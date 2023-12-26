@@ -25,7 +25,7 @@ export cached_gf, cached_occupation, cached_electriccurrent, cached_electriccurr
 
 # utilities for TEMPO
 # exact models
-export AbstractImpurityModel, SISB, SIDB, IRLM, SKIM, boundarydynamics!, boundarydynamics, boundarydynamics2
+export AbstractImpurityModel, SISB, SIDB, IRLM, SKIM, boundarycondition!, boundarycondition, boundarycondition2
 export hybriddynamics, hybriddynamicsstepper, qim_hybriddynamics, qim_hybriddynamicsstepper, correlationfunction
 export systhermalstate, systhermalstate!, sysdynamics, sysdynamics!, sysdynamicsstepper!, acc_sysdynamics, acc_sysdynamics2
 export zoomin, zoomout

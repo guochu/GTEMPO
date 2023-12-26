@@ -1,7 +1,7 @@
-# push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/DMRG/src")
-# push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/Hamiltonians/src")
+push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/DMRG/src")
+push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/Hamiltonians/src")
 # push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/ImpurityModelBase/src")
-# push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/TEBD/src")
+push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/TEBD/src")
 push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/FermionicTCMPS/src")
 
 using Test, Random

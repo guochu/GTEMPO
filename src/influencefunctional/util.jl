@@ -63,12 +63,14 @@ function partialmpo(row::Int, cols::Vector{Int}, coefs::Vector{<:Number})
 	I2 = one(JW)
 
     virtual = isomorphism(Matrix{eltype(coefs)}, Rep[ℤ₂](1=>1), Rep[ℤ₂](1=>1))
+    pspace = grassmannpspace()
+    T = scalartype(virtual)
     @tensor m22I[1,3;2,4] := virtual[1,2] * I2[3,4] 
 	if row < cols[1]
 	    tmp = Matrix{Any}(undef, 1, 2)
 	    tmp[1, 1] = I2
 	    tmp[1, 2] = one(eltype(coefs)) * σ₊
-	    mpoj = SparseMPOTensor(tmp)
+	    mpoj = SparseMPOTensor(tmp, T, pspace)
 	    data = [mpoj]
 	    for i in 1:length(cols)-1
 	        tmp = Matrix{Any}(undef, 2, 2)
@@ -76,19 +78,19 @@ function partialmpo(row::Int, cols::Vector{Int}, coefs::Vector{<:Number})
 	        tmp[2,2] = m22I
 	        tmp[1,2] = 0.
 	        tmp[2,1] = adjoint(σ₋) * coefs[i]
-	        push!(data, SparseMPOTensor(tmp))
+	        push!(data, SparseMPOTensor(tmp, T, pspace))
 	    end
 	    tmp = Matrix{Any}(undef, 2, 1)
 	    tmp[1,1] = I2
 	    tmp[2,1] = adjoint(σ₋) * coefs[end]
-	    mpof = SparseMPOTensor(tmp)
+	    mpof = SparseMPOTensor(tmp, T, pspace)
 	    push!(data, mpof)
 	    positions = [row; cols]
 	elseif row > cols[end]
 	    tmp = Matrix{Any}(undef, 1, 2)
 	    tmp[1, 1] = I2
 	    tmp[1, 2] = (-coefs[1]) * σ₊
-	    mpoj = SparseMPOTensor(tmp)
+	    mpoj = SparseMPOTensor(tmp, T, pspace)
 	    data = [mpoj]
 	    for i in 2:length(cols)
 	        tmp = Matrix{Any}(undef, 2, 2)
@@ -96,19 +98,19 @@ function partialmpo(row::Int, cols::Vector{Int}, coefs::Vector{<:Number})
 	        tmp[2,2] = m22I
 	        tmp[2,1] = 0.
 	        tmp[1,2] = (-coefs[i]) * σ₊
-	        push!(data, SparseMPOTensor(tmp))
+	        push!(data, SparseMPOTensor(tmp, T, pspace))
 	    end	
 	    tmp = Matrix{Any}(undef, 2, 1)
 	    tmp[1,1] = I2
 	    tmp[2,1] = adjoint(σ₋) * one(eltype(coefs))
-	    mpof = SparseMPOTensor(tmp)
+	    mpof = SparseMPOTensor(tmp, T, pspace)
 	    push!(data, mpof)
 	    positions = [cols; row]
 	else
 	    tmp = Matrix{Any}(undef, 1, 2)
 	    tmp[1, 1] = I2
 	    tmp[1, 2] = (-coefs[1]) * σ₊
-	    mpoj = SparseMPOTensor(tmp)
+	    mpoj = SparseMPOTensor(tmp, T, pspace)
 	    data = [mpoj]
 
 		row_pos = findfirst(x -> row < x, cols)
@@ -119,14 +121,14 @@ function partialmpo(row::Int, cols::Vector{Int}, coefs::Vector{<:Number})
 	        tmp[2,2] = m22I
 	        tmp[2,1] = 0.
 	        tmp[1,2] = (-coefs[i]) * σ₊
-	        push!(data, SparseMPOTensor(tmp))			
+	        push!(data, SparseMPOTensor(tmp, T, pspace))			
 		end
 		tmp = Matrix{Any}(undef, 2, 2)
 		tmp[1,1] = I2
 		tmp[2,2] = 0.
 		tmp[1,2] = σ₊
 		tmp[2,1] = adjoint(σ₋) * one(eltype(coefs))
-		push!(data, SparseMPOTensor(tmp))
+		push!(data, SparseMPOTensor(tmp, T, pspace))
 
 	    for i in row_pos:length(cols)-1
 	        tmp = Matrix{Any}(undef, 2, 2)
@@ -134,12 +136,12 @@ function partialmpo(row::Int, cols::Vector{Int}, coefs::Vector{<:Number})
 	        tmp[2,2] = m22I
 	        tmp[1,2] = 0.
 	        tmp[2,1] = adjoint(σ₋) * coefs[i]
-	        push!(data, SparseMPOTensor(tmp))
+	        push!(data, SparseMPOTensor(tmp, T, pspace))
 	    end
 	    tmp = Matrix{Any}(undef, 2, 1)
 	    tmp[1,1] = I2
 	    tmp[2,1] = adjoint(σ₋) * coefs[end]
-	    mpof = SparseMPOTensor(tmp)
+	    mpof = SparseMPOTensor(tmp, T, pspace)
 	    push!(data, mpof)
 	    positions = insert!(copy(cols), row_pos, row)
 	end

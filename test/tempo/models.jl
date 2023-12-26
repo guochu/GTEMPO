@@ -87,7 +87,7 @@ end
 		for ordering in imag_grassmann_orderings
 			lattice = GrassmannLattice(N=N, δτ=β/N, contour=:imag, ordering=ordering)
 			mpsI = hybriddynamics(lattice, exact_model, trunc=trunc) 
-			mpsI = boundarydynamics(mpsI, lattice)
+			mpsI = boundarycondition(mpsI, lattice)
 			mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
 			g₃ = gf(lattice, mpsK, mpsI)
 			@test norm(g₁ - g₃) / norm(g₁) < rtol
@@ -111,7 +111,7 @@ end
 
 		mpsKs = [sysdynamics(lattice, exact_model)]
 		for band in 1:lattice.bands
-			mpsKs = boundarydynamics2(mpsKs, lattice, band=band)
+			mpsKs = boundarycondition2(mpsKs, lattice, band=band)
 		end
 		
 
@@ -122,7 +122,7 @@ end
 			mps = sysdynamics(lattice_r, exact_model)
 			mps = systhermalstate!(mps, lattice_r, exact_model)
 			for band in 1:lattice.bands
-				mps = boundarydynamics(mps, lattice_r, band=band)
+				mps = boundarycondition(mps, lattice_r, band=band)
 			end
 
 			for band in 1:lattice.bands
@@ -150,7 +150,7 @@ end
 
 		mpsKs = [acc_sysdynamics2(lattice, exact_model)]
 		for band in 1:lattice.bands
-			mpsKs = boundarydynamics2(mpsKs, lattice, band=band)
+			mpsKs = boundarycondition2(mpsKs, lattice, band=band)
 		end
 		
 		for ordering in [A1A1a1a1B1B1b1b1(), A1a1B1b1b1B1a1A1(), A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1(), A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2()]
@@ -160,7 +160,7 @@ end
 			mps = acc_sysdynamics2(lattice_r, exact_model)
 			mps = systhermalstate!(mps, lattice_r, exact_model)
 			for band in 1:lattice.bands
-				mps = boundarydynamics(mps, lattice_r, band=band)
+				mps = boundarycondition(mps, lattice_r, band=band)
 			end
 
 			for band in 1:lattice.bands
@@ -193,7 +193,7 @@ end
 
 		mpsKs = [acc_sysdynamics2(lattice, exact_model)]
 		for band in 1:lattice.bands
-			mpsKs = boundarydynamics2(mpsKs, lattice, band=band)
+			mpsKs = boundarycondition2(mpsKs, lattice, band=band)
 		end
 
 
@@ -201,7 +201,7 @@ end
 		mps = acc_sysdynamics2(lattice_r, exact_model)
 		mps = systhermalstate!(mps, lattice_r, exact_model)
 		for band in 1:lattice.bands
-			mps = boundarydynamics(mps, lattice_r, band=band)
+			mps = boundarycondition(mps, lattice_r, band=band)
 		end
 
 		for band in 1:lattice.bands
@@ -268,7 +268,7 @@ end
 
 			corr = correlationfunction(exact_model.bath, lattice)
 			mpsI = hybriddynamics(lattice, exact_model, corr=corr, trunc=trunc) 
-			mpsI = boundarydynamics(mpsI, lattice)
+			mpsI = boundarycondition(mpsI, lattice)
 			mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
 
 			ns2 = occupation(lattice, mpsK, mpsI)
@@ -289,7 +289,7 @@ end
 				lattice, mpsI, mpsK = makestep(lattice, mpsI, mpsK)
 				@test k == timesteps(mpsI, lattice) == lattice.k
 				mpsI = hybriddynamicsstepper(mpsI, lattice, corr, trunc=trunc)
-				mpsI′ = boundarydynamics(mpsI, lattice)
+				mpsI′ = boundarycondition(mpsI, lattice)
 				mpsK = sysdynamicsstepper!(mpsK, lattice, exact_model, trunc=trunc)
 				ns2[k-1] = occupation(lattice, k-1, mpsK, mpsI′)
 				currents2[k-1] = electriccurrent2(lattice, corr, k, mpsK, mpsI′)
@@ -310,7 +310,7 @@ end
 				lattice, mpsI, mpsK = makestep(lattice, mpsI, mpsK)
 				@test k == timesteps(mpsI, lattice) == lattice.k
 				mpsI2 = hybriddynamicsstepper(mpsI, lattice, corr, finalize=true, trunc=trunc)
-				mpsI2 = boundarydynamics(mpsI2, lattice)
+				mpsI2 = boundarycondition(mpsI2, lattice)
 				mpsI = hybriddynamicsstepper(mpsI, lattice, corr, trunc=trunc)
 				mpsK = sysdynamicsstepper!(mpsK, lattice, exact_model, trunc=trunc)
 				cache = environments(lattice, mpsK, mpsI2)
@@ -351,7 +351,7 @@ end
 	rightcorr = correlationfunction(exact_model.rightbath, lattice)
 	corr = leftcorr + rightcorr
 	mpsI = qim_hybriddynamics(lattice, corr, trunc=trunc) 
-	mpsI = boundarydynamics(boundarydynamics(mpsI, lattice, band=1), lattice, band=2)
+	mpsI = boundarycondition(boundarycondition(mpsI, lattice, band=1), lattice, band=2)
 	mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
 
 	ns = occupation(lattice, mpsK, mpsI)
@@ -363,9 +363,9 @@ end
 	rightcorr = correlationfunction(exact_model.rightbath, lattice)
 	corr = leftcorr + rightcorr
 	mpsI1 = hybriddynamics(lattice, corr, trunc=trunc, band=1) 
-	mpsI1 = boundarydynamics(mpsI1, lattice, band=1)
+	mpsI1 = boundarycondition(mpsI1, lattice, band=1)
 	mpsI2 = hybriddynamics(lattice, corr, trunc=trunc, band=2) 
-	mpsI2 = boundarydynamics(mpsI2, lattice, band=2)
+	mpsI2 = boundarycondition(mpsI2, lattice, band=2)
 	mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
 
 	cache = environments(lattice, mpsK, mpsI1, mpsI2)

@@ -15,7 +15,7 @@ function systhermalstate_iterative!(gmps::GrassmannMPS, lattice::RealGrassmannLa
 
 
 	# for band in 1:lattice_i.bands
-	# 	gmps_i = boundarydynamics(gmps_i, lattice_i, band=band, trunc=trunc)
+	# 	gmps_i = boundarycondition(gmps_i, lattice_i, band=band, trunc=trunc)
 	# end
 	@assert length(gmps_i) == length(lattice_i)
 

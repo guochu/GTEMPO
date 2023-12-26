@@ -115,15 +115,15 @@ end
 			lattice_scaling = zoomin(lattice, scaling=scaling)
 			K1 = sysdynamics(lattice_scaling, exact_model)
 			for band in 1:lattice.bands
-				K1 = boundarydynamics(K1, lattice_scaling, band=band)
+				K1 = boundarycondition(K1, lattice_scaling, band=band)
 			end
 			K2 = acc_sysdynamics(lattice, exact_model, scaling=scaling)
 			for band in 1:lattice.bands
-				K2 = boundarydynamics(K2, lattice, band=band)
+				K2 = boundarycondition(K2, lattice, band=band)
 			end	
 			K3 = acc_sysdynamics2(lattice, exact_model, scaling=scaling)
 			for band in 1:lattice.bands
-				K3 = boundarydynamics(K3, lattice, band=band)
+				K3 = boundarycondition(K3, lattice, band=band)
 			end	
 			Z1 = integrate(lattice_scaling, K1)
 			Z2 = integrate(lattice, K2)
@@ -151,15 +151,15 @@ end
 				lattice_scaling = zoomin(lattice, scaling=scaling)
 				K1 = sysdynamics(lattice_scaling, exact_model)
 				for band in 1:lattice.bands
-					K1 = boundarydynamics(K1, lattice_scaling, band=band)
+					K1 = boundarycondition(K1, lattice_scaling, band=band)
 				end
 				K2 = acc_sysdynamics(lattice, exact_model, scaling=scaling)
 				for band in 1:lattice.bands
-					K2 = boundarydynamics(K2, lattice, band=band)
+					K2 = boundarycondition(K2, lattice, band=band)
 				end	
 				K3 = acc_sysdynamics2(lattice, exact_model, scaling=scaling)
 				for band in 1:lattice.bands
-					K3 = boundarydynamics(K3, lattice, band=band)
+					K3 = boundarycondition(K3, lattice, band=band)
 				end	
 				Z1 = integrate(lattice_scaling, K1)
 				Z2 = integrate(lattice, K2)
@@ -198,11 +198,11 @@ end
 			lattice_scaling = zoomin(lattice, scaling=scaling)
 			K1 = sysdynamics(lattice_scaling, exact_model)
 			for band in 1:lattice.bands
-				K1 = boundarydynamics(K1, lattice_scaling, band=band)
+				K1 = boundarycondition(K1, lattice_scaling, band=band)
 			end
 			K2 = acc_sysdynamics(lattice, exact_model, scaling=scaling)
 			for band in 1:lattice.bands
-				K2 = boundarydynamics(K2, lattice, band=band)
+				K2 = boundarycondition(K2, lattice, band=band)
 			end	
 			Z1 = integrate(lattice_scaling, K1)
 			Z2 = integrate(lattice, K2)
@@ -229,16 +229,16 @@ end
 			lattice_scaling = zoomin(lattice, scaling=scaling)
 			K1 = sysdynamics(lattice_scaling, exact_model)
 			for band in 1:lattice.bands
-				K1 = boundarydynamics(K1, lattice_scaling, band=band)
+				K1 = boundarycondition(K1, lattice_scaling, band=band)
 			end
 			K2 = acc_sysdynamics(lattice, exact_model, scaling=scaling)
 			for band in 1:lattice.bands
-				K2 = boundarydynamics(K2, lattice, band=band)
+				K2 = boundarycondition(K2, lattice, band=band)
 			end	
 			K3 = acc_sysdynamics2(lattice, exact_model, scaling=scaling)
 			K3 = [K3]
 			for band in 1:lattice.bands
-				K3 = boundarydynamics2(K3, lattice, band=band)
+				K3 = boundarycondition2(K3, lattice, band=band)
 			end	
 			Z1 = integrate(lattice_scaling, K1)
 			Z2 = integrate(lattice, K2)
@@ -269,15 +269,15 @@ end
 				lattice_scaling = zoomin(lattice, scaling=scaling)
 				K1 = [sysdynamics(lattice_scaling, exact_model)]
 				for band in 1:lattice.bands
-					K1 = boundarydynamics2(K1, lattice_scaling, band=band)
+					K1 = boundarycondition2(K1, lattice_scaling, band=band)
 				end
 				K2 = [acc_sysdynamics(lattice, exact_model, scaling=scaling)]
 				for band in 1:lattice.bands
-					K2 = boundarydynamics2(K2, lattice, band=band)
+					K2 = boundarycondition2(K2, lattice, band=band)
 				end	
 				K3 = [acc_sysdynamics2(lattice, exact_model, scaling=scaling)]
 				for band in 1:lattice.bands
-					K3 = boundarydynamics2(K3, lattice, band=band)
+					K3 = boundarycondition2(K3, lattice, band=band)
 				end	
 				Z1 = integrate(lattice_scaling, K1)
 				Z2 = integrate(lattice, K2)
@@ -310,11 +310,11 @@ end
 				lattice_scaling = zoomin(lattice, scaling=scaling)
 				K1 = sysdynamics(lattice_scaling, exact_model, forward=f)
 				for band in 1:lattice.bands
-					K1 = boundarydynamics(K1, lattice_scaling, band=band)
+					K1 = boundarycondition(K1, lattice_scaling, band=band)
 				end
 				K2 = acc_sysdynamics2(lattice, exact_model, scaling=scaling, forward=f)
 				for band in 1:lattice.bands
-					K2 = boundarydynamics(K2, lattice, band=band)
+					K2 = boundarycondition(K2, lattice, band=band)
 				end	
 				Z1 = integrate(lattice_scaling, K1)
 				Z2 = integrate(lattice, K2)
@@ -351,7 +351,7 @@ end
 	K = sysdynamics(lattice, exact_model)
 	K = systhermalstate!(K, lattice, exact_model)
 	for band in 1:lattice.bands
-		K = boundarydynamics(K, lattice, band=band)
+		K = boundarycondition(K, lattice, band=band)
 	end
 	n0 = occupation(lattice, K, band=1)
 
@@ -360,7 +360,7 @@ end
 		K = acc_sysdynamics2(lattice, exact_model)
 		K = systhermalstate!(K, lattice, exact_model)
 		for band in 1:lattice.bands
-			K = boundarydynamics(K, lattice, band=band)
+			K = boundarycondition(K, lattice, band=band)
 		end
 		for band in 1:lattice.bands
 			n2 = occupation(lattice, K, band=band)	

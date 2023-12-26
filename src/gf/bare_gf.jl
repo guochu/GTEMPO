@@ -247,12 +247,14 @@ function two_body_mpo_row(row::Int, cols::Vector{Int}, coefs::Vector{<:Number})
     I2 = one(JW)
 
     virtual = isomorphism(Matrix{eltype(coefs)}, Rep[ℤ₂](1=>1), Rep[ℤ₂](1=>1))
+    pspace = grassmannpspace()
+    T = scalartype(virtual)
     @tensor m22JW[1,3;2,4] := virtual[1,2] * JW[3,4] 
     if row < cols[1]
         tmp = Matrix{Any}(undef, 1, 2)
         tmp[1, 1] = zero(I2)
         tmp[1, 2] = one(eltype(coefs)) * σ₊
-        mpoj = SparseMPOTensor(tmp)
+        mpoj = SparseMPOTensor(tmp, T, pspace)
         data = [mpoj]
         for i in row+1 : cols[end]-1
             tmp = Matrix{Any}(undef, 2, 2)
@@ -265,18 +267,18 @@ function two_body_mpo_row(row::Int, cols::Vector{Int}, coefs::Vector{<:Number})
             else
                 tmp[2,1] = adjoint(σ₋) * coefs[pos]
             end
-            push!(data, SparseMPOTensor(tmp))
+            push!(data, SparseMPOTensor(tmp, T, pspace))
         end
         tmp = Matrix{Any}(undef, 2, 1)
         tmp[1,1] = I2
         tmp[2,1] = adjoint(σ₋) * coefs[end]
-        push!(data, SparseMPOTensor(tmp))
+        push!(data, SparseMPOTensor(tmp, T, pspace))
         positions = collect(row:cols[end])
     elseif row > cols[end]
         tmp = Matrix{Any}(undef, 1, 2)
         tmp[1, 1] = I2
         tmp[1, 2] = (-coefs[1]) * σ₊
-        mpoj = SparseMPOTensor(tmp)
+        mpoj = SparseMPOTensor(tmp, T, pspace)
         data = [mpoj]
         for i in cols[1]+1:row-1
             tmp = Matrix{Any}(undef, 2, 2)
@@ -289,18 +291,18 @@ function two_body_mpo_row(row::Int, cols::Vector{Int}, coefs::Vector{<:Number})
             else
                 tmp[1,2] = (-coefs[pos]) * σ₊
             end
-            push!(data, SparseMPOTensor(tmp))
+            push!(data, SparseMPOTensor(tmp, T, pspace))
         end
         tmp = Matrix{Any}(undef, 2, 1)
         tmp[1,1] = zero(I2)
         tmp[2,1] = adjoint(σ₋) * one(eltype(coefs))
-        push!(data, SparseMPOTensor(tmp))
+        push!(data, SparseMPOTensor(tmp, T, pspace))
         positions = collect(cols[1]:row)
     else
         tmp = Matrix{Any}(undef, 1, 2)
         tmp[1, 1] = I2
         tmp[1, 2] = (-coefs[1]) * σ₊
-        mpoj = SparseMPOTensor(tmp)
+        mpoj = SparseMPOTensor(tmp, T, pspace)
         data = [mpoj]
         positions = [cols[1]]
 
@@ -315,7 +317,7 @@ function two_body_mpo_row(row::Int, cols::Vector{Int}, coefs::Vector{<:Number})
             else
                 tmp[1,2] = (-coefs[pos]) * σ₊
             end
-            push!(data, SparseMPOTensor(tmp))
+            push!(data, SparseMPOTensor(tmp, T, pspace))
             push!(positions, i)
         end
         tmp = Matrix{Any}(undef, 2, 2)
@@ -323,7 +325,7 @@ function two_body_mpo_row(row::Int, cols::Vector{Int}, coefs::Vector{<:Number})
         tmp[2,2] = 0.
         tmp[1,2] = σ₊
         tmp[2,1] = adjoint(σ₋) * one(eltype(coefs))
-        push!(data, SparseMPOTensor(tmp))
+        push!(data, SparseMPOTensor(tmp, T, pspace))
         push!(positions, row)
         for i in row+1 : cols[end]-1
             tmp = Matrix{Any}(undef, 2, 2)
@@ -336,13 +338,13 @@ function two_body_mpo_row(row::Int, cols::Vector{Int}, coefs::Vector{<:Number})
             else
                 tmp[2,1] = adjoint(σ₋) * coefs[pos]
             end
-            push!(data, SparseMPOTensor(tmp))
+            push!(data, SparseMPOTensor(tmp, T, pspace))
             push!(positions, i)
         end
         tmp = Matrix{Any}(undef, 2, 1)
         tmp[1,1] = I2
         tmp[2,1] = adjoint(σ₋) * coefs[end]
-        push!(data, SparseMPOTensor(tmp))
+        push!(data, SparseMPOTensor(tmp, T, pspace))
         push!(positions, cols[end])
     end
 

@@ -3,7 +3,10 @@ abstract type AbstractGTerm end
 const _ph = Rep[ℤ₂](0=>1, 1=>1)
 
 grassmannpspace() = _ph
+grassmannpspacetype() = spacetype(_ph)
 # grassmannvacuum() =  Rep[ℤ₂](0=>1)
+grassmannmpstensortype(::Type{T}) where {T<:Number} = mpstensortype(grassmannpspacetype(), T)
+grassmannmpotensortype(::Type{T}) where {T<:Number} = mpotensortype(grassmannpspacetype(), T)
 
 function spin_site_ops_z2()
     ph = _ph
@@ -26,7 +29,7 @@ struct GTerm{N, T <: Number} <: AbstractGTerm
 
 function GTerm(positions::NTuple{N, Int}; coeff::Number) where {N}
 	(length(Set(positions)) == N) || throw(ArgumentError("multiple grassmann on the same position not allowed"))
-	(N % 2 == 0) || throw(ArgumentError("only support even number of grassmann"))
+	(N % 2 == 0) || throw(ArgumentError("only support even number of grassmann variables"))
 	p = sortperm([positions...])
 	positions = positions[p]
 	p = Permutation(p)
