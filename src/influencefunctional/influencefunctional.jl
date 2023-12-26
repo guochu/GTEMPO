@@ -11,4 +11,3 @@ end
 include("util.jl")
 include("imaginarytime.jl")
 include("realtime.jl")
-include("mixedtime.jl")
