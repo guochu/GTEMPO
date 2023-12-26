@@ -1,0 +1,71 @@
+abstract type ImagGrassmannLattice{O<:ImagGrassmannOrdering} <: AbstractGrassmannLattice{O} end
+DMRG.scalartype(::Type{<:ImagGrassmannLattice}) = Float64
+
+struct ImagGrassmannLattice1Order{O<:ImagGrassmannOrdering} <: ImagGrassmannLattice{O}
+	δτ::Float64
+	bands::Int
+	N::Int
+	ordering::O
+
+	ImagGrassmannLattice1Order(δτ::Real, bands::Int, N::Int, ordering::ImagGrassmannOrdering) = new{typeof(ordering)}(convert(Float64, δτ), bands, N, ordering)
+end
+
+ImagGrassmannLattice1Order(; δτ::Real, N::Int, bands::Int=1, ordering::ImagGrassmannOrdering=A1A1B1B1()) = ImagGrassmannLattice1Order(δτ, bands, N, ordering)
+Base.similar(x::ImagGrassmannLattice1Order; δτ::Real=x.δτ, bands::Int=x.bands, N::Int=x.N, ordering::ImagGrassmannOrdering=x.ordering) = ImagGrassmannLattice1Order(δτ, bands, N, ordering)
+
+function ImagGrassmannLattice(; order::Int=1, kwargs...)
+	(order in (1, 2)) || throw(ArgumentError("order must be 1 or 2"))
+	if order == 1
+		return ImagGrassmannLattice1Order(; kwargs...)
+	else
+		error("Second orderr ImagGrassmannLattice not implemented")
+	end
+end
+
+Base.length(x::ImagGrassmannLattice) = 2*x.bands * (x.k+1)
+function Base.getproperty(x::ImagGrassmannLattice1Order, s::Symbol)
+	if s == :k
+		return x.N+1
+	elseif s == :τs
+		return 0:x.δτ:x.N*x.δτ
+	elseif s == :β
+		return x.N * x.δτ
+	elseif s == :T
+		return 1 / x.β
+	else
+		getfield(x, s)
+	end
+end
+# ab\bar{b}\bar{a} a_2b_2\bar{b}_2\bar{a}_2 a_1b_1\bar{b}_1\bar{a}_1
+function index(x::ImagGrassmannLattice{<:A1B1B1A1}, i::Int; conj::Bool, band::Int=1)
+	(0 <= i <= x.k) || throw(BoundsError())
+	# TL = length(x)
+	bands = x.bands
+	if i == 0
+		ifelse(conj, 2bands+1-band, band)
+	else
+		ifelse(conj, (x.k-i)*2*bands + 2bands+1-band, (x.k-i)*2*bands + band) + 2*bands
+	end	
+end
+# a\bar{a}b\bar{b} a_2\bar{a}_2b_2\bar{b}_2 a_1\bar{a}_1b_1\bar{b}_1
+function index(x::ImagGrassmannLattice{<:A1A1B1B1}, i::Int; conj::Bool, band::Int=1)
+	(0 <= i <= x.k) || throw(BoundsError())
+	# TL = length(x)
+	bands = x.bands
+	if i == 0
+		ifelse(conj, 2*band, 2*band-1)
+	else
+		ifelse(conj, (x.k-i)*2*bands + 2*band, (x.k-i)*2*bands + 2*band-1) + 2*bands
+	end	
+end
+# a\bar{a}b\bar{b} a_2\bar{a}_2a_1\bar{a}_1 b_2\bar{b}_2b_1\bar{b}_1
+function index(x::ImagGrassmannLattice{<:A2A2A1A1B2B2B1B1}, i::Int; conj::Bool, band::Int=1)
+	(0 <= i <= x.k) || throw(BoundsError())
+	n = 2 * x.k 
+	if i == 0
+		ifelse(conj, 2*band, 2*band-1)
+	else
+		ifelse(conj, (band-1) * n + (x.k-i)*2 + 2, (band-1) * n + (x.k-i)*2 + 1) + 2 * x.bands
+	end	
+end
+

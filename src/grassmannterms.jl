@@ -1,0 +1,73 @@
+abstract type AbstractGTerm end
+
+const _ph = Rep[ℤ₂](0=>1, 1=>1)
+
+grassmannpspace() = _ph
+# grassmannvacuum() =  Rep[ℤ₂](0=>1)
+
+function spin_site_ops_z2()
+    ph = _ph
+    vacuum = oneunit(ph)
+    σ₊ = TensorMap(zeros, vacuum ⊗ ph ← Rep[ℤ₂](1=>1) ⊗ ph)
+    blocks(σ₊)[Irrep[ℤ₂](1)] = ones(1, 1)
+    σ₋ = TensorMap(zeros, vacuum ⊗ ph ← Rep[ℤ₂](1=>1) ⊗ ph)
+    blocks(σ₋)[Irrep[ℤ₂](0)] = ones(1, 1)
+    σz = TensorMap(ones, ph ← ph)
+    blocks(σz)[Irrep[ℤ₂](0)] = -ones(1, 1)
+    JW = -σz
+    return σ₊, σ₋,σz, JW, one(JW)
+end
+
+const σ₊, σ₋, σz, JW, I2 = spin_site_ops_z2()
+
+struct GTerm{N, T <: Number} <: AbstractGTerm
+	positions::NTuple{N, Int}
+	coeff::T
+
+function GTerm(positions::NTuple{N, Int}; coeff::Number) where {N}
+	(length(Set(positions)) == N) || throw(ArgumentError("multiple grassmann on the same position not allowed"))
+	(N % 2 == 0) || throw(ArgumentError("only support even number of grassmann"))
+	p = sortperm([positions...])
+	positions = positions[p]
+	p = Permutation(p)
+	coeff *= sign(p)
+	new{N, typeof(coeff)}(positions, coeff)
+end
+end
+
+DMRG.scalartype(::Type{GTerm{N, T}}) where {N, T} = T
+Hamiltonians.positions(x::GTerm) = x.positions
+GTerm(a::Vararg{Int}; kwargs...) = GTerm(a; kwargs...)
+
+function Base.convert(::Type{<:QTerm}, x::GTerm)
+	n = x.positions[end] - x.positions[1] + 1
+	pos = collect(x.positions[1]:x.positions[end])
+	ops = Vector{Any}(undef, n)
+	ops[1] = σ₊
+	ops[end] = adjoint(σ₋)
+	rest_pos = x.positions[2:end-1]
+	_s = 1
+	for (i, pj) in enumerate(x.positions[1]+1:x.positions[end]-1)
+		if pj in rest_pos
+			_s *= -1
+			ops[i+1] = ifelse(_s == -1, adjoint(σ₋), σ₊)
+		else
+			ops[i+1] = ifelse(_s == -1, I2, JW)
+		end
+	end
+	return QTerm(pos, ops, coeff=x.coeff)
+end
+
+
+struct ExpGTerm{N, T <:Number} 
+	data::GTerm{N, T}
+end
+DMRG.scalartype(::Type{ExpGTerm{N, T}}) where {N, T} = T
+Hamiltonians.positions(x::ExpGTerm) = x.data.positions
+Base.exp(x::GTerm{N}) where N = ExpGTerm(x)
+function Base.convert(::Type{<:QTerm}, x::ExpGTerm)
+	t1 = convert(QTerm, x.data)
+	return t1 + id(t1)
+end
+tompo(x::Union{GTerm, ExpGTerm}, L::Int) = prodmpo([_ph for i in 1:L], convert(QTerm, x))
+

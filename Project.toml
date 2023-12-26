@@ -1,0 +1,15 @@
+name = "GTEMPO"
+uuid = "44ad46a9-1ad4-442b-94e0-dc86be91c0af"
+authors = ["Guo Chu <guochu604b@gmail.com>"]
+version = "0.0.1"
+
+[deps]
+DMRG = "1240110f-4488-488b-9691-4f58b4220f75"
+Hamiltonians = "ce941b29-2bb2-4194-8c5f-a969bff03822"
+ImpurityModelBase = "a5817ebb-6d84-46c1-a17a-d25f868e249e"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+Permutations = "2ae35dd2-176d-5d53-8349-f30d82d94d4f"
+QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+SphericalTensors = "810931ec-fc2f-499d-8094-ffc35d8d9f19"
