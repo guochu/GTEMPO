@@ -20,7 +20,7 @@ scale(x::GrassmannMPS) = x.scale[]
 
 Base.length(x::GrassmannMPS) = length(x.data)
 Base.isempty(x::GrassmannMPS) = isempty(x.data)
-DMRG.scalartype(::Type{GrassmannMPS{A}}) where {A} = scalartype(A)
+TK.scalartype(::Type{GrassmannMPS{A}}) where {A} = scalartype(A)
 Base.getindex(x::GrassmannMPS, i::Int) = getindex(x.data, i)
 Base.firstindex(x::GrassmannMPS) = firstindex(x.data)
 Base.lastindex(x::GrassmannMPS) = lastindex(x.data)
@@ -176,6 +176,3 @@ function _swap_gate(m1, m2; trunc)
 	# return u, permute(s * v, (1,2), (3,))
 	return u * s, permute(v, (1,2), (3,))
 end
-
-include("orth.jl")
-include("linalg.jl")

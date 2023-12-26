@@ -1,12 +1,5 @@
 abstract type AbstractGTerm end
 
-const _ph = Rep[ℤ₂](0=>1, 1=>1)
-
-grassmannpspace() = _ph
-grassmannpspacetype() = spacetype(_ph)
-# grassmannvacuum() =  Rep[ℤ₂](0=>1)
-grassmannmpstensortype(::Type{T}) where {T<:Number} = mpstensortype(grassmannpspacetype(), T)
-grassmannmpotensortype(::Type{T}) where {T<:Number} = mpotensortype(grassmannpspacetype(), T)
 
 function spin_site_ops_z2()
     ph = _ph
@@ -38,7 +31,7 @@ function GTerm(positions::NTuple{N, Int}; coeff::Number) where {N}
 end
 end
 
-DMRG.scalartype(::Type{GTerm{N, T}}) where {N, T} = T
+TK.scalartype(::Type{GTerm{N, T}}) where {N, T} = T
 Hamiltonians.positions(x::GTerm) = x.positions
 GTerm(a::Vararg{Int}; kwargs...) = GTerm(a; kwargs...)
 
@@ -65,7 +58,7 @@ end
 struct ExpGTerm{N, T <:Number} 
 	data::GTerm{N, T}
 end
-DMRG.scalartype(::Type{ExpGTerm{N, T}}) where {N, T} = T
+TK.scalartype(::Type{ExpGTerm{N, T}}) where {N, T} = T
 Hamiltonians.positions(x::ExpGTerm) = x.data.positions
 Base.exp(x::GTerm{N}) where N = ExpGTerm(x)
 function Base.convert(::Type{<:QTerm}, x::ExpGTerm)

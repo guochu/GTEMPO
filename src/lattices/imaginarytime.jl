@@ -1,5 +1,5 @@
 abstract type ImagGrassmannLattice{O<:ImagGrassmannOrdering} <: AbstractGrassmannLattice{O} end
-DMRG.scalartype(::Type{<:ImagGrassmannLattice}) = Float64
+TK.scalartype(::Type{<:ImagGrassmannLattice}) = Float64
 
 struct ImagGrassmannLattice1Order{O<:ImagGrassmannOrdering} <: ImagGrassmannLattice{O}
 	δτ::Float64

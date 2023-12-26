@@ -1,5 +1,5 @@
 abstract type MixedGrassmannLattice{O<:MixedGrassmannOrdering} <: AbstractGrassmannLattice{O} end
-DMRG.scalartype(::Type{<:MixedGrassmannLattice}) = ComplexF64
+TK.scalartype(::Type{<:MixedGrassmannLattice}) = ComplexF64
 
 struct MixedGrassmannLattice1Order{O<:MixedGrassmannOrdering} <: MixedGrassmannLattice{O}
 	β::Float64

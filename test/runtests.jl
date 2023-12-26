@@ -8,9 +8,9 @@ using Test, Random
 using SphericalTensors, DMRG, Hamiltonians, FermionicTCMPS
 const TK = SphericalTensors
 
-# include("../src/includes.jl")
-push!(LOAD_PATH, "../src")
-using GTEMPO
+include("../src/includes.jl")
+# push!(LOAD_PATH, "../src")
+# using GTEMPO
 
 Random.seed!(12354)
 
