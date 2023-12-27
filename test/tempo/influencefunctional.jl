@@ -19,11 +19,8 @@ println("------------------------------------")
 							mps1 = t * mps1
 							canonicalize!(mps1, alg=Orthogonalize(TK.SVD(), trunc))
 						end	
-						# mps2 = partialinfluencefunctional(lattice, i, η[i, :], trunc=trunc, band=band)				
-						# # println("bond dimension is ", bond_dimension(mps2))
-						# @test distance(mps1, mps2) / norm(mps1) <= 1.0e-5
 
-						mps3 = partialinfluencefunctional2(lattice, i, η[i, :], band=band)	
+						mps3 = partialinfluencefunctional(lattice, i, η[i, :], band=band)	
 						@test bond_dimension(mps3) == 2
 						@test distance(mps1, mps3) / norm(mps1) <= 1.0e-5
 					end
@@ -57,10 +54,8 @@ end
 									mps1 = t * mps1
 									canonicalize!(mps1, alg=Orthogonalize(TK.SVD(), trunc))
 								end
-								# mps2 = partialinfluencefunctional(lattice, i, view(η, i, 1:lattice.k), trunc=trunc, band=band, fi=fi, fj=fj)
-								# # println("bond dimension is ", bond_dimension(mps2))
-								# @test distance(mps1, mps2) / norm(mps1) <= 1.0e-5
-								mps3 = partialinfluencefunctional2(lattice, i, view(η, i, 1:lattice.k), band=band, fi=fi, fj=fj)
+
+								mps3 = partialinfluencefunctional(lattice, i, view(η, i, 1:lattice.k), band=band, fi=fi, fj=fj)
 								@test bond_dimension(mps3) == 2
 								@test distance(mps1, mps3) / norm(mps1) <= 1.0e-5
 							end
@@ -91,12 +86,8 @@ end
 								mps1 = t * mps1
 								canonicalize!(mps1, alg=Orthogonalize(trunc = trunc))															
 							end
-							# tmp1 = partialinfluencefunctional2(lattice, i, view(η₁, i, 1:lattice.k), band=band, fi=fi, fj=true)
-							# tmp2 = partialinfluencefunctional2(lattice, i, view(η₁, i, 1:lattice.k), band=band, fi=fi, fj=false)
-							# mps2 = mult(tmp1, tmp2, trunc=trunc)
-							# @test distance(mps1, mps2) / norm(mps1) <= 1.0e-5
 
-							mps3 = partialinfluencefunctional2(lattice, i, view(η₁, i, 1:lattice.k), view(η₂, i, 1:lattice.k), band=band, fi=fi)
+							mps3 = partialinfluencefunctional(lattice, i, view(η₁, i, 1:lattice.k), view(η₂, i, 1:lattice.k), band=band, fi=fi)
 							@test bond_dimension(mps3) == 2
 							@test distance(mps1, mps3) / norm(mps1) <= 1.0e-5
 						end
@@ -112,19 +103,6 @@ end
 				lattice = GrassmannLattice(N=N, δt=0.05, bands=bands, contour=:real, order=1, ordering=ordering)
 				η = randn(ComplexF64, lattice.k, lattice.k)
 				for fi in (true, false), fj in (true, false)
-					# for i in 1:lattice.k
-					# 	for band in 1:lattice.bands
-					# 		mps1 = GrassmannMPS(scalartype(lattice), length(lattice))
-					# 		for j in 1:lattice.k
-					# 			pos1, pos2 = index(lattice, i, conj=true, forward=fi, band=band), index(lattice, j, conj=false, forward=fj, band=band)
-					# 			t = exp(GTerm(pos1, pos2, coeff=η[i, j]))
-					# 			mps1 = t * mps1
-					# 			canonicalize!(mps1, alg=Orthogonalize(TK.SVD(), trunc))
-					# 		end
-					# 		mps2 = partialinfluencefunctional(lattice, i, η[i, 1:lattice.k], trunc=trunc, band=band, fi=fi, fj=fj)
-					# 		@test distance(mps1, mps2) / norm(mps1) <= 1.0e-5
-					# 	end
-					# end
 
 					for j in 1:lattice.k
 						for band in 1:lattice.bands
@@ -135,10 +113,8 @@ end
 								mps1 = t * mps1
 								canonicalize!(mps1, alg=Orthogonalize(TK.SVD(), trunc))		
 							end
-							# mps2 = partialinfluencefunctional(lattice, η[1:lattice.k, j], j, trunc=trunc, band=band, fi=fi, fj=fj)
-							# # println("bond dimension is ", bond_dimension(mps2))
-							# @test distance(mps1, mps2) / norm(mps1) <= 1.0e-5
-							mps3 = partialinfluencefunctional2(lattice, η[1:lattice.k, j], j, band=band, fi=fi, fj=fj)
+
+							mps3 = partialinfluencefunctional(lattice, η[1:lattice.k, j], j, band=band, fi=fi, fj=fj)
 							@test bond_dimension(mps3) == 2
 							@test distance(mps1, mps3) / norm(mps1) <= 1.0e-5
 						end
@@ -159,7 +135,7 @@ end
 								mps1 = t * mps1
 								canonicalize!(mps1, alg=Orthogonalize(trunc = trunc))
 							end
-							mps2 = partialinfluencefunctional2(lattice, i, η[i, 1:lattice.k], η₂[i, 1:lattice.k], band=band, fi=fi)
+							mps2 = partialinfluencefunctional(lattice, i, η[i, 1:lattice.k], η₂[i, 1:lattice.k], band=band, fi=fi)
 							@test distance(mps1, mps2) / norm(mps1) <= 1.0e-5
 						end
 					end
@@ -178,7 +154,7 @@ end
 								mps1 = t * mps1
 								canonicalize!(mps1, alg=Orthogonalize(trunc = trunc))		
 							end
-							mps3 = partialinfluencefunctional2(lattice, η[1:lattice.k, j], η₂[1:lattice.k, j], j, band=band, fj=fj)
+							mps3 = partialinfluencefunctional(lattice, η[1:lattice.k, j], η₂[1:lattice.k, j], j, band=band, fj=fj)
 							@test bond_dimension(mps3) == 2
 							@test distance(mps1, mps3) / norm(mps1) <= 1.0e-5
 						end

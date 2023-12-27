@@ -9,21 +9,12 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order
 	corr = corr1.data
 	k = lattice.k-1
 	for i in 1:k
-		tmp = partialinfluencefunctional2(lattice, i+1, [0; view(corr, i, 1:k)], band=band)
-		# gmps = mult(tmp, gmps, trunc=trunc)
+		tmp = partialinfluencefunctional(lattice, i+1, [0; view(corr, i, 1:k)], band=band)
 		gmps = mult!(gmps, tmp, trunc=trunc)
 	end
 	return gmps
 end
-# function hybriddynamics(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr1::ImagCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
-# 	corr = corr1.data
-# 	k = lattice.k-1
-# 	for i in 1:k
-# 		tmp = partialinfluencefunctional2(lattice, i, view(corr, i, 1:k), band=band)
-# 		gmps = mult(tmp, gmps, trunc=trunc)
-# 	end
-# 	return gmps
-# end
+
 
 """
 	hybriddynamics(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction; band::Int, trunc)
@@ -35,21 +26,11 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order
 	@assert size(η⁺⁺) == size(η⁺⁻) == size(η⁻⁺) == size(η⁻⁻)
 	k = lattice.k
 	for i in 1:k
-		# tmp1 = partialinfluencefunctional(lattice, i, view(η⁺⁺, i, 1:k), trunc=trunc, fi=true, fj=true, band=band)
-		# tmp2 = partialinfluencefunctional(lattice, i, view(η⁺⁻, i, 1:k), trunc=trunc, fi=true, fj=false, band=band)
-		# tmp3 = partialinfluencefunctional(lattice, i, view(η⁻⁺, i, 1:k), trunc=trunc, fi=false, fj=true, band=band)
-		# tmp4 = partialinfluencefunctional(lattice, i, view(η⁻⁻, i, 1:k), trunc=trunc, fi=false, fj=false, band=band)
-		# tmp1 = partialinfluencefunctional2(lattice, i, view(η⁺⁺, i, 1:k), fi=true, fj=true, band=band)
-		# tmp2 = partialinfluencefunctional2(lattice, i, view(η⁺⁻, i, 1:k), fi=true, fj=false, band=band)
-		# tmp3 = partialinfluencefunctional2(lattice, i, view(η⁻⁺, i, 1:k), fi=false, fj=true, band=band)
-		# tmp4 = partialinfluencefunctional2(lattice, i, view(η⁻⁻, i, 1:k), fi=false, fj=false, band=band)
-		tmp1 = partialinfluencefunctional2(lattice, i, view(η⁺⁺, i, 1:k), view(η⁺⁻, i, 1:k), fi=true, band=band)
-		tmp3 = partialinfluencefunctional2(lattice, i, view(η⁻⁺, i, 1:k), view(η⁻⁻, i, 1:k), fi=false, band=band)
+		tmp1 = partialinfluencefunctional(lattice, i, view(η⁺⁺, i, 1:k), view(η⁺⁻, i, 1:k), fi=true, band=band)
+		tmp3 = partialinfluencefunctional(lattice, i, view(η⁻⁺, i, 1:k), view(η⁻⁻, i, 1:k), fi=false, band=band)
 
 		gmps = mult!(gmps, tmp1, trunc=trunc)
-		# gmps = mult(tmp2, gmps, trunc=trunc)
 		gmps = mult!(gmps, tmp3, trunc=trunc)
-		# gmps = mult(tmp4, gmps, trunc=trunc)
 	end
 	return gmps		
 end
@@ -146,15 +127,15 @@ The top right of the influence functional
 function finalinfluencefunctional(lattice::RealGrassmannLattice2Order, η::AbstractMatrix; 
 				finalize::Bool, trunc::TruncationScheme=DefaultITruncation, kwargs...)
 	rows, cols = finalize ? top_right_if_final(lattice, η) : top_right_if(lattice, η)
-	out1 = partialinfluencefunctional2(lattice, lattice.k, cols; kwargs...)
-	out2 = partialinfluencefunctional2(lattice, rows, lattice.k; kwargs...)
+	out1 = partialinfluencefunctional(lattice, lattice.k, cols; kwargs...)
+	out2 = partialinfluencefunctional(lattice, rows, lattice.k; kwargs...)
 	return mult(out1, out2, trunc=trunc)
 end
 function finalinfluencefunctional(lattice::RealGrassmannLattice1Order, η::AbstractMatrix; trunc::TruncationScheme=DefaultITruncation, kwargs...)
 	@assert lattice.k <= size(η, 1)
 	k = lattice.k
-	out1 = partialinfluencefunctional2(lattice, k, [η[k, 1:k-1]; 0.5*η[k,k]]; kwargs...)
-	out2 = partialinfluencefunctional2(lattice, [η[1:k-1, k]; 0.5*η[k,k]], k; kwargs...)
+	out1 = partialinfluencefunctional(lattice, k, [η[k, 1:k-1]; 0.5*η[k,k]]; kwargs...)
+	out2 = partialinfluencefunctional(lattice, [η[1:k-1, k]; 0.5*η[k,k]], k; kwargs...)
 	return mult(out1, out2, trunc=trunc)
 end
 

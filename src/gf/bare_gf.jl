@@ -58,16 +58,6 @@ function gf(lattice::RealGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS
     return g
 end
 
-# function gf(lattice::RealGrassmannLattice, i::Int, j::Int, A::Vector{<:GrassmannMPS}, B::GrassmannMPS...; 
-#             f1::Bool, f2::Bool, c1::Bool=true, c2::Bool=false, band::Int=1, 
-#             trunc::TruncationScheme=DefaultIntegrationTruncation, alg::IntegrationAlgorithm=ExactIntegrate(),
-#             Z::Number = integrate(lattice, A, B..., alg=alg, trunc=trunc))
-#     pos1, pos2 = index(lattice, i, conj=c1, forward=f1, band=band), index(lattice, j, conj=c2, forward=f2, band=band)
-#     t = GTerm(pos1, pos2, coeff=1)
-#     A2 = [t * item for item in A]
-#     g = integrate(lattice, A2, B..., alg=alg, trunc=trunc)/Z
-#     return g
-# end
 
 function occupation(lattice::RealGrassmannLattice1Order, i::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...) 
     return real(gf(lattice, i, i, A, B...; c1=false, c2=true, f1=true, f2=false, kwargs...))
@@ -196,47 +186,6 @@ function build_current_mpo(lattice::RealGrassmannLattice2Order, corr::RealCorrel
    
     return two_body_mpo_row(row, cols, coefs)
 end
-
-
-
-# function two_body_mpo_row(row::Int, cols::Vector{Int}, coefs::Vector{<:Number}) 
-#     @assert length(cols) == length(coefs) >= 1
-#     p = sortperm(cols)
-#     cols = cols[p]
-#     coefs = coefs[p]
-#     @assert all(x -> row < x, cols) 
-#     # the first site
-#     # leftspaces = [Rep[ℤ₂](0=>1), Rep[ℤ₂](1=>1)]
-#     # rightspaces = leftspaces
-#     I2 = one(JW)
-#     tmp = Matrix{Any}(undef, 1, 2)
-#     tmp[1, 1] = zero(I2)
-#     tmp[1, 2] = one(eltype(coefs)) * σ₊
-#     mpoj = SparseMPOTensor(tmp)
-#     data = [mpoj]
-#     virtual = isomorphism(Matrix{eltype(coefs)}, Rep[ℤ₂](1=>1), Rep[ℤ₂](1=>1))
-#     @tensor m22JW[1,3;2,4] := virtual[1,2] * JW[3,4] 
-#     # @tensor m22I[1,3;2,4] := virtual[1,2] * I2[3,4] 
-#     for i in row+1 : cols[end]-1
-#         tmp = Matrix{Any}(undef, 2, 2)
-#         tmp[1,1] = I2
-#         tmp[2,2] = m22JW
-#         tmp[1,2] = 0.
-#         pos = findfirst(x->x==i, cols)
-#         if isnothing(pos)
-#             tmp[2,1] = 0.
-#         else
-#             tmp[2,1] = adjoint(σ₋) * coefs[pos]
-#         end
-#         push!(data, SparseMPOTensor(tmp))
-#     end
-#     tmp = Matrix{Any}(undef, 2, 1)
-#     tmp[1,1] = I2
-#     tmp[2,1] = adjoint(σ₋) * coefs[end]
-#     push!(data, SparseMPOTensor(tmp))
-#     mpo = MPO(MPOHamiltonian(data))
-#     return QTerm(collect(row:cols[end]), mpo.data)
-# end
 
 function two_body_mpo_row(row::Int, cols::Vector{Int}, coefs::Vector{<:Number}) 
     @assert length(cols) == length(coefs) >= 1

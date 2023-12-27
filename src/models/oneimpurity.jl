@@ -58,87 +58,6 @@ function hybriddynamics(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order,
 end
 
 
-
-# # # impurity dynamics
-# """
-# 	si_freedynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order; μ::Real, trunc::TruncationScheme=DMRG.DefaultTruncation)
-
-# Imaginary time free dynamics of single impurity model
-# """
-# function si_freedynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order; μ::Real, trunc::TruncationScheme=DMRG.DefaultTruncation)
-# 	μ = convert(Float64, μ)
-# 	a = exp(-lattice.δτ*μ)
-# 	for band in 1:lattice.bands
-# 		for i in 1:lattice.k-1
-#             pos1, pos2 = index(lattice, i+1, conj=true, band=band), index(lattice, i, conj=false, band=band)
-#             apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
-#             canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))			
-# 		end
-# 	end		
-# 	return gmps
-# end
-# si_freedynamics(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice; kwargs...) = si_freedynamics!(copy(gmps), lattice; kwargs...)
-# si_freedynamics(lattice::AbstractGrassmannLattice; kwargs...) = si_freedynamics(GrassmannMPS(eltype(lattice), length(lattice)), lattice; kwargs...)
-
-# """
-# 	si_interactiondynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order; U::Real, trunc::TruncationScheme=DMRG.DefaultTruncation)
-
-# Imaginary time interaction dynamics of single impurity model
-# """
-# function si_interactiondynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order; U::Real, trunc::TruncationScheme=DMRG.DefaultTruncation)
-# 	U = convert(Float64, U)
-# 	if U != 0.
-# 		(lattice.bands == 2) || throw(ArgumentError("lattice should have two bands"))
-# 		a = -lattice.δτ*U
-# 		for i in 1:lattice.k-1
-# 			for band in 1:2:lattice.bands
-# 				pos1 = index(lattice, i+1, conj=true, band=band)
-# 				pos2 = index(lattice, i+1, conj=true, band=band+1)
-# 				pos3 = index(lattice, i, conj=false, band=band+1)
-# 				pos4 = index(lattice, i, conj=false, band=band)
-# 				apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=a)), gmps)
-# 				canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
-# 			end
-# 		end
-# 	end
-# 	return gmps
-# end
-# si_interactiondynamics(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice; kwargs...) = si_interactiondynamics!(copy(gmps), lattice; kwargs...)
-
-# function si_sysdynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice; 
-# 						μ::Real, U::Real=0, trunc::TruncationScheme=DefaultKTruncation)
-# 	# free dynamics
-# 	μ = convert(Float64, μ)
-# 	a = exp(-lattice.δτ*μ)
-# 	for band in 1:lattice.bands
-# 		for i in 1:lattice.k-1
-#             pos1, pos2 = index(lattice, i+1, conj=true, band=band), index(lattice, i, conj=false, band=band)
-#             apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
-#             canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))			
-# 		end
-# 	end		
-
-# 	# interacting dynamics
-# 	U = convert(Float64, U)
-# 	if U != 0.
-# 		(lattice.bands == 2) || throw(ArgumentError("lattice should have two bands"))
-# 		# a = -lattice.δτ*U
-# 		b = a^2 * (exp(-lattice.δτ*U) - 1)
-# 		for i in 1:lattice.k-1
-# 			for band in 1:2:lattice.bands
-# 				pos1 = index(lattice, i+1, conj=true, band=band)
-# 				pos2 = index(lattice, i+1, conj=true, band=band+1)
-# 				pos3 = index(lattice, i, conj=false, band=band+1)
-# 				pos4 = index(lattice, i, conj=false, band=band)
-# 				apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=b)), gmps)
-# 				canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
-# 			end
-# 		end
-# 	end
-# 	return gmps
-# end
-# si_sysdynamics(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice; kwargs...) = si_sysdynamics!(copy(gmps), lattice; kwargs...)
-# si_sysdynamics(lattice::AbstractGrassmannLattice; kwargs...) = si_sysdynamics(GrassmannMPS(eltype(lattice), length(lattice)), lattice; kwargs...)
 function sysdynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice, model::SingleImpurityModel; trunc::TruncationScheme=DefaultKTruncation) 
 	μ, U = model.μ, model.U
 	a = exp(-lattice.δτ*μ)
@@ -170,73 +89,6 @@ function sysdynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice, model::
 	return gmps	
 end
 
-# """
-# 	si_sysdynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order; μ::Real, trunc::TruncationScheme=DMRG.DefaultTruncation)
-
-# Real time free dynamics of single impurity model
-# """
-# function si_freedynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice; 
-# 						μ::Real, sys_state::Symbol=:vacuum, trunc::TruncationScheme=DMRG.DefaultTruncation)
-# 	(sys_state in (:filled, :vacuum)) || throw(ArgumentError("sys_state must be :filled, :vacuum, or :thermal"))
-# 	a = exp(-im*lattice.δt*μ)
-# 	for band in 1:lattice.bands
-# 		for i in 1:lattice.k-1
-#             pos1, pos2 = index(lattice, i+1, conj=true, forward=true, band=band), index(lattice, i, conj=false, forward=true, band=band)
-#             apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
-#             canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))			
-# 		end
-# 	end
-# 	# if sys_state == :thermal
-# 	# 	a = exp(lattice.β*μ)
-# 	# 	for band in 1:lattice.bands
-# 	# 		pos1, pos2 = index(lattice, 1, conj=true, forward=true, band=band), index(lattice, 1, conj=false, forward=false, band=band)
-# 	# 		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
-# 	# 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))	
-# 	# 	end
-# 	# elseif sys_state == :filled
-# 	# 	error("not implemented for sys_state=:filled")
-# 	# end
-# 	(sys_state == :filled) && throw(ArgumentError("not implemented for sys_state=:filled"))
-# 	a = exp(im*lattice.δt*μ)
-# 	for band in 1:lattice.bands
-# 		for i in 1:lattice.k-1
-# 			pos1, pos2 = index(lattice, i, conj=true, forward=false, band=band), index(lattice, i+1, conj=false, forward=false, band=band)
-# 			apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
-# 			canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))	
-# 		end
-# 	end
-# 	return gmps
-# end
-
-# function si_interactiondynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice; U::Real, trunc::TruncationScheme=DMRG.DefaultTruncation)
-# 	U = convert(Float64, U)
-# 	if U != 0.
-# 		(lattice.bands == 2) || throw(ArgumentError("lattice should have two bands"))
-# 		a = -im*lattice.δt*U
-# 		for i in 1:lattice.k-1
-# 			for band in 1:2:lattice.bands
-# 				pos1 = index(lattice, i+1, conj=true, forward=true, band=band)
-# 				pos2 = index(lattice, i+1, conj=true, forward=true, band=band+1)
-# 				pos3 = index(lattice, i, conj=false, forward=true, band=band+1)
-# 				pos4 = index(lattice, i, conj=false, forward=true, band=band)
-# 				apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=a)), gmps)
-# 				canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))			
-# 			end
-# 		end
-# 		a = im*lattice.δt*U
-# 		for i in 1:lattice.k-1
-# 			for band in 1:2:lattice.bands
-# 				pos1 = index(lattice, i, conj=true, forward=false, band=band)
-# 				pos2 = index(lattice, i, conj=true, forward=false, band=band+1)
-# 				pos3 = index(lattice, i+1, conj=false, forward=false, band=band+1)
-# 				pos4 = index(lattice, i+1, conj=false, forward=false, band=band)
-# 				apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=a)), gmps)
-# 				canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))			
-# 			end
-# 		end	
-# 	end
-# 	return gmps
-# end
 
 function sysdynamics_forward!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::SingleImpurityModel; trunc::TruncationScheme=DefaultKTruncation)
 	# free dynamics
@@ -301,29 +153,6 @@ function sysdynamics_backward!(gmps::GrassmannMPS, lattice::RealGrassmannLattice
 	return gmps
 end
 
-# function systhermalstate!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::SingleImpurityModel; trunc::TruncationScheme=DefaultKTruncation)
-# 	μ, U = model.μ, model.U
-# 	β = model.bath.β
-# 	a = exp(-β*μ)
-# 	for band in 1:lattice.bands
-# 		pos1, pos2 = index(lattice, 1, conj=true, forward=true, band=band), index(lattice, 1, conj=false, forward=false, band=band)
-# 		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
-# 		canonicalize!(gmps, alg=Orthogonalize(trunc=trunc))	
-# 	end	
-# 	if U != 0.
-# 		(lattice.bands == 2) || throw(ArgumentError("lattice should have two bands"))
-# 		b = a^2 * (exp(-β*U) - 1)
-# 		for band in 1:2:lattice.bands
-# 			pos1 = index(lattice, 1, conj=true, forward=true, band=band)
-# 			pos2 = index(lattice, 1, conj=true, forward=true, band=band+1)
-# 			pos3 = index(lattice, 1, conj=false, forward=false, band=band+1)
-# 			pos4 = index(lattice, 1, conj=false, forward=false, band=band)
-# 			apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=b)), gmps)
-# 			canonicalize!(gmps, alg=Orthogonalize(trunc=trunc))			
-# 		end
-# 	end
-# 	return gmps
-# end
 
 function si_sysdynamics_stepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattice; μ::Real, U::Real=0, trunc::Union{Nothing,TruncationScheme}=DefaultKTruncation)
 	# free dynamics
@@ -366,54 +195,4 @@ function si_sysdynamics_stepper!(gmps::GrassmannMPS, lattice::RealGrassmannLatti
 	return gmps
 end
 sysdynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::SingleImpurityModel; kwargs...) = si_sysdynamics_stepper!(gmps, lattice; μ=model.μ, U=model.U, kwargs...)
-
-# function si_sysdynamics(lattice::RealGrassmannLattice; μ::Real, U::Real=0, sys_state::Symbol=:vacuum, trunc::TruncationScheme=DMRG.DefaultTruncation)
-# 	# free dynamics
-# 	gmps = vacuumstate(lattice)
-# 	(sys_state in (:filled, :vacuum)) || throw(ArgumentError("sys_state must be :filled, :vacuum, or :thermal"))
-# 	a = exp(-im*lattice.δt*μ)
-# 	for band in 1:lattice.bands
-# 		for i in 1:lattice.k-1
-#             pos1, pos2 = index(lattice, i+1, conj=true, forward=true, band=band), index(lattice, i, conj=false, forward=true, band=band)
-#             apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
-# 		end
-# 	end
-# 	(sys_state == :filled) && throw(ArgumentError("not implemented for sys_state=:filled"))
-# 	a = exp(im*lattice.δt*μ)
-# 	for band in 1:lattice.bands
-# 		for i in 1:lattice.k-1
-# 			pos1, pos2 = index(lattice, i, conj=true, forward=false, band=band), index(lattice, i+1, conj=false, forward=false, band=band)
-# 			apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
-# 		end
-# 	end
-
-# 	# interaction dynamics
-# 	U = convert(Float64, U)
-# 	if U != 0.
-# 		(lattice.bands == 2) || throw(ArgumentError("lattice should have two bands"))
-# 		a = -im*lattice.δt*U
-# 		for i in 1:lattice.k-1
-# 			for band in 1:2:lattice.bands
-# 				pos1 = index(lattice, i+1, conj=true, forward=true, band=band)
-# 				pos2 = index(lattice, i+1, conj=true, forward=true, band=band+1)
-# 				pos3 = index(lattice, i, conj=false, forward=true, band=band+1)
-# 				pos4 = index(lattice, i, conj=false, forward=true, band=band)
-# 				apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=a)), gmps)
-# 			end
-# 		end
-# 		a = im*lattice.δt*U
-# 		for i in 1:lattice.k-1
-# 			for band in 1:2:lattice.bands
-# 				pos1 = index(lattice, i, conj=true, forward=false, band=band)
-# 				pos2 = index(lattice, i, conj=true, forward=false, band=band+1)
-# 				pos3 = index(lattice, i+1, conj=false, forward=false, band=band+1)
-# 				pos4 = index(lattice, i+1, conj=false, forward=false, band=band)
-# 				apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=a)), gmps)
-# 			end
-# 		end	
-# 	end	
-# 	return gmps
-# end
-# sysdynamics(lattice::AbstractGrassmannLattice, model::SingleImpurityModel; kwargs...) = si_sysdynamics(lattice; μ=model.μ, U=model.U, kwargs...)
-
 

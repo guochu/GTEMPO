@@ -18,7 +18,7 @@ export IntegrationAlgorithm, ExactIntegrate, BMPSIntegrate
 # correlation functions
 export Gτ, Gt, branch
 # influence functional
-export partialinfluencefunctional, partialinfluencefunctional2
+export partialinfluencefunctional
 # GF and other observables
 export gf, parallel_gf, occupation, electriccurrent, electriccurrent2
 export cached_gf, cached_occupation, cached_electriccurrent, cached_electriccurrent2

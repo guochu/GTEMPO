@@ -50,11 +50,3 @@ function boundarycondition2(x0::GrassmannMPS, lattice::RealGrassmannLattice; ban
 	canonicalize!(x2, alg=Orthogonalize(trunc=trunc))
 	return x, x2
 end
-
-# function apply_boundaries(x0::GrassmannMPS, lattice::AbstractGrassmannLattice; trunc::TruncationScheme=DefaultIntegrationTruncation)
-# 	x = x0
-# 	for band in 1:lattice.bands
-# 		x = apply_boundary(x, lattice, band=band, trunc=trunc)
-# 	end
-# 	return x
-# end
