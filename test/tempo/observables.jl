@@ -104,9 +104,9 @@ end
 						g1 = electriccurrent(lattice, corr, i, A, B, band=band, Z=Z)
 						g2 = cached_electriccurrent(lattice, corr, i, A, B, cache=cache, band=band)
 						@test abs(g1-g2)/abs(g1) < rtol
-						g3 = electriccurrent2(lattice, corr, i, A, B, band=band, Z=Z)
+						g3 = electriccurrent_fast(lattice, corr, i, A, B, band=band, Z=Z)
 						@test abs(g1-g3)/abs(g1) < rtol
-						g4 = cached_electriccurrent2(lattice, corr, i, A, B, cache=cache, band=band)
+						g4 = cached_electriccurrent_fast(lattice, corr, i, A, B, cache=cache, band=band)
 						@test abs(g1-g4)/abs(g1) < rtol
 					end
 				end
@@ -130,9 +130,9 @@ end
 						g1 = electriccurrent(lattice, corr, i, AB, C, band=band, Z=Z)
 						g2 = cached_electriccurrent(lattice, corr, i, A, B, C, cache=cache, band=band)
 						@test abs(g1-g2)/abs(g1) < rtol
-						g3 = electriccurrent2(lattice, corr, i, A, B, C, band=band, Z=Z)
+						g3 = electriccurrent_fast(lattice, corr, i, A, B, C, band=band, Z=Z)
 						@test abs(g1-g3)/abs(g1) < rtol
-						g4 = cached_electriccurrent2(lattice, corr, i, A, B, C, cache=cache, band=band)
+						g4 = cached_electriccurrent_fast(lattice, corr, i, A, B, C, cache=cache, band=band)
 						@test abs(g1-g4)/abs(g1) < rtol
 					end
 				end
@@ -155,9 +155,9 @@ end
 					g1 = electriccurrent(lattice, corr, A, B, band=band, Z=Z)
 					g2 = cached_electriccurrent(lattice, corr, A, B, cache=cache, band=band)
 					@test abs(g1-g2)/abs(g1) < rtol
-					g3 = electriccurrent2(lattice, corr, A, B, band=band, Z=Z)
+					g3 = electriccurrent_fast(lattice, corr, A, B, band=band, Z=Z)
 					@test abs(g1-g3)/abs(g1) < rtol
-					g4 = cached_electriccurrent2(lattice, corr, A, B, cache=cache, band=band)
+					g4 = cached_electriccurrent_fast(lattice, corr, A, B, cache=cache, band=band)
 					@test abs(g1-g4)/abs(g1) < rtol
 				end
 			end
@@ -179,9 +179,9 @@ end
 					g1 = electriccurrent(lattice, corr, A, BC, band=band, Z=Z)
 					g2 = cached_electriccurrent(lattice, corr, A, B, C, cache=cache, band=band)
 					@test abs(g1-g2)/abs(g1) < rtol
-					g3 = electriccurrent2(lattice, corr, A, B, C, band=band, Z=Z)
+					g3 = electriccurrent_fast(lattice, corr, A, B, C, band=band, Z=Z)
 					@test abs(g1-g3)/abs(g1) < rtol
-					g4 = cached_electriccurrent2(lattice, corr, A, B, C, cache=cache, band=band)
+					g4 = cached_electriccurrent_fast(lattice, corr, A, B, C, cache=cache, band=band)
 					@test abs(g1-g4)/abs(g1) < rtol
 				end
 			end

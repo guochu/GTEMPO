@@ -1,7 +1,7 @@
 module GTEMPO
 
 # TEMPO backend
-export AbstractGTerm, GTerm, ExpGTerm, GrassmannMPS, grassmannpspace, scale, randomgmps, mult
+export AbstractGTerm, GTerm, ExpGTerm, GrassmannMPS, grassmannpspace, scale, randomgmps, mult!, mult
 # Ordering of grasmann numbers
 export GrassmannOrdering, ImagGrassmannOrdering, RealGrassmannOrdering, MixedGrassmannOrdering
 export AbstractGrassmannLattice, ImagGrassmannLattice, RealGrassmannLattice, MixedGrassmannLattice
@@ -20,14 +20,14 @@ export Gτ, Gt, branch
 # influence functional
 export partialinfluencefunctional
 # GF and other observables
-export gf, parallel_gf, occupation, electriccurrent, electriccurrent2
-export cached_gf, cached_occupation, cached_electriccurrent, cached_electriccurrent2
+export gf, parallel_gf, occupation, electriccurrent, electriccurrent_fast
+export cached_gf, cached_occupation, cached_electriccurrent, cached_electriccurrent_fast
 
 # utilities for TEMPO
 # exact models
-export AbstractImpurityModel, SISB, SIDB, IRLM, SKIM, boundarycondition!, boundarycondition, boundarycondition2
+export AbstractImpurityModel, SISB, SIDB, IRLM, SKIM, boundarycondition!, boundarycondition, boundarycondition_branching
 export hybriddynamics, hybriddynamicsstepper, qim_hybriddynamics, qim_hybriddynamicsstepper, correlationfunction
-export systhermalstate, systhermalstate!, sysdynamics, sysdynamics!, sysdynamicsstepper!, acc_sysdynamics, acc_sysdynamics2
+export systhermalstate, systhermalstate!, sysdynamics, sysdynamics!, sysdynamicsstepper!, accsysdynamics, accsysdynamics_fast
 export zoomin, zoomout
 
 

@@ -111,7 +111,7 @@ end
 
 		mpsKs = [sysdynamics(lattice, exact_model)]
 		for band in 1:lattice.bands
-			mpsKs = boundarycondition2(mpsKs, lattice, band=band)
+			mpsKs = boundarycondition_branching(mpsKs, lattice, band=band)
 		end
 		
 
@@ -148,16 +148,16 @@ end
 		bands = (U == 0.) ? 1 : 2
 		lattice = GrassmannLattice(δτ=δτ, N=N, bands=bands, contour=:imag)
 
-		mpsKs = [acc_sysdynamics2(lattice, exact_model)]
+		mpsKs = [accsysdynamics_fast(lattice, exact_model)]
 		for band in 1:lattice.bands
-			mpsKs = boundarycondition2(mpsKs, lattice, band=band)
+			mpsKs = boundarycondition_branching(mpsKs, lattice, band=band)
 		end
 		
 		for ordering in [A1A1a1a1B1B1b1b1(), A1a1B1b1b1B1a1A1(), A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1(), A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2()]
 
 			lattice_r = GrassmannLattice(δt=0.1, N=5, bands=bands, contour=:real)
 			exact_model = SISB(bath, U=U, μ=ϵ_d)
-			mps = acc_sysdynamics2(lattice_r, exact_model)
+			mps = accsysdynamics_fast(lattice_r, exact_model)
 			mps = systhermalstate!(mps, lattice_r, exact_model)
 			for band in 1:lattice.bands
 				mps = boundarycondition(mps, lattice_r, band=band)
@@ -191,14 +191,14 @@ end
 		bands = 2 * norb
 		lattice = GrassmannLattice(δτ=δτ, N=N, bands=bands, contour=:imag)
 
-		mpsKs = [acc_sysdynamics2(lattice, exact_model)]
+		mpsKs = [accsysdynamics_fast(lattice, exact_model)]
 		for band in 1:lattice.bands
-			mpsKs = boundarycondition2(mpsKs, lattice, band=band)
+			mpsKs = boundarycondition_branching(mpsKs, lattice, band=band)
 		end
 
 
 		lattice_r = GrassmannLattice(δt=0.1, N=2, bands=bands, contour=:real, ordering = A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2())
-		mps = acc_sysdynamics2(lattice_r, exact_model)
+		mps = accsysdynamics_fast(lattice_r, exact_model)
 		mps = systhermalstate!(mps, lattice_r, exact_model)
 		for band in 1:lattice.bands
 			mps = boundarycondition(mps, lattice_r, band=band)
@@ -292,7 +292,7 @@ end
 				mpsI′ = boundarycondition(mpsI, lattice)
 				mpsK = sysdynamicsstepper!(mpsK, lattice, exact_model, trunc=trunc)
 				ns2[k-1] = occupation(lattice, k-1, mpsK, mpsI′)
-				currents2[k-1] = electriccurrent2(lattice, corr, k, mpsK, mpsI′)
+				currents2[k-1] = electriccurrent_fast(lattice, corr, k, mpsK, mpsI′)
 			end
 			@test norm(ns-ns2) / norm(ns) < rtol
 			@test norm(currents - currents2) / norm(currents) < rtol
@@ -315,7 +315,7 @@ end
 				mpsK = sysdynamicsstepper!(mpsK, lattice, exact_model, trunc=trunc)
 				cache = environments(lattice, mpsK, mpsI2)
 				ns2[k-1] = cached_occupation(lattice, mpsK, mpsI2, cache=cache)
-				currents2[k-1] = cached_electriccurrent2(lattice, corr, mpsK, mpsI2, cache=cache)
+				currents2[k-1] = cached_electriccurrent_fast(lattice, corr, mpsK, mpsI2, cache=cache)
 			end
 			@test norm(ns-ns2) / norm(ns) < rtol
 			@test norm(currents - currents2) / norm(currents) < rtol
@@ -371,9 +371,9 @@ end
 	cache = environments(lattice, mpsK, mpsI1, mpsI2)
 	ns2 = cached_occupation(lattice, mpsK, mpsI1, mpsI2, cache=cache)
 	@test norm(ns2-ns) / norm(ns) < rtol
-	currents_left2 = [cached_electriccurrent2(lattice, leftcorr, k+1, mpsK, mpsI1, mpsI2, cache=cache) for k in 1:N]
+	currents_left2 = [cached_electriccurrent_fast(lattice, leftcorr, k+1, mpsK, mpsI1, mpsI2, cache=cache) for k in 1:N]
 	@test norm(currents_left2-currents_left) / norm(currents_left) < rtol
-	currents_right2 = [cached_electriccurrent2(lattice, rightcorr, k+1, mpsK, mpsI1, mpsI2, cache=cache) for k in 1:N]
+	currents_right2 = [cached_electriccurrent_fast(lattice, rightcorr, k+1, mpsK, mpsI1, mpsI2, cache=cache) for k in 1:N]
 	@test norm(currents_right2-currents_right) / norm(currents_right) < rtol
 
 end

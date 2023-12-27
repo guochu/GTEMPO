@@ -51,7 +51,7 @@ cached_electriccurrent(lattice::RealGrassmannLattice1Order, corr::RealCorrelatio
                         cache::AbstractExpectationCache=environments(lattice, A, B...), 
                         kwargs...) = [cached_electriccurrent(lattice, corr, k, A, B...; cache=cache, kwargs...) for k in 2:lattice.k]
 
-function cached_electriccurrent2(lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction, k::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
+function cached_electriccurrent_fast(lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction, k::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
                                     cache::AbstractExpectationCache=environments(lattice, A, B...), band::Int=1, kwargs...)
     mpo = build_current_mpo(lattice, corr, k, band)
     A2 = _mult_A(mpo, A) 
@@ -59,9 +59,9 @@ function cached_electriccurrent2(lattice::RealGrassmannLattice1Order, corr::Real
     curr = cached_integrate_util(lattice, a, b, cache, A2, B...; kwargs...)
     return 2 * curr / lattice.δt
 end
-cached_electriccurrent2(lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
+cached_electriccurrent_fast(lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
                         cache::AbstractExpectationCache=environments(lattice, A, B...), 
-                        kwargs...) = [cached_electriccurrent2(lattice, corr, k, A, B...; cache=cache, kwargs...) for k in 2:lattice.k]
+                        kwargs...) = [cached_electriccurrent_fast(lattice, corr, k, A, B...; cache=cache, kwargs...) for k in 2:lattice.k]
 
 
 # real-time second order
@@ -85,7 +85,7 @@ function cached_electriccurrent(lattice::RealGrassmannLattice2Order, corr::RealC
     return 2 * curr / (0.5*lattice.δt)
 end
 
-function cached_electriccurrent2(lattice::RealGrassmannLattice2Order, corr::RealCorrelationFunction, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
+function cached_electriccurrent_fast(lattice::RealGrassmannLattice2Order, corr::RealCorrelationFunction, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
                                     cache::AbstractExpectationCache=environments(lattice, A, B...), band::Int=1, kwargs...)
     k = lattice.k
     mpo = build_current_mpo(lattice, corr, k, band)

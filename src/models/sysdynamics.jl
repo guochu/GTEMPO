@@ -1,7 +1,7 @@
 # the functions here are only applicable for specific orderings
 
 # There is a "root" ordering which can be used to build K accurately and efficiently
-# TODO: generalize acc_sysdynamics to BandLocalLayout
+# TODO: generalize accsysdynamics to BandLocalLayout
 
 """
 	zoomout(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, scaling::Int = 10)
@@ -113,7 +113,7 @@ function zoomin(lattice::ImagGrassmannLattice, scaling::Int)
 end 
 zoomin(lattice::AbstractGrassmannLattice; scaling::Int=10) = zoomin(lattice, scaling)
 
-function acc_sysdynamics(lattice::AbstractGrassmannLattice, model::AbstractImpurityModel; scaling::Int=10, trunc::TruncationScheme=DefaultKTruncation, kwargs...)
+function accsysdynamics(lattice::AbstractGrassmannLattice, model::AbstractImpurityModel; scaling::Int=10, trunc::TruncationScheme=DefaultKTruncation, kwargs...)
 	lattice_scaling = zoomin(lattice, scaling)
 	gmps = sysdynamics(lattice_scaling, model; trunc = trunc, kwargs...)
 	gmps2 = zoomout(gmps, lattice_scaling, scaling=scaling)
@@ -121,8 +121,8 @@ function acc_sysdynamics(lattice::AbstractGrassmannLattice, model::AbstractImpur
 	return canonicalize!(gmps2, alg=Orthogonalize(trunc=trunc))
 end
 
-# acc_sysdynamics2(lattice::ImagGrassmannLattice, model::AbstractImpurityModel; kwargs...) = error("acc_sysdynamics2 only support TimeLocalLayout for ImagGrassmannLattice")
-function _acc_sysdynamics2(lattice::ImagGrassmannLattice{<:A1B1B1A1}, model::AbstractImpurityModel; scaling::Int=10, trunc::TruncationScheme=DefaultKTruncation, kwargs...)
+# accsysdynamics_fast(lattice::ImagGrassmannLattice, model::AbstractImpurityModel; kwargs...) = error("accsysdynamics_fast only support TimeLocalLayout for ImagGrassmannLattice")
+function _accsysdynamics_fast(lattice::ImagGrassmannLattice{<:A1B1B1A1}, model::AbstractImpurityModel; scaling::Int=10, trunc::TruncationScheme=DefaultKTruncation, kwargs...)
 	lattice1 = similar(lattice, N=1)
 	lattice_n = zoomin(lattice1, scaling=scaling)
 	lattice_n_1 = similar(lattice_n, N=1)
@@ -187,17 +187,17 @@ function _acc_sysdynamics2(lattice::ImagGrassmannLattice{<:A1B1B1A1}, model::Abs
 	# return canonicalize!(gmps, alg=Orthogonalize(trunc=trunc))
 	return gmps
 end
-function acc_sysdynamics2(lattice::ImagGrassmannLattice{O}, model::AbstractImpurityModel; scaling::Int=10, trunc::TruncationScheme=DefaultKTruncation) where O
+function accsysdynamics_fast(lattice::ImagGrassmannLattice{O}, model::AbstractImpurityModel; scaling::Int=10, trunc::TruncationScheme=DefaultKTruncation) where O
 	lattice2 = similar(lattice, ordering=A1B1B1A1())
-	x = _acc_sysdynamics2(lattice2, model, scaling=scaling, trunc=trunc)
+	x = _accsysdynamics_fast(lattice2, model, scaling=scaling, trunc=trunc)
 	return isa(lattice2.ordering, O) ? x : changeordering(O, lattice2, x, trunc=trunc)
 end
 
 get_left(lattice::ImagGrassmannLattice{<:A1B1B1A1}, j::Int) = index(lattice, j, conj=true, band=lattice.bands)
 get_right(lattice::ImagGrassmannLattice{<:A1B1B1A1}, j::Int) = index(lattice, j, conj=false, band=lattice.bands)
 
-# acc_sysdynamics2(lattice::RealGrassmannLattice, model::AbstractImpurityModel; kwargs...) = error("acc_sysdynamics2 only support BranchLocalLayout for RealGrassmannLattice")
-function _acc_sysdynamics2(lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, model::AbstractImpurityModel; scaling::Int=10, trunc::TruncationScheme=DefaultKTruncation, kwargs...)
+# accsysdynamics_fast(lattice::RealGrassmannLattice, model::AbstractImpurityModel; kwargs...) = error("accsysdynamics_fast only support BranchLocalLayout for RealGrassmannLattice")
+function _accsysdynamics_fast(lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, model::AbstractImpurityModel; scaling::Int=10, trunc::TruncationScheme=DefaultKTruncation, kwargs...)
 	lattice1 = similar(lattice, N=1)
 	lattice_n = zoomin(lattice1, scaling=scaling)
 	lattice_n_1 = similar(lattice_n, N=1)
@@ -270,9 +270,9 @@ function _acc_sysdynamics2(lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1b1b
 	# return canonicalize!(gmps, alg=Orthogonalize(trunc=trunc))
 	return gmps
 end
-function acc_sysdynamics2(lattice::RealGrassmannLattice{O}, model::AbstractImpurityModel; scaling::Int=10, trunc::TruncationScheme=DefaultKTruncation, kwargs...) where O
+function accsysdynamics_fast(lattice::RealGrassmannLattice{O}, model::AbstractImpurityModel; scaling::Int=10, trunc::TruncationScheme=DefaultKTruncation, kwargs...) where O
 	lattice2 = similar(lattice, ordering=A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2())
-	x = _acc_sysdynamics2(lattice2, model; scaling=scaling, trunc=trunc, kwargs...)
+	x = _accsysdynamics_fast(lattice2, model; scaling=scaling, trunc=trunc, kwargs...)
 	return isa(lattice2.ordering, O) ? x : changeordering(O, lattice2, x, trunc=trunc)
 end
 
