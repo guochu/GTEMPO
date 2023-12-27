@@ -35,7 +35,7 @@ function Gt(f0::SpectrumFunction, β::Real, N::Int, δt::Real, μ::Real)
     for i = 1:N
         ηₖⱼ[i+1] = quadgk(ε -> g₂(ε)*fⱼₖ(i,ε)', lb, ub)[1]
     end
-    G₊₊ = CorrelationFunctionData(ηⱼₖ, ηₖⱼ)   
+    G₊₊ = CorrelationMatrix(ηⱼₖ, ηₖⱼ)   
 
     ### G₊₋
     ηⱼₖ = zeros(ComplexF64, N+1)
@@ -49,7 +49,7 @@ function Gt(f0::SpectrumFunction, β::Real, N::Int, δt::Real, μ::Real)
     for i = 1:N
         ηₖⱼ[i+1] = ηⱼₖ[i+1]'
     end
-    G₊₋ = CorrelationFunctionData(ηⱼₖ, ηₖⱼ)  
+    G₊₋ = CorrelationMatrix(ηⱼₖ, ηₖⱼ)  
 
     ### G₋₊
     ηⱼₖ = zeros(ComplexF64, N+1)
@@ -63,7 +63,7 @@ function Gt(f0::SpectrumFunction, β::Real, N::Int, δt::Real, μ::Real)
     for i = 1:N
         ηₖⱼ[i+1] = ηⱼₖ[i+1]'
     end
-    G₋₊ = CorrelationFunctionData(ηⱼₖ, ηₖⱼ)  
+    G₋₊ = CorrelationMatrix(ηⱼₖ, ηₖⱼ)  
 
     ### G₋₋
     ηⱼₖ = zeros(ComplexF64, N+1)
@@ -77,7 +77,7 @@ function Gt(f0::SpectrumFunction, β::Real, N::Int, δt::Real, μ::Real)
     for i = 1:N
         ηₖⱼ[i+1] = quadgk(ε -> -g₁(ε)*fⱼₖ(i,ε)', lb, ub)[1]
     end
-    G₋₋ = CorrelationFunctionData(ηⱼₖ, ηₖⱼ)
+    G₋₋ = CorrelationMatrix(ηⱼₖ, ηₖⱼ)
     return RealCorrelationFunction(G₊₊, G₊₋, G₋₊, G₋₋)
 end
 

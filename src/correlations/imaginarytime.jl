@@ -46,7 +46,7 @@ function Gτ(f0::SpectrumFunction, β::Real, N::Int, μ::Real, δτ::Real=β / N
     for k = 1:L-1
         ηₖⱼ[k+1] = quadgk(ε -> -g₂(ε)*fₖⱼ(k,ε), lb, ub)[1]
     end
-    ImagCorrelationFunction(CorrelationFunctionData{Float64}(ηⱼₖ, ηₖⱼ))
+    ImagCorrelationFunction(CorrelationMatrix{Float64}(ηⱼₖ, ηₖⱼ))
 end
 
 # from now on j > k
