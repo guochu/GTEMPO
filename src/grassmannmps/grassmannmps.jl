@@ -3,7 +3,7 @@
 """
 struct GrassmannMPS{A <: MPSTensor} 
 	data::Vector{A}
-	scale::Ref{Float64}
+	scaling::Ref{Float64}
 end
 
 function GrassmannMPS(::Type{T}, L::Int) where {T <: Number}
@@ -14,9 +14,10 @@ function GrassmannMPS(::Type{T}, L::Int) where {T <: Number}
 	return GrassmannMPS([copy(v) for i in 1:L], Ref(1.))
 end
 GrassmannMPS(L::Int) = GrassmannMPS(Float64, L)
-GrassmannMPS(data::Vector{<:MPSTensor}; scale::Real=1) = GrassmannMPS(data, Ref(convert(Float64, scale)))
+GrassmannMPS(data::Vector{<:MPSTensor}; scaling::Real=1) = GrassmannMPS(data, Ref(convert(Float64, scaling)))
 # GrassmannMPS(psi::MPS; kwargs...) = GrassmannMPS(psi.data; kwargs...)
-scale(x::GrassmannMPS) = x.scale[]
+scaling(x::GrassmannMPS) = x.scaling[]
+setscaling!(x::GrassmannMPS, scaling::Real) = (x.scaling[] = scaling)
 
 Base.length(x::GrassmannMPS) = length(x.data)
 Base.isempty(x::GrassmannMPS) = isempty(x.data)
@@ -31,7 +32,7 @@ function Base.setindex!(x::GrassmannMPS, v::MPSTensor, i::Int)
 	# end
 	return setindex!(x.data, v, i)
 end
-Base.copy(x::GrassmannMPS) = GrassmannMPS(copy(x.data), scale=scale(x))
+Base.copy(x::GrassmannMPS) = GrassmannMPS(copy(x.data), scaling=scaling(x))
 DMRG.bond_dimension(a::GrassmannMPS, bond::Int) = begin
 	((bond >= 1) && (bond <= length(a))) || throw(BoundsError())
 	dim(space(a[bond], 3))

@@ -1,7 +1,7 @@
 module GTEMPO
 
 # TEMPO backend
-export AbstractGTerm, GTerm, ExpGTerm, GrassmannMPS, grassmannpspace, scale, randomgmps, mult!, mult
+export AbstractGTerm, GTerm, ExpGTerm, GrassmannMPS, grassmannpspace, scaling, setscaling!, randomgmps, mult!, mult
 # Ordering of grasmann numbers
 export GrassmannOrdering, ImagGrassmannOrdering, RealGrassmannOrdering, MixedGrassmannOrdering
 export AbstractGrassmannLattice, ImagGrassmannLattice, RealGrassmannLattice, MixedGrassmannLattice

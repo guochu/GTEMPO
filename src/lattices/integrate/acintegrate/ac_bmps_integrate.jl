@@ -43,18 +43,18 @@ end
 function _l_bmps_boundary(xx::Vector{<:GrassmannMPS})
 	s = oneunit(_ph)
 	v = TensorMap(ds->ones(scalartype(xx[1]), ds), s ⊗ s' ← s )
-	return GrassmannMPS([v for i in 1:length(xx)], scale=1)
+	return GrassmannMPS([v for i in 1:length(xx)])
 end
 
 function _r_bmps_boundary(xx::Vector{<:GrassmannMPS})
 	s = oneunit(_ph)
 	v = TensorMap(ds->ones(scalartype(xx[1]), ds), s ⊗ s ← s )
-	return GrassmannMPS([v for i in 1:length(xx)], scale=1)
+	return GrassmannMPS([v for i in 1:length(xx)])
 end
 
 function update_left_util(left::GrassmannMPS, pos::Int, x::Vector{<:GrassmannMPS}; trunc=DefaultIntegrationTruncation)
 	@assert length(left) == length(x)
-	tmp = [rmul!(_apply_physical_left(left[i], x[i][pos]), scale(x[i]) ) for i in 1:length(left)]
+	tmp = [rmul!(_apply_physical_left(left[i], x[i][pos]), scaling(x[i]) ) for i in 1:length(left)]
 	left2 = similar(left.data, length(left))
 	for i in length(left)-1:-1:1
 		a, b = swap_left(tmp[i], tmp[i+1], trunc)
@@ -68,13 +68,13 @@ function update_left_1(left::GrassmannMPS, pos::Int, x::Vector{<:GrassmannMPS}; 
 	tmp, left2 = update_left_util(left, pos, x)
 	# fuse boundary
 	left2[1] = _fuse_boundary(tmp[1])
-	return canonicalize!(GrassmannMPS(left2, scale=scale(left)), alg=Orthogonalize(trunc=trunc))
+	return canonicalize!(GrassmannMPS(left2, scaling=scaling(left)), alg=Orthogonalize(trunc=trunc))
 end
 function update_left_2(left::GrassmannMPS, pos::Int, x::Vector{<:GrassmannMPS}; trunc)
 	tmp, left2 = update_left_util(left, pos, x)
 	# trace physices
 	left2[1] = _trace_boundary(tmp[1])
-	return canonicalize!(GrassmannMPS(left2, scale=scale(left)), alg=Orthogonalize(trunc=trunc))
+	return canonicalize!(GrassmannMPS(left2, scaling=scaling(left)), alg=Orthogonalize(trunc=trunc))
 end
 
 function update_pair_left(left::GrassmannMPS, j::Int, xx::Vector{<:GrassmannMPS}; trunc)
@@ -87,7 +87,7 @@ end
 function update_right_util(right::GrassmannMPS, pos::Int, x::Vector{<:GrassmannMPS}; trunc=DefaultIntegrationTruncation)
 	@assert length(right) == length(x)
 	L = length(right)
-	tmp = [rmul!(_apply_physical_right(right[i], x[L-i+1][pos]), scale(x[L-i+1])) for i in 1:L]
+	tmp = [rmul!(_apply_physical_right(right[i], x[L-i+1][pos]), scaling(x[L-i+1])) for i in 1:L]
 	right2 = similar(right.data, L)
 	for i in length(right)-1:-1:1
 		a, b = swap_left(tmp[i], tmp[i+1], trunc)
@@ -100,12 +100,12 @@ end
 function update_right_1(right::GrassmannMPS, pos::Int, x::Vector{<:GrassmannMPS}; trunc)
 	tmp, right2 = update_right_util(right, pos, x)
 	right2[1] = _fuse_boundary(tmp[1])
-	return canonicalize!(GrassmannMPS(right2, scale=scale(right)), alg=Orthogonalize(trunc=trunc))
+	return canonicalize!(GrassmannMPS(right2, scaling=scaling(right)), alg=Orthogonalize(trunc=trunc))
 end
 function update_right_2(right::GrassmannMPS, pos::Int, x::Vector{<:GrassmannMPS}; trunc)
 	tmp, right2 = update_right_util(right, pos, x)
 	right2[1] = _trace_boundary(tmp[1], nt=false)
-	return canonicalize!(GrassmannMPS(right2, scale=scale(right)), alg=Orthogonalize(trunc=trunc))
+	return canonicalize!(GrassmannMPS(right2, scaling=scaling(right)), alg=Orthogonalize(trunc=trunc))
 end
 
 function update_pair_right(right::GrassmannMPS, j::Int, xx::Vector{<:GrassmannMPS}; trunc)
@@ -118,7 +118,7 @@ end
 function contract_center(left::GrassmannMPS, right::GrassmannMPS)
 	L = length(left)
 	mj = isomorphism(Matrix{scalartype(left)}, space_r(left)', space_l(right))
-	f = scale(left) * scale(right)
+	f = scaling(left) * scaling(right)
 	for i in L:-1:1
 		mj = @tensor tmp[1,5] := f * left[i][1,2,3] * mj[3,4] * right[L-i+1][4,2,5]
 	end

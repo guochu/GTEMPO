@@ -48,7 +48,7 @@ function systhermalstate_iterative!(gmps::GrassmannMPS, lattice::RealGrassmannLa
 	# println(inds)
 
 	gmps2 = _creategmps(length(lattice), inds, data, trunc=trunc)
-	_rescaling!(gmps2, scale(gmps_i)^(length(gmps_i)))
+	_rescaling!(gmps2, scaling(gmps_i)^(length(gmps_i)))
 	# println(bond_dimensions(gmps2))
 	# return gmps2
 	return mult!(gmps, gmps2, trunc=trunc)

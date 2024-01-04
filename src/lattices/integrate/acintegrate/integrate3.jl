@@ -1,7 +1,7 @@
 
 function update_pair_left(left0::AbstractTensorMap, j::Int, x::GrassmannMPS, y::GrassmannMPS, z::GrassmannMPS; trunc)
 	posa = 2*j-1
-	f = (scale(x) * scale(y) * scale(z) )^2
+	f = (scaling(x) * scaling(y) * scaling(z) )^2
 	left = copy(left0)
 
 	for (f1, f2) in fusiontrees(left)
@@ -134,7 +134,7 @@ end
 
 function update_pair_right(right::AbstractTensorMap, j::Int, x::GrassmannMPS, y::GrassmannMPS, z::GrassmannMPS; trunc)
 	posb = 2 * j
-	f = (scale(x) * scale(y) * scale(z))^2
+	f = (scaling(x) * scaling(y) * scaling(z))^2
 
 	@tensor tmp1[4 ;1 2 5] := z[posb][1,2,3] * right[3,4,5]
 	for (f1, f2) in fusiontrees(tmp1)

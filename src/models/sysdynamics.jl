@@ -22,12 +22,12 @@ function zoomout(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, scaling:
 		posa, posb = band_boundary(lattice, 0)
 		posa_n, posb_n = band_boundary(lattice_n, 0)
 		for (idx, idx_n) in zip(posa:posb, posa_n:posb_n)
-			gmps_n[idx_n] = gmps[idx] * scale(gmps)
+			gmps_n[idx_n] = gmps[idx] * _scaling(gmps)
 		end
 		posa, posb = band_boundary(lattice, lattice.k)
 		posa_n, posb_n = band_boundary(lattice_n, lattice_n.k)
 		for (idx, idx_n) in zip(posa:posb, posa_n:posb_n)
-			gmps_n[idx_n] = gmps[idx] * scale(gmps)
+			gmps_n[idx_n] = gmps[idx] * _scaling(gmps)
 		end
 		# println("the 0-th band, posa=$(posa), posb=$(posb), posa_n=$(posa_n), posb_n=$(posb_n)")
 		# the last band
@@ -39,7 +39,7 @@ function zoomout(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, scaling:
 			posa, posb = band_boundary(lattice, (j-1)*scaling+1)
 			posa_n, posb_n = band_boundary(lattice_n, j)
 			for (idx, idx_n) in zip(posa:posb, posa_n:posb_n)
-				gmps_n[idx_n] = gmps[idx] * scale(gmps)
+				gmps_n[idx_n] = gmps[idx] * _scaling(gmps)
 			end
 			# println("the $j-th band, posa=$(posa), posb=$(posb), posa_n=$(posa_n), posb_n=$(posb_n)")
 			# println(space_r(gmps_n[posa_n-1])', " ", space_l(gmps_n[posa_n]))
@@ -52,13 +52,13 @@ function zoomout(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, scaling:
 		posa, posb = band_boundary(lattice, 0)
 		posa_n, posb_n = band_boundary(lattice_n, 0)
 		for (idx, idx_n) in zip(posa:posb, posa_n:posb_n)
-			gmps_n[idx_n] = gmps[idx] * scale(gmps)
+			gmps_n[idx_n] = gmps[idx] * _scaling(gmps)
 		end
 		for forward in (true, false)
 			posa, posb = band_boundary(lattice, lattice.k, forward=forward)
 			posa_n, posb_n = band_boundary(lattice_n, lattice_n.k, forward=forward)
 			for (idx, idx_n) in zip(posa:posb, posa_n:posb_n)
-				gmps_n[idx_n] = gmps[idx] * scale(gmps)
+				gmps_n[idx_n] = gmps[idx] * _scaling(gmps)
 			end
 		end
 		for j in lattice_n.N:-1:1
@@ -69,7 +69,7 @@ function zoomout(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, scaling:
 			posa, posb = band_boundary(lattice, (j-1)*scaling+1, forward=true)
 			posa_n, posb_n = band_boundary(lattice_n, j, forward=true)
 			for (idx, idx_n) in zip(posa:posb, posa_n:posb_n)
-				gmps_n[idx_n] = gmps[idx] * scale(gmps)
+				gmps_n[idx_n] = gmps[idx] * _scaling(gmps)
 			end
 			gmps_n[posa_n] = @tensor tmp3[1,3;4] := tmp2[1,2] * gmps_n[posa_n][2,3,4] 
 		end	
@@ -77,7 +77,7 @@ function zoomout(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, scaling:
 			posa, posb = band_boundary(lattice, (j-1)*scaling+1, forward=false)
 			posa_n, posb_n = band_boundary(lattice_n, j, forward=false)
 			for (idx, idx_n) in zip(posa:posb, posa_n:posb_n)
-				gmps_n[idx_n] = gmps[idx] * scale(gmps)
+				gmps_n[idx_n] = gmps[idx] * _scaling(gmps)
 			end
 			tmp2 = _contract_band(gmps, lattice, (j-1)*scaling+2, forward=false)
 			for kk in (j-1)*scaling+3:j*scaling
@@ -153,7 +153,7 @@ function _accsysdynamics_fast(lattice::ImagGrassmannLattice{<:A1B1B1A1}, model::
 		return s
 	end
 	s0 = check_gmps1(gmps_n_1, 1.0e-10)
-	_s = scale(gmps_n_1)^(length(gmps_n_1) / (posb-posa+1))
+	_s = _scaling(gmps_n_1)^(length(gmps_n_1) / (posb-posa+1))
 	for i in posa:posb
 		gmps_n_1[i] *= _s
 	end
@@ -170,7 +170,7 @@ function _accsysdynamics_fast(lattice::ImagGrassmannLattice{<:A1B1B1A1}, model::
 	gmps1 = zoomout(gmps_n, lattice_n, scaling=scaling)
 	@assert length(gmps1) == length(lattice_n_1)
 	s0 = check_gmps1(gmps1, 1.0e-10)
-	_s = scale(gmps1)^(length(gmps1) / (posb-posa+1))
+	_s = _scaling(gmps1)^(length(gmps1) / (posb-posa+1))
 	for i in posa:posb
 		gmps1[i] *= _s
 	end
@@ -195,6 +195,8 @@ end
 
 get_left(lattice::ImagGrassmannLattice{<:A1B1B1A1}, j::Int) = index(lattice, j, conj=true, band=lattice.bands)
 get_right(lattice::ImagGrassmannLattice{<:A1B1B1A1}, j::Int) = index(lattice, j, conj=false, band=lattice.bands)
+
+_scaling(x::GrassmannMPS) = scaling(x)
 
 # accsysdynamics_fast(lattice::RealGrassmannLattice, model::AbstractImpurityModel; kwargs...) = error("accsysdynamics_fast only support BranchLocalLayout for RealGrassmannLattice")
 function _accsysdynamics_fast(lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, model::AbstractImpurityModel; scaling::Int=10, trunc::TruncationScheme=DefaultKTruncation, kwargs...)
@@ -226,7 +228,7 @@ function _accsysdynamics_fast(lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1
 		return s
 	end
 	s0 = check_gmps1(gmps_n_1, 1.0e-10)
-	_s = scale(gmps_n_1)^(length(gmps_n_1) / (posb_f-posa_f+1 + posb_b - posa_b+1))
+	_s = _scaling(gmps_n_1)^(length(gmps_n_1) / (posb_f-posa_f+1 + posb_b - posa_b+1))
 	for i in Iterators.flatten((posa_f:posb_f, posa_b:posb_b))
 		gmps_n_1[i] *= _s
 	end
@@ -248,7 +250,7 @@ function _accsysdynamics_fast(lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1
 	gmps1 = zoomout(gmps_n, lattice_n, scaling=scaling)
 	@assert length(gmps1) == length(lattice_n_1)
 	s0 = check_gmps1(gmps1, 1.0e-10)
-	_s = scale(gmps1)^(length(gmps1) / (posb_f-posa_f+1 + posb_b - posa_b+1))
+	_s = _scaling(gmps1)^(length(gmps1) / (posb_f-posa_f+1 + posb_b - posa_b+1))
 	for i in Iterators.flatten((posa_f:posb_f, posa_b:posb_b))
 		gmps1[i] *= _s
 	end
@@ -293,7 +295,7 @@ function _contract_band(x::GrassmannMPS, lattice::ImagGrassmannLattice{<:A1A1B1B
 			@assert @isdefined tmp2
 			tmp2 = tmp2 * _trace_physical(tmp4)
 		end
-		tmp2 = rmul!(tmp2, scale(x)^2)
+		tmp2 = rmul!(tmp2, scaling(x)^2)
 	end
 	return tmp2
 end
@@ -312,7 +314,7 @@ function _contract_band(x::GrassmannMPS, lattice::ImagGrassmannLattice{<:A1B1B1A
 			@tensor tmp4[1,2,5;6] := x[pos1][1,2,3] * tmp2[3,4] * x[pos2][4,5,6]
 			tmp2 = _trace_physical(tmp4)
 		end
-		tmp2 = rmul!(tmp2, scale(x)^2)
+		tmp2 = rmul!(tmp2, scaling(x)^2)
 	end
 	return tmp2	
 end
@@ -331,7 +333,7 @@ function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A1A1a1a
 				@assert @isdefined tmp2
 				tmp2 = tmp2 * _trace_physical(tmp4)
 			end
-			tmp2 = rmul!(tmp2, scale(x)^2)
+			tmp2 = rmul!(tmp2, scaling(x)^2)
 		else
 			for f in (true, false)
 				pos1 = index(lattice, j, conj=false, forward=f, band=band)
@@ -344,7 +346,7 @@ function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A1A1a1a
 					@assert @isdefined tmp2
 					tmp2 = tmp2 * _trace_physical(tmp4)
 				end	
-				tmp2 = rmul!(tmp2, scale(x)^2)		
+				tmp2 = rmul!(tmp2, scaling(x)^2)		
 			end
 		end
 	end
@@ -366,7 +368,7 @@ function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A1a1B1b
 				@tensor tmp4[1,2,5;6] := x[pos1][1,2,3] * tmp2[3,4] * x[pos2][4,5,6]
 				tmp2 = _trace_physical(tmp4)
 			end
-			tmp2 = rmul!(tmp2, scale(x)^2)
+			tmp2 = rmul!(tmp2, scaling(x)^2)
 		else
 			for f in (false, true)
 				pos1 = index(lattice, j, conj=false, forward=f, band=band)
@@ -381,7 +383,7 @@ function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A1a1B1b
 					@tensor tmp4[1,2,5;6] := x[pos1][1,2,3] * tmp2[3,4] * x[pos2][4,5,6]
 					tmp2 = _trace_physical(tmp4)
 				end	
-				tmp2 = rmul!(tmp2, scale(x)^2)		
+				tmp2 = rmul!(tmp2, scaling(x)^2)		
 			end
 		end
 	end
@@ -404,7 +406,7 @@ function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A2A2B2B
 				@assert @isdefined tmp2
 				tmp2 = tmp2 * _trace_physical(tmp4)
 			end
-			tmp2 = rmul!(tmp2, scale(x)^2)
+			tmp2 = rmul!(tmp2, scaling(x)^2)
 		else
 			pos1 = index(lattice, j, conj=false, forward=forward, band=band)
 			pos2 = index(lattice, j, conj=true, forward=forward, band=band)
@@ -416,7 +418,7 @@ function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A2A2B2B
 				@assert @isdefined tmp2
 				tmp2 = tmp2 * _trace_physical(tmp4)
 			end	
-			tmp2 = rmul!(tmp2, scale(x)^2)		
+			tmp2 = rmul!(tmp2, scaling(x)^2)		
 		end
 	end
 	return tmp2
@@ -437,7 +439,7 @@ function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A2B2B2A
 				@tensor tmp4[1,2,5;6] := x[pos1][1,2,3] * tmp2[3,4] * x[pos2][4,5,6]
 				tmp2 = _trace_physical(tmp4)
 			end
-			tmp2 = rmul!(tmp2, scale(x)^2)
+			tmp2 = rmul!(tmp2, scaling(x)^2)
 		else
 			pos1 = index(lattice, j, conj=false, forward=forward, band=band)
 			pos2 = index(lattice, j, conj=true, forward=forward, band=band)
@@ -451,7 +453,7 @@ function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A2B2B2A
 				@tensor tmp4[1,2,5;6] := x[pos1][1,2,3] * tmp2[3,4] * x[pos2][4,5,6]
 				tmp2 = _trace_physical(tmp4)
 			end	
-			tmp2 = rmul!(tmp2, scale(x)^2)		
+			tmp2 = rmul!(tmp2, scaling(x)^2)		
 		end
 	end
 	return tmp2

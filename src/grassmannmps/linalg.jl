@@ -6,11 +6,11 @@ DMRG.r_RR(a::GrassmannMPS, b::GrassmannMPS) = DMRG.loose_isometry(Matrix{promote
 DMRG.l_LL(a::GrassmannMPS, b::GrassmannMPS) = DMRG.loose_isometry(Matrix{promote_type(scalartype(a), scalartype(b))}, space_l(a), space_l(b))
 
 
-TK.dot(psiA::GrassmannMPS, psiB::GrassmannMPS) = _dot(psiA, psiB) * (scale(psiA) * scale(psiB))^length(psiA)
+TK.dot(psiA::GrassmannMPS, psiB::GrassmannMPS) = _dot(psiA, psiB) * (scaling(psiA) * scaling(psiB))^length(psiA)
 function TK.norm(psi::GrassmannMPS) 
 	a = real(_dot(psi, psi))
     # println("a is ", a)
-	return sqrt(a) * scale(psi)^(length(psi))
+	return sqrt(a) * scaling(psi)^(length(psi))
 end
 DMRG.distance(a::GrassmannMPS, b::GrassmannMPS) = DMRG._distance(a, b)
 DMRG.distance2(a::GrassmannMPS, b::GrassmannMPS) = DMRG._distance2(a, b)
@@ -42,7 +42,7 @@ function Base.:*(h::MPO, psi::GrassmannMPS)
         @tensor tmp[-1 -2; -3] := conj(fusion_ts[i-1][1,2,-1]) * r[i][1,2,-2,3,4] * fusion_ts[i][3,4,-3]
         mpstensors[i] = tmp
     end
-    return GrassmannMPS(mpstensors, scale=scale(psi))
+    return GrassmannMPS(mpstensors, scaling=scaling(psi))
 end
 
 
@@ -51,7 +51,7 @@ function Base.:*(x::GrassmannMPS, y::GrassmannMPS)
     (length(x) == length(y)) || throw(DimensionMismatch())
     out = [_fuse_physical(_mult_site(x[i], y[i])) for i in 1:length(x)]
     fusers = DMRG.PeriodicArray([isomorphism(space(item, 4)' ⊗ space(item, 5)', fuse(space(item, 4), space(item, 5)) ) for item in out])
-    return GrassmannMPS([@tensor tmp[3,4;7] := conj(fusers[i-1][1,2,3]) * out[i][1,2,4,5,6] * fusers[i][5,6,7] for i in 1:length(x)], scale=scale(x) * scale(y))
+    return GrassmannMPS([@tensor tmp[3,4;7] := conj(fusers[i-1][1,2,3]) * out[i][1,2,4,5,6] * fusers[i][5,6,7] for i in 1:length(x)], scaling=scaling(x) * scaling(y))
 end
 # function mult(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=DMRG.DefaultTruncation)
 #   z = x * y
@@ -98,7 +98,7 @@ mult(x::GrassmannMPS, y::GrassmannMPS; kwargs...) = mult!(copy(x), y; kwargs...)
 function Base.:+(x::GrassmannMPS, y::GrassmannMPS) 
     (length(x) == length(y)) || throw(DimensionMismatch())
     @assert !isempty(x)
-    (length(x) == 1) && return GrassmannMPS([scale(x) * x[1] + scale(y) * y[1]], scale=1)
+    (length(x) == 1) && return GrassmannMPS([scaling(x) * x[1] + scaling(y) * y[1]])
 
     T = promote_type(scalartype(x), scalartype(y))
     A = mpstensortype(spacetype(x), T)
@@ -115,9 +115,9 @@ function Base.:+(x::GrassmannMPS, y::GrassmannMPS)
             @tensor m1[-1 -2; -3] := (embedders[i-1][1])'[-1, 1] * x[i][1,-2,2] * embedders[i][1][2, -3]
             @tensor m2[-1 -2; -3] := (embedders[i-1][2])'[-1, 1] * y[i][1,-2,2] * embedders[i][2][2, -3]
         end
-        push!(r, scale(x) * m1 + scale(y) * m2)
+        push!(r, scaling(x) * m1 + scaling(y) * m2)
     end
-    return GrassmannMPS(r, scale=1)
+    return GrassmannMPS(r)
 end
 
 function right_embedders(::Type{T}, a::S...) where {T <: Number, S <: ElementarySpace}

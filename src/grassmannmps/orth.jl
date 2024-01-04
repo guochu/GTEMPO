@@ -54,7 +54,7 @@ end
 function _rescaling!(psi::GrassmannMPS, n::Real)
 	L = length(psi)
 	scale1 = n^(1/L)
-	psi.scale[] = scale(psi) * scale1
+	setscaling!(psi, scaling(psi) * scale1)
 	return psi
 end
 function _rescaling!(psi::GrassmannMPS)
@@ -62,11 +62,3 @@ function _rescaling!(psi::GrassmannMPS)
 	psi[1] = rmul!(psi[1], 1/nrm1)
 	return _rescaling!(psi, nrm1)
 end
-# function _rescaling!(psi::GrassmannMPS)
-# 	nrm1 = norm(psi[1])
-# 	L = length(psi)
-# 	scale1 = nrm1^(1/L)
-# 	psi[1] = rmul!(psi[1], 1/nrm1)
-# 	psi.scale[] = scale(psi) * scale1
-# 	return psi
-# end

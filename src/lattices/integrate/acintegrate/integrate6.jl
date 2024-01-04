@@ -2,7 +2,7 @@
 
 function update_pair_left(left::AbstractTensorMap, j::Int, x::GrassmannMPS, y::GrassmannMPS, z::GrassmannMPS, u::GrassmannMPS, v::GrassmannMPS, w::GrassmannMPS; trunc)
 	posa = 2*j-1
-	f = (scale(x) * scale(y) * scale(z) * scale(u) * scale(v) * scale(w))^2
+	f = (scaling(x) * scaling(y) * scaling(z) * scaling(u) * scaling(v) * scaling(w))^2
 
 	@tensor tmp1[1,2,3,4,7,8;5] := left[1,2,3,4,5,6] * w[posa][6,7,8] 
 	for (f1, f2) in fusiontrees(tmp1)
