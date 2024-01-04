@@ -298,7 +298,7 @@ function two_body_mpo_row(row::Int, cols::Vector{Int}, coefs::Vector{<:Number})
     end
 
     mpo = MPO(MPOHamiltonian(data))
-    return QTerm(positions, mpo.data)
+    return PartialMPO(mpo.data, positions)
 end
 
 

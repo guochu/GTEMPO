@@ -36,8 +36,7 @@ using LinearAlgebra: mul!, rmul!, axpy!, tr
 using QuadGK, Permutations, Reexport
 using SphericalTensors: SphericalTensors, QR, SVD
 const TK = SphericalTensors
-@reexport using DMRG, Hamiltonians, ImpurityModelBase
-import Hamiltonians: apply!
+@reexport using DMRG, ImpurityModelBase
 
 # # TEMPO algorithm
 

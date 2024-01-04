@@ -32,26 +32,31 @@ end
 end
 
 TK.scalartype(::Type{GTerm{N, T}}) where {N, T} = T
-Hamiltonians.positions(x::GTerm) = x.positions
+DMRG.positions(x::GTerm) = x.positions
 GTerm(a::Vararg{Int}; kwargs...) = GTerm(a; kwargs...)
 
-function Base.convert(::Type{<:QTerm}, x::GTerm)
+function Base.convert(::Type{<:PartialMPO}, x::GTerm)
 	n = x.positions[end] - x.positions[1] + 1
 	pos = collect(x.positions[1]:x.positions[end])
-	ops = Vector{Any}(undef, n)
+	A = mpotensortype(grassmannpspacetype(), scalartype(x))
+	ops = Vector{A}(undef, n)
 	ops[1] = σ₊
 	ops[end] = adjoint(σ₋)
 	rest_pos = x.positions[2:end-1]
 	_s = 1
+	leftspace = space_r(ops[1])'
 	for (i, pj) in enumerate(x.positions[1]+1:x.positions[end]-1)
 		if pj in rest_pos
 			_s *= -1
 			ops[i+1] = ifelse(_s == -1, adjoint(σ₋), σ₊)
+			leftspace = space_r(ops[i+1])'
 		else
-			ops[i+1] = ifelse(_s == -1, I2, JW)
+			mj = ifelse(_s == -1, I2, JW)
+			id2 = id(storagetype(A), leftspace)
+			ops[i+1] = @tensor tmp[1,3;2,4] := id2[1,2] * mj[3,4]
 		end
 	end
-	return QTerm(pos, ops, coeff=x.coeff)
+	return PartialMPO(ops, pos) * x.coeff
 end
 
 
@@ -59,11 +64,11 @@ struct ExpGTerm{N, T <:Number}
 	data::GTerm{N, T}
 end
 TK.scalartype(::Type{ExpGTerm{N, T}}) where {N, T} = T
-Hamiltonians.positions(x::ExpGTerm) = x.data.positions
+DMRG.positions(x::ExpGTerm) = x.data.positions
 Base.exp(x::GTerm{N}) where N = ExpGTerm(x)
-function Base.convert(::Type{<:QTerm}, x::ExpGTerm)
-	t1 = convert(QTerm, x.data)
+function Base.convert(::Type{<:PartialMPO}, x::ExpGTerm)
+	t1 = convert(PartialMPO, x.data)
 	return t1 + id(t1)
 end
-tompo(x::Union{GTerm, ExpGTerm}, L::Int) = prodmpo([_ph for i in 1:L], convert(QTerm, x))
+tompo(x::Union{GTerm, ExpGTerm}, L::Int) = prodmpo([_ph for i in 1:L], convert(PartialMPO, x))
 

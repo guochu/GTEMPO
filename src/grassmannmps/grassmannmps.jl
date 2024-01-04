@@ -44,31 +44,33 @@ TK.spacetype(x::GrassmannMPS) = spacetype(typeof(x))
 
 # Base.:+(x::GrassmannMPS, y::GrassmannMPS) = GrassmannMPS(x.data + y.data)
 
-function apply!(t::QTerm, mps::GrassmannMPS)
-	_start, _end = positions(t)[1], positions(t)[end]
-	S = spacetype(mps)
-	T = scalartype(mps)
-	physpaces = [space(mps[i], 2) for i in _start:_end]
-	mpo = prodmpo(T, physpaces, positions(t) .- (_start-1), op(t)) * TK.scalar(coeff(t))
-
-	M = tensormaptype(S, 2, 3, T)
-	r = Vector{M}(undef, _end - _start + 1)
-	for (i, pos) in enumerate(_start:_end)
-		r[i] = @tensor tmp[-1 -2; -3 -4 -5] := mpo[i][-1, -3, -4, 1] * mps[pos][-2, 1, -5]
-	end
-	fusion_ts = [isomorphism(space(item, 4)' ⊗ space(item, 5)', fuse(space(item, 4)', space(item, 5)')) for item in r]
-	left = isomorphism(fuse(space(r[1], 1), space(r[1], 2)), space(r[1], 1) ⊗ space(r[1], 2))
-	mps[_start] = @tensor tmp[1,4;7] := left[1,2,3] * r[1][2,3,4,5,6] * fusion_ts[1][5,6,7]
-	for (i, pos) in enumerate(_start+1:_end)
-		mps[pos] = @tensor tmp[3,4;7] := conj(fusion_ts[i][1,2,3]) * r[i+1][1,2,4,5,6] * fusion_ts[i+1][5,6,7]
-	end
+function DMRG.apply!(t::PartialMPO, mps::GrassmannMPS)
+	apply!(t, MPS(mps.data))
 	return mps
-end
-Base.:*(t::QTerm, mps::GrassmannMPS) = apply!(t, copy(mps))
+	# _start, _end = positions(t)[1], positions(t)[end]
+	# S = spacetype(mps)
+	# T = scalartype(mps)
+	# physpaces = [space(mps[i], 2) for i in _start:_end]
+	# mpo = prodmpo(T, physpaces, positions(t) .- (_start-1), op(t)) * TK.scalar(coeff(t))
 
-function apply!(x::Union{GTerm, ExpGTerm}, mps::GrassmannMPS)
+	# M = tensormaptype(S, 2, 3, T)
+	# r = Vector{M}(undef, _end - _start + 1)
+	# for (i, pos) in enumerate(_start:_end)
+	# 	r[i] = @tensor tmp[-1 -2; -3 -4 -5] := mpo[i][-1, -3, -4, 1] * mps[pos][-2, 1, -5]
+	# end
+	# fusion_ts = [isomorphism(space(item, 4)' ⊗ space(item, 5)', fuse(space(item, 4)', space(item, 5)')) for item in r]
+	# left = isomorphism(fuse(space(r[1], 1), space(r[1], 2)), space(r[1], 1) ⊗ space(r[1], 2))
+	# mps[_start] = @tensor tmp[1,4;7] := left[1,2,3] * r[1][2,3,4,5,6] * fusion_ts[1][5,6,7]
+	# for (i, pos) in enumerate(_start+1:_end)
+	# 	mps[pos] = @tensor tmp[3,4;7] := conj(fusion_ts[i][1,2,3]) * r[i+1][1,2,4,5,6] * fusion_ts[i+1][5,6,7]
+	# end
+	# return mps
+end
+Base.:*(t::PartialMPO, mps::GrassmannMPS) = apply!(t, copy(mps))
+
+function DMRG.apply!(x::Union{GTerm, ExpGTerm}, mps::GrassmannMPS)
 	all(s -> 1 <= s <= length(mps), positions(x)) || throw(BoundsError())
-	t = convert(QTerm, x)
+	t = convert(PartialMPO, x)
 	apply!(t, mps)
 	return mps
 end

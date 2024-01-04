@@ -25,15 +25,15 @@ const real_grassmann_orderings = [A1A1a1a1B1B1b1b1(), A1a1B1b1b1B1a1A1(), A2A2A1
 const imag_ac_grassmann_orderings = [A1A1B1B1(), A2A2A1A1B2B2B1B1()]
 const real_ac_grassmann_orderings = [A1A1a1a1B1B1b1b1(), A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1(), A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2()]
 
-# include("tempo/grassmannlattice.jl")
-# include("tempo/grassmannmps.jl")
-# include("tempo/bmps_integrate.jl")
+include("tempo/grassmannlattice.jl")
+include("tempo/grassmannmps.jl")
+include("tempo/bmps_integrate.jl")
 
-# include("tempo/influencefunctional.jl")
+include("tempo/influencefunctional.jl")
 
-# include("tempo/gf.jl")
-# include("tempo/cached_gf.jl")
-# include("tempo/bmps_gf.jl")
+include("tempo/gf.jl")
+include("tempo/cached_gf.jl")
+include("tempo/bmps_gf.jl")
 
 include("tempo/models.jl")
 include("tempo/observables.jl")
