@@ -70,8 +70,7 @@ function sysdynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice, model::
 	end		
 
 	# interacting dynamics
-	U = convert(Float64, U)
-	if U != 0.
+	if U != zero(U)
 		(lattice.bands == 2) || throw(ArgumentError("lattice should have two bands"))
 		# a = -lattice.δτ*U
 		b = a^2 * (exp(-lattice.δτ*U) - 1)
@@ -103,7 +102,7 @@ function sysdynamics_forward!(gmps::GrassmannMPS, lattice::RealGrassmannLattice,
 	end
 
 	# interacting dynamics
-	if U != 0.
+	if U != zero(U)
 		(lattice.bands == 2) || throw(ArgumentError("lattice should have two bands"))
 		# a = -im*lattice.δt*U
 		b = a^2 * (exp(-im*lattice.δt*U) - 1)
