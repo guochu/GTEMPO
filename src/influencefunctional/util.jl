@@ -1,56 +1,56 @@
-# move left and right most physical indices after the i-th position
-function pif_util(data::Vector{M}, i::Int; trunc) where {M}
-	L = length(data) 
-	ndata = Vector{M}(undef, L+1)
-	util = TensorMap(ds->ones(Float64, ds), oneunit(_ph) ← one(_ph))
-	@tensor left[1,3;4,5,2] := util[1] * data[1][2,3,4,5]
-	for j in 1:i-1
-		ndata[j], left = move_to_right(left, data[j+1], trunc=trunc)
-	end
-	if i == L
-		u, s, v = DMRG.stable_tsvd(left, (1,2,4), (3,5), trunc=trunc)
-		ndata[i] = permute(u, (1,2), (4,3))
-		ndata[i+1] = @tensor tmp[1,4;5,3] := s[1,2] * v[2,3,4] * conj(util[5])
-	else
-		@tensor right[3,1,2;5,4] := data[L][1,2,3,4] * conj(util[5])
-		for j in (L+1):-1:(i+3)
-			right, ndata[j] = move_to_left(data[j-2], right, trunc=trunc)
-		end
-		if i == 0
-			u, s, v = DMRG.stable_tsvd(right, (1,2), (3,4,5), trunc=trunc)
-			u = u * s
-			ndata[2] = permute(v, (1,2), (3,4))
-			ndata[1] = @tensor tmp[1,3;4,2] := util[1] * u[2,3,4]
-		else
-			ndata[i], ndata[i+1], ndata[i+2] = central(left, right, trunc=trunc)	
-		end			
-	end
-	return ndata
-end
+# # move left and right most physical indices after the i-th position
+# function pif_util(data::Vector{M}, i::Int; trunc) where {M}
+# 	L = length(data) 
+# 	ndata = Vector{M}(undef, L+1)
+# 	util = TensorMap(ds->ones(Float64, ds), oneunit(_ph) ← one(_ph))
+# 	@tensor left[1,3;4,5,2] := util[1] * data[1][2,3,4,5]
+# 	for j in 1:i-1
+# 		ndata[j], left = move_to_right(left, data[j+1], trunc=trunc)
+# 	end
+# 	if i == L
+# 		u, s, v = DMRG.stable_tsvd(left, (1,2,4), (3,5), trunc=trunc)
+# 		ndata[i] = permute(u, (1,2), (4,3))
+# 		ndata[i+1] = @tensor tmp[1,4;5,3] := s[1,2] * v[2,3,4] * conj(util[5])
+# 	else
+# 		@tensor right[3,1,2;5,4] := data[L][1,2,3,4] * conj(util[5])
+# 		for j in (L+1):-1:(i+3)
+# 			right, ndata[j] = move_to_left(data[j-2], right, trunc=trunc)
+# 		end
+# 		if i == 0
+# 			u, s, v = DMRG.stable_tsvd(right, (1,2), (3,4,5), trunc=trunc)
+# 			u = u * s
+# 			ndata[2] = permute(v, (1,2), (3,4))
+# 			ndata[1] = @tensor tmp[1,3;4,2] := util[1] * u[2,3,4]
+# 		else
+# 			ndata[i], ndata[i+1], ndata[i+2] = central(left, right, trunc=trunc)	
+# 		end			
+# 	end
+# 	return ndata
+# end
 
-# t1 is rank-4, t2 is rank-5
-function move_to_left(t1, t2; trunc)
-	@tensor tmp[5,1,2,4; 6,7,8] := t1[1,2,3,4] * t2[5,3,6,7,8]
-	u, s, v, err = DMRG.stable_tsvd!(tmp, trunc=trunc)
-	return permute(u*s, (1,2,3), (5,4)), permute(v, (1,2), (3,4))
-end
+# # t1 is rank-4, t2 is rank-5
+# function move_to_left(t1, t2; trunc)
+# 	@tensor tmp[5,1,2,4; 6,7,8] := t1[1,2,3,4] * t2[5,3,6,7,8]
+# 	u, s, v, err = DMRG.stable_tsvd!(tmp, trunc=trunc)
+# 	return permute(u*s, (1,2,3), (5,4)), permute(v, (1,2), (3,4))
+# end
 
-# t1 is rank-5, t2 is rank-4
-function move_to_right(t1, t2; trunc)
-	@tensor tmp[1,2,4; 6,7,8,5] := t1[1,2,3,4,5] * t2[3,6,7,8]
-	u, s, v, err = DMRG.stable_tsvd!(tmp, trunc=trunc)
-	return permute(u, (1,2), (4,3)), permute(s * v, (1,2), (3,4,5))
-end
+# # t1 is rank-5, t2 is rank-4
+# function move_to_right(t1, t2; trunc)
+# 	@tensor tmp[1,2,4; 6,7,8,5] := t1[1,2,3,4,5] * t2[3,6,7,8]
+# 	u, s, v, err = DMRG.stable_tsvd!(tmp, trunc=trunc)
+# 	return permute(u, (1,2), (4,3)), permute(s * v, (1,2), (3,4,5))
+# end
 
-# t1 is rank-5, t2 is rank-5
-function central(t1, t2; trunc)
-	u1, s1, v1, err = DMRG.stable_tsvd(t1, (1,2,4), (3,5), trunc=trunc)
-	v1 = s1 * v1
-	u2, s2, v2, err = DMRG.stable_tsvd(t2, (1,2), (3,4,5), trunc=trunc)
-	u2 = u2 * s2
-	@tensor center[1,3;5,4] := v1[1,2,3] * u2[4,2,5]
-	return permute(u1, (1,2), (4,3)), center, permute(v2, (1,2), (3,4))
-end
+# # t1 is rank-5, t2 is rank-5
+# function central(t1, t2; trunc)
+# 	u1, s1, v1, err = DMRG.stable_tsvd(t1, (1,2,4), (3,5), trunc=trunc)
+# 	v1 = s1 * v1
+# 	u2, s2, v2, err = DMRG.stable_tsvd(t2, (1,2), (3,4,5), trunc=trunc)
+# 	u2 = u2 * s2
+# 	@tensor center[1,3;5,4] := v1[1,2,3] * u2[4,2,5]
+# 	return permute(u1, (1,2), (4,3)), center, permute(v2, (1,2), (3,4))
+# end
 
 
 function partialmpo(row::Int, cols::Vector{Int}, coefs::Vector{<:Number})

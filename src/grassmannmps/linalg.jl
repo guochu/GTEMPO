@@ -1,9 +1,10 @@
 
 DMRG.space_l(a::GrassmannMPS) = space_l(a[1])
 DMRG.space_r(a::GrassmannMPS) = space_r(a[end])
-# the convention here is different from DMRG!!!
-DMRG.r_RR(a::GrassmannMPS, b::GrassmannMPS) = DMRG.loose_isometry(Matrix{promote_type(scalartype(a), scalartype(b))}, space_r(a), space_r(b))
-DMRG.l_LL(a::GrassmannMPS, b::GrassmannMPS) = DMRG.loose_isometry(Matrix{promote_type(scalartype(a), scalartype(b))}, space_l(a), space_l(b))
+
+# # the convention here is different from DMRG!!!
+r_RR(a::GrassmannMPS, b::GrassmannMPS) = DMRG.loose_isometry(Matrix{promote_type(scalartype(a), scalartype(b))}, space_r(a), space_r(b))
+l_LL(a::GrassmannMPS, b::GrassmannMPS) = DMRG.loose_isometry(Matrix{promote_type(scalartype(a), scalartype(b))}, space_l(a), space_l(b))
 
 
 TK.dot(psiA::GrassmannMPS, psiB::GrassmannMPS) = _dot(psiA, psiB) * (scaling(psiA) * scaling(psiB))^length(psiA)
@@ -50,7 +51,7 @@ end
 function Base.:*(x::GrassmannMPS, y::GrassmannMPS)
     (length(x) == length(y)) || throw(DimensionMismatch())
     out = [_fuse_physical(_mult_site(x[i], y[i])) for i in 1:length(x)]
-    fusers = DMRG.PeriodicArray([isomorphism(space(item, 4)' ⊗ space(item, 5)', fuse(space(item, 4), space(item, 5)) ) for item in out])
+    fusers = PeriodicArray([isomorphism(space(item, 4)' ⊗ space(item, 5)', fuse(space(item, 4), space(item, 5)) ) for item in out])
     return GrassmannMPS([@tensor tmp[3,4;7] := conj(fusers[i-1][1,2,3]) * out[i][1,2,4,5,6] * fusers[i][5,6,7] for i in 1:length(x)], scaling=scaling(x) * scaling(y))
 end
 # function mult(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=DMRG.DefaultTruncation)

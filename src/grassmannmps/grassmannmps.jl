@@ -45,6 +45,7 @@ TK.spacetype(x::GrassmannMPS) = spacetype(typeof(x))
 # Base.:+(x::GrassmannMPS, y::GrassmannMPS) = GrassmannMPS(x.data + y.data)
 
 function DMRG.apply!(t::PartialMPO, mps::GrassmannMPS)
+	@assert isoneunit(space_r(t))
 	apply!(t, MPS(mps.data))
 	return mps
 	# _start, _end = positions(t)[1], positions(t)[end]
