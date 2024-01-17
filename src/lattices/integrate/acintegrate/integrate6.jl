@@ -1,6 +1,7 @@
 
 
-function update_pair_left(left::AbstractTensorMap, j::Int, x::GrassmannMPS, y::GrassmannMPS, z::GrassmannMPS, u::GrassmannMPS, v::GrassmannMPS, w::GrassmannMPS; trunc)
+function update_pair_left(left::AbstractTensorMap, j::Int, x::GrassmannMPS, y::GrassmannMPS, 
+							z::GrassmannMPS, u::GrassmannMPS, v::GrassmannMPS, w::GrassmannMPS; trunc=DefaultIntegrationTruncation)
 	posa = 2*j-1
 	f = (scaling(x) * scaling(y) * scaling(z) * scaling(u) * scaling(v) * scaling(w))^2
 

@@ -1,7 +1,7 @@
 # 1 gmps integration
 
 
-function update_pair_left(left::AbstractTensorMap, j::Int, x::GrassmannMPS; trunc)
+function update_pair_left(left::AbstractTensorMap, j::Int, x::GrassmannMPS; trunc=DefaultIntegrationTruncation)
 	f = scaling(x)^2
 	pos1, pos2 = 2*j-1, 2*j
 	@tensor tmp2[2,4; 5] := left[1] * x[pos1][1,2,3] * x[pos2][3,4,5]
@@ -19,7 +19,7 @@ function update_pair_left(left::AbstractTensorMap, j::Int, x::GrassmannMPS; trun
 end
 
 
-function update_pair_right(right::AbstractTensorMap, j::Int, x::GrassmannMPS; trunc)
+function update_pair_right(right::AbstractTensorMap, j::Int, x::GrassmannMPS; trunc=DefaultIntegrationTruncation)
 	f = scaling(x)^2
 	pos1, pos2 = 2*j-1, 2*j
 	@tensor tmp2[1; 2 4] := x[pos1][1,2,3] * (x[pos2][3,4,5] * right[5])

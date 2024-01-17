@@ -1,26 +1,26 @@
 
-_l_LL(x::GrassmannMPS, y::GrassmannMPS, z::GrassmannMPS...) = error("_l_LL not implemented for $(2+length(z)) mps")
-_r_RR(x::GrassmannMPS, y::GrassmannMPS, z::GrassmannMPS...) = error("_r_RR not implemented for $(2+length(z)) mps")
+DMRG.l_LL(x::GrassmannMPS, y::GrassmannMPS, z::GrassmannMPS...) = error("l_LL not implemented for $(2+length(z)) mps")
+DMRG.r_RR(x::GrassmannMPS, y::GrassmannMPS, z::GrassmannMPS...) = error("r_RR not implemented for $(2+length(z)) mps")
 
-function _l_LL(x::GrassmannMPS)
+function DMRG.l_LL(x::GrassmannMPS)
 	vacuum = space_l(x)
 	left = isomorphism(Matrix{scalartype(x)}, one(vacuum), vacuum)
 	return left
 end
 
-function _l_LL(x::GrassmannMPS, y::GrassmannMPS)
+function DMRG.l_LL(x::GrassmannMPS, y::GrassmannMPS)
 	vacuum = space_l(x)
 	left = isomorphism(Matrix{scalartype(x)}, vacuum', vacuum)
 	return left
 end
 
-function _r_RR(x::GrassmannMPS)
+function DMRG.r_RR(x::GrassmannMPS)
 	vacuum = space_l(x)
 	left = isomorphism(Matrix{scalartype(x)}, vacuum, one(vacuum))
 	return left
 end
 
-function _r_RR(x::GrassmannMPS, y::GrassmannMPS)
+function DMRG.r_RR(x::GrassmannMPS, y::GrassmannMPS)
 	vacuum = space_l(x)
 	right = isomorphism(Matrix{scalartype(x)}, vacuum, vacuum')
 	return right
@@ -30,13 +30,13 @@ function contract_center(left::AbstractTensorMap{S, 1, 1}, right::AbstractTensor
 	return r
 end
 
-function _l_LL(x::GrassmannMPS, y::GrassmannMPS, z::GrassmannMPS)
+function DMRG.l_LL(x::GrassmannMPS, y::GrassmannMPS, z::GrassmannMPS)
 	vacuum = space_l(x)
 	left = isomorphism(Matrix{scalartype(x)}, vacuum' ⊗ vacuum',  vacuum )
 	return left
 end
 
-function _r_RR(x::GrassmannMPS, y::GrassmannMPS, z::GrassmannMPS)
+function DMRG.r_RR(x::GrassmannMPS, y::GrassmannMPS, z::GrassmannMPS)
 	vacuum = space_l(x)
 	right = isomorphism(Matrix{scalartype(x)}, vacuum ⊗ vacuum,  vacuum')
 	return right
@@ -46,19 +46,19 @@ function contract_center(left::AbstractTensorMap{S, 2, 1}, right::AbstractTensor
 	return r
 end
 
-function _l_LL(x::GrassmannMPS, y::GrassmannMPS, z::GrassmannMPS, u::GrassmannMPS)
+function DMRG.l_LL(x::GrassmannMPS, y::GrassmannMPS, z::GrassmannMPS, u::GrassmannMPS)
 	vacuum = space_l(x)
 	left = isomorphism(Matrix{scalartype(x)}, vacuum' ⊗ vacuum' ,  vacuum ⊗ vacuum )
 	return left
 end
 
-function _l_LL(x::GrassmannMPS, y::GrassmannMPS, z::GrassmannMPS, u::GrassmannMPS, v::GrassmannMPS, w::GrassmannMPS)
+function DMRG.l_LL(x::GrassmannMPS, y::GrassmannMPS, z::GrassmannMPS, u::GrassmannMPS, v::GrassmannMPS, w::GrassmannMPS)
 	vacuum = space_l(x)
 	left = isomorphism(Matrix{scalartype(x)}, vacuum' ⊗ vacuum' ⊗ vacuum',  vacuum ⊗ vacuum ⊗ vacuum )
 	return left
 end
 
-function _l_LL(x::GrassmannMPS, y::GrassmannMPS, z::GrassmannMPS, u::GrassmannMPS, v::GrassmannMPS, w::GrassmannMPS, r::GrassmannMPS)
+function DMRG.l_LL(x::GrassmannMPS, y::GrassmannMPS, z::GrassmannMPS, u::GrassmannMPS, v::GrassmannMPS, w::GrassmannMPS, r::GrassmannMPS)
 	vacuum = space_l(x)
 	left = isomorphism(Matrix{scalartype(x)}, vacuum' ⊗ vacuum' ⊗ vacuum' ⊗ vacuum',  vacuum ⊗ vacuum ⊗ vacuum )
 	return left

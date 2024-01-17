@@ -2,9 +2,9 @@
 DMRG.space_l(a::GrassmannMPS) = space_l(a[1])
 DMRG.space_r(a::GrassmannMPS) = space_r(a[end])
 
-# # the convention here is different from DMRG!!!
-r_RR(a::GrassmannMPS, b::GrassmannMPS) = DMRG.loose_isometry(Matrix{promote_type(scalartype(a), scalartype(b))}, space_r(a), space_r(b))
-l_LL(a::GrassmannMPS, b::GrassmannMPS) = DMRG.loose_isometry(Matrix{promote_type(scalartype(a), scalartype(b))}, space_l(a), space_l(b))
+# # # the convention here is different from DMRG!!!
+# r_RR(a::GrassmannMPS, b::GrassmannMPS) = DMRG.loose_isometry(Matrix{promote_type(scalartype(a), scalartype(b))}, space_r(a), space_r(b))
+# l_LL(a::GrassmannMPS, b::GrassmannMPS) = DMRG.loose_isometry(Matrix{promote_type(scalartype(a), scalartype(b))}, space_l(a), space_l(b))
 
 
 TK.dot(psiA::GrassmannMPS, psiB::GrassmannMPS) = _dot(psiA, psiB) * (scaling(psiA) * scaling(psiB))^length(psiA)
@@ -16,19 +16,19 @@ end
 DMRG.distance(a::GrassmannMPS, b::GrassmannMPS) = DMRG._distance(a, b)
 DMRG.distance2(a::GrassmannMPS, b::GrassmannMPS) = DMRG._distance2(a, b)
 
-function _dot(psiA::GrassmannMPS, psiB::GrassmannMPS)
-	(length(psiA) == length(psiB)) || throw(DimensionMismatch())
-    hold = l_LL(psiA, psiB)
-    for i in 1:length(psiA)
-        hold = _updateleft(hold, psiA[i], psiB[i])
-    end
-    return tr(hold) 
-end
+_dot(psiA::GrassmannMPS, psiB::GrassmannMPS) = dot(MPS(psiA.data), MPS(psiB.data))
+# 	(length(psiA) == length(psiB)) || throw(DimensionMismatch())
+#     hold = l_LL(psiA, psiB)
+#     for i in 1:length(psiA)
+#         hold = _updateleft(hold, psiA[i], psiB[i])
+#     end
+#     return tr(hold) 
+# end
 
-# the convention here is different from DMRG!!!
-function _updateleft(hold::MPSBondTensor, mpsAj::MPSTensor, mpsBj::MPSTensor) 
-    @tensor out[4; 5] := hold[1,2] * conj(mpsAj[1, 3, 4]) * mpsBj[2,3,5]
-end
+# # the convention here is different from DMRG!!!
+# function _updateleft(hold::MPSBondTensor, mpsAj::MPSTensor, mpsBj::MPSTensor) 
+#     @tensor out[4; 5] := hold[1,2] * conj(mpsAj[1, 3, 4]) * mpsBj[2,3,5]
+# end
 
 function Base.:*(h::MPO, psi::GrassmannMPS)
     @assert !isempty(h)

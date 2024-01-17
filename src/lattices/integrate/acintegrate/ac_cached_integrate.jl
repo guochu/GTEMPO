@@ -7,13 +7,13 @@ Zvalue(x::AbstractExpectationCache) = TK.scalar(x.hleft[end])
 
 Cache at the left of the j-th time step
 """
-leftenv(x::AbstractExpectationCache, j::Int) = x.hleft[j]
+DMRG.leftenv(x::AbstractExpectationCache, j::Int) = x.hleft[j]
 """
 	rightenv(x::AbstractExpectationCache, j::Int)
 
 Cache at the right of the j-th time step
 """
-rightenv(x::AbstractExpectationCache, j::Int) = error("rightenv not implemented for cache type $(typeof(x))")
+DMRG.rightenv(x::AbstractExpectationCache, j::Int) = error("rightenv not implemented for cache type $(typeof(x))")
 
 DMRG.environments(lattice::AbstractGrassmannLattice, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS, C::GrassmannMPS...; 
 						alg::IntegrationAlgorithm=ExactIntegrate(), kwargs...) = _environments(alg, lattice, A, B, C...; kwargs...)
@@ -30,7 +30,7 @@ struct TwosideExpectationCache{M<:GrassmannMPS, G<:Tuple, L<:AbstractGrassmannLa
 	hleft::Hl
 	hright::Hr	
 end
-rightenv(x::TwosideExpectationCache, j::Int) = x.hright[j+1]
+DMRG.rightenv(x::TwosideExpectationCache, j::Int) = x.hright[j+1]
 Base.length(x::TwosideExpectationCache) = length(x.lattice)
 
 function TwosideExpectationCache(lattice::AbstractGrassmannLattice, As::Tuple; trunc::TruncationScheme=DefaultIntegrationTruncation) 
@@ -39,14 +39,14 @@ function TwosideExpectationCache(lattice::AbstractGrassmannLattice, As::Tuple; t
 	(all(v->length(v)==length(lattice), As)) || throw(DimensionMismatch())
 	Lhalf = div(length(lattice), 2)
 	xs = As
-	left = _l_LL(xs...)
+	left = l_LL(xs...)
 	hleft = Vector{typeof(left)}(undef, Lhalf+1)
 	hleft[1] = left
 	for i in 1:Lhalf
 		hleft[i+1] = update_pair_left(hleft[i], i, xs..., trunc=trunc)
 	end
 
-	right = _r_RR(xs...)
+	right = r_RR(xs...)
 	hright = Vector{typeof(right)}(undef, Lhalf+1)
 	hright[Lhalf+1] = right
 	for i in Lhalf:-1:1
@@ -103,7 +103,7 @@ function LeftExpectationCache(lattice::AbstractGrassmannLattice, As::Tuple; trun
 	(all(v->length(v)==length(lattice), As)) || throw(DimensionMismatch())
 	Lhalf = div(length(lattice), 2)
 	xs = As
-	left = _l_LL(xs...)
+	left = l_LL(xs...)
 	hleft = Vector{typeof(left)}(undef, Lhalf+1)
 	hleft[1] = left
 	for i in 1:Lhalf

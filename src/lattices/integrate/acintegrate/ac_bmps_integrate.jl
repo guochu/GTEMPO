@@ -77,7 +77,7 @@ function update_left_2(left::GrassmannMPS, pos::Int, x::Vector{<:GrassmannMPS}; 
 	return canonicalize!(GrassmannMPS(left2, scaling=scaling(left)), alg=Orthogonalize(trunc=trunc))
 end
 
-function update_pair_left(left::GrassmannMPS, j::Int, xx::Vector{<:GrassmannMPS}; trunc)
+function update_pair_left(left::GrassmannMPS, j::Int, xx::Vector{<:GrassmannMPS}; trunc=DefaultIntegrationTruncation)
 	posa = 2 * j -1
 	left = update_left_1(left, posa, xx, trunc=trunc)
 	left = update_left_2(left, posa+1, xx, trunc=trunc)

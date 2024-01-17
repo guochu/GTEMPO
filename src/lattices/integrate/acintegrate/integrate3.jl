@@ -1,5 +1,5 @@
 
-function update_pair_left(left0::AbstractTensorMap, j::Int, x::GrassmannMPS, y::GrassmannMPS, z::GrassmannMPS; trunc)
+function update_pair_left(left0::AbstractTensorMap, j::Int, x::GrassmannMPS, y::GrassmannMPS, z::GrassmannMPS; trunc=DefaultIntegrationTruncation)
 	posa = 2*j-1
 	f = (scaling(x) * scaling(y) * scaling(z) )^2
 	left = copy(left0)
@@ -132,7 +132,7 @@ function update_pair_left(left0::AbstractTensorMap, j::Int, x::GrassmannMPS, y::
 	return left	
 end
 
-function update_pair_right(right::AbstractTensorMap, j::Int, x::GrassmannMPS, y::GrassmannMPS, z::GrassmannMPS; trunc)
+function update_pair_right(right::AbstractTensorMap, j::Int, x::GrassmannMPS, y::GrassmannMPS, z::GrassmannMPS; trunc=DefaultIntegrationTruncation)
 	posb = 2 * j
 	f = (scaling(x) * scaling(y) * scaling(z))^2
 
