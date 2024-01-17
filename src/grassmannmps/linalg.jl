@@ -135,12 +135,15 @@ function right_embedders(::Type{T}, a::S...) where {T <: Number, S <: Elementary
     return ts
 end
 
-function _permute!(x::GrassmannMPS, perm::Vector{Int}; trunc::TruncationScheme=DMRG.DefaultTruncation)
+function TK.permute!(x::GrassmannMPS, perm::Vector{Int}; trunc::TruncationScheme=DMRG.DefaultTruncation)
     @assert length(x) == length(perm)
+    if svectors_uninitialized(x)
+        canonicalize!(x, alg=Orthogonalize(trunc=trunc, normalize=false))
+    end
     p = CoxeterDecomposition(Permutation(perm))
     for i in p.terms
         easy_swap!(x, i, trunc=trunc)
     end
     return x
 end
-_permute(x::GrassmannMPS, perm::Vector{Int}; kwargs...) = _permute!(copy(x), perm; kwargs...)
+TK.permute(x::GrassmannMPS, perm::Vector{Int}; kwargs...) = permute!(deepcopy(x), perm; kwargs...)

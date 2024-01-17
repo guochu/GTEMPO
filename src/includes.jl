@@ -1,4 +1,3 @@
-# for debugging
 using Logging: @warn
 using LinearAlgebra: mul!, rmul!, axpy!, tr
 using QuadGK, Permutations, Reexport

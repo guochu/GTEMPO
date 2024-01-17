@@ -62,7 +62,8 @@ end
 
 function _abba2aabb(x::GrassmannMPS, lattice::AbstractGrassmannLattice; trunc::TruncationScheme=DefaultKTruncation)
     @assert length(x) == length(lattice)
-    x2 = copy(x)
+    x2 = deepcopy(x)
+    canonicalize!(x2, alg=Orthogonalize(trunc=trunc, normalize=false))
     _abba2aabb_band!(x2, lattice, 0, trunc=trunc)
     for j in lattice.k:-1:1
         _abba2aabb_band!(x2, lattice, j, trunc=trunc)
@@ -72,7 +73,8 @@ end
 
 function _abba2aabb_real(x::GrassmannMPS, lattice::AbstractGrassmannLattice; trunc::TruncationScheme=DefaultKTruncation)
     @assert length(x) == length(lattice)
-    x2 = copy(x)
+    x2 = deepcopy(x)
+    canonicalize!(x2, alg=Orthogonalize(trunc=trunc, normalize=false))
     _abba2aabb_band!(x2, lattice, 0, trunc=trunc)
     for forward in (true, false)
         # _abba2aabb_band_real!(x2, lattice, 0, trunc=trunc, forward=forward)

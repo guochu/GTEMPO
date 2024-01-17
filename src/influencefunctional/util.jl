@@ -8,7 +8,7 @@
 # 		ndata[j], left = move_to_right(left, data[j+1], trunc=trunc)
 # 	end
 # 	if i == L
-# 		u, s, v = DMRG.stable_tsvd(left, (1,2,4), (3,5), trunc=trunc)
+# 		u, s, v = stable_tsvd(left, (1,2,4), (3,5), trunc=trunc)
 # 		ndata[i] = permute(u, (1,2), (4,3))
 # 		ndata[i+1] = @tensor tmp[1,4;5,3] := s[1,2] * v[2,3,4] * conj(util[5])
 # 	else
@@ -17,7 +17,7 @@
 # 			right, ndata[j] = move_to_left(data[j-2], right, trunc=trunc)
 # 		end
 # 		if i == 0
-# 			u, s, v = DMRG.stable_tsvd(right, (1,2), (3,4,5), trunc=trunc)
+# 			u, s, v = stable_tsvd(right, (1,2), (3,4,5), trunc=trunc)
 # 			u = u * s
 # 			ndata[2] = permute(v, (1,2), (3,4))
 # 			ndata[1] = @tensor tmp[1,3;4,2] := util[1] * u[2,3,4]
@@ -31,22 +31,22 @@
 # # t1 is rank-4, t2 is rank-5
 # function move_to_left(t1, t2; trunc)
 # 	@tensor tmp[5,1,2,4; 6,7,8] := t1[1,2,3,4] * t2[5,3,6,7,8]
-# 	u, s, v, err = DMRG.stable_tsvd!(tmp, trunc=trunc)
+# 	u, s, v, err = stable_tsvd!(tmp, trunc=trunc)
 # 	return permute(u*s, (1,2,3), (5,4)), permute(v, (1,2), (3,4))
 # end
 
 # # t1 is rank-5, t2 is rank-4
 # function move_to_right(t1, t2; trunc)
 # 	@tensor tmp[1,2,4; 6,7,8,5] := t1[1,2,3,4,5] * t2[3,6,7,8]
-# 	u, s, v, err = DMRG.stable_tsvd!(tmp, trunc=trunc)
+# 	u, s, v, err = stable_tsvd!(tmp, trunc=trunc)
 # 	return permute(u, (1,2), (4,3)), permute(s * v, (1,2), (3,4,5))
 # end
 
 # # t1 is rank-5, t2 is rank-5
 # function central(t1, t2; trunc)
-# 	u1, s1, v1, err = DMRG.stable_tsvd(t1, (1,2,4), (3,5), trunc=trunc)
+# 	u1, s1, v1, err = stable_tsvd(t1, (1,2,4), (3,5), trunc=trunc)
 # 	v1 = s1 * v1
-# 	u2, s2, v2, err = DMRG.stable_tsvd(t2, (1,2), (3,4,5), trunc=trunc)
+# 	u2, s2, v2, err = stable_tsvd(t2, (1,2), (3,4,5), trunc=trunc)
 # 	u2 = u2 * s2
 # 	@tensor center[1,3;5,4] := v1[1,2,3] * u2[4,2,5]
 # 	return permute(u1, (1,2), (4,3)), center, permute(v2, (1,2), (3,4))

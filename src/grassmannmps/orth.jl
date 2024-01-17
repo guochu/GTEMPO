@@ -31,18 +31,19 @@ end
 function _rightorth!(psi::GrassmannMPS, alg::SVD, trunc::TruncationScheme)
 	L = length(psi)
 	for i in L:-1:2
-		u, s, v, err = DMRG.stable_tsvd(psi[i], (1,), (2, 3), trunc=trunc)
+		u, s, v, err = stable_tsvd(psi[i], (1,), (2, 3), trunc=trunc)
 		psi[i] = permute(v, (1,2), (3,))
 		u2 = u * s
 		nl = norm(u2)
 		_rescaling!(psi, nl)
 		u2 = rmul!(u2, 1/nl)
 		psi[i-1] = @tensor tmp[-1 -2; -3] := psi[i-1][-1, -2, 1] * u2[1, -3]
+		psi.s[i] = normalize!(s)
 	end
 	return psi
 end
 
-function DMRG.canonicalize!(psi::GrassmannMPS; alg::Orthogonalize = Orthogonalize(SVD(), DMRG.DefaultTruncation, normalize=false))
+function DMRG.canonicalize!(psi::GrassmannMPS; alg::Orthogonalize = Orthogonalize(trunc=DMRG.DefaultTruncation, normalize=false))
 	alg.normalize && @warn "canonicalize with normalization not implemented for GrassmannMPS"
 	L = length(psi)
 	_leftorth!(psi, QR(), NoTruncation())

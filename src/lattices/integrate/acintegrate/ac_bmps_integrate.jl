@@ -212,6 +212,6 @@ function swap_left(a::AbstractTensorMap{S, 3, 1}, b::AbstractTensorMap{S, 3, 1},
 			tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,1,:,:,:]
 		end
 	end
-	u, s, v, err = DMRG.stable_tsvd!(tmp3; trunc=trunc)
+	u, s, v, err = stable_tsvd!(tmp3; trunc=trunc)
 	return u, permute(s * v, (1,2), (3,))
 end

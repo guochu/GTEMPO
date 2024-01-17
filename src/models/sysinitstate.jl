@@ -62,7 +62,7 @@ function _creategmps(L::Int, inds::Vector{Int}, data::Vector{<:MPSTensor}; trunc
 		perm = sortperm(inds)
 		# println(perm)
 		inds = inds[perm]
-		gmps = _permute(GrassmannMPS(data), perm, trunc=trunc)
+		gmps = permute(GrassmannMPS(data), perm, trunc=trunc)
 		# gmps = GrassmannMPS(data)
 		# easy_swap!(gmps, 1, trunc=trunc)
 		data = gmps.data
