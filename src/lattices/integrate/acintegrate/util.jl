@@ -64,6 +64,8 @@ function _l_LL(x::GrassmannMPS, y::GrassmannMPS, z::GrassmannMPS, u::GrassmannMP
 	return left
 end
 
+_mult_A(t, A::GrassmannMPS) = t * A
+_mult_A(t, A::Vector{<:GrassmannMPS}) = [t * Aj for Aj in A]
 
 
 # the 2 and 3-th indices are physical ones to be traced out

@@ -8,8 +8,6 @@ function gf(lattice::ImagGrassmannLattice, i::Int, A::Union{GrassmannMPS, Vector
 	return integrate(lattice, A2, B..., alg=alg, trunc=trunc)/Z
 end
 
-_mult_A(t, A::GrassmannMPS) = t * A
-_mult_A(t, A::Vector{<:GrassmannMPS}) = [t * Aj for Aj in A]
 
 
 function parallel_gf(lattice::ImagGrassmannLattice, i::Int, A::Vector{<:GrassmannMPS}, B::GrassmannMPS...; 
