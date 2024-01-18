@@ -4,7 +4,7 @@ include("grassmannordering.jl")
 abstract type AbstractGrassmannLattice{O <: GrassmannOrdering} end
 
 index(x::AbstractGrassmannLattice, args...; kwargs...) = error("index not implemented for grassmann lattice type $(typeof(x))")
-OrderingStyle(::Type{<:AbstractGrassmannLattice{O}}) where O = O
+OrderingStyle(::Type{<:AbstractGrassmannLattice{O}}) where O = O()
 ConjugationStyle(::Type{<:AbstractGrassmannLattice{O}}) where O = ConjugationStyle(O)
 LayoutStyle(::Type{<:AbstractGrassmannLattice{O}}) where O = LayoutStyle(O)
 ConjugationStyle(x::AbstractGrassmannLattice) = ConjugationStyle(typeof(x))

@@ -104,6 +104,7 @@ end
 # ab\bar{b}\bar{a} a_2^+a_2^-b_2^+b_2^-\bar{b}_2^-\bar{b}_2^+\bar{a}_2^-\bar{a}_2^+ a_1^+a_1^-b_1^+b_1^-\bar{b}_1^-\bar{b}_1^+\bar{a}_1^-\bar{a}_1^+
 function index(x::RealGrassmannLattice{<:A1a1B1b1b1B1a1A1}, i::Int; conj::Bool, forward::Union{Bool, Nothing}=nothing, band::Int=1)
 	(0 <= i <= x.k) || throw(BoundsError())
+	@assert (1 <= band <= x.bands)
 	TL = length(x)
 	bands = x.bands
 	if i == 0
@@ -120,6 +121,7 @@ end
 # a\bar{a}b\bar{b} a_2^+\bar{a}_2^+a_2^-\bar{a}_2^-b_2^+\bar{b}_2^+b_2^-\bar{b}_2^- a_1^+\bar{a}_1^+a_1^-\bar{a}_1^-b_1^+\bar{b}_1^+b_1^-\bar{b}_1^-
 function index(x::RealGrassmannLattice{<:A1A1a1a1B1B1b1b1}, i::Int; conj::Bool, forward::Union{Bool, Nothing}=nothing, band::Int=1)
 	(0 <= i <= x.k) || throw(BoundsError())
+	@assert (1 <= band <= x.bands)
 	TL = length(x)
 	bands = x.bands
 	if i == 0
@@ -136,6 +138,7 @@ end
 # a\bar{a}b\bar{b} a_2^+\bar{a}_2^+a_1^+\bar{a}_1^+ a_2^-\bar{a}_2^-a_1^-\bar{a}_1^- b_2^+\bar{b}_2^+b_1^+\bar{b}_1^+  b_2^-\bar{b}_2^-b_1^-\bar{b}_1^-
 function index(x::RealGrassmannLattice{<:A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1}, i::Int; conj::Bool, forward::Union{Bool, Nothing}=nothing, band::Int=1)
 	(0 <= i <= x.k) || throw(BoundsError())
+	@assert (1 <= band <= x.bands)
 	TL = length(x)
 	n = 4 * x.k
 	if i == 0
@@ -153,6 +156,7 @@ end
 # ab\bar{b}\bar{a} a_2^+b_2^+\bar{b}_2^+\bar{a}_2^+a_1^+b_1^+\bar{b}_1^+\bar{a}_1^+ a_1^-b_1^-\bar{b}_1^-\bar{a}_1^-a_2^-b_2^-\bar{b}_2^-\bar{a}_2^-
 function index(x::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, i::Int; conj::Bool, forward::Union{Bool, Nothing}=nothing, band::Int=1)
 	(0 <= i <= x.k) || throw(BoundsError())
+	@assert (1 <= band <= x.bands)
 	TL = length(x)
 	bands = x.bands
 	if i == 0
@@ -171,6 +175,7 @@ end
 # a\bar{a}b\bar{b} a_2^+\bar{a}_2^+b_2^+\bar{b}_2^+a_1^+\bar{a}_1^+b_1^+\bar{b}_1^+ a_1^-\bar{a}_1^-b_1^-\bar{b}_1^-a_2^-\bar{a}_2^-b_2^-\bar{b}_2^-
 function index(x::RealGrassmannLattice{<:A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2}, i::Int; conj::Bool, forward::Union{Bool, Nothing}=nothing, band::Int=1)
 	(0 <= i <= x.k) || throw(BoundsError())
+	@assert (1 <= band <= x.bands)
 	TL = length(x)
 	bands = x.bands
 	if i == 0
