@@ -1,20 +1,12 @@
-
-DMRG.space_l(a::GrassmannMPS) = space_l(a[1])
-DMRG.space_r(a::GrassmannMPS) = space_r(a[end])
-
 # # # the convention here is different from DMRG!!!
-# r_RR(a::GrassmannMPS, b::GrassmannMPS) = DMRG.loose_isometry(Matrix{promote_type(scalartype(a), scalartype(b))}, space_r(a), space_r(b))
-# l_LL(a::GrassmannMPS, b::GrassmannMPS) = DMRG.loose_isometry(Matrix{promote_type(scalartype(a), scalartype(b))}, space_l(a), space_l(b))
-
-
 TK.dot(psiA::GrassmannMPS, psiB::GrassmannMPS) = _dot(psiA, psiB) * (scaling(psiA) * scaling(psiB))^length(psiA)
 function TK.norm(psi::GrassmannMPS) 
 	a = real(_dot(psi, psi))
     # println("a is ", a)
 	return sqrt(a) * scaling(psi)^(length(psi))
 end
-DMRG.distance(a::GrassmannMPS, b::GrassmannMPS) = DMRG._distance(a, b)
-DMRG.distance2(a::GrassmannMPS, b::GrassmannMPS) = DMRG._distance2(a, b)
+DMRG.distance(a::AbstractGMPS, b::AbstractGMPS) = DMRG._distance(a, b)
+DMRG.distance2(a::AbstractGMPS, b::AbstractGMPS) = DMRG._distance2(a, b)
 
 _dot(psiA::GrassmannMPS, psiB::GrassmannMPS) = dot(MPS(psiA.data), MPS(psiB.data))
 # 	(length(psiA) == length(psiB)) || throw(DimensionMismatch())
@@ -135,7 +127,7 @@ function right_embedders(::Type{T}, a::S...) where {T <: Number, S <: Elementary
     return ts
 end
 
-function TK.permute!(x::GrassmannMPS, perm::Vector{Int}; trunc::TruncationScheme=DMRG.DefaultTruncation)
+function _permute!(x::AbstractGMPS, perm::Vector{Int}; trunc::TruncationScheme=DMRG.DefaultTruncation)
     @assert length(x) == length(perm)
     if svectors_uninitialized(x)
         canonicalize!(x, alg=Orthogonalize(trunc=trunc, normalize=false))
@@ -146,4 +138,5 @@ function TK.permute!(x::GrassmannMPS, perm::Vector{Int}; trunc::TruncationScheme
     end
     return x
 end
-TK.permute(x::GrassmannMPS, perm::Vector{Int}; kwargs...) = permute!(deepcopy(x), perm; kwargs...)
+TK.permute!(x::GrassmannMPS, perm::Vector; kwargs...) = _permute!(x, perm; kwargs...)
+TK.permute(x::AbstractGMPS, perm::Vector{Int}; kwargs...) = permute!(deepcopy(x), perm; kwargs...)

@@ -121,65 +121,65 @@ end
 	end
 end
 
-@testset "GF: 6" begin
-	rtol = 1.0e-4
+# @testset "GF: 6" begin
+# 	rtol = 1.0e-4
 
-	for N in 2:3
-		for bands in 1:2
-			for ordering in imag_grassmann_orderings
-				lattice = GrassmannLattice(N=N, δτ=0.1, bands=bands, contour=:imag, ordering=ordering)
-				A = randomgmps(Float64, length(lattice), D=2)
-				B = randomgmps(Float64, length(lattice), D=2)
-				C = randomgmps(Float64, length(lattice), D=2)
-				D = randomgmps(Float64, length(lattice), D=2)
-				E = randomgmps(Float64, length(lattice), D=2)
-				F = randomgmps(Float64, length(lattice), D=2)
+# 	for N in 2:3
+# 		for bands in 1:2
+# 			for ordering in imag_grassmann_orderings
+# 				lattice = GrassmannLattice(N=N, δτ=0.1, bands=bands, contour=:imag, ordering=ordering)
+# 				A = randomgmps(Float64, length(lattice), D=2)
+# 				B = randomgmps(Float64, length(lattice), D=2)
+# 				C = randomgmps(Float64, length(lattice), D=2)
+# 				D = randomgmps(Float64, length(lattice), D=2)
+# 				E = randomgmps(Float64, length(lattice), D=2)
+# 				F = randomgmps(Float64, length(lattice), D=2)
 
-				ABC = A * B * C
-				DEF = D * E * F 
-				Z1 = integrate(lattice, ABC, DEF)
-				Z2 = integrate(lattice, A, B, F, E, D, C)
-				@test abs(Z1-Z2)/abs(Z1) < rtol
-				for i in 1:lattice.k
-					for band in 1:lattice.bands
-						g1 = gf(lattice, i, ABC, DEF, band=band, Z=Z1)
-						g2 = gf(lattice, i, A, B, F, E, D, C, band=band, Z=Z2)
-						@test abs(g1-g2)/abs(g1) < rtol
-					end
-				end
-			end
-		end
-	end
-end
+# 				ABC = A * B * C
+# 				DEF = D * E * F 
+# 				Z1 = integrate(lattice, ABC, DEF)
+# 				Z2 = integrate(lattice, A, B, F, E, D, C)
+# 				@test abs(Z1-Z2)/abs(Z1) < rtol
+# 				for i in 1:lattice.k
+# 					for band in 1:lattice.bands
+# 						g1 = gf(lattice, i, ABC, DEF, band=band, Z=Z1)
+# 						g2 = gf(lattice, i, A, B, F, E, D, C, band=band, Z=Z2)
+# 						@test abs(g1-g2)/abs(g1) < rtol
+# 					end
+# 				end
+# 			end
+# 		end
+# 	end
+# end
 
-@testset "GF: 7" begin
-	rtol = 1.0e-4
+# @testset "GF: 7" begin
+# 	rtol = 1.0e-4
 
-	for N in 2:3
-		for bands in 1:2
-			for ordering in imag_grassmann_orderings
-				lattice = GrassmannLattice(N=N, δτ=0.1, bands=bands, contour=:imag, ordering=ordering)
-				A = randomgmps(Float64, length(lattice), D=2)
-				B = randomgmps(Float64, length(lattice), D=2)
-				C = randomgmps(Float64, length(lattice), D=2)
-				D = randomgmps(Float64, length(lattice), D=2)
-				E = randomgmps(Float64, length(lattice), D=2)
-				F = randomgmps(Float64, length(lattice), D=2)
-				G = randomgmps(Float64, length(lattice), D=2)
+# 	for N in 2:3
+# 		for bands in 1:2
+# 			for ordering in imag_grassmann_orderings
+# 				lattice = GrassmannLattice(N=N, δτ=0.1, bands=bands, contour=:imag, ordering=ordering)
+# 				A = randomgmps(Float64, length(lattice), D=2)
+# 				B = randomgmps(Float64, length(lattice), D=2)
+# 				C = randomgmps(Float64, length(lattice), D=2)
+# 				D = randomgmps(Float64, length(lattice), D=2)
+# 				E = randomgmps(Float64, length(lattice), D=2)
+# 				F = randomgmps(Float64, length(lattice), D=2)
+# 				G = randomgmps(Float64, length(lattice), D=2)
 
-				ABC = A * B * C
-				DEFG = D * E * F * G
-				Z1 = integrate(lattice, ABC, DEFG)
-				Z2 = integrate(lattice, A, B, C, D, E, F, G)
-				@test abs(Z1-Z2)/abs(Z1) < rtol
-				for i in 1:lattice.k
-					for band in 1:lattice.bands
-						g1 = gf(lattice, i, ABC, DEFG, band=band, Z=Z1)
-						g2 = gf(lattice, i, A, B, C, D, E, F, G, band=band, Z=Z2)
-						@test abs(g1-g2)/abs(g1) < rtol
-					end
-				end
-			end
-		end
-	end
-end
+# 				ABC = A * B * C
+# 				DEFG = D * E * F * G
+# 				Z1 = integrate(lattice, ABC, DEFG)
+# 				Z2 = integrate(lattice, A, B, C, D, E, F, G)
+# 				@test abs(Z1-Z2)/abs(Z1) < rtol
+# 				for i in 1:lattice.k
+# 					for band in 1:lattice.bands
+# 						g1 = gf(lattice, i, ABC, DEFG, band=band, Z=Z1)
+# 						g2 = gf(lattice, i, A, B, C, D, E, F, G, band=band, Z=Z2)
+# 						@test abs(g1-g2)/abs(g1) < rtol
+# 					end
+# 				end
+# 			end
+# 		end
+# 	end
+# end

@@ -43,14 +43,16 @@ function TwosideExpectationCache(lattice::AbstractGrassmannLattice, As::Tuple; t
 	hleft = Vector{typeof(left)}(undef, Lhalf+1)
 	hleft[1] = left
 	for i in 1:Lhalf
-		hleft[i+1] = update_pair_left(hleft[i], i, xs..., trunc=trunc)
+		hleft[i+1] = hleft[i] * GrassmannTransferMatrix(i, xs...)
+		# hleft[i+1] = update_pair_left(hleft[i], i, xs..., trunc=trunc)
 	end
 
 	right = r_RR(xs...)
 	hright = Vector{typeof(right)}(undef, Lhalf+1)
 	hright[Lhalf+1] = right
 	for i in Lhalf:-1:1
-		hright[i] = update_pair_right(hright[i+1], i, xs..., trunc=trunc)
+		hright[i] = GrassmannTransferMatrix(i, xs...) * hright[i+1]
+		# hright[i] = update_pair_right(hright[i+1], i, xs..., trunc=trunc)
 	end
 	return TwosideExpectationCache(first(As), Base.tail(As), lattice, hleft, hright)
 end
@@ -83,7 +85,8 @@ function integrate_unnormalized(m::PartialMPO, cache::TwosideExpectationCache; t
 	right = rightenv(cache, k) 
 	A2 = _mult_A(m, cache.A)
 	for tj in k:-1:j
-		right = update_pair_right(right, tj, A2, cache.Bs..., trunc=trunc)
+		right = GrassmannTransferMatrix(tj, A2, cache.Bs...) * right 
+		# right = update_pair_right(right, tj, A2, cache.Bs..., trunc=trunc)
 	end	
 	return contract_center(left, right) 	
 end
@@ -107,7 +110,8 @@ function LeftExpectationCache(lattice::AbstractGrassmannLattice, As::Tuple; trun
 	hleft = Vector{typeof(left)}(undef, Lhalf+1)
 	hleft[1] = left
 	for i in 1:Lhalf
-		hleft[i+1] = update_pair_left(hleft[i], i, xs..., trunc=trunc)
+		hleft[i+1] = hleft[i] * GrassmannTransferMatrix(i, xs...)
+		# hleft[i+1] = update_pair_left(hleft[i], i, xs..., trunc=trunc)
 	end
 	return LeftExpectationCache(first(As), Base.tail(As), lattice, hleft)
 end
@@ -139,7 +143,8 @@ function integrate_unnormalized(m::PartialMPO, cache::LeftExpectationCache; trun
 	left = leftenv(cache, j)  
 	A2 = _mult_A(m, cache.A)
 	for tj in j:pos2pairindex(length(cache))
-		left = update_pair_left(left, tj, A2, cache.Bs..., trunc=trunc)
+		left = left * GrassmannTransferMatrix(tj, A2, cache.Bs...)
+		# left = update_pair_left(left, tj, A2, cache.Bs..., trunc=trunc)
 	end	
 	return TK.scalar(left) 
 end

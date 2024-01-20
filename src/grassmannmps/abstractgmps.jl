@@ -28,3 +28,17 @@ DMRG.left_virtualspaces(a::AbstractGMPS) = [left_virtualspace(a, i) for i in 1:l
 DMRG.right_virtualspaces(a::AbstractGMPS) = [right_virtualspace(a, i) for i in 1:length(a)]
 
 
+edgespace(::Type{<:AbstractFiniteGMPS}) = Rep[ℤ₂](0=>1)
+edgespace(x::AbstractGMPS) = edgespace(typeof(x))
+
+function DMRG.l_LL(f, vspace::ElementarySpace, x::AbstractGMPS, ys::AbstractGMPS...)
+	T = promote_type(scalartype(x), map(scalartype, ys)...)
+	return TensorMap(f, T, vspace, ⊗(space_l(x), map(y->space_l(y), ys)...))
+end
+DMRG.l_LL(x::AbstractGMPS, ys::AbstractGMPS...) = l_LL(ones, edgespace(x), x, ys...)
+
+function DMRG.r_RR(f, vspace::ElementarySpace, x::AbstractGMPS, ys::AbstractGMPS...)
+	T = promote_type(scalartype(x), map(scalartype, ys)...)
+	return TensorMap(f, T, ⊗(space_r(x)', map(y->space_r(y)', reverse(ys))...), vspace)
+end
+DMRG.r_RR(x::AbstractGMPS, ys::AbstractGMPS...) = r_RR(ones, edgespace(x), x, ys...)

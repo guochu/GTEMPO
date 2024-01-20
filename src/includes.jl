@@ -1,6 +1,5 @@
 using Logging: @warn
-using LinearAlgebra: mul!, rmul!, axpy!, tr
-using QuadGK, Permutations, Reexport
+using QuadGK, Permutations, Reexport, TupleTools, Strided
 using SphericalTensors: SphericalTensors, QR, SVD
 const TK = SphericalTensors
 @reexport using DMRG, ImpurityModelBase
@@ -10,9 +9,11 @@ const TK = SphericalTensors
 # Grassmann MPS operations
 include("grassmannmps/space.jl")
 include("grassmannmps/grassmannterms.jl")
+include("grassmannmps/abstractgmps.jl")
 include("grassmannmps/grassmannmps.jl")
 include("grassmannmps/orth.jl")
 include("grassmannmps/linalg.jl")
+include("grassmannmps/transfer.jl")
 
 # Grassmann lattice and integration
 include("lattices/lattices.jl")

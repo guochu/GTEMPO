@@ -1,7 +1,7 @@
 """
 	GrassmannMPS{A, B}
 """
-struct GrassmannMPS{A <: MPSTensor, B <: MPSBondTensor} 
+struct GrassmannMPS{A <: MPSTensor, B <: MPSBondTensor} <: AbstractFiniteGMPS{A}
 	data::Vector{A}
 	svectors::Vector{Union{Missing, B}}
 	scaling::Ref{Float64}
@@ -43,7 +43,6 @@ setscaling!(x::GrassmannMPS, scaling::Real) = (x.scaling[] = scaling)
 
 Base.length(x::GrassmannMPS) = length(x.data)
 Base.isempty(x::GrassmannMPS) = isempty(x.data)
-TK.scalartype(::Type{GrassmannMPS{A, B}}) where {A, B} = scalartype(A)
 Base.getindex(x::GrassmannMPS, i::Int) = getindex(x.data, i)
 Base.firstindex(x::GrassmannMPS) = firstindex(x.data)
 Base.lastindex(x::GrassmannMPS) = lastindex(x.data)
@@ -56,18 +55,14 @@ function Base.setindex!(x::GrassmannMPS, v::MPSTensor, i::Int)
 end
 
 DMRG.svectors_uninitialized(psi::GrassmannMPS) = any(ismissing, psi.svectors)
-# Base.copy(x::GrassmannMPS) = GrassmannMPS(copy(x.data), scaling=scaling(x))
-
 Base.copy(psi::GrassmannMPS) = GrassmannMPS(copy(psi.data), copy(psi.svectors), Ref(scaling(psi)))
-
-DMRG.bond_dimension(a::GrassmannMPS, bond::Int) = begin
-	((bond >= 1) && (bond <= length(a))) || throw(BoundsError())
-	dim(space(a[bond], 3))
-end 
-DMRG.bond_dimensions(a::GrassmannMPS) = [bond_dimension(a, i) for i in 1:length(a)]
-DMRG.bond_dimension(a::GrassmannMPS) = maximum(bond_dimensions(a))
-TK.spacetype(::Type{GrassmannMPS{A, B}}) where {A, B} = spacetype(A)
-TK.spacetype(x::GrassmannMPS) = spacetype(typeof(x))
+function Base.complex(psi::GrassmannMPS)
+	if scalartype(psi) <: Real
+		data = [complex(item) for item in psi.data]
+		return GrassmannMPS(data, psi.svectors, x.scaling)
+	end
+	return psi
+end
 
 # Base.:+(x::GrassmannMPS, y::GrassmannMPS) = GrassmannMPS(x.data + y.data)
 

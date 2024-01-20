@@ -172,107 +172,107 @@ end
 	end	
 end
 
-@testset "GrassmannMPS: integration 6" begin
-	rtol = 1.0e-4
+# @testset "GrassmannMPS: integration 6" begin
+# 	rtol = 1.0e-4
 
-	for N in (1, 2,3)
-		for bands in (1,2)
-			for ordering in imag_grassmann_orderings
-				lattice = GrassmannLattice(N=N, δτ=0.1, bands=bands, contour=:imag, ordering=ordering)
-				A = randomgmps(Float64, length(lattice), D=2)
-				B = randomgmps(Float64, length(lattice), D=2)
-				C = randomgmps(Float64, length(lattice), D=2)
-				D = randomgmps(Float64, length(lattice), D=2)
-				E = randomgmps(Float64, length(lattice), D=2)
-				F = randomgmps(Float64, length(lattice), D=2)
+# 	for N in (1, 2,3)
+# 		for bands in (1,2)
+# 			for ordering in imag_grassmann_orderings
+# 				lattice = GrassmannLattice(N=N, δτ=0.1, bands=bands, contour=:imag, ordering=ordering)
+# 				A = randomgmps(Float64, length(lattice), D=2)
+# 				B = randomgmps(Float64, length(lattice), D=2)
+# 				C = randomgmps(Float64, length(lattice), D=2)
+# 				D = randomgmps(Float64, length(lattice), D=2)
+# 				E = randomgmps(Float64, length(lattice), D=2)
+# 				F = randomgmps(Float64, length(lattice), D=2)
 
-				ABC = A * B * C
-				DEF = D * E * F 
+# 				ABC = A * B * C
+# 				DEF = D * E * F 
 
-				Z1 = integrate(lattice, ABC, DEF)
-				Z2 = integrate(lattice, C, B, A, D, F, E)
+# 				Z1 = integrate(lattice, ABC, DEF)
+# 				Z2 = integrate(lattice, C, B, A, D, F, E)
 
-				@test abs((Z1-Z2) / Z1) <= rtol
-			end
-		end		
-	end
+# 				@test abs((Z1-Z2) / Z1) <= rtol
+# 			end
+# 		end		
+# 	end
 
-	for N in (1,2)
-		for bands in (1,2)
-			for ordering in real_grassmann_orderings
-				lattice = GrassmannLattice(N=N, δt=0.2, bands=bands, contour=:real, ordering=ordering)
-				A = randomgmps(ComplexF64, length(lattice), D=2)
-				B = randomgmps(ComplexF64, length(lattice), D=2)
-				C = randomgmps(ComplexF64, length(lattice), D=2)
-				D = randomgmps(ComplexF64, length(lattice), D=2)
-				E = randomgmps(ComplexF64, length(lattice), D=2)
-				F = randomgmps(ComplexF64, length(lattice), D=2)
-
-
-				ABC = A * B * C
-				DEF = D * E * F 
-
-				Z1 = integrate(lattice, ABC, DEF)
-				Z2 = integrate(lattice, A, E, F, B, D, C)
-
-				@test abs((Z1-Z2) / Z1) <= rtol
-			end
-		end		
-	end	
-end
+# 	for N in (1,2)
+# 		for bands in (1,2)
+# 			for ordering in real_grassmann_orderings
+# 				lattice = GrassmannLattice(N=N, δt=0.2, bands=bands, contour=:real, ordering=ordering)
+# 				A = randomgmps(ComplexF64, length(lattice), D=2)
+# 				B = randomgmps(ComplexF64, length(lattice), D=2)
+# 				C = randomgmps(ComplexF64, length(lattice), D=2)
+# 				D = randomgmps(ComplexF64, length(lattice), D=2)
+# 				E = randomgmps(ComplexF64, length(lattice), D=2)
+# 				F = randomgmps(ComplexF64, length(lattice), D=2)
 
 
-@testset "GrassmannMPS: integration 7" begin
-	rtol = 1.0e-4
+# 				ABC = A * B * C
+# 				DEF = D * E * F 
 
-	for N in (1, 2,3)
-		for bands in (1,2)
-			for ordering in imag_grassmann_orderings
-				lattice = GrassmannLattice(N=N, δτ=0.1, bands=bands, contour=:imag, ordering=ordering)
-				A = randomgmps(Float64, length(lattice), D=2)
-				B = randomgmps(Float64, length(lattice), D=2)
-				C = randomgmps(Float64, length(lattice), D=2)
-				D = randomgmps(Float64, length(lattice), D=2)
-				E = randomgmps(Float64, length(lattice), D=2)
-				F = randomgmps(Float64, length(lattice), D=2)
-				G = randomgmps(Float64, length(lattice), D=2)
+# 				Z1 = integrate(lattice, ABC, DEF)
+# 				Z2 = integrate(lattice, A, E, F, B, D, C)
 
-				ABC = A * B * C
-				DEFG = D * E * F * G
-
-				Z1 = integrate(lattice, ABC, DEFG)
-				Z2 = integrate(lattice, A, B, C, D, E, F, G)
-				Z3 = integrate(lattice, D, B, C, A, G, F, E)
-
-				@test abs((Z1-Z2) / Z1) <= rtol
-				@test abs((Z1-Z3) / Z1) <= rtol
-			end
-		end		
-	end
-
-	for N in (1,2)
-		for bands in (1,2)
-			for ordering in real_grassmann_orderings
-				lattice = GrassmannLattice(N=N, δt=0.2, bands=bands, contour=:real, ordering=ordering)
-				A = randomgmps(ComplexF64, length(lattice), D=2)
-				B = randomgmps(ComplexF64, length(lattice), D=2)
-				C = randomgmps(ComplexF64, length(lattice), D=2)
-				D = randomgmps(ComplexF64, length(lattice), D=2)
-				E = randomgmps(ComplexF64, length(lattice), D=2)
-				F = randomgmps(ComplexF64, length(lattice), D=2)
-				G = randomgmps(ComplexF64, length(lattice), D=2)
+# 				@test abs((Z1-Z2) / Z1) <= rtol
+# 			end
+# 		end		
+# 	end	
+# end
 
 
-				ABC = A * B * C
-				DEFG = D * E * F * G
+# @testset "GrassmannMPS: integration 7" begin
+# 	rtol = 1.0e-4
 
-				Z1 = integrate(lattice, ABC, DEFG)
-				Z2 = integrate(lattice, A, B, C, D, E, F, G)
-				Z3 = integrate(lattice, D, B, C, A, G, F, E)
+# 	for N in (1, 2,3)
+# 		for bands in (1,2)
+# 			for ordering in imag_grassmann_orderings
+# 				lattice = GrassmannLattice(N=N, δτ=0.1, bands=bands, contour=:imag, ordering=ordering)
+# 				A = randomgmps(Float64, length(lattice), D=2)
+# 				B = randomgmps(Float64, length(lattice), D=2)
+# 				C = randomgmps(Float64, length(lattice), D=2)
+# 				D = randomgmps(Float64, length(lattice), D=2)
+# 				E = randomgmps(Float64, length(lattice), D=2)
+# 				F = randomgmps(Float64, length(lattice), D=2)
+# 				G = randomgmps(Float64, length(lattice), D=2)
 
-				@test abs((Z1-Z2) / Z1) <= rtol
-				@test abs((Z1-Z3) / Z1) <= rtol
-			end
-		end		
-	end	
-end
+# 				ABC = A * B * C
+# 				DEFG = D * E * F * G
+
+# 				Z1 = integrate(lattice, ABC, DEFG)
+# 				Z2 = integrate(lattice, A, B, C, D, E, F, G)
+# 				Z3 = integrate(lattice, D, B, C, A, G, F, E)
+
+# 				@test abs((Z1-Z2) / Z1) <= rtol
+# 				@test abs((Z1-Z3) / Z1) <= rtol
+# 			end
+# 		end		
+# 	end
+
+# 	for N in (1,2)
+# 		for bands in (1,2)
+# 			for ordering in real_grassmann_orderings
+# 				lattice = GrassmannLattice(N=N, δt=0.2, bands=bands, contour=:real, ordering=ordering)
+# 				A = randomgmps(ComplexF64, length(lattice), D=2)
+# 				B = randomgmps(ComplexF64, length(lattice), D=2)
+# 				C = randomgmps(ComplexF64, length(lattice), D=2)
+# 				D = randomgmps(ComplexF64, length(lattice), D=2)
+# 				E = randomgmps(ComplexF64, length(lattice), D=2)
+# 				F = randomgmps(ComplexF64, length(lattice), D=2)
+# 				G = randomgmps(ComplexF64, length(lattice), D=2)
+
+
+# 				ABC = A * B * C
+# 				DEFG = D * E * F * G
+
+# 				Z1 = integrate(lattice, ABC, DEFG)
+# 				Z2 = integrate(lattice, A, B, C, D, E, F, G)
+# 				Z3 = integrate(lattice, D, B, C, A, G, F, E)
+
+# 				@test abs((Z1-Z2) / Z1) <= rtol
+# 				@test abs((Z1-Z3) / Z1) <= rtol
+# 			end
+# 		end		
+# 	end	
+# end

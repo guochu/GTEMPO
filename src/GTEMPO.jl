@@ -1,7 +1,9 @@
 module GTEMPO
 
-# TEMPO backend
-export AbstractGTerm, GTerm, ExpGTerm, GrassmannMPS, grassmannpspace, scaling, setscaling!, randomgmps, mult!, mult
+# Grassmann MPS
+export AbstractGTerm, GTerm, ExpGTerm, grassmannpspace
+export AbstractGMPS, AbstractFiniteGMPS, edgespace, GrassmannMPS, scaling, setscaling!, randomgmps, mult!, mult
+
 # Ordering of grasmann numbers
 export GrassmannOrdering, ImagGrassmannOrdering, RealGrassmannOrdering
 export AbstractGrassmannLattice, ImagGrassmannLattice, RealGrassmannLattice, matchindices
@@ -32,7 +34,7 @@ export zoomin, zoomout
 
 
 using Logging: @warn
-using QuadGK, Permutations, Reexport
+using QuadGK, Permutations, Reexport, TupleTools, Strided
 using SphericalTensors: SphericalTensors, QR, SVD
 const TK = SphericalTensors
 @reexport using DMRG, ImpurityModelBase
@@ -42,9 +44,11 @@ const TK = SphericalTensors
 # Grassmann MPS operations
 include("grassmannmps/space.jl")
 include("grassmannmps/grassmannterms.jl")
+include("grassmannmps/abstractgmps.jl")
 include("grassmannmps/grassmannmps.jl")
 include("grassmannmps/orth.jl")
 include("grassmannmps/linalg.jl")
+include("grassmannmps/transfer.jl")
 
 # Grassmann lattice and integration
 include("lattices/lattices.jl")
