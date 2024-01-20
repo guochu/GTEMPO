@@ -36,6 +36,11 @@ function Base.getproperty(x::ImagGrassmannLattice1Order, s::Symbol)
 		getfield(x, s)
 	end
 end
+# function Base.:(==)(a::ImagGrassmannLattice1Order, b::ImagGrassmannLattice1Order)
+# 	return (a.δτ == b.δτ) && (a.bands == b.bands) && (a.N == b.N) && (OrderingStype(a) == OrderingStyle(b))
+# end
+
+
 # ab\bar{b}\bar{a} a_2b_2\bar{b}_2\bar{a}_2 a_1b_1\bar{b}_1\bar{a}_1
 function index(x::ImagGrassmannLattice{<:A1B1B1A1}, i::Int; conj::Bool, band::Int=1)
 	(0 <= i <= x.k) || throw(BoundsError())
@@ -71,4 +76,19 @@ function index(x::ImagGrassmannLattice{<:A2A2A1A1B2B2B1B1}, i::Int; conj::Bool, 
 		ifelse(conj, (band-1) * n + (x.k-i)*2 + 2, (band-1) * n + (x.k-i)*2 + 1) + 2 * x.bands
 	end	
 end
+
+
+
+function indexmappings(lattice::ImagGrassmannLattice)
+	r = Dict{Tuple{Int, Bool, Int}, Int}()
+	for i in 0:lattice.k
+		for c in (true, false)
+			for band in 1:lattice.bands
+				r[(i, c, band)] = index(lattice, i, conj=c, band=band)
+			end
+		end
+	end
+	return r
+end
+
 

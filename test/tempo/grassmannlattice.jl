@@ -399,7 +399,6 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 end
 
-
 @testset "GrassmannLattice: real time A1A1a1a1B1B1b1b1" begin
 	# a\bar{a} a_3^+\bar{a}_3^+a_3^-\bar{a}_3^- a_2^+\bar{a}_2^+a_2^-\bar{a}_2^- a_1^+\bar{a}_1^+a_1^-\bar{a}_1^-
 	lattice = GrassmannLattice(N=2, δt=0.05, contour=:real, ordering=A1A1a1a1B1B1b1b1())
@@ -872,3 +871,59 @@ end
 	mps = vacuumstate(lattice)
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 end
+
+@testset "ImagGrassmannLattice: change ordering" begin
+	function check_lattice_match(tsc, src, mapping)
+		for i in 1:tsc.k
+			for c in (true, false)
+				for band in 1:tsc.bands
+					if mapping[index(tsc, i, conj=c, band=band)] != index(src, i, conj=c, band=band)
+						return false
+					end
+				end
+			end
+		end
+		return true
+	end
+	
+	N = 3
+	bands = 2
+	for o1 in imag_grassmann_orderings
+		tsc = GrassmannLattice(δτ=0.1, N=N, contour=:imag, bands=bands, ordering=o1)
+		for o2 in imag_grassmann_orderings
+			src = GrassmannLattice(δτ=0.1, N=N, contour=:imag, bands=bands, ordering=o2)
+			mapping = matchindices(tsc, src)
+			@test check_lattice_match(tsc, src, mapping)
+		end
+	end
+end
+
+
+@testset "RealGrassmannLattice: change ordering" begin
+	function check_lattice_match(tsc, src, mapping)
+		for i in 1:tsc.k
+			for c in (true, false)
+				for band in 1:tsc.bands
+					for f in (true, false)
+						if mapping[index(tsc, i, conj=c, forward=f, band=band)] != index(src, i, conj=c, forward=f, band=band)
+							return false
+						end
+					end
+				end
+			end
+		end
+		return true
+	end
+	
+	N = 2
+	bands = 3
+	for o1 in real_grassmann_orderings
+		tsc = GrassmannLattice(δt=0.1, N=N, contour=:real, bands=bands, ordering=o1)
+		for o2 in real_grassmann_orderings
+			src = GrassmannLattice(δt=0.1, N=N, contour=:real, bands=bands, ordering=o2)
+			mapping = matchindices(tsc, src)
+			@test check_lattice_match(tsc, src, mapping)
+		end
+	end
+end
+

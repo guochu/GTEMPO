@@ -60,7 +60,7 @@ function Base.convert(::Type{<:PartialMPO}, x::GTerm)
 end
 
 
-struct ExpGTerm{N, T <:Number} 
+struct ExpGTerm{N, T <:Number} <: AbstractGTerm
 	data::GTerm{N, T}
 end
 TK.scalartype(::Type{ExpGTerm{N, T}}) where {N, T} = T
@@ -70,5 +70,3 @@ function Base.convert(::Type{<:PartialMPO}, x::ExpGTerm)
 	t1 = convert(PartialMPO, x.data)
 	return t1 + id(t1)
 end
-tompo(x::Union{GTerm, ExpGTerm}, L::Int) = prodmpo([_ph for i in 1:L], convert(PartialMPO, x))
-

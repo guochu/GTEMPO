@@ -1,7 +1,6 @@
 abstract type GrassmannOrdering end
 abstract type ImagGrassmannOrdering <: GrassmannOrdering end
 abstract type RealGrassmannOrdering <: GrassmannOrdering end
-abstract type MixedGrassmannOrdering <: GrassmannOrdering end
 
 abstract type ConjugationStyle end
 struct AdjacentConjugation <: ConjugationStyle end

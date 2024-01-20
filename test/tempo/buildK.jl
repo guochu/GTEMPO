@@ -28,13 +28,13 @@ end
 		for f in (true, false)
 			K1 = sysdynamics(lattice1, exact_model, forward=f)
 			K2 = sysdynamics(lattice2, exact_model, forward=f)
-			K2′ = changeordering(A1A1a1a1B1B1b1b1, lattice1, K1)
+			K2′ = changeordering(A1A1a1a1B1B1b1b1, lattice1, K1)[2]
 			@test distance(K2, K2′) / norm(K2) < tol
 		end
 		if norb == 1
 			K1 = sysdynamics(lattice1, exact_model)
 			K2 = sysdynamics(lattice2, exact_model)
-			K2′ = changeordering(A1A1a1a1B1B1b1b1, lattice1, K1)
+			K2′ = changeordering(A1A1a1a1B1B1b1b1, lattice1, K1)[2]
 			@test distance(K2, K2′) / norm(K2) < tol			
 		end
 	end

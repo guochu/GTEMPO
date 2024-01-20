@@ -2,6 +2,8 @@
 DMRG.l_LL(x::GrassmannMPS, y::GrassmannMPS, z::GrassmannMPS...) = error("l_LL not implemented for $(2+length(z)) mps")
 DMRG.r_RR(x::GrassmannMPS, y::GrassmannMPS, z::GrassmannMPS...) = error("r_RR not implemented for $(2+length(z)) mps")
 
+edgespace() = Rep[ℤ₂](0=>1)
+
 function DMRG.l_LL(x::GrassmannMPS)
 	vacuum = space_l(x)
 	left = isomorphism(Matrix{scalartype(x)}, one(vacuum), vacuum)
