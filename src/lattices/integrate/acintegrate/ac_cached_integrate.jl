@@ -57,8 +57,8 @@ function TwosideExpectationCache(lattice::AbstractGrassmannLattice, As::Tuple; t
 	return TwosideExpectationCache(first(As), Base.tail(As), lattice, hleft, hright)
 end
 
-_environments(alg::ExactIntegrate, lattice::AbstractGrassmannLattice, A::GrassmannMPS, B::GrassmannMPS; kwargs...) = TwosideExpectationCache(lattice, (A, B); kwargs...)
-_environments(alg::ExactIntegrate, lattice::AbstractGrassmannLattice, A::GrassmannMPS, B::GrassmannMPS, C::GrassmannMPS; kwargs...) = TwosideExpectationCache(lattice, (A, B, C); kwargs...)
+_environments(alg::ExactIntegrate, lattice::AbstractGrassmannLattice, A::GrassmannMPS, B::GrassmannMPS...; kwargs...) = TwosideExpectationCache(lattice, (A, B...); kwargs...)
+# _environments(alg::ExactIntegrate, lattice::AbstractGrassmannLattice, A::GrassmannMPS, B::GrassmannMPS, C::GrassmannMPS; kwargs...) = TwosideExpectationCache(lattice, (A, B, C); kwargs...)
 
 
 # function _cached_integrate_util(lattice::AbstractGrassmannLattice, j::Int, k::Int, cache::TwosideExpectationCache, A2::GrassmannMPS, Bs::GrassmannMPS...; 
@@ -115,8 +115,8 @@ function LeftExpectationCache(lattice::AbstractGrassmannLattice, As::Tuple; trun
 	end
 	return LeftExpectationCache(first(As), Base.tail(As), lattice, hleft)
 end
-_environments(alg::ExactIntegrate, lattice::AbstractGrassmannLattice, A::GrassmannMPS, B::GrassmannMPS, C::GrassmannMPS, D::GrassmannMPS, E::GrassmannMPS...; 
-						kwargs...) = LeftExpectationCache(lattice, (A, B, C, D, E...); kwargs...)
+# _environments(alg::ExactIntegrate, lattice::AbstractGrassmannLattice, A::GrassmannMPS, B::GrassmannMPS, C::GrassmannMPS, D::GrassmannMPS, E::GrassmannMPS...; 
+# 						kwargs...) = LeftExpectationCache(lattice, (A, B, C, D, E...); kwargs...)
 
 # A2 is temporary and overwritten
 # function _cached_integrate_util(lattice::AbstractGrassmannLattice, j::Int, k::Int, cache::LeftExpectationCache, A2::GrassmannMPS, Bs::GrassmannMPS...; 
