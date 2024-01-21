@@ -1,5 +1,3 @@
-const DefaultITruncation = truncdimcutoff(D=200, ϵ=1.0e-7, add_back=0)
-### generic functions
 """
 	hybriddynamics(gmps::GrassmannMPS, lattice::ImagGrassmannLattice, corr::ImagCorrelationFunction; band, trunc)
 

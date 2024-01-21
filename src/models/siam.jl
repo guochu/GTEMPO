@@ -1,4 +1,3 @@
-const DefaultKTruncation = truncdimcutoff(D=1000, ϵ=1.0e-10, add_back=0)
 
 struct SISB{B <: AbstractFermionicBath} <: AbstractImpurityModel
 	bath::B

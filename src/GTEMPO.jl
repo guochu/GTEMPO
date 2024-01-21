@@ -17,10 +17,14 @@ export changeordering, toadjacentordering
 export vacuumstate, makestep, timesteps
 export ImagGrassmannLattice1Order, RealGrassmannLattice1Order, RealGrassmannLattice2Order, GrassmannLattice, index, integrate
 export IntegrationAlgorithm, ExactIntegrate, BMPSIntegrate
+
 # correlation functions
-export Gτ, Gt, branch, CorrelationMatrix
+export Gτ, Gt, branch, CorrelationMatrix, correlationfunction
+
 # influence functional
 export partialinfluencefunctional
+export hybriddynamics, hybriddynamics!, hybriddynamicsstepper, hybriddynamicsstepper!
+
 # GF and other observables
 export gf, parallel_gf, occupation, electriccurrent, electriccurrent_fast
 export cached_gf, cached_occupation, cached_electriccurrent, cached_electriccurrent_fast
@@ -28,7 +32,6 @@ export cached_gf, cached_occupation, cached_electriccurrent, cached_electriccurr
 # utilities for TEMPO
 # exact models
 export AbstractImpurityModel, SISB, SIDB, IRLM, SKIM, boundarycondition!, boundarycondition, boundarycondition_branching
-export hybriddynamics, hybriddynamicsstepper, qim_hybriddynamics, qim_hybriddynamicsstepper, correlationfunction
 export systhermalstate, systhermalstate!, sysdynamics, sysdynamics!, sysdynamicsstepper!, accsysdynamics, accsysdynamics_fast
 export zoomin, zoomout
 

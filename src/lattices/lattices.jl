@@ -11,7 +11,6 @@ OrderingStyle(x::AbstractGrassmannLattice) = OrderingStyle(typeof(x))
 ConjugationStyle(x::AbstractGrassmannLattice) = ConjugationStyle(typeof(x))
 LayoutStyle(x::AbstractGrassmannLattice) = LayoutStyle(typeof(x))
 
-const DefaultIntegrationTruncation = truncdimcutoff(D=10000, ϵ=1.0e-12, add_back=0)
 
 include("imaginarytime.jl")
 include("realtime.jl")

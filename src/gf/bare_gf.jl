@@ -1,45 +1,41 @@
 ###--------------imaginary time----------------
 function gf(lattice::ImagGrassmannLattice, i::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...;
-            band::Int=1, trunc::TruncationScheme=DefaultIntegrationTruncation, 
-            alg::IntegrationAlgorithm=ExactIntegrate(), Z::Real = integrate(lattice, A, B..., alg=alg, trunc=trunc))
+            band::Int=1, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Real = integrate(lattice, A, B..., alg=alg))
 	pos1, pos2 = index(lattice, i, conj=false, band=band), index(lattice, 1, conj=true, band=band)
 	t = GTerm(pos1, pos2, coeff=1)
 	A2 = _mult_A(t, A)
-	return integrate(lattice, A2, B..., alg=alg, trunc=trunc)/Z
+	return integrate(lattice, A2, B..., alg=alg)/Z
 end
 
 
 
 function parallel_gf(lattice::ImagGrassmannLattice, i::Int, A::Vector{<:GrassmannMPS}, B::GrassmannMPS...; 
-            band::Int=1, trunc::TruncationScheme=DefaultIntegrationTruncation, 
-            alg::IntegrationAlgorithm=ExactIntegrate(), Z::Real = parallel_integrate(lattice, A, B..., alg=alg, trunc=trunc) )
+            band::Int=1, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Real = parallel_integrate(lattice, A, B..., alg=alg) )
     pos1, pos2 = index(lattice, i, conj=false, band=band), index(lattice, 1, conj=true, band=band)
     t = GTerm(pos1, pos2, coeff=1)
     A2 = _mult_A(t, A)
-    return parallel_integrate(lattice, A2, B..., alg=alg, trunc=trunc)/Z
+    return parallel_integrate(lattice, A2, B..., alg=alg)/Z
 end
 
 function gf(lattice::ImagGrassmannLattice1Order, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...;
-            band::Int=1, trunc::TruncationScheme=DefaultIntegrationTruncation, 
-            alg::IntegrationAlgorithm=ExactIntegrate(), Z::Real = integrate(lattice, A, B..., alg=alg, trunc=trunc))
+            band::Int=1, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Real = integrate(lattice, A, B..., alg=alg))
     g = zeros(Float64, lattice.k)
     for i in 1:lattice.k-1
-        g[i] = gf(lattice, i, A, B...; band=band, trunc=trunc, alg=alg, Z=Z)
+        g[i] = gf(lattice, i, A, B...; band=band, alg=alg, Z=Z)
     end
     g[end] = 1 - g[1]
     return g
 end
 
 function parallel_gf(lattice::ImagGrassmannLattice1Order, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
-                     band::Int=1, trunc::TruncationScheme=DefaultIntegrationTruncation,
-                     alg::IntegrationAlgorithm=ExactIntegrate(), Z::Real = parallel_integrate(lattice, A, B..., alg=alg, trunc=trunc))
+                     band::Int=1, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Real = parallel_integrate(lattice, A, B..., alg=alg))
     g = zeros(Float64, lattice.k)
     function _f(ist::Int, ifn::Int, r, lat, args...; kws...)
         for i in ist:ifn
             r[i] = gf(lat, i, args...; kws...)
         end
     end
-    parallel_run(lattice.k-1, Threads.nthreads(), _f, g, lattice, A, B...; Z=Z, band=band, alg=alg, trunc=trunc)
+    parallel_run(lattice.k-1, Threads.nthreads(), _f, g, lattice, A, B...; Z=Z, band=band, alg=alg)
     g[end] = 1 - g[1]
     return g
 end
@@ -47,12 +43,12 @@ end
 ###--------------real time 1 order----------------
 function gf(lattice::RealGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
             f1::Bool, f2::Bool, c1::Bool=true, c2::Bool=false, band::Int=1, 
-            trunc::TruncationScheme=DefaultIntegrationTruncation, alg::IntegrationAlgorithm=ExactIntegrate(), 
-            Z::Number = integrate(lattice, A, B..., alg=alg, trunc=trunc))
+            alg::IntegrationAlgorithm=ExactIntegrate(), 
+            Z::Number = integrate(lattice, A, B..., alg=alg))
     pos1, pos2 = index(lattice, i, conj=c1, forward=f1, band=band), index(lattice, j, conj=c2, forward=f2, band=band)
     t = GTerm(pos1, pos2, coeff=1)
     A2 = _mult_A(t, A)
-    g = integrate(lattice, A2, B..., alg=alg, trunc=trunc)/Z
+    g = integrate(lattice, A2, B..., alg=alg)/Z
     return g
 end
 
@@ -61,28 +57,25 @@ function occupation(lattice::RealGrassmannLattice1Order, i::Int, A::Union{Grassm
     return real(gf(lattice, i, i, A, B...; c1=false, c2=true, f1=true, f2=false, kwargs...))
 end
 occupation(lattice::RealGrassmannLattice1Order, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; band::Int=1, 
-            trunc::TruncationScheme=DefaultIntegrationTruncation, 
             alg::IntegrationAlgorithm=ExactIntegrate(), 
-            Z::Number = integrate(lattice, A, B..., alg=alg, trunc=trunc)) = [occupation(lattice, i, A, B...; alg=alg, trunc=trunc, Z=Z, band=band) for i in 1:lattice.N]
+            Z::Number = integrate(lattice, A, B..., alg=alg)) = [occupation(lattice, i, A, B...; alg=alg, Z=Z, band=band) for i in 1:lattice.N]
 
 
 # real-time first order
 function electriccurrent(lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction, k::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
-                         trunc::TruncationScheme=DefaultIntegrationTruncation,
                          alg::IntegrationAlgorithm=ExactIntegrate(),
-                         Z::Number = integrate(lattice, A, B..., alg=alg, trunc=trunc), band::Int=1, max_range::Int=10000)
+                         Z::Number = integrate(lattice, A, B..., alg=alg), band::Int=1, max_range::Int=10000)
     curr = complex(0.)
     η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
     for j in max(1, k-max_range):k-1
-        curr += η⁺⁺[k, j] * gf(lattice, k, j, A, B...; f1=true, f2=true, Z=Z, band=band, alg=alg, trunc=trunc)
-        curr += η⁺⁻[k, j] * gf(lattice, k, j, A, B...; f1=true, f2=false, Z=Z, band=band, alg=alg, trunc=trunc)
+        curr += η⁺⁺[k, j] * gf(lattice, k, j, A, B...; f1=true, f2=true, Z=Z, band=band, alg=alg)
+        curr += η⁺⁻[k, j] * gf(lattice, k, j, A, B...; f1=true, f2=false, Z=Z, band=band, alg=alg)
     end
     return 2 * curr / lattice.δt
 end
 electriccurrent(lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; band::Int=1,
-                trunc::TruncationScheme=DefaultIntegrationTruncation, 
                 alg::IntegrationAlgorithm=ExactIntegrate(), 
-                Z::Number = integrate(lattice, A, B..., alg=alg, trunc=trunc)) = [electriccurrent(lattice, corr, k, A, B...; alg=alg, trunc=trunc, Z=Z, band=band) for k in 2:lattice.k]
+                Z::Number = integrate(lattice, A, B..., alg=alg)) = [electriccurrent(lattice, corr, k, A, B...; alg=alg, Z=Z, band=band) for k in 2:lattice.k]
 
 """
     electriccurrent_fast(A::GrassmannMPS, B::GrassmannMPS, lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction, k::Int; kwargs...)
@@ -90,18 +83,16 @@ electriccurrent(lattice::RealGrassmannLattice1Order, corr::RealCorrelationFuncti
 Calculate electric current by converting the current operator into an MPO
 """
 function electriccurrent_fast(lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction, k::Int, A::GrassmannMPS, B::GrassmannMPS...; band::Int=1, 
-                            trunc::TruncationScheme=DefaultIntegrationTruncation,
                             alg::IntegrationAlgorithm=ExactIntegrate(), 
-                            Z::Number = integrate(lattice, A, B..., alg=alg, trunc=trunc))
+                            Z::Number = integrate(lattice, A, B..., alg=alg))
     mpo = build_current_mpo(lattice, corr, k, band)
     A2 = mpo * A
-    curr = integrate(lattice, A2, B..., trunc=trunc, alg=alg) / Z
+    curr = integrate(lattice, A2, B..., alg=alg) / Z
     return 2 * curr / lattice.δt
 end
 electriccurrent_fast(lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction, A::GrassmannMPS, B::GrassmannMPS...; band::Int=1,
-                   trunc::TruncationScheme=DefaultIntegrationTruncation,
                    alg::IntegrationAlgorithm=ExactIntegrate(),
-                   Z::Real = integrate(lattice, A, B..., alg=alg, trunc=trunc)) = [electriccurrent_fast(lattice, corr, k, A, B...; alg=alg, trunc=trunc, Z=Z, band=band) for k in 2:lattice.k]
+                   Z::Real = integrate(lattice, A, B..., alg=alg)) = [electriccurrent_fast(lattice, corr, k, A, B...; alg=alg, Z=Z, band=band) for k in 2:lattice.k]
 
 
 # real-time second order
@@ -110,36 +101,34 @@ function occupation(lattice::RealGrassmannLattice2Order, A::GrassmannMPS, B::Gra
 end
 
 function electriccurrent(lattice::RealGrassmannLattice2Order, corr::RealCorrelationFunction, A::GrassmannMPS, B::GrassmannMPS...; 
-                            trunc::TruncationScheme=DefaultIntegrationTruncation,
                             alg::IntegrationAlgorithm=ExactIntegrate(), 
-                            Z::Number = integrate(lattice, A, B..., alg=alg, trunc=trunc), band::Int=1, max_range::Int=10000)
+                            Z::Number = integrate(lattice, A, B..., alg=alg), band::Int=1, max_range::Int=10000)
     curr = complex(0.)
     η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
     @assert  lattice.N <= div(size(η⁺⁺,1)-1, 2) 
     k = lattice.k
-    curr -= η⁺⁺[2*k-1, 1] * gf(lattice, k, 1, A, B...; f1=false, f2=true, Z=Z, band=band, alg=alg, trunc=trunc)
-    curr -= η⁺⁻[2*k-1, 1] * gf(lattice, k, 1, A, B..., f1=false, f2=false, Z=Z, band=band, alg=alg, trunc=trunc)
+    curr -= η⁺⁺[2*k-1, 1] * gf(lattice, k, 1, A, B...; f1=false, f2=true, Z=Z, band=band, alg=alg)
+    curr -= η⁺⁻[2*k-1, 1] * gf(lattice, k, 1, A, B..., f1=false, f2=false, Z=Z, band=band, alg=alg)
     for j in 2:k-1
-        curr -= (η⁺⁺[2*k-1, 2*j-2] + η⁺⁺[2*k-1, 2*j-1]) * gf(lattice, k, j, A, B..., f1=false, f2=true, Z=Z, band=band, alg=alg, trunc=trunc)
-        curr -= (η⁺⁻[2*k-1, 2*j-2] + η⁺⁻[2*k-1, 2*j-1])  * gf(lattice, k, j, A, B..., f1=false, f2=false, Z=Z, band=band, alg=alg, trunc=trunc)
+        curr -= (η⁺⁺[2*k-1, 2*j-2] + η⁺⁺[2*k-1, 2*j-1]) * gf(lattice, k, j, A, B..., f1=false, f2=true, Z=Z, band=band, alg=alg)
+        curr -= (η⁺⁻[2*k-1, 2*j-2] + η⁺⁻[2*k-1, 2*j-1])  * gf(lattice, k, j, A, B..., f1=false, f2=false, Z=Z, band=band, alg=alg)
     end
-    curr -= η⁺⁺[2*k-1, 2*k-2] * gf(lattice, k, k, A, B..., f1=false, f2=true, Z=Z, band=band, alg=alg, trunc=trunc)
-    curr -= η⁺⁻[2*k-1, 2*k-2] * gf(lattice, k, k, A, B..., f1=false, f2=false, Z=Z, band=band, alg=alg, trunc=trunc)
+    curr -= η⁺⁺[2*k-1, 2*k-2] * gf(lattice, k, k, A, B..., f1=false, f2=true, Z=Z, band=band, alg=alg)
+    curr -= η⁺⁻[2*k-1, 2*k-2] * gf(lattice, k, k, A, B..., f1=false, f2=false, Z=Z, band=band, alg=alg)
     return 2 * curr / (0.5*lattice.δt)
 end
 
 function electriccurrent_fast(lattice::RealGrassmannLattice2Order, corr::RealCorrelationFunction, A::GrassmannMPS, B::GrassmannMPS...; 
-                            trunc::TruncationScheme=DefaultIntegrationTruncation,
                             alg::IntegrationAlgorithm=ExactIntegrate(), 
-                            Z::Number = integrate(lattice, A, B..., alg=alg, trunc=trunc), band::Int=1)
+                            Z::Number = integrate(lattice, A, B..., alg=alg), band::Int=1)
     k = lattice.k
     mpo = build_current_mpo(lattice, corr, k, band)
     A2 = mpo * A
-    curr = integrate(lattice, A2, B..., alg=alg, trunc=trunc) / Z
+    curr = integrate(lattice, A2, B..., alg=alg) / Z
 
     η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
-    curr -= η⁺⁺[2*k-1, 2*k-2] * gf(lattice, k, k, A, B..., f1=false, f2=true, Z=Z, band=band, alg=alg, trunc=trunc)
-    curr -= η⁺⁻[2*k-1, 2*k-2] * gf(lattice, k, k, A, B..., f1=false, f2=false, Z=Z, band=band, alg=alg, trunc=trunc)
+    curr -= η⁺⁺[2*k-1, 2*k-2] * gf(lattice, k, k, A, B..., f1=false, f2=true, Z=Z, band=band, alg=alg)
+    curr -= η⁺⁻[2*k-1, 2*k-2] * gf(lattice, k, k, A, B..., f1=false, f2=false, Z=Z, band=band, alg=alg)
     return 2 * curr / (0.5*lattice.δt)
 end
 

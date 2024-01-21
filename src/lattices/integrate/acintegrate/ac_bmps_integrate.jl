@@ -1,9 +1,9 @@
 # integrate multiple GMPSs using BMPS-like method
 
-function _ac_integrate(alg::BMPSIntegrate, lattice::AbstractGrassmannLattice, x0::GrassmannMPS, x1::GrassmannMPS, x2::GrassmannMPS...; kwargs...)
+function _ac_integrate(alg::BMPSIntegrate, lattice::AbstractGrassmannLattice, x0::GrassmannMPS, x1::GrassmannMPS, x2::GrassmannMPS...; center::Int=pos2pairindex(length(lattice)))
 	(ConjugationStyle(lattice) isa AdjacentConjugation) || throw(ArgumentError("AdjacentConjugation expected"))
 	xx = collect((x0, x1, x2...))
-	return _bmps_integrate(lattice, xx; kwargs...)
+	return _bmps_integrate(lattice, xx; center=center, trunc=alg.trunc)
 end
 
 function _bmps_integrate(lattice::AbstractGrassmannLattice, xx::Vector{<:GrassmannMPS}; center::Int=pos2pairindex(length(lattice)), kwargs...)

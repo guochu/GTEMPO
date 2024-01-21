@@ -36,10 +36,8 @@ function systhermalstate!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, mod
 end 
 
 include("boundary.jl")
-include("correlationfunctions.jl")
-include("hybriddynamics.jl")
 include("sysdynamics.jl")
-include("oneimpurity.jl")
+include("siam.jl")
 include("irlm.jl")
 include("skmodel.jl")
 include("sysinitstate.jl")

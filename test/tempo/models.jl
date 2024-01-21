@@ -350,7 +350,10 @@ end
 	leftcorr = correlationfunction(exact_model.leftbath, lattice)
 	rightcorr = correlationfunction(exact_model.rightbath, lattice)
 	corr = leftcorr + rightcorr
-	mpsI = qim_hybriddynamics(lattice, corr, trunc=trunc) 
+	mpsI = vacuumstate(lattice)
+	for band in 1:lattice.bands
+		mpsI = hybriddynamics!(mpsI, lattice, corr, trunc=trunc, band=band) 
+	end
 	mpsI = boundarycondition(boundarycondition(mpsI, lattice, band=1), lattice, band=2)
 	mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
 

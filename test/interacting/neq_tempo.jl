@@ -121,7 +121,11 @@ end
 	exact_model = SIDB(leftbath, rightbath, μ=epsilon_d, U=U)
 	leftcorr = correlationfunction(exact_model.leftbath, lattice)
 	rightcorr = correlationfunction(exact_model.rightbath, lattice)
-	mpsI = qim_hybriddynamics(lattice, leftcorr + rightcorr, trunc=trunc) 
+	corr = leftcorr + rightcorr
+	mpsI = vacuumstate(lattice)
+	for band in 1:lattice.bands
+		mpsI = hybriddynamics!(mpsI, lattice, corr, trunc=trunc, band=band) 
+	end
 	mpsI = boundarycondition(mpsI, lattice, band=1)
 	mpsI = boundarycondition(mpsI, lattice, band=2)	
 	mpsK = sysdynamics(lattice, exact_model, trunc=trunc)

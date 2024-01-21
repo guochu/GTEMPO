@@ -4,3 +4,4 @@ function partialinfluencefunctional(lattice::ImagGrassmannLattice1Order, i::Int,
 	mpo = partialmpo(row, col_pos, reverse(cols))
 	return mpo * vacuumstate(lattice)
 end
+

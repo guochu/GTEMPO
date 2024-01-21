@@ -1,6 +1,9 @@
 abstract type IntegrationAlgorithm end
 struct ExactIntegrate <: IntegrationAlgorithm end
-struct BMPSIntegrate <: IntegrationAlgorithm end
+struct BMPSIntegrate{T<:TruncationScheme} <: IntegrationAlgorithm 
+	trunc::T
+end
+BMPSIntegrate(; trunc::TruncationScheme=DefaultIntegrationTruncation) = BMPSIntegrate(trunc)
 
 
 
@@ -21,16 +24,16 @@ include("acintegrate/ac_bmps_integrate.jl")
 include("conversion.jl")
 
 
-function _integrate(alg::IntegrationAlgorithm, lattice::AbstractGrassmannLattice, x0::GrassmannMPS, x1::GrassmannMPS...; kwargs...)
+function integrate(alg::IntegrationAlgorithm, lattice::AbstractGrassmannLattice, x0::GrassmannMPS, x1::GrassmannMPS...; kwargs...)
 	if ConjugationStyle(lattice) isa AdjacentConjugation
 		return _ac_integrate(alg, lattice, x0, x1...; kwargs...)
 	else
 		r = toadjacentordering(lattice, x0, x1...; kwargs...)
-		return _integrate(alg, first(r), Base.tail(r)...; kwargs...)
+		return integrate(alg, first(r), Base.tail(r)...; kwargs...)
 	end
 end
 integrate(lattice::AbstractGrassmannLattice, x0::GrassmannMPS, x1::GrassmannMPS...; 
-			alg::IntegrationAlgorithm=ExactIntegrate(), kwargs...) = _integrate(alg, lattice, x0, x1...; kwargs...)
+			alg::IntegrationAlgorithm=ExactIntegrate(), kwargs...) = integrate(alg, lattice, x0, x1...; kwargs...)
 
 function integrate(lattice::AbstractGrassmannLattice, x0::Vector{<:GrassmannMPS}, x1::GrassmannMPS...; kwargs...)
 	r = zero(scalartype(lattice))
