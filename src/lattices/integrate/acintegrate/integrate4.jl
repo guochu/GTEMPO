@@ -221,7 +221,7 @@
 
 
 
-function update_pair_left(left::AbstractTensorMap{<:ElementarySpace, 1, 4}, j::Int, x::Vector, y::Vector, z::Vector, u::Vector; trunc=DefaultIntegrationTruncation)
+function update_pair_left(left::AbstractTensorMap{<:ElementarySpace, 1, 4}, j::Int, x::Vector, y::Vector, z::Vector, u::Vector)
 	posa = 2*j-1
 
 	@tensor tmp1[7,1,2,5,6; 3] := left[7,1,2,3,4] * u[posa][4,5,6] 
@@ -449,7 +449,7 @@ function update_pair_left(left::AbstractTensorMap{<:ElementarySpace, 1, 4}, j::I
 end
 
 
-function update_pair_right(right::AbstractTensorMap{<:ElementarySpace, 4, 1}, j::Int, x::Vector, y::Vector, z::Vector, u::Vector; trunc=DefaultIntegrationTruncation)
+function update_pair_right(right::AbstractTensorMap{<:ElementarySpace, 4, 1}, j::Int, x::Vector, y::Vector, z::Vector, u::Vector)
 	posb = 2 * j
 	@tensor tmp1[4 ;5 6 1 2 7] := u[posb][1,2,3] * right[3,4,5,6,7]
 	for (f1, f2) in fusiontrees(tmp1)

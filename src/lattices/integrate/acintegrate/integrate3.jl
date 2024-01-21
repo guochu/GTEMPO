@@ -260,7 +260,7 @@
 
 
 
-function update_pair_left(left0::AbstractTensorMap{<:ElementarySpace, 1, 3}, j::Int, x::Vector, y::Vector, z::Vector; trunc=DefaultIntegrationTruncation) 
+function update_pair_left(left0::AbstractTensorMap{<:ElementarySpace, 1, 3}, j::Int, x::Vector, y::Vector, z::Vector) 
 	posa = 2*j-1
 	left = copy(left0)
 
@@ -393,7 +393,7 @@ function update_pair_left(left0::AbstractTensorMap{<:ElementarySpace, 1, 3}, j::
 	return permute(left, (1,), (2,3,4))
 end
 
-function update_pair_right(right::AbstractTensorMap{<:ElementarySpace, 3, 1}, j::Int, x::Vector, y::Vector, z::Vector; trunc=DefaultIntegrationTruncation)
+function update_pair_right(right::AbstractTensorMap{<:ElementarySpace, 3, 1}, j::Int, x::Vector, y::Vector, z::Vector)
 	posb = 2 * j
 
 	@tensor tmp1[4 ;1 2 5 6] := z[posb][1,2,3] * right[3,4,5,6]
