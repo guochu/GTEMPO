@@ -173,24 +173,24 @@ function _mult_site(xj, yj)
 	end
 	return r
 end
-function _fuse_physical(m::AbstractTensorMap{S, 4, 2}) where S
-	cod = ProductSpace{S}((space(m, 1), space(m, 2), space(m, 3)))
-	dom = ProductSpace{S}((space(m, 5)', space(m, 6)'))
-	r = TensorMap(ds->zeros(scalartype(m), ds), cod ← dom)
-	for (f1, f2) in fusiontrees(m)
-		if f1.uncoupled[3] == f1.uncoupled[4]
-			if iseven(f1.uncoupled[3].n)
-				f1′ = FusionTree((f1.uncoupled[1],f1.uncoupled[2],f1.uncoupled[3]), f1.coupled, (f1.isdual[1],f1.isdual[2],f1.isdual[3]))
-				r[f1′, f2] .+= m[f1, f2][:, :, :, 1, :, :]
-			end
-		else
-			isdual3 = isodd(f1.uncoupled[3].n) ? f1.isdual[3] : f1.isdual[4]
-			f1′ = FusionTree((f1.uncoupled[1],f1.uncoupled[2],Z2Irrep(1)), f1.coupled, (f1.isdual[1],f1.isdual[2], isdual3))
-			r[f1′, f2] .+= m[f1, f2][:, :, :, 1, :, :]
-		end
-	end
-	return r
-end
+# function _fuse_physical(m::AbstractTensorMap{S, 4, 2}) where S
+# 	cod = ProductSpace{S}((space(m, 1), space(m, 2), space(m, 3)))
+# 	dom = ProductSpace{S}((space(m, 5)', space(m, 6)'))
+# 	r = TensorMap(ds->zeros(scalartype(m), ds), cod ← dom)
+# 	for (f1, f2) in fusiontrees(m)
+# 		if f1.uncoupled[3] == f1.uncoupled[4]
+# 			if iseven(f1.uncoupled[3].n)
+# 				f1′ = FusionTree((f1.uncoupled[1],f1.uncoupled[2],f1.uncoupled[3]), f1.coupled, (f1.isdual[1],f1.isdual[2],f1.isdual[3]))
+# 				r[f1′, f2] .+= m[f1, f2][:, :, :, 1, :, :]
+# 			end
+# 		else
+# 			isdual3 = isodd(f1.uncoupled[3].n) ? f1.isdual[3] : f1.isdual[4]
+# 			f1′ = FusionTree((f1.uncoupled[1],f1.uncoupled[2],Z2Irrep(1)), f1.coupled, (f1.isdual[1],f1.isdual[2], isdual3))
+# 			r[f1′, f2] .+= m[f1, f2][:, :, :, 1, :, :]
+# 		end
+# 	end
+# 	return r
+# end
 
 function _swap_gate(m1, m2; trunc)
 	@tensor twositemps[1,4;2,5] := m1[1,2,3] * m2[3,4,5]

@@ -18,7 +18,7 @@ export vacuumstate, makestep, timesteps
 export ImagGrassmannLattice1Order, RealGrassmannLattice1Order, RealGrassmannLattice2Order, GrassmannLattice, index, integrate
 export IntegrationAlgorithm, ExactIntegrate, BMPSIntegrate
 # correlation functions
-export Gτ, Gt, branch
+export Gτ, Gt, branch, CorrelationMatrix
 # influence functional
 export partialinfluencefunctional
 # GF and other observables
@@ -41,7 +41,11 @@ const TK = SphericalTensors
 
 # # TEMPO algorithm
 
+# default constants
+include("defaults.jl")
+
 # Grassmann MPS operations
+include("grassmannmps/util.jl")
 include("grassmannmps/space.jl")
 include("grassmannmps/grassmannterms.jl")
 include("grassmannmps/abstractgmps.jl")

@@ -24,6 +24,11 @@ function Base.getindex(A::CorrelationMatrix, i::Int, j::Int)
     end
 end
 
+function Base.:+(x::CorrelationMatrix, y::CorrelationMatrix)
+    (size(x) == size(y)) || throw(DimensionMismatch("correlation matrix size mismatch"))
+    return CorrelationMatrix(x.ηⱼₖ + y.ηⱼₖ, x.ηₖⱼ + y.ηₖⱼ)
+end
+
 include("util.jl")
 include("imaginarytime.jl")
 include("realtime.jl")

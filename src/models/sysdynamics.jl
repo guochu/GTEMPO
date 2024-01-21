@@ -290,10 +290,10 @@ function _contract_band(x::GrassmannMPS, lattice::ImagGrassmannLattice{<:A1A1B1B
 		@assert pos1 + 1 == pos2
 		@tensor tmp4[1,2,4;5] := x[pos1][1,2,3] * x[pos2][3,4,5]
 		if band == 1
-			tmp2 = _trace_physical(tmp4)
+			tmp2 = g_trace(tmp4, 2)
 		else
 			@assert @isdefined tmp2
-			tmp2 = tmp2 * _trace_physical(tmp4)
+			tmp2 = tmp2 * g_trace(tmp4, 2)
 		end
 		tmp2 = rmul!(tmp2, scaling(x)^2)
 	end
@@ -308,11 +308,11 @@ function _contract_band(x::GrassmannMPS, lattice::ImagGrassmannLattice{<:A1B1B1A
 		if band == lattice.bands
 			@assert pos1 + 1 == pos2
 			@tensor tmp4[1,2,4;5] := x[pos1][1,2,3] * x[pos2][3,4,5]
-			tmp2 = _trace_physical(tmp4)
+			tmp2 = g_trace(tmp4, 2)
 		else
 			@assert @isdefined tmp2
 			@tensor tmp4[1,2,5;6] := x[pos1][1,2,3] * tmp2[3,4] * x[pos2][4,5,6]
-			tmp2 = _trace_physical(tmp4)
+			tmp2 = g_trace(tmp4, 2)
 		end
 		tmp2 = rmul!(tmp2, scaling(x)^2)
 	end
@@ -328,10 +328,10 @@ function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A1A1a1a
 			@tensor tmp4[1,2,4;5] := x[pos1][1,2,3] * x[pos2][3,4,5]
 			@assert pos1 + 1 == pos2
 			if band == 1
-				tmp2 = _trace_physical(tmp4)
+				tmp2 = g_trace(tmp4, 2)
 			else
 				@assert @isdefined tmp2
-				tmp2 = tmp2 * _trace_physical(tmp4)
+				tmp2 = tmp2 * g_trace(tmp4, 2)
 			end
 			tmp2 = rmul!(tmp2, scaling(x)^2)
 		else
@@ -341,10 +341,10 @@ function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A1A1a1a
 				@assert pos1 + 1 == pos2
 				@tensor tmp4[1,2,4;5] := x[pos1][1,2,3] * x[pos2][3,4,5]
 				if (band == 1) && (f == true)
-					tmp2 = _trace_physical(tmp4)
+					tmp2 = g_trace(tmp4, 2)
 				else
 					@assert @isdefined tmp2
-					tmp2 = tmp2 * _trace_physical(tmp4)
+					tmp2 = tmp2 * g_trace(tmp4, 2)
 				end	
 				tmp2 = rmul!(tmp2, scaling(x)^2)		
 			end
@@ -362,11 +362,11 @@ function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A1a1B1b
 			if band == lattice.bands
 				@assert pos1 + 1 == pos2
 				@tensor tmp4[1,2,4;5] := x[pos1][1,2,3] * x[pos2][3,4,5]
-				tmp2 = _trace_physical(tmp4)
+				tmp2 = g_trace(tmp4, 2)
 			else
 				@assert @isdefined tmp2
 				@tensor tmp4[1,2,5;6] := x[pos1][1,2,3] * tmp2[3,4] * x[pos2][4,5,6]
-				tmp2 = _trace_physical(tmp4)
+				tmp2 = g_trace(tmp4, 2)
 			end
 			tmp2 = rmul!(tmp2, scaling(x)^2)
 		else
@@ -377,11 +377,11 @@ function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A1a1B1b
 				if (band == lattice.bands) && (f == false)
 					@assert pos1 + 1 == pos2
 					@tensor tmp4[1,2,4;5] := x[pos1][1,2,3] * x[pos2][3,4,5]
-					tmp2 = _trace_physical(tmp4)
+					tmp2 = g_trace(tmp4, 2)
 				else
 					@assert @isdefined tmp2
 					@tensor tmp4[1,2,5;6] := x[pos1][1,2,3] * tmp2[3,4] * x[pos2][4,5,6]
-					tmp2 = _trace_physical(tmp4)
+					tmp2 = g_trace(tmp4, 2)
 				end	
 				tmp2 = rmul!(tmp2, scaling(x)^2)		
 			end
@@ -401,10 +401,10 @@ function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A2A2B2B
 			@tensor tmp4[1,2,4;5] := x[pos1][1,2,3] * x[pos2][3,4,5]
 			@assert pos1 + 1 == pos2
 			if band == 1
-				tmp2 = _trace_physical(tmp4)
+				tmp2 = g_trace(tmp4, 2)
 			else
 				@assert @isdefined tmp2
-				tmp2 = tmp2 * _trace_physical(tmp4)
+				tmp2 = tmp2 * g_trace(tmp4, 2)
 			end
 			tmp2 = rmul!(tmp2, scaling(x)^2)
 		else
@@ -413,10 +413,10 @@ function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A2A2B2B
 			@assert pos1 + 1 == pos2
 			@tensor tmp4[1,2,4;5] := x[pos1][1,2,3] * x[pos2][3,4,5]
 			if band == 1
-				tmp2 = _trace_physical(tmp4)
+				tmp2 = g_trace(tmp4, 2)
 			else
 				@assert @isdefined tmp2
-				tmp2 = tmp2 * _trace_physical(tmp4)
+				tmp2 = tmp2 * g_trace(tmp4, 2)
 			end	
 			tmp2 = rmul!(tmp2, scaling(x)^2)		
 		end
@@ -433,11 +433,11 @@ function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A2B2B2A
 			if band == lattice.bands
 				@assert pos1 + 1 == pos2
 				@tensor tmp4[1,2,4;5] := x[pos1][1,2,3] * x[pos2][3,4,5]
-				tmp2 = _trace_physical(tmp4)
+				tmp2 = g_trace(tmp4, 2)
 			else
 				@assert @isdefined tmp2
 				@tensor tmp4[1,2,5;6] := x[pos1][1,2,3] * tmp2[3,4] * x[pos2][4,5,6]
-				tmp2 = _trace_physical(tmp4)
+				tmp2 = g_trace(tmp4, 2)
 			end
 			tmp2 = rmul!(tmp2, scaling(x)^2)
 		else
@@ -447,11 +447,11 @@ function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A2B2B2A
 			if (band == lattice.bands) 
 				@assert pos1 + 1 == pos2
 				@tensor tmp4[1,2,4;5] := x[pos1][1,2,3] * x[pos2][3,4,5]
-				tmp2 = _trace_physical(tmp4)
+				tmp2 = g_trace(tmp4, 2)
 			else
 				@assert @isdefined tmp2
 				@tensor tmp4[1,2,5;6] := x[pos1][1,2,3] * tmp2[3,4] * x[pos2][4,5,6]
-				tmp2 = _trace_physical(tmp4)
+				tmp2 = g_trace(tmp4, 2)
 			end	
 			tmp2 = rmul!(tmp2, scaling(x)^2)		
 		end

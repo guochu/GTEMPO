@@ -42,7 +42,7 @@ end
 # the reuslt is also a GrassmannMPS
 function Base.:*(x::GrassmannMPS, y::GrassmannMPS)
     (length(x) == length(y)) || throw(DimensionMismatch())
-    out = [_fuse_physical(_mult_site(x[i], y[i])) for i in 1:length(x)]
+    out = [g_fuse(_mult_site(x[i], y[i]), 3) for i in 1:length(x)]
     fusers = PeriodicArray([isomorphism(space(item, 4)' ⊗ space(item, 5)', fuse(space(item, 4), space(item, 5)) ) for item in out])
     return GrassmannMPS([@tensor tmp[3,4;7] := conj(fusers[i-1][1,2,3]) * out[i][1,2,4,5,6] * fusers[i][5,6,7] for i in 1:length(x)], scaling=scaling(x) * scaling(y))
 end
@@ -74,12 +74,12 @@ function mult!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=DMRG.De
     (length(x) == length(y)) || throw(DimensionMismatch())
     A = mpstensortype(spacetype(x), promote_type(scalartype(x), scalartype(y)))
     left = isomorphism( fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) )
-    tmp5 = _fuse_physical(_mult_site(x[1], y[1]))
+    tmp5 = g_fuse(_mult_site(x[1], y[1]), 3)
     @tensor tmp4[1,4;5,6] := left[1,2,3] * tmp5[2,3,4,5,6]
     for i in 1:length(x)-1
         q, r = leftorth!(tmp4, alg = QR())
         x[i] = q
-        tmp5 = _fuse_physical(_mult_site(x[i+1], y[i+1]))
+        tmp5 = g_fuse(_mult_site(x[i+1], y[i+1]), 3)
         @tensor tmp4[1,4;5,6] := r[1,2,3] * tmp5[2,3,4,5,6]
     end
     x[end] = @tensor tmp[1,2;5] := tmp4[1,2,3,4] * conj(left[5,3,4])
