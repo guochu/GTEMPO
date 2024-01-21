@@ -10,6 +10,8 @@ include("acintegrate/integrate1.jl")
 include("acintegrate/integrate2.jl")
 include("acintegrate/integrate3.jl")
 include("acintegrate/integrate4.jl")
+include("acintegrate/integrate5.jl")
+
 # include("acintegrate/integrate6.jl")
 # include("acintegrate/integrate7.jl")
 
