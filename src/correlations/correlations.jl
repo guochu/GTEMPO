@@ -28,6 +28,8 @@ function Base.:+(x::CorrelationMatrix, y::CorrelationMatrix)
     (size(x) == size(y)) || throw(DimensionMismatch("correlation matrix size mismatch"))
     return CorrelationMatrix(x.ηⱼₖ + y.ηⱼₖ, x.ηₖⱼ + y.ηₖⱼ)
 end
+Base.:(-)(x::CorrelationMatrix) = CorrelationMatrix(-x.ηⱼₖ, -x.ηₖⱼ)
+Base.transpose(x::CorrelationMatrix) = CorrelationMatrix(x.ηₖⱼ, x.ηⱼₖ)
 
 include("util.jl")
 include("imaginarytime.jl")

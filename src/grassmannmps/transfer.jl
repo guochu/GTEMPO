@@ -37,13 +37,13 @@ function Base.:*(m::GrassmannTransferMatrix{M, N}, right::AbstractTensorMap{S, N
 	return right
 end
 
-# function DMRG.l_LL(f, vspace::ElementarySpace, m::GrassmannTransferMatrix)
-# 	return TensorMap(f, scalartype(m), vspace, ⊗(map(y->space_l(y[1]), m.states)...))
-# end
+function DMRG.l_LL(f, vspace::ElementarySpace, m::GrassmannTransferMatrix)
+	return TensorMap(f, scalartype(m), vspace, ⊗(map(y->space_l(y[1]), m.states)...))
+end
 
-# function DMRG.r_RR(f, vspace::ElementarySpace, m::GrassmannTransferMatrix)
-# 	return TensorMap(f, scalartype(m), ⊗(map(y->space_r(y[end])', reverse(m.states))...), vspace)
-# end
+function DMRG.r_RR(f, vspace::ElementarySpace, m::GrassmannTransferMatrix)
+	return TensorMap(f, scalartype(m), ⊗(map(y->space_r(y[end])', reverse(m.states))...), vspace)
+end
 
 
 GrassmannTransferMatrix(states::Vararg{M, N}) where {M <: GrassmannMPS, N} = GrassmannTransferMatrix(map(x->x.data, states), scaling(states...)^2)

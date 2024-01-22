@@ -143,7 +143,7 @@ randomgmps(L::Int; kwargs...) = randomgmps(Float64, L; kwargs...)
 # 	return x
 # end
 
-function easy_swap!(x::GrassmannMPS, bond::Int; trunc::TruncationScheme=DMRG.DefaultTruncation)
+function easy_swap!(x::AbstractGMPS, bond::Int; trunc::TruncationScheme=DMRG.DefaultTruncation)
 	x[bond], x.s[bond+1], x[bond+1] = _swap_gate(x.s[bond], x[bond], x.s[bond+1], x[bond+1], trunc=trunc)
 	# x[bond], x[bond+1] = _swap_gate(x[bond], x[bond+1], trunc=trunc)
 	return x

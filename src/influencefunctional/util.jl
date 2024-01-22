@@ -172,7 +172,9 @@ function ti_mpotensor(corr::CorrelationMatrix, alg::ExponentialExpansionAlgorith
 	return SchurMPOTensor(-coef * abar_a, vcat(m1s, m2s))
 end
 
-function _split_op(mpoj::MPOTensor, trunc)
+
+
+function split_mpotensor(mpoj::MPOTensor, trunc)
 	ph = grassmannpspace()
 	f = isomorphism(fuse(ph, ph), ph ⊗ ph)
 	@tensor mpoj6[1,5,7;6,3,8] := mpoj[1,2,3,4] * conj(f[2,5,6]) * f[4,7,8]

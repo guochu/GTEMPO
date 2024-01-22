@@ -1,3 +1,9 @@
+hybriddynamics(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::PartialIF; kwargs...) = hybriddynamics(gmps, lattice, corr; kwargs...)
+hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::PartialIF; kwargs...) = hybriddynamics!(vacuumstate(lattice), lattice, corr; kwargs...)
+
+hybriddynamics(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = hybriddynamics!(copy(gmps), lattice, corr; kwargs...)
+hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = hybriddynamics!(GrassmannMPS(scalartype(lattice), length(lattice)), lattice, corr; kwargs...)
+
 """
 	hybriddynamics(gmps::GrassmannMPS, lattice::ImagGrassmannLattice, corr::ImagCorrelationFunction; band, trunc)
 
@@ -32,8 +38,6 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order
 	end
 	return gmps		
 end
-hybriddynamics(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = hybriddynamics!(copy(gmps), lattice, corr; kwargs...)
-hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = hybriddynamics!(GrassmannMPS(scalartype(lattice), length(lattice)), lattice, corr; kwargs...)
 
 function hybriddynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋

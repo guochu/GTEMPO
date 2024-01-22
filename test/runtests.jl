@@ -8,9 +8,10 @@ using Test, Random
 using SphericalTensors, DMRG, FermionicTCMPS
 const TK = SphericalTensors
 
-include("../src/includes.jl")
-# push!(LOAD_PATH, "../src")
-# using GTEMPO
+# include("../src/includes.jl")
+
+push!(LOAD_PATH, "../src")
+using GTEMPO
 
 Random.seed!(12354)
 
@@ -30,6 +31,8 @@ include("tempo/grassmannmps.jl")
 include("tempo/bmps_integrate.jl")
 
 include("tempo/influencefunctional.jl")
+include("tempo/influenceoperator.jl")
+include("tempo/hybriddynamics.jl")
 
 include("tempo/gf.jl")
 include("tempo/cached_gf.jl")

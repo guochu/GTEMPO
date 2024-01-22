@@ -1,16 +1,22 @@
 abstract type InfluenceFunctionalAlgorithm end
 """
 	struct PartialIF
+
+Build the IF as the product of partial MPOs, each with D=2
 """
 struct PartialIF <: InfluenceFunctionalAlgorithm end
 """
-	struct FullIF
+	struct TranslationInvariantIF
+
+Build the IF as a translational variant MPO
 """
-struct FullIF{T<:ExponentialExpansionAlgorithm, E<:TimeEvoMPOAlgorithm} <: InfluenceFunctionalAlgorithm 
+struct TranslationInvariantIF{T<:ExponentialExpansionAlgorithm, E<:TimeEvoMPOAlgorithm} <: InfluenceFunctionalAlgorithm 
 	algexpan::T
 	algevo::E
+	k::Int
 end
-FullIF(; algexpan::ExponentialExpansionAlgorithm=PronyExpansion(), algevo::TimeEvoMPOAlgorithm=WII()) = FullIF(algexpan, algevo)
+TranslationInvariantIF(; algexpan::ExponentialExpansionAlgorithm=PronyExpansion(tol=1.0e-5, verbosity=0), algevo::TimeEvoMPOAlgorithm=WII(), k::Int=5) = TranslationInvariantIF(
+						algexpan, algevo, k)
 
 include("util.jl")
 include("imaginarytime.jl")

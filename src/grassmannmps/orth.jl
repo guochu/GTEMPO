@@ -7,6 +7,7 @@ function _leftorth!(psi::GrassmannMPS, alg::QR, trunc::TruncationScheme)
 		q, r = leftorth!(psi[i], alg = alg)
 		psi[i] = q
 		nr = norm(r)
+		(nr ≈ zero(nr)) && @warn "norm of GrassmannMPS is zero"
 		_rescaling!(psi, nr)
 		r = rmul!(r, 1/nr)
 		psi[i + 1] = @tensor tmp[1 3; 4] := r[1,2] * psi[i+1][2,3,4]
@@ -21,6 +22,7 @@ function _rightorth!(psi::GrassmannMPS, alg::QR, trunc::TruncationScheme)
 		l, q = rightorth(psi[i], (1,), (2, 3), alg=LQ())
 		psi[i] = permute(q, (1,2), (3,))
 		nl = norm(l)
+		(nl ≈ zero(nl)) && @warn "norm of GrassmannMPS is zero"
 		_rescaling!(psi, nl)
 		l = rmul!(l, 1/nl)
 		psi[i-1] = @tensor tmp[1 2; 4] := psi[i-1][1,2,3] * l[3,4] 
@@ -35,6 +37,7 @@ function _rightorth!(psi::GrassmannMPS, alg::SVD, trunc::TruncationScheme)
 		psi[i] = permute(v, (1,2), (3,))
 		u2 = u * s
 		nl = norm(u2)
+		(nl ≈ zero(nl)) && @warn "norm of GrassmannMPS is zero"
 		_rescaling!(psi, nl)
 		u2 = rmul!(u2, 1/nl)
 		psi[i-1] = @tensor tmp[-1 -2; -3] := psi[i-1][-1, -2, 1] * u2[1, -3]

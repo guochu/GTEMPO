@@ -8,6 +8,29 @@ end
 DMRG.distance(a::AbstractGMPS, b::AbstractGMPS) = DMRG._distance(a, b)
 DMRG.distance2(a::AbstractGMPS, b::AbstractGMPS) = DMRG._distance2(a, b)
 
+function TK.lmul!(f::Number, psi::GrassmannMPS)
+    if !isempty(psi)
+        psi[1] *= f
+    end
+    _renormalize!(psi, psi[1], false)
+    return psi
+end
+
+Base.:*(psi::GrassmannMPS, f::Number) = lmul!(f, copy(psi))
+Base.:*(f::Number, psi::GrassmannMPS) = psi * f
+Base.:/(psi::GrassmannMPS, f::Number) = psi * (1/f)
+
+
+function _renormalize!(psi, r, normalize)
+  nr = norm(r)
+  if nr != zero(nr)
+      if !normalize
+          _rescaling!(psi, nr)
+      end
+      r = lmul!(1/nr, r)  
+  end
+end
+
 _dot(psiA::GrassmannMPS, psiB::GrassmannMPS) = dot(MPS(psiA.data), MPS(psiB.data))
 # 	(length(psiA) == length(psiB)) || throw(DimensionMismatch())
 #     hold = l_LL(psiA, psiB)

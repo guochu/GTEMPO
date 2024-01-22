@@ -8,8 +8,8 @@ end
 """
 	influenceoperator(lattice::ImagGrassmannLattice1Order{<:A1A1B1B1}, corr2::ImagCorrelationFunction; band, algexpan)
 """
-function influenceoperator(lattice::ImagGrassmannLattice1Order{<:A1A1B1B1}, corr2::ImagCorrelationFunction; band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
-	corr = corr.data
+function influenceoperator(lattice::ImagGrassmannLattice1Order, corr2::ImagCorrelationFunction; band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
+	corr = corr2.data
 	mpoj = ti_mpotensor(corr, algexpan)
 	h = MPOHamiltonian([mpoj, mpoj, mpoj])
 	mpo = MPO(h)
@@ -18,11 +18,11 @@ function influenceoperator(lattice::ImagGrassmannLattice1Order{<:A1A1B1B1}, corr
 end
 
 """
-	differentialinfluencefunctional(lattice::ImagGrassmannLattice1Order{<:A1A1B1B1}, corr2::ImagCorrelationFunction, dt, alg; band, algexpan)
+	influenceoperatorexponential(lattice::ImagGrassmannLattice1Order{<:A1A1B1B1}, corr2::ImagCorrelationFunction, dt, alg; band, algexpan)
 """
-function differentialinfluencefunctional(lattice::ImagGrassmannLattice1Order{<:A1A1B1B1}, corr2::ImagCorrelationFunction, dt::Real, alg::FirstOrderStepper; 
+function influenceoperatorexponential(lattice::ImagGrassmannLattice1Order, corr2::ImagCorrelationFunction, dt::Real, alg::FirstOrderStepper; 
 										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
-	corr = corr.data
+	corr = corr2.data
 	mpoj = ti_mpotensor(corr, algexpan)
 	h = MPOHamiltonian([mpoj, mpoj, mpoj])
 	h2 = timeevompo(h, dt, alg)
@@ -30,14 +30,53 @@ function differentialinfluencefunctional(lattice::ImagGrassmannLattice1Order{<:A
 	_JW = I2
 	return _fit_to_lattice(lattice, mpo, _JW, band) 
 end
+function influenceoperatorexponential(lattice::ImagGrassmannLattice1Order, corr2::ImagCorrelationFunction, dt::Real, alg::ComplexStepper; 
+										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
+	corr = corr2.data
+	mpoj = ti_mpotensor(corr, algexpan)
+	h = MPOHamiltonian([mpoj, mpoj, mpoj])
+	h1, h2 = timeevompo(h, dt, alg)
+	mpo1, mpo2 = MPO(h1), MPO(h2)
+	_JW = I2
+	return _fit_to_lattice(lattice, mpo1, _JW, band), _fit_to_lattice(lattice, mpo2, _JW, band) 
+end
 
-function _fit_to_lattice(lattice::ImagGrassmannLattice, mpo::MPO, _JW::MPSBondTensor, band::Int)
+function differentialinfluencefunctional(lattice::ImagGrassmannLattice1Order{O}, corr::ImagCorrelationFunction, dt::Real, alg::TimeEvoMPOAlgorithm; 
+										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion(), trunc::TruncationScheme=DefaultMPOTruncation) where O
+	if !(LayoutStyle(lattice) isa TimeLocalLayout)
+		lattice2 = similar(lattice, ordering = A1A1B1B1())
+		mps = _differentialinfluencefunctional(lattice2, corr, dt, alg; band=band, algexpan=algexpan, trunc=trunc)
+		_, mps2 = changeordering(O, lattice2, mps, trunc=trunc)
+		return mps2
+	else
+		return _differentialinfluencefunctional(lattice, corr, dt, alg; band=band, algexpan=algexpan, trunc=trunc)
+	end
+end
+
+
+function _differentialinfluencefunctional(lattice::ImagGrassmannLattice1Order, corr::ImagCorrelationFunction, dt::Real, alg::FirstOrderStepper; 
+										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion(), trunc::TruncationScheme=DefaultMPOTruncation)
+	mps = influenceoperatorexponential(lattice, corr, dt, alg, band=band, algexpan=algexpan) * vacuumstate(lattice)
+	canonicalize!(mps, alg=Orthogonalize(trunc=trunc, normalize=false))
+	return mps
+end
+function _differentialinfluencefunctional(lattice::ImagGrassmannLattice1Order, corr::ImagCorrelationFunction, dt::Real, alg::ComplexStepper; 
+										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion(), trunc::TruncationScheme=DefaultMPOTruncation)
+ 	mpo1, mpo2 = influenceoperatorexponential(lattice, corr, dt, alg, band=band, algexpan=algexpan)
+	mps =  mpo1 * vacuumstate(lattice)
+	canonicalize!(mps, alg=Orthogonalize(trunc=trunc, normalize=false))
+	mps =  mpo2 * mps
+	canonicalize!(mps, alg=Orthogonalize(trunc=trunc, normalize=false))
+	return mps
+end
+
+function _fit_to_lattice(lattice::ImagGrassmannLattice, mpo::MPO, _JW::MPSBondTensor, band::Int, trunc::TruncationScheme=DefaultMPOTruncation)
 	@assert length(mpo) == 3
 	(LayoutStyle(lattice) isa TimeLocalLayout) || throw(ArgumentError("only works lattice with TimeLocalLayout"))
 
-	u_left, v_left = _split_op(mpo[1], DefaultMPOTruncation)
-	u_middle, v_middle = _split_op(mpo[2], DefaultMPOTruncation)
-	u_right, v_right = _split_op(mpo[3], DefaultMPOTruncation)
+	u_left, v_left = split_mpotensor(mpo[1], trunc)
+	u_middle, v_middle = split_mpotensor(mpo[2], trunc)
+	u_right, v_right = split_mpotensor(mpo[3], trunc)
 	L = length(lattice)
 	data2 = Vector{typeof(u_middle)}(undef, L)
 	leftspace = oneunit(grassmannpspace())

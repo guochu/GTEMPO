@@ -3,10 +3,11 @@ module GTEMPO
 # Grassmann MPS
 export AbstractGTerm, GTerm, ExpGTerm, grassmannpspace
 export AbstractGMPS, AbstractFiniteGMPS, edgespace, GrassmannMPS, scaling, setscaling!, randomgmps, mult!, mult
+export GrassmannTransferMatrix
 
 # Ordering of grasmann numbers
 export GrassmannOrdering, ImagGrassmannOrdering, RealGrassmannOrdering
-export AbstractGrassmannLattice, ImagGrassmannLattice, RealGrassmannLattice, matchindices
+export AbstractGrassmannLattice, ImagGrassmannLattice, RealGrassmannLattice, matchindices, indexmappings
 export OrderingStyle, ConjugationStyle, AdjacentConjugation, GeneralConjugation
 export LayoutStyle, TimeLocalLayout, BandLocalLayout, BranchLocalLayout
 export A1A1B1B1, AABB, A1B1B1A1, ABBA, A2A2A1A1B2B2B1B1
@@ -22,7 +23,9 @@ export IntegrationAlgorithm, ExactIntegrate, BMPSIntegrate
 export Gτ, Gt, branch, CorrelationMatrix, correlationfunction
 
 # influence functional
+export InfluenceFunctionalAlgorithm, PartialIF, TranslationInvariantIF
 export partialinfluencefunctional
+export influenceoperator, influenceoperatorexponential, differentialinfluencefunctional
 export hybriddynamics, hybriddynamics!, hybriddynamicsstepper, hybriddynamicsstepper!
 
 # GF and other observables
