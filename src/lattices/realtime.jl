@@ -207,3 +207,46 @@ function indexmappings(lattice::RealGrassmannLattice)
 	end
 	return r
 end
+
+function band_boundary(lattice::RealGrassmannLattice{<:A1a1B1b1b1B1a1A1}, j::Int)
+    if j == 0
+        posa = index(lattice, j, conj=false, band=1)
+        posb = index(lattice, j, conj=true, band=1)     
+    else
+        posa = index(lattice, j, conj=false, forward=true, band=1)
+        posb = index(lattice, j, conj=true, forward=true, band=1)
+    end
+    return posa, posb
+end
+function band_boundary(lattice::RealGrassmannLattice{<:A1A1a1a1B1B1b1b1}, j::Int)
+    if j == 0
+        posa = index(lattice, j, conj=false, band=1)
+        posb = index(lattice, j, conj=true, band=lattice.bands)     
+    else
+        posa = index(lattice, j, conj=false, forward=true, band=1)
+        posb = index(lattice, j, conj=true, forward=false, band=lattice.bands)
+    end
+    return posa, posb
+end
+function band_boundary(lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, j::Int; forward::Union{Nothing, Bool}=nothing)
+    if j == 0
+        posa = index(lattice, j, conj=false, band=1)
+        posb = index(lattice, j, conj=true, band=1)   
+    else
+        @assert isa(forward, Bool)
+        posa = index(lattice, j, conj=false, band=1, forward=forward)
+        posb = index(lattice, j, conj=true, band=1, forward=forward) 
+    end
+    return posa, posb
+end
+function band_boundary(lattice::RealGrassmannLattice{<:A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2}, j::Int; forward::Union{Nothing, Bool}=nothing)
+    if j == 0
+        posa = index(lattice, j, conj=false, band=1)
+        posb = index(lattice, j, conj=true, band=lattice.bands)   
+    else
+        @assert isa(forward, Bool)
+        posa = index(lattice, j, conj=false, band=1, forward=forward)
+        posb = index(lattice, j, conj=true, band=lattice.bands, forward=forward) 
+    end
+    return posa, posb
+end

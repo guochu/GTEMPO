@@ -91,4 +91,13 @@ function indexmappings(lattice::ImagGrassmannLattice)
 	return r
 end
 
-
+function band_boundary(lattice::ImagGrassmannLattice{<:A1B1B1A1}, j::Int)
+    posa = index(lattice, j, conj=false, band=1)
+    posb = index(lattice, j, conj=true, band=1)     
+    return posa, posb
+end
+function band_boundary(lattice::ImagGrassmannLattice{<:A1A1B1B1}, j::Int)
+    posa = index(lattice, j, conj=false, band=1)
+    posb = index(lattice, j, conj=true, band=lattice.bands)     
+    return posa, posb
+end

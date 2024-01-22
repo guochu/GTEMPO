@@ -39,3 +39,5 @@ function partialinfluencefunctional(lattice::RealGrassmannLattice, rows_f::Abstr
 	return mpo * vacuumstate(lattice)
 end
 
+# full influence operator
+

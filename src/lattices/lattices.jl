@@ -54,3 +54,7 @@ Return all the index mappings of a lattice
 This is an internal function used for changing lattice ordering
 """
 indexmappings(lattice::AbstractGrassmannLattice) = error("indexmappings not implemented for lattice type $(typeof(lattice))")
+
+
+# This function is used in some special cases
+band_boundary(lattice::AbstractGrassmannLattice, j::Int; kwargs...) = error("indexmappings not implemented for lattice type $(typeof(lattice))")

@@ -41,6 +41,7 @@ using QuadGK, Permutations, Reexport, TupleTools, Strided
 using SphericalTensors: SphericalTensors, QR, SVD
 const TK = SphericalTensors
 @reexport using DMRG, ImpurityModelBase
+using DMRG: TimeEvoMPOAlgorithm
 
 # # TEMPO algorithm
 

@@ -1,4 +1,16 @@
-# const DefaultMPOTruncation = truncdimcutoff(D=10000, ϵ=1.0e-10, add_back=0)
+abstract type InfluenceFunctionalAlgorithm end
+"""
+	struct PartialIF
+"""
+struct PartialIF <: InfluenceFunctionalAlgorithm end
+"""
+	struct FullIF
+"""
+struct FullIF{T<:ExponentialExpansionAlgorithm, E<:TimeEvoMPOAlgorithm} <: InfluenceFunctionalAlgorithm 
+	algexpan::T
+	algevo::E
+end
+FullIF(; algexpan::ExponentialExpansionAlgorithm=PronyExpansion(), algevo::TimeEvoMPOAlgorithm=WII()) = FullIF(algexpan, algevo)
 
 include("util.jl")
 include("imaginarytime.jl")
