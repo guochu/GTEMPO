@@ -17,7 +17,7 @@ export changeordering, toadjacentordering
 
 export vacuumstate, makestep, timesteps
 export ImagGrassmannLattice1Order, RealGrassmannLattice1Order, RealGrassmannLattice2Order, GrassmannLattice, index, integrate
-export IntegrationAlgorithm, ExactIntegrate, BMPSIntegrate
+export IntegrationAlgorithm, ExactIntegrate, BMPSIntegrate, Zvalue
 
 # correlation functions
 export Gτ, Gt, branch, CorrelationMatrix, correlationfunction

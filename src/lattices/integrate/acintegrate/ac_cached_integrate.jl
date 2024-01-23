@@ -21,7 +21,7 @@ DMRG.environments(lattice::AbstractGrassmannLattice, A::Union{GrassmannMPS, Vect
 # cached_integrate_util(lattice::AbstractGrassmannLattice, j::Int, k::Int, cache::AbstractExpectationCache, A::Union{GrassmannMPS, Vector}, Bs::GrassmannMPS...; kwargs...) = _cached_integrate_util(
 # 	lattice, j, k, cache, A, Bs...; kwargs...) / Zvalue(cache)
 
-integrate(m::Union{GTerm, ExpGTerm}, cache::AbstractExpectationCache; kwargs...) = integrate(convert(PartialMPO, m), cache; kwargs...)
+DMRG.expectationvalue(m::Union{GTerm, ExpGTerm}, cache::AbstractExpectationCache; kwargs...) = expectationvalue(convert(PartialMPO, m), cache; kwargs...)
 
 struct TwosideExpectationCache{M<:GrassmannMPS, G<:Tuple, L<:AbstractGrassmannLattice, Hl, Hr} <: AbstractExpectationCache
 	A::M
@@ -33,7 +33,7 @@ end
 DMRG.rightenv(x::TwosideExpectationCache, j::Int) = x.hright[j+1]
 Base.length(x::TwosideExpectationCache) = length(x.lattice)
 
-function TwosideExpectationCache(lattice::AbstractGrassmannLattice, As::Tuple; trunc::TruncationScheme=DefaultIntegrationTruncation) 
+function TwosideExpectationCache(lattice::AbstractGrassmannLattice, As::Tuple) 
 	(ConjugationStyle(lattice.ordering) isa AdjacentConjugation) || throw(ArgumentError("only AdjacentConjugation supported for cached evaluation"))
 	# (length(A) == length(B) == length(lattice)) || throw(DimensionMismatch())
 	(all(v->length(v)==length(lattice), As)) || throw(DimensionMismatch())
@@ -57,7 +57,7 @@ function TwosideExpectationCache(lattice::AbstractGrassmannLattice, As::Tuple; t
 	return TwosideExpectationCache(first(As), Base.tail(As), lattice, hleft, hright)
 end
 
-_environments(alg::ExactIntegrate, lattice::AbstractGrassmannLattice, A::GrassmannMPS, B::GrassmannMPS...; kwargs...) = TwosideExpectationCache(lattice, (A, B...); kwargs...)
+_environments(alg::ExactIntegrate, lattice::AbstractGrassmannLattice, A::GrassmannMPS, B::GrassmannMPS...) = TwosideExpectationCache(lattice, (A, B...))
 # _environments(alg::ExactIntegrate, lattice::AbstractGrassmannLattice, A::GrassmannMPS, B::GrassmannMPS, C::GrassmannMPS; kwargs...) = TwosideExpectationCache(lattice, (A, B, C); kwargs...)
 
 
@@ -76,9 +76,8 @@ _environments(alg::ExactIntegrate, lattice::AbstractGrassmannLattice, A::Grassma
 # 	r = contract_center(left, right) 
 # 	return r 
 # end
-integrate(m::PartialMPO, cache::TwosideExpectationCache; trunc::TruncationScheme=DefaultIntegrationTruncation) = integrate_unnormalized(
-			m, cache, trunc=trunc) / Zvalue(cache)
-function integrate_unnormalized(m::PartialMPO, cache::TwosideExpectationCache; trunc::TruncationScheme=DefaultIntegrationTruncation)
+DMRG.expectationvalue(m::PartialMPO, cache::TwosideExpectationCache) = expectation(m, cache) / Zvalue(cache)
+function DMRG.expectation(m::PartialMPO, cache::TwosideExpectationCache)
 	j, k = positions(m)[1], positions(m)[end]
 	j, k = pos2pairindex(j), pos2pairindex(k)
 	left = leftenv(cache, j)  
@@ -90,8 +89,6 @@ function integrate_unnormalized(m::PartialMPO, cache::TwosideExpectationCache; t
 	end	
 	return contract_center(left, right) 	
 end
-# cached_integrate_util(lattice::AbstractGrassmannLattice, j::Int, k::Int, cache::TwosideExpectationCache, A2::GrassmannMPS, Bs::GrassmannMPS...; kwargs...) = _cached_integrate_util(
-# 	lattice, j, k, cache, A2, Bs...; kwargs...) / Zvalue(cache)
 
 # 4 mps
 struct LeftExpectationCache{M<:GrassmannMPS, G<:Tuple, L<:AbstractGrassmannLattice, H} <: AbstractExpectationCache
@@ -101,7 +98,7 @@ struct LeftExpectationCache{M<:GrassmannMPS, G<:Tuple, L<:AbstractGrassmannLatti
 	hleft::H
 end
 Base.length(x::LeftExpectationCache) = length(x.lattice)
-function LeftExpectationCache(lattice::AbstractGrassmannLattice, As::Tuple; trunc::TruncationScheme=DefaultIntegrationTruncation)
+function LeftExpectationCache(lattice::AbstractGrassmannLattice, As::Tuple)
 	(ConjugationStyle(lattice.ordering) isa AdjacentConjugation) || throw(ArgumentError("only AdjacentConjugation supported for cached evaluation"))
 	(all(v->length(v)==length(lattice), As)) || throw(DimensionMismatch())
 	Lhalf = div(length(lattice), 2)
@@ -135,9 +132,8 @@ end
 # end
 # cached_integrate_util(lattice::AbstractGrassmannLattice, j::Int, k::Int, cache::LeftExpectationCache, A2::GrassmannMPS, Bs::GrassmannMPS...; kwargs...) = _cached_integrate_util(
 # 	lattice, j, k, cache, A2, Bs...; kwargs...) / Zvalue(cache)
-integrate(m::PartialMPO, cache::LeftExpectationCache; trunc::TruncationScheme=DefaultIntegrationTruncation) = integrate_unnormalized(
-			m, cache, trunc=trunc) / Zvalue(cache)
-function integrate_unnormalized(m::PartialMPO, cache::LeftExpectationCache; trunc::TruncationScheme=DefaultIntegrationTruncation)
+DMRG.expectationvalue(m::PartialMPO, cache::LeftExpectationCache) = expectation(m, cache) / Zvalue(cache)
+function DMRG.expectation(m::PartialMPO, cache::LeftExpectationCache)
 	j, k = positions(m)[1], positions(m)[end]
 	j = pos2pairindex(j)
 	left = leftenv(cache, j)  
@@ -155,8 +151,8 @@ end
 Base.length(x::VectorExpectationCache) = length(x.caches[1])
 Zvalue(x::VectorExpectationCache) = sum(Zvalue.(x.caches))
 
-function _environments(alg::ExactIntegrate, lattice::AbstractGrassmannLattice, A::Vector{<:GrassmannMPS}, B::GrassmannMPS...; kwargs...)
-	caches = [_environments(alg, lattice, Aj, B...; kwargs...) for Aj in A]
+function _environments(alg::ExactIntegrate, lattice::AbstractGrassmannLattice, A::Vector{<:GrassmannMPS}, B::GrassmannMPS...)
+	caches = [_environments(alg, lattice, Aj, B...) for Aj in A]
 	return VectorExpectationCache(caches)
 end
 
@@ -164,9 +160,6 @@ end
 # 	@assert length(cache.caches) == length(A2)
 # 	return sum([_cached_integrate_util(lattice, j, k, cj, Aj, Bs...; kwargs...) for (cj, Aj) in zip(cache.caches, A2)])
 # end
-
-function integrate(m::PartialMPO, cache::VectorExpectationCache; trunc::TruncationScheme=DefaultIntegrationTruncation)
-	return sum(integrate_unnormalized(m, cj; trunc=trunc) for cj in cache.caches) / Zvalue(cache)
-end
-
+DMRG.expectation(m::PartialMPO, cache::VectorExpectationCache) = sum(expectation(m, cj) for cj in cache.caches)
+DMRG.expectationvalue(m::PartialMPO, cache::VectorExpectationCache) = expectation(m, cache) / Zvalue(cache)
 

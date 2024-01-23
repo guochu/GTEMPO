@@ -4,7 +4,7 @@ function cached_gf(lattice::ImagGrassmannLattice, i::Int, A::Union{GrassmannMPS,
                 cache::AbstractExpectationCache=environments(lattice, A, B...), band::Int=1, kwargs...)
 	pos1, pos2 = index(lattice, i, conj=false, band=band), index(lattice, 1, conj=true, band=band)
 	t = GTerm(pos1, pos2, coeff=1)
-	return integrate(t, cache; kwargs...)
+	return expectationvalue(t, cache; kwargs...)
 end
 
 function cached_gf(lattice::ImagGrassmannLattice, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...;
@@ -22,7 +22,7 @@ function cached_gf(lattice::RealGrassmannLattice, i::Int, j::Int, A::Union{Grass
                     cache::AbstractExpectationCache=environments(lattice, A, B...), f1::Bool, f2::Bool, c1::Bool=true, c2::Bool=false, band::Int=1, kwargs...)
     pos1, pos2 = index(lattice, i, conj=c1, forward=f1, band=band), index(lattice, j, conj=c2, forward=f2, band=band)
     t = GTerm(pos1, pos2, coeff=1)
-    return integrate(t, cache; kwargs...)
+    return expectationvalue(t, cache; kwargs...)
 end
 
 # real-time first order
@@ -50,7 +50,7 @@ cached_electriccurrent(lattice::RealGrassmannLattice1Order, corr::RealCorrelatio
 function cached_electriccurrent_fast(lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction, k::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
                                     cache::AbstractExpectationCache=environments(lattice, A, B...), band::Int=1, kwargs...)
     mpo = build_current_mpo(lattice, corr, k, band)
-    curr = integrate(mpo, cache; kwargs...)
+    curr = expectationvalue(mpo, cache; kwargs...)
     return 2 * curr / lattice.δt
 end
 cached_electriccurrent_fast(lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
@@ -86,7 +86,7 @@ function cached_electriccurrent_fast(lattice::RealGrassmannLattice2Order, corr::
     # A2 =_mult_A(mpo, A) 
     # curr = cached_integrate_util(lattice, k, 1, cache, A2, B...; kwargs...)
     # a, b = first(positions(mpo)), last(positions(mpo))
-    curr = integrate(mpo, cache; kwargs...)
+    curr = expectationvalue(mpo, cache; kwargs...)
 
     η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
     curr -= η⁺⁺[2*k-1, 2*k-2] * cached_gf(lattice, k, k, A, B...; cache=cache, f1=false, f2=true, band=band, kwargs...)
