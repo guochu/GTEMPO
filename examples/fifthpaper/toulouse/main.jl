@@ -165,7 +165,7 @@ function main_ti_vs_t()
 end
 
 function main_ti_vs_order()
-	main_partial(0.5)
+	main_ti(0.5)
 	t = 30.
 	for order in [6,7,8]
 		main_ti(t, order=order)
@@ -173,7 +173,7 @@ function main_ti_vs_order()
 end
 
 function main_ti_vs_k()
-	main_partial(0.5)
+	main_ti(0.5)
 	t = 30.
 	for k in [5, 10, 15]
 		main_ti(t, k=k)
