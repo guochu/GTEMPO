@@ -90,6 +90,20 @@ function main_partial(t; ϵ_d=0, β=20., order=7, δt = 0.05)
 
 end
 
+function main_partial_vs_t()
+	main_partial(0.5)
+	for t in [10., 20., 30., 40., 50., 60.]
+		main_partial(t)
+	end
+end
+
+function main_partial_vs_order()
+	main_partial(0.5)
+	t = 30.
+	for order in [6,7,8]
+		main_partial(t, order=order)
+	end
+end
 
 function main_ti(t; ϵ_d=0, β = 20., order=7, prony=1.0e-5, k=5, δt = 0.05)
 	D = 2.
@@ -143,4 +157,25 @@ function main_ti(t; ϵ_d=0, β = 20., order=7, prony=1.0e-5, k=5, δt = 0.05)
 end
 
 
+function main_ti_vs_t()
+	main_ti(0.5)
+	for t in [10., 20., 30., 40., 50., 60.]
+		main_ti(t)
+	end
+end
 
+function main_ti_vs_order()
+	main_partial(0.5)
+	t = 30.
+	for order in [6,7,8]
+		main_ti(t, order=order)
+	end
+end
+
+function main_ti_vs_k()
+	main_partial(0.5)
+	t = 30.
+	for k in [5, 10, 15]
+		main_ti(t, k=k)
+	end
+end
