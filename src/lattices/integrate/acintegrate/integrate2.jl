@@ -50,20 +50,21 @@ function update_pair_left(left::AbstractTensorMap{<:ElementarySpace, 1, 2}, j::I
 	end	
 
 	# fuse physical
-	cod = space(tmp2, 1) ⊗ space(tmp2, 2) ⊗ space(tmp2, 4)
-	dom = space(tmp2, 5)'
-	tmp3 = TensorMap(zeros, scalartype(tmp2), cod ← dom) 
-	for (f1, f2) in fusiontrees(tmp2)
-		n = f1.uncoupled[2].n + f1.uncoupled[3].n 
-		if n == 0
-			f1′ = FusionTree((f1.uncoupled[1],f1.uncoupled[2], f1.uncoupled[4]), f1.coupled, (f1.isdual[1],f1.isdual[2],f1.isdual[4]))
-			tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,1,:,:]
-		elseif n == 1
-			isdual2 = ifelse(fermionparity(f1.uncoupled[2]), f1.isdual[2], f1.isdual[3] )
-			f1′ = FusionTree((f1.uncoupled[1], Z2Irrep(1), f1.uncoupled[4]), f1.coupled, (f1.isdual[1], isdual2, f1.isdual[4]))
-			tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,1,:,:]
-		end
-	end
+	# cod = space(tmp2, 1) ⊗ space(tmp2, 2) ⊗ space(tmp2, 4)
+	# dom = space(tmp2, 5)'
+	# tmp3 = TensorMap(zeros, scalartype(tmp2), cod ← dom) 
+	# for (f1, f2) in fusiontrees(tmp2)
+	# 	n = f1.uncoupled[2].n + f1.uncoupled[3].n 
+	# 	if n == 0
+	# 		f1′ = FusionTree((f1.uncoupled[1],f1.uncoupled[2], f1.uncoupled[4]), f1.coupled, (f1.isdual[1],f1.isdual[2],f1.isdual[4]))
+	# 		tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,1,:,:]
+	# 	elseif n == 1
+	# 		isdual2 = ifelse(fermionparity(f1.uncoupled[2]), f1.isdual[2], f1.isdual[3] )
+	# 		f1′ = FusionTree((f1.uncoupled[1], Z2Irrep(1), f1.uncoupled[4]), f1.coupled, (f1.isdual[1], isdual2, f1.isdual[4]))
+	# 		tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,1,:,:]
+	# 	end
+	# end
+	tmp3 = g_fuse(tmp2, 2)
 
 	@tensor tmp1[1,2,5,6;3] := tmp3[1,2,3,4] * x[posa+1][4,5,6]
 	for (f1, f2) in fusiontrees(tmp1)
@@ -84,20 +85,21 @@ function update_pair_left(left::AbstractTensorMap{<:ElementarySpace, 1, 2}, j::I
 	end	
 
 	# fuse physical
-	cod = space(tmp2, 1) ⊗ space(tmp2, 2) ⊗ space(tmp2, 3) 
-	dom = space(tmp2, 5)' ⊗ space(tmp2, 6)'
-	tmp3 = TensorMap(ds->zeros(scalartype(tmp2), ds), cod ← dom) 
-	for (f1, f2) in fusiontrees(tmp2)
-		n = f1.uncoupled[3].n + f1.uncoupled[4].n 
-		if n == 0
-			f1′ = FusionTree((f1.uncoupled[1],f1.uncoupled[2], f1.uncoupled[3]), f1.coupled, (f1.isdual[1],f1.isdual[2],f1.isdual[3]))
-			tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,:,1,:,:]
-		elseif n == 1
-			isdual2 = ifelse(fermionparity(f1.uncoupled[3]), f1.isdual[3], f1.isdual[4] )
-			f1′ = FusionTree((f1.uncoupled[1], f1.uncoupled[2], Z2Irrep(1)), f1.coupled, (f1.isdual[1], f1.isdual[2], isdual2))
-			tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,:,1,:,:]
-		end
-	end
+	# cod = space(tmp2, 1) ⊗ space(tmp2, 2) ⊗ space(tmp2, 3) 
+	# dom = space(tmp2, 5)' ⊗ space(tmp2, 6)'
+	# tmp3 = TensorMap(ds->zeros(scalartype(tmp2), ds), cod ← dom) 
+	# for (f1, f2) in fusiontrees(tmp2)
+	# 	n = f1.uncoupled[3].n + f1.uncoupled[4].n 
+	# 	if n == 0
+	# 		f1′ = FusionTree((f1.uncoupled[1],f1.uncoupled[2], f1.uncoupled[3]), f1.coupled, (f1.isdual[1],f1.isdual[2],f1.isdual[3]))
+	# 		tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,:,1,:,:]
+	# 	elseif n == 1
+	# 		isdual2 = ifelse(fermionparity(f1.uncoupled[3]), f1.isdual[3], f1.isdual[4] )
+	# 		f1′ = FusionTree((f1.uncoupled[1], f1.uncoupled[2], Z2Irrep(1)), f1.coupled, (f1.isdual[1], f1.isdual[2], isdual2))
+	# 		tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,:,1,:,:]
+	# 	end
+	# end
+	tmp3 = g_fuse(tmp2, 3)
 
 	# trace physices
 	left = TensorMap(zeros, scalartype(tmp3), space(tmp3, 1) ← space(tmp3, 4)' ⊗ space(tmp3, 5)')
@@ -131,20 +133,21 @@ function update_pair_right(right::AbstractTensorMap{<:ElementarySpace, 2, 1}, j:
 	end	
 
 	# fuse physical
-	cod = space(tmp2, 1) ⊗ space(tmp2, 2) ⊗ space(tmp2, 3) 
-	dom = space(tmp2, 5)' 
-	tmp3 = TensorMap(zeros, scalartype(tmp2), cod ← dom) 
-	for (f1, f2) in fusiontrees(tmp2)
-		n = f1.uncoupled[3].n + f1.uncoupled[4].n 
-		if n == 0
-			f1′ = FusionTree((f1.uncoupled[1],f1.uncoupled[2], f1.uncoupled[3]), f1.coupled, (f1.isdual[1],f1.isdual[2],f1.isdual[3]))
-			tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,:,1,:]
-		elseif n == 1
-			isdual2 = ifelse(fermionparity(f1.uncoupled[3]), f1.isdual[3], f1.isdual[4] )
-			f1′ = FusionTree((f1.uncoupled[1], f1.uncoupled[2], Z2Irrep(1)), f1.coupled, (f1.isdual[1], f1.isdual[2], isdual2))
-			tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,:,1,:]
-		end
-	end
+	# cod = space(tmp2, 1) ⊗ space(tmp2, 2) ⊗ space(tmp2, 3) 
+	# dom = space(tmp2, 5)' 
+	# tmp3 = TensorMap(zeros, scalartype(tmp2), cod ← dom) 
+	# for (f1, f2) in fusiontrees(tmp2)
+	# 	n = f1.uncoupled[3].n + f1.uncoupled[4].n 
+	# 	if n == 0
+	# 		f1′ = FusionTree((f1.uncoupled[1],f1.uncoupled[2], f1.uncoupled[3]), f1.coupled, (f1.isdual[1],f1.isdual[2],f1.isdual[3]))
+	# 		tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,:,1,:]
+	# 	elseif n == 1
+	# 		isdual2 = ifelse(fermionparity(f1.uncoupled[3]), f1.isdual[3], f1.isdual[4] )
+	# 		f1′ = FusionTree((f1.uncoupled[1], f1.uncoupled[2], Z2Irrep(1)), f1.coupled, (f1.isdual[1], f1.isdual[2], isdual2))
+	# 		tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,:,1,:]
+	# 	end
+	# end
+	tmp3 = g_fuse(tmp2, 3)
 
 	@tensor tmp1[4,1,2,5;6] := x[posb-1][1,2,3] * tmp3[3,4,5,6]
 	for (f1, f2) in fusiontrees(tmp1)
@@ -165,20 +168,21 @@ function update_pair_right(right::AbstractTensorMap{<:ElementarySpace, 2, 1}, j:
 	end	
 
 	# fuse physical
-	cod = space(tmp2, 1) ⊗ space(tmp2, 2) ⊗ space(tmp2, 3) ⊗ space(tmp2, 5) 
-	dom = space(tmp2, 6)' 
-	tmp3 = TensorMap(zeros, scalartype(tmp2), cod ← dom) 
-	for (f1, f2) in fusiontrees(tmp2)
-		n = f1.uncoupled[3].n + f1.uncoupled[4].n 
-		if n == 0
-			f1′ = FusionTree((f1.uncoupled[1],f1.uncoupled[2], f1.uncoupled[3], f1.uncoupled[5]), f1.coupled, (f1.isdual[1],f1.isdual[2],f1.isdual[3], f1.isdual[5]))
-			tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,:,1,:,:]
-		elseif n == 1
-			isdual2 = ifelse(fermionparity(f1.uncoupled[3]), f1.isdual[3], f1.isdual[4] )
-			f1′ = FusionTree((f1.uncoupled[1], f1.uncoupled[2], Z2Irrep(1), f1.uncoupled[5]), f1.coupled, (f1.isdual[1], f1.isdual[2], isdual2, f1.isdual[5]))
-			tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,:,1,:,:]
-		end
-	end
+	# cod = space(tmp2, 1) ⊗ space(tmp2, 2) ⊗ space(tmp2, 3) ⊗ space(tmp2, 5) 
+	# dom = space(tmp2, 6)' 
+	# tmp3 = TensorMap(zeros, scalartype(tmp2), cod ← dom) 
+	# for (f1, f2) in fusiontrees(tmp2)
+	# 	n = f1.uncoupled[3].n + f1.uncoupled[4].n 
+	# 	if n == 0
+	# 		f1′ = FusionTree((f1.uncoupled[1],f1.uncoupled[2], f1.uncoupled[3], f1.uncoupled[5]), f1.coupled, (f1.isdual[1],f1.isdual[2],f1.isdual[3], f1.isdual[5]))
+	# 		tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,:,1,:,:]
+	# 	elseif n == 1
+	# 		isdual2 = ifelse(fermionparity(f1.uncoupled[3]), f1.isdual[3], f1.isdual[4] )
+	# 		f1′ = FusionTree((f1.uncoupled[1], f1.uncoupled[2], Z2Irrep(1), f1.uncoupled[5]), f1.coupled, (f1.isdual[1], f1.isdual[2], isdual2, f1.isdual[5]))
+	# 		tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,:,1,:,:]
+	# 	end
+	# end
+	tmp3 = g_fuse(tmp2, 3)
 
 	# trace physices
 	right = TensorMap(zeros, scalartype(tmp3), space(tmp3, 1) ⊗ space(tmp3, 2) ← space(tmp3, 5)')

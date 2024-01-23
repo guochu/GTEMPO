@@ -248,22 +248,23 @@ function update_pair_left(left::AbstractTensorMap{<:ElementarySpace, 1, 4}, j::I
 	end		
 
 	# fuse indices
-	cod = space(tmp2, 1) ⊗ space(tmp2, 2) ⊗ space(tmp2, 3) ⊗ space(tmp2, 5) ⊗ space(tmp2, 6)
-	dom = space(tmp2, 7)'
-	tmp3 = TensorMap(ds->zeros(scalartype(tmp2), ds), cod ← dom) 
-	for (f1, f2) in fusiontrees(tmp2)
-		n = f1.uncoupled[3].n + f1.uncoupled[4].n
-		if n == 0
-			f1′ = FusionTree((f1.uncoupled[1],f1.uncoupled[2],f1.uncoupled[3], f1.uncoupled[5],f1.uncoupled[6]), f1.coupled, 
-							(f1.isdual[1],f1.isdual[2],f1.isdual[3],f1.isdual[5], f1.isdual[6]))
-			tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,:,1,:,:,:]
-		elseif n == 1
-			isdual2 = ifelse(isodd(f1.uncoupled[3].n), f1.isdual[3], f1.isdual[4])
-			f1′ = FusionTree((f1.uncoupled[1], f1.uncoupled[2], Z2Irrep(1), f1.uncoupled[5], f1.uncoupled[6]), f1.coupled, 
-						(f1.isdual[1], f1.isdual[2], isdual2, f1.isdual[5], f1.isdual[6]))
-			tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,:,1,:,:,:]
-		end
-	end
+	# cod = space(tmp2, 1) ⊗ space(tmp2, 2) ⊗ space(tmp2, 3) ⊗ space(tmp2, 5) ⊗ space(tmp2, 6)
+	# dom = space(tmp2, 7)'
+	# tmp3 = TensorMap(ds->zeros(scalartype(tmp2), ds), cod ← dom) 
+	# for (f1, f2) in fusiontrees(tmp2)
+	# 	n = f1.uncoupled[3].n + f1.uncoupled[4].n
+	# 	if n == 0
+	# 		f1′ = FusionTree((f1.uncoupled[1],f1.uncoupled[2],f1.uncoupled[3], f1.uncoupled[5],f1.uncoupled[6]), f1.coupled, 
+	# 						(f1.isdual[1],f1.isdual[2],f1.isdual[3],f1.isdual[5], f1.isdual[6]))
+	# 		tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,:,1,:,:,:]
+	# 	elseif n == 1
+	# 		isdual2 = ifelse(isodd(f1.uncoupled[3].n), f1.isdual[3], f1.isdual[4])
+	# 		f1′ = FusionTree((f1.uncoupled[1], f1.uncoupled[2], Z2Irrep(1), f1.uncoupled[5], f1.uncoupled[6]), f1.coupled, 
+	# 					(f1.isdual[1], f1.isdual[2], isdual2, f1.isdual[5], f1.isdual[6]))
+	# 		tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,:,1,:,:,:]
+	# 	end
+	# end
+	tmp3 = g_fuse(tmp2, 3)
 
 	@tensor tmp2[8,2,6,3,4,7; 1] := tmp3[8,1,2,3,4,5] * y[posa][5,6,7]
 	for (f1, f2) in fusiontrees(tmp2)
@@ -281,22 +282,23 @@ function update_pair_left(left::AbstractTensorMap{<:ElementarySpace, 1, 4}, j::I
 	end
 
 	# fuse indices
-	cod = space(tmp2, 1) ⊗ space(tmp2, 2) ⊗ space(tmp2, 4) ⊗ space(tmp2, 5) ⊗ space(tmp2, 6)
-	dom = space(tmp2, 7)'
-	tmp3 = TensorMap(ds->zeros(scalartype(tmp2), ds), cod ← dom) 
-	for (f1, f2) in fusiontrees(tmp2)
-		n = f1.uncoupled[2].n + f1.uncoupled[3].n
-		if n == 0
-			f1′ = FusionTree((f1.uncoupled[1],f1.uncoupled[2],f1.uncoupled[4], f1.uncoupled[5],f1.uncoupled[6]), f1.coupled, 
-							(f1.isdual[1],f1.isdual[2],f1.isdual[4],f1.isdual[5], f1.isdual[6]))
-			tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,1,:,:,:,:]
-		elseif n == 1
-			isdual2 = ifelse(isodd(f1.uncoupled[2].n), f1.isdual[2], f1.isdual[3])
-			f1′ = FusionTree((f1.uncoupled[1], Z2Irrep(1), f1.uncoupled[4], f1.uncoupled[5], f1.uncoupled[6]), f1.coupled, 
-							(f1.isdual[1], isdual2, f1.isdual[4], f1.isdual[5], f1.isdual[6]))
-			tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,1,:,:,:,:]
-		end
-	end
+	# cod = space(tmp2, 1) ⊗ space(tmp2, 2) ⊗ space(tmp2, 4) ⊗ space(tmp2, 5) ⊗ space(tmp2, 6)
+	# dom = space(tmp2, 7)'
+	# tmp3 = TensorMap(ds->zeros(scalartype(tmp2), ds), cod ← dom) 
+	# for (f1, f2) in fusiontrees(tmp2)
+	# 	n = f1.uncoupled[2].n + f1.uncoupled[3].n
+	# 	if n == 0
+	# 		f1′ = FusionTree((f1.uncoupled[1],f1.uncoupled[2],f1.uncoupled[4], f1.uncoupled[5],f1.uncoupled[6]), f1.coupled, 
+	# 						(f1.isdual[1],f1.isdual[2],f1.isdual[4],f1.isdual[5], f1.isdual[6]))
+	# 		tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,1,:,:,:,:]
+	# 	elseif n == 1
+	# 		isdual2 = ifelse(isodd(f1.uncoupled[2].n), f1.isdual[2], f1.isdual[3])
+	# 		f1′ = FusionTree((f1.uncoupled[1], Z2Irrep(1), f1.uncoupled[4], f1.uncoupled[5], f1.uncoupled[6]), f1.coupled, 
+	# 						(f1.isdual[1], isdual2, f1.isdual[4], f1.isdual[5], f1.isdual[6]))
+	# 		tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,1,:,:,:,:]
+	# 	end
+	# end
+	tmp3 = g_fuse(tmp2, 2)
 
 	@tensor tmp2[8,1,6,2,3,4;7] := tmp3[8,1,2,3,4,5] * x[posa][5,6,7]
 	for (f1, f2) in fusiontrees(tmp2)
@@ -310,22 +312,23 @@ function update_pair_left(left::AbstractTensorMap{<:ElementarySpace, 1, 4}, j::I
 	end
 
 	# fuse indices
-	cod = space(tmp2, 1) ⊗ space(tmp2, 2) ⊗ space(tmp2, 4) ⊗ space(tmp2, 5) ⊗ space(tmp2, 6)
-	dom = space(tmp2, 7)'
-	tmp3 = TensorMap(ds->zeros(scalartype(tmp2), ds), cod ← dom) 
-	for (f1, f2) in fusiontrees(tmp2)
-		n = f1.uncoupled[2].n + f1.uncoupled[3].n
-		if n == 0
-			f1′ = FusionTree((f1.uncoupled[1],f1.uncoupled[2],f1.uncoupled[4], f1.uncoupled[5],f1.uncoupled[6]), f1.coupled, 
-							(f1.isdual[1],f1.isdual[2],f1.isdual[4],f1.isdual[5],f1.isdual[6]))
-			tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,1,:,:,:,:]
-		elseif n == 1
-			isdual2 = ifelse(isodd(f1.uncoupled[2].n), f1.isdual[2], f1.isdual[3])
-			f1′ = FusionTree((f1.uncoupled[1], Z2Irrep(1), f1.uncoupled[4], f1.uncoupled[5], f1.uncoupled[6]), f1.coupled, 
-							(f1.isdual[1], isdual2, f1.isdual[4], f1.isdual[5], f1.isdual[6]))
-			tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,1,:,:,:,:]
-		end
-	end
+	# cod = space(tmp2, 1) ⊗ space(tmp2, 2) ⊗ space(tmp2, 4) ⊗ space(tmp2, 5) ⊗ space(tmp2, 6)
+	# dom = space(tmp2, 7)'
+	# tmp3 = TensorMap(ds->zeros(scalartype(tmp2), ds), cod ← dom) 
+	# for (f1, f2) in fusiontrees(tmp2)
+	# 	n = f1.uncoupled[2].n + f1.uncoupled[3].n
+	# 	if n == 0
+	# 		f1′ = FusionTree((f1.uncoupled[1],f1.uncoupled[2],f1.uncoupled[4], f1.uncoupled[5],f1.uncoupled[6]), f1.coupled, 
+	# 						(f1.isdual[1],f1.isdual[2],f1.isdual[4],f1.isdual[5],f1.isdual[6]))
+	# 		tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,1,:,:,:,:]
+	# 	elseif n == 1
+	# 		isdual2 = ifelse(isodd(f1.uncoupled[2].n), f1.isdual[2], f1.isdual[3])
+	# 		f1′ = FusionTree((f1.uncoupled[1], Z2Irrep(1), f1.uncoupled[4], f1.uncoupled[5], f1.uncoupled[6]), f1.coupled, 
+	# 						(f1.isdual[1], isdual2, f1.isdual[4], f1.isdual[5], f1.isdual[6]))
+	# 		tmp3[f1′, f2] .+= tmp2[f1, f2][:,:,1,:,:,:,:]
+	# 	end
+	# end
+	tmp3 = g_fuse(tmp2, 2)
 
 	# \bar{a}
 	@tensor tmp1[8,1,2,3,6,7;4] := tmp3[8,1,2,3,4,5] * x[posa+1][5,6,7]

@@ -18,13 +18,15 @@ function g_fuse(m::AbstractTensorMap{S, M, N}, i::Int) where {S, M, N}
 			isdual = map(n->f1.isdual[n], idx)
 			if n == 0
 				f1′ = FusionTree(uncoupled, f1.coupled, isdual)
-				tmp[f1′, f2] .+= StridedView(dropdims(m[f1, f2], dims=i+1) )
+				# tmp[f1′, f2] .+= StridedView(dropdims(m[f1, f2], dims=i+1) )
+				axpy!(true, StridedView(dropdims(m[f1, f2], dims=i+1) ), tmp[f1′, f2])
 			elseif n == 1
 				isdual2 = ifelse(isodd(f1.uncoupled[i].n), f1.isdual[i], f1.isdual[i+1])
 				uncoupled = TupleTools.setindex(uncoupled, Z2Irrep(1), i)
 				isdual = TupleTools.setindex(isdual, isdual2, i)
 				f1′ = FusionTree(uncoupled, f1.coupled, isdual)
-				tmp[f1′, f2] .+= StridedView(dropdims(m[f1, f2], dims=i+1))
+				# tmp[f1′, f2] .+= StridedView(dropdims(m[f1, f2], dims=i+1))
+				axpy!(true, StridedView(dropdims(m[f1, f2], dims=i+1)), tmp[f1′, f2])
 			end
 		end
 	else
@@ -40,13 +42,15 @@ function g_fuse(m::AbstractTensorMap{S, M, N}, i::Int) where {S, M, N}
 			isdual = map(n->f2.isdual[n], idx)
 			if n == 0
 				f2′ = FusionTree(uncoupled, f2.coupled, isdual)
-				tmp[f1, f2′] .+= StridedView(dropdims(m[f1, f2], dims=i+1))
+				# tmp[f1, f2′] .+= StridedView(dropdims(m[f1, f2], dims=i+1))
+				axpy!(true, StridedView(dropdims(m[f1, f2], dims=i+1)), tmp[f1, f2′])
 			elseif n == 1
 				isdual2 = ifelse(isodd(f2.uncoupled[i2].n), f2.isdual[i2], f2.isdual[i2+1])
 				uncoupled = TupleTools.setindex(uncoupled, Z2Irrep(1), i2)
 				isdual = TupleTools.setindex(isdual, isdual2, i2)
 				f2′ = FusionTree(uncoupled, f2.coupled, isdual)
-				tmp[f1, f2′] .+= StridedView(dropdims(m[f1, f2], dims=i+1))
+				# tmp[f1, f2′] .+= StridedView(dropdims(m[f1, f2], dims=i+1))
+				axpy!(true, StridedView(dropdims(m[f1, f2], dims=i+1)), tmp[f1, f2′])
 			end
 		end	
 	end
@@ -70,7 +74,8 @@ function g_trace(m::AbstractTensorMap{S, M, N}, i::Int) where {S, M, N}
 				isdual = map(n->f1.isdual[n], idx)
 
 				f0 = FusionTree(uncoupled, f1.coupled, isdual)
-				tmp[f0, f2] += StridedView(dropdims(m[f1, f2], dims=(i, i+1)))
+				# tmp[f0, f2] += StridedView(dropdims(m[f1, f2], dims=(i, i+1)))
+				axpy!(true, StridedView(dropdims(m[f1, f2], dims=(i, i+1))), tmp[f0, f2])
 			end
 		end	
 	else
@@ -88,7 +93,8 @@ function g_trace(m::AbstractTensorMap{S, M, N}, i::Int) where {S, M, N}
 
 				f0 = FusionTree(uncoupled, f2.coupled, isdual)
 
-				tmp[f1, f0] += StridedView(dropdims(m[f1, f2], dims=(i, i+1)))
+				# tmp[f1, f0] += StridedView(dropdims(m[f1, f2], dims=(i, i+1)))
+				axpy!(true, StridedView(dropdims(m[f1, f2], dims=(i, i+1))), tmp[f1, f0])
 
 			end
 		end	
