@@ -34,6 +34,20 @@ println("------------------------------------")
 		psi1 = canonicalize!(deepcopy(psi), alg=Orthogonalize(trunc=NoTruncation(), normalize=false))
 		@test norm(psi) ≈ norm(psi1) atol = 1.0e-7
 		@test distance(psi, psi1) < 1.0e-7
+
+		psi1 = randomgmps(T, L, D=2)
+		psi2 = randomgmps(T, L, D=4)
+
+		psi3 = psi1 * psi2
+		_n = norm(psi3)
+		psi4 = mult(psi1, psi2, trunc=truncdimcutoff(D=10, ϵ=1.0e-10))
+		@test distance(psi3, psi4) / _n < 1.0e-7
+		canonicalize!(psi1)
+		canonicalize!(psi2)
+		psi5 = psi1 * psi2
+		@test distance(psi3, psi5) / _n < 1.0e-7
+		psi6 = mult(psi1, psi2, trunc=truncdimcutoff(D=10, ϵ=1.0e-10))
+		@test distance(psi3, psi6) / _n < 1.0e-7
 	end
 	
 end

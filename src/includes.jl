@@ -1,6 +1,6 @@
 using Logging: @warn
-using QuadGK, Permutations, Reexport, TupleTools, Strided
-using SphericalTensors: SphericalTensors, QR, SVD
+using QuadGK, Permutations, Reexport, TupleTools, Strided, Statistics
+using SphericalTensors: SphericalTensors, QR, SVD, LQ
 const TK = SphericalTensors
 @reexport using DMRG, ImpurityModelBase
 using DMRG: TimeEvoMPOAlgorithm

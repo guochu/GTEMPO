@@ -1,2 +1,2 @@
 include("svdmult.jl")
-# include("iterativemult.jl")
+include("iterativemult.jl")
