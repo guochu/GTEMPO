@@ -60,6 +60,7 @@ include("grassmannmps/grassmannmps.jl")
 include("grassmannmps/orth.jl")
 include("grassmannmps/linalg.jl")
 include("grassmannmps/transfer.jl")
+include("grassmannmps/mult/mult.jl")
 
 # Grassmann lattice and integration
 include("lattices/lattices.jl")

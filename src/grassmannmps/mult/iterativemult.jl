@@ -13,7 +13,7 @@ end
 
 
 # provide the initial guess
-function _svd_mult(x::GrassmannMPS, y::GrassmannMPS, trunc::TruncationScheme)
+function _svd_guess(x::GrassmannMPS, y::GrassmannMPS, trunc::TruncationScheme)
     (length(x) == length(y)) || throw(DimensionMismatch())
     A = mpstensortype(spacetype(x), promote_type(scalartype(x), scalartype(y)))
     left = isomorphism( fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) )
@@ -54,4 +54,23 @@ function _svd_mult(x::GrassmannMPS, y::GrassmannMPS, trunc::TruncationScheme)
     x[end] = @tensor tmp[1,2;5] := tmp4[1,2,3,4] * conj(left[5,3,4])
     _rightorth!(x, SVD(), trunc, false)
     return _rescaling!(x)	
+end
+
+function updatemultleft(left::MPSTensor, zj::MPSTensor, xj::MPSTensor, yj::MPSTensor)
+    @tensor tmp1[1,5,4;2] := left[1,2,3] * yj[3,4,5]
+    for (f1, f2) in fusiontrees(tmp1)
+        coef1 = (isodd(f1.uncoupled[2].n) && isodd(f2.uncoupled[1].n)) ? -1 : 1
+        coef2 = (isodd(f1.uncoupled[3].n) && isodd(f2.uncoupled[1].n)) ? -1 : 1
+        coef3 = (isodd(f1.uncoupled[3].n) && isodd(f1.uncoupled[2].n)) ? -1 : 1
+        # println(coef1, " ", coef2, " ", coef3, " ", coef4, " ", coef5)
+        coef = coef1 * coef2 * coef3
+        if coef != 1
+            lmul!(coef, tmp1[f1, f2])
+        end
+    end    
+    @tensor tmp2[1,3,5;6,2] := tmp1[1,2,3,4] * xj[4,5,6]
+end
+
+function updatemultright(right::MPSTensor, zj::MPSTensor, xj::MPSTensor, yj::MPSTensor)
+    @tensor tmp1[] :=
 end
