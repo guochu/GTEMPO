@@ -46,6 +46,7 @@ end
 
 function main_partial(t; ϵ_d=0, β=20., order=7, δt = 0.05)
 	D = 2.
+	χ = 50
 
 	N = round(Int, t / δt)
 
@@ -57,8 +58,8 @@ function main_partial(t; ϵ_d=0, β=20., order=7, δt = 0.05)
 
 	corr = correlationfunction(exact_model.bath, lattice)
 
-	trunc = truncdimcutoff(D=1024, ϵ=10.0^(-order), add_back=0)
-	truncK = truncdimcutoff(D=1024, ϵ=1.0e-10, add_back=0)
+	trunc = truncdimcutoff(D=χ, ϵ=10.0^(-order), add_back=0)
+	truncK = truncdimcutoff(D=χ, ϵ=1.0e-10, add_back=0)
 
 
 	println("computing MPS-IF...")
@@ -109,6 +110,7 @@ end
 
 function main_ti(t; ϵ_d=0, β = 20., order=7, prony=1.0e-5, k=5, δt = 0.05)
 	D = 2.
+	χ = 50
 
 	N = round(Int, t / δt)
 
@@ -120,8 +122,8 @@ function main_ti(t; ϵ_d=0, β = 20., order=7, prony=1.0e-5, k=5, δt = 0.05)
 
 	corr = correlationfunction(exact_model.bath, lattice)
 
-	trunc = truncdimcutoff(D=1024, ϵ=10.0^(-order), add_back=0)
-	truncK = truncdimcutoff(D=1024, ϵ=1.0e-10, add_back=0)
+	trunc = truncdimcutoff(D=χ, ϵ=10.0^(-order), add_back=0)
+	truncK = truncdimcutoff(D=χ, ϵ=1.0e-10, add_back=0)
 
 
 	println("computing MPS-IF...")
