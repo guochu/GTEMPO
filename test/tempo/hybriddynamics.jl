@@ -58,10 +58,13 @@ end
 
 			corr = correlationfunction(bath, lattice)
 			mpsI1 = hybriddynamics(lattice, corr, alg1, trunc=trunc) 
-			mpsI2 = hybriddynamics(lattice, corr, alg2, trunc=trunc)
+			mpsI2 = hybriddynamics(lattice, corr, alg2, SVDCompression(trunc), trunc=trunc)
 
 			# println(norm(mpsI1), " ", norm(mpsI2), " ", distance(mpsI1, mpsI2))
 			@test distance(mpsI1, mpsI2) / norm(mpsI1) < rtol
+
+			mpsI3 = hybriddynamics(lattice, corr, alg2, trunc=truncdimcutoff(D=bond_dimension(mpsI1), ϵ=trunc.ϵ))
+			@test distance(mpsI1, mpsI3) / norm(mpsI1) < rtol
 		end
 	end
 
