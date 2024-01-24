@@ -1,8 +1,10 @@
-push!(LOAD_PATH, "../../../src")
+# push!(LOAD_PATH, "../../../src")
+# using GTEMPO
 
+include("../../../src/includes.jl")
 
 using JSON, QuadGK
-using GTEMPO
+
 
 function J(D::Real, ω::Real)
 	return (D/(2*pi)) * sqrt(1 - (ω/D)^2 ) * 0.1
@@ -128,7 +130,7 @@ function main_ti(t; ϵ_d=0, β = 20., order=7, prony=1.0e-5, k=5, δt = 0.05)
 	alg = TranslationInvariantIF(algevo=algevo, algexpan=algexpan, k=k)
 	_t = @elapsed mpsI = hybriddynamics(lattice, corr, alg, trunc=trunc, band=1)
 
-	println("time for building Partial IF ", _t)
+	println("time for building Translation Invariant IF ", _t)
 
 	bds = bond_dimensions(mpsI)
 

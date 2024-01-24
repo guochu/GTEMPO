@@ -19,17 +19,7 @@ end
 Base.:*(psi::GrassmannMPS, f::Number) = lmul!(f, copy(psi))
 Base.:*(f::Number, psi::GrassmannMPS) = psi * f
 Base.:/(psi::GrassmannMPS, f::Number) = psi * (1/f)
-
-
-function _renormalize!(psi, r, normalize)
-  nr = norm(r)
-  if nr != zero(nr)
-      if !normalize
-          _rescaling!(psi, nr)
-      end
-      r = lmul!(1/nr, r)  
-  end
-end
+Base.:(-)(psi::GrassmannMPS) = (-1) * psi
 
 _dot(psiA::GrassmannMPS, psiB::GrassmannMPS) = dot(MPS(psiA.data), MPS(psiB.data))
 # 	(length(psiA) == length(psiB)) || throw(DimensionMismatch())
@@ -69,31 +59,8 @@ function Base.:*(x::GrassmannMPS, y::GrassmannMPS)
     fusers = PeriodicArray([isomorphism(space(item, 4)' ⊗ space(item, 5)', fuse(space(item, 4), space(item, 5)) ) for item in out])
     return GrassmannMPS([@tensor tmp[3,4;7] := conj(fusers[i-1][1,2,3]) * out[i][1,2,4,5,6] * fusers[i][5,6,7] for i in 1:length(x)], scaling=scaling(x) * scaling(y))
 end
-# function mult(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=DMRG.DefaultTruncation)
-#   z = x * y
-#   canonicalize!(z, alg=Orthogonalize(SVD(), trunc))
-#   return z
-# end
-# function mult(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=DMRG.DefaultTruncation)
-#     (length(x) == length(y)) || throw(DimensionMismatch())
-#     A = DMRG.mpstensortype(spacetype(x), promote_type(eltype(x), eltype(y)))
-#     z = Vector{A}(undef, length(x))
-#     left = isomorphism( fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) )
-#     tmp5 = _fuse_physical(_mult_site(x[1], y[1]))
-#     @tensor tmp4[1,4;5,6] := left[1,2,3] * tmp5[2,3,4,5,6]
-#     for i in 1:length(x)-1
-#         q, r = leftorth!(tmp4, alg = QR())
-#         z[i] = q
-#         tmp5 = _fuse_physical(_mult_site(x[i+1], y[i+1]))
-#         @tensor tmp4[1,4;5,6] := r[1,2,3] * tmp5[2,3,4,5,6]
-#     end
-#     z[length(x)] = @tensor tmp[1,2;5] := tmp4[1,2,3,4] * conj(left[5,3,4])
-#     out = GrassmannMPS(z)
-#     _rightorth!(out, SVD(), trunc)
-#     return _rescaling!(out)
-# end
 
-function mult!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=DMRG.DefaultTruncation)
+function mult2!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=DMRG.DefaultTruncation)
     (length(x) == length(y)) || throw(DimensionMismatch())
     A = mpstensortype(spacetype(x), promote_type(scalartype(x), scalartype(y)))
     left = isomorphism( fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) )
@@ -106,7 +73,50 @@ function mult!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=DMRG.De
         @tensor tmp4[1,4;5,6] := r[1,2,3] * tmp5[2,3,4,5,6]
     end
     x[end] = @tensor tmp[1,2;5] := tmp4[1,2,3,4] * conj(left[5,3,4])
-    _rightorth!(x, SVD(), trunc)
+    _rightorth!(x, SVD(), trunc, false)
+    return _rescaling!(x)
+end
+mult2(x::GrassmannMPS, y::GrassmannMPS; kwargs...) = mult2!(copy(x), y; kwargs...)
+
+function mult!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=DMRG.DefaultTruncation)
+    (length(x) == length(y)) || throw(DimensionMismatch())
+    A = mpstensortype(spacetype(x), promote_type(scalartype(x), scalartype(y)))
+    left = isomorphism( fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) )
+    tmp5 = g_fuse(_mult_site(x[1], y[1]), 3)
+    @tensor tmp4[1,4;5,6] := left[1,2,3] * tmp5[2,3,4,5,6]
+    for i in 1:length(x)-1
+        q, r = leftorth!(tmp4, alg = QR())
+        x[i] = q
+        _renormalize!(x, r, false)
+        @tensor tmp1[1,5,4;2] := r[1,2,3] * y[i+1][3,4,5]
+        for (f1, f2) in fusiontrees(tmp1)
+            coef1 = (isodd(f1.uncoupled[2].n) && isodd(f2.uncoupled[1].n)) ? -1 : 1
+            coef2 = (isodd(f1.uncoupled[3].n) && isodd(f2.uncoupled[1].n)) ? -1 : 1
+            coef3 = (isodd(f1.uncoupled[3].n) && isodd(f1.uncoupled[2].n)) ? -1 : 1
+            # println(coef1, " ", coef2, " ", coef3, " ", coef4, " ", coef5)
+            coef = coef1 * coef2 * coef3
+            if coef != 1
+                lmul!(coef, tmp1[f1, f2])
+            end
+        end
+        @tensor tmp2[1,3,5;6,2] := tmp1[1,2,3,4] * x[i+1][4,5,6]
+        for (f1, f2) in fusiontrees(tmp2)
+            coef1 = (isodd(f2.uncoupled[2].n) && isodd(f1.uncoupled[2].n)) ? -1 : 1
+            coef2 = (isodd(f2.uncoupled[2].n) && isodd(f1.uncoupled[3].n)) ? -1 : 1
+            coef3 = (isodd(f2.uncoupled[2].n) && isodd(f2.uncoupled[1].n)) ? -1 : 1
+            # println(coef1, " ", coef2, " ", coef3, " ", coef4, " ", coef5)
+            coef = coef1 * coef2 * coef3
+            if coef != 1
+                lmul!(coef, tmp2[f1, f2])
+            end
+        end
+        tmp4 = g_fuse(tmp2, 2)
+
+        # tmp5 = g_fuse(_mult_site(x[i+1], y[i+1]), 3)
+        # @tensor tmp4[1,4;5,6] := r[1,2,3] * tmp5[2,3,4,5,6]
+    end
+    x[end] = @tensor tmp[1,2;5] := tmp4[1,2,3,4] * conj(left[5,3,4])
+    _rightorth!(x, SVD(), trunc, false)
     return _rescaling!(x)
 end
 mult(x::GrassmannMPS, y::GrassmannMPS; kwargs...) = mult!(copy(x), y; kwargs...)
@@ -114,7 +124,9 @@ mult(x::GrassmannMPS, y::GrassmannMPS; kwargs...) = mult!(copy(x), y; kwargs...)
 function Base.:+(x::GrassmannMPS, y::GrassmannMPS) 
     (length(x) == length(y)) || throw(DimensionMismatch())
     @assert !isempty(x)
-    (length(x) == 1) && return GrassmannMPS([scaling(x) * x[1] + scaling(y) * y[1]])
+    scaling_x = scaling(x)
+    scaling_y = scaling(y)
+    (length(x) == 1) && return GrassmannMPS([scaling_x * x[1] + scaling_y * y[1]])
 
     T = promote_type(scalartype(x), scalartype(y))
     A = mpstensortype(spacetype(x), T)
@@ -122,19 +134,20 @@ function Base.:+(x::GrassmannMPS, y::GrassmannMPS)
     r = A[]
     for i in 1:length(x)
         if i == 1
-            @tensor m1[-1 -2; -3] := x[i][-1,-2,2] * embedders[i][1][2, -3]
-            @tensor m2[-1 -2; -3] := y[i][-1,-2,2] * embedders[i][2][2, -3]
+            @tensor m1[-1 -2; -3] := scaling_x * x[i][-1,-2,2] * embedders[i][1][2, -3]
+            @tensor m1[-1 -2; -3] += scaling_y * y[i][-1,-2,2] * embedders[i][2][2, -3]
         elseif i == length(x)
-            @tensor m1[-1 -2; -3] := (embedders[i-1][1])'[-1, 1] * x[i][1,-2,-3] 
-            @tensor m2[-1 -2; -3] := (embedders[i-1][2])'[-1, 1] * y[i][1,-2,-3] 
+            @tensor m1[-1 -2; -3] := scaling_x * (embedders[i-1][1])'[-1, 1] * x[i][1,-2,-3] 
+            @tensor m1[-1 -2; -3] += scaling_y * (embedders[i-1][2])'[-1, 1] * y[i][1,-2,-3] 
         else          
-            @tensor m1[-1 -2; -3] := (embedders[i-1][1])'[-1, 1] * x[i][1,-2,2] * embedders[i][1][2, -3]
-            @tensor m2[-1 -2; -3] := (embedders[i-1][2])'[-1, 1] * y[i][1,-2,2] * embedders[i][2][2, -3]
+            @tensor m1[-1 -2; -3] := scaling_x * (embedders[i-1][1])'[-1, 1] * x[i][1,-2,2] * embedders[i][1][2, -3]
+            @tensor m1[-1 -2; -3] += scaling_y * (embedders[i-1][2])'[-1, 1] * y[i][1,-2,2] * embedders[i][2][2, -3]
         end
-        push!(r, scaling(x) * m1 + scaling(y) * m2)
+        push!(r, m1)
     end
     return GrassmannMPS(r)
 end
+Base.:-(x::GrassmannMPS, y::GrassmannMPS) = x + (-y)
 
 function right_embedders(::Type{T}, a::S...) where {T <: Number, S <: ElementarySpace}
     V = ⊕(a...) 
@@ -163,3 +176,14 @@ function _permute!(x::AbstractGMPS, perm::Vector{Int}; trunc::TruncationScheme=D
 end
 TK.permute!(x::GrassmannMPS, perm::Vector; kwargs...) = _permute!(x, perm; kwargs...)
 TK.permute(x::AbstractGMPS, perm::Vector{Int}; kwargs...) = permute!(deepcopy(x), perm; kwargs...)
+
+function _mult_site(xj, yj)
+    @tensor r[1,4,2,5;3,6] := xj[1,2,3] * yj[4,5,6]
+    for (f1, f2) in fusiontrees(r)
+        if isodd(f1.uncoupled[4].n) && isodd(f2.uncoupled[1].n)
+            r[f1, f2] .*= -1
+        end
+    end
+    return r
+end
+

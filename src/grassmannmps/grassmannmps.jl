@@ -64,6 +64,11 @@ function Base.complex(psi::GrassmannMPS)
 	return psi
 end
 
+DMRG.isrightcanonical(a::GrassmannMPS; kwargs...) = (scaling(a) ≈ 1) && isrightcanonical(MPS(a.data, a.svectors); kwargs...)
+DMRG.isleftcanonical(a::GrassmannMPS; kwargs...) = (scaling(a) ≈ 1) && isleftcanonical(MPS(a.data, a.svectors); kwargs...)
+DMRG.iscanonical(a::GrassmannMPS; kwargs...) = (scaling(a) ≈ 1) && iscanonical(MPS(a.data, a.svectors); kwargs...)
+
+
 # Base.:+(x::GrassmannMPS, y::GrassmannMPS) = GrassmannMPS(x.data + y.data)
 
 function DMRG.apply!(t::PartialMPO, mps::GrassmannMPS)
@@ -164,15 +169,7 @@ end
 # 	t4 = (isodd(f1.uncoupled[5].n) && isodd(f1.uncoupled[3].n)) ? -1 : 1
 # 	return TK.SingletonDict(ft=>coeff*t4)
 # end
-function _mult_site(xj, yj)
-	@tensor r[1,4,2,5;3,6] := xj[1,2,3] * yj[4,5,6]
-	for (f1, f2) in fusiontrees(r)
-		if isodd(f1.uncoupled[4].n) && isodd(f2.uncoupled[1].n)
-			r[f1, f2] .*= -1
-		end
-	end
-	return r
-end
+
 # function _fuse_physical(m::AbstractTensorMap{S, 4, 2}) where S
 # 	cod = ProductSpace{S}((space(m, 1), space(m, 2), space(m, 3)))
 # 	dom = ProductSpace{S}((space(m, 5)', space(m, 6)'))

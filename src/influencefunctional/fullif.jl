@@ -19,7 +19,8 @@ function _exp_mult(mps, k::Int, trunc::TruncationDimCutoff)
 	dtt = 1/scale^k	
 	for i in 1:k
 		dtt *= scale
-		mps = mult!(copy(mps), mps, trunc=truncdimcutoff(D=D, ϵ=ϵ0*dtt, add_back=0))
+		mps = mult(mps, mps, trunc=truncdimcutoff(D=D, ϵ=ϵ0*dtt, add_back=0))
+		# println("mps bond dimension is ", bond_dimension(mps), " at ", i, "-th iteration")
 	end	
 	return mps
 end
