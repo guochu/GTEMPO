@@ -16,9 +16,9 @@ spectrum_func(D) = SpectrumFunction(ω -> J(D, ω), lb = -D, ub = D)
 
 const Vs = [0., 0.17857143, 0.35714286, 0.53571429, 0.71428571, 0.89285715, 1.07142857, 1.25, 1.42857143, 1.60714287, 1.78571429, 1.96428573, 2.14285714, 2.32142859, 2.5, 2.67857145, 2.85714286]
 
-function main_tempo_1order_b_all(V_over_Gamma, dt =0.007, order=7)
+function main_tempo_1order_b_all(V_over_Gamma, t=6., dt =0.007, order=7, k=5)
 	for U in [0., 2., 4., 6., 8.]
-		main_tempo_1order_b(V_over_Gamma, U, dt, order)
+		main_tempo_1order_b(V_over_Gamma, U, t, dt, order, k)
 	end
 end
 
