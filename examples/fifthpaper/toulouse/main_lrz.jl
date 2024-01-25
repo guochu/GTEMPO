@@ -7,10 +7,10 @@ using JSON, QuadGK
 
 
 function J(D::Real, ω::Real)
-	return (D/(2*pi)) * sqrt(1 - (ω/D)^2 ) * 0.1
+	return (D/(pi)) / (ω^2 + D^2)
 end
 
-spectrum_func(D) = SpectrumFunction(ω -> J(D, ω), lb = -D, ub = D)
+spectrum_func(D) = SpectrumFunction(ω -> J(D, ω), lb = -Inf, ub = Inf)
 
 function Gw(ω::Float64, spectrum, ϵ_d, μ=0)
 	δ = 1e-8
@@ -31,7 +31,7 @@ function main_analytic(t::Float64; ϵ_d=0, δt=0.05)
 	g = [G(t, spectrum_func(D), -ϵ_d, 0.) for t in ts]	
 
 	g = real(g)
-	data_path = "result/analytic_mu$(ϵ_d)_dt$(δt)_N$(N).json"
+	data_path = "result/lrz_analytic_mu$(ϵ_d)_dt$(δt)_N$(N).json"
 
 	results = Dict("ts"=>ts, "gf" => g)
 
@@ -84,7 +84,7 @@ function main_partial(t; ϵ_d=0, β=20., order=7, δt = 0.05)
 
 	ts = [i*δt for i in 1:N]
 
-	data_path = "result/partial_if_mu$(ϵ_d)_beta$(β)_dt$(δt)_N$(N)_order$(order).json"
+	data_path = "result/lrz_partial_if_mu$(ϵ_d)_beta$(β)_dt$(δt)_N$(N)_order$(order).json"
 	results = Dict("ts"=>ts, "gt"=>greater, "lt"=>lesser, "bd"=>bds, "ns"=>ns, "time"=>_t)
 	println("save results to path ", data_path)
 	open(data_path, "w") do f
@@ -151,7 +151,7 @@ function main_ti(t; ϵ_d=0, β = 20., order=7, prony=1.0e-5, k=5, δt = 0.05)
 
 	ts = [i*δt for i in 1:N]
 
-	data_path = "result/ti_if_mu$(ϵ_d)_beta$(β)_dt$(δt)_N$(N)_order$(order)_prony$(prony)_k$(k).json"
+	data_path = "result/lrz_ti_if_mu$(ϵ_d)_beta$(β)_dt$(δt)_N$(N)_order$(order)_prony$(prony)_k$(k).json"
 	println("save results to path ", data_path)
 	results = Dict("ts"=>ts, "gt"=>greater, "lt"=>lesser, "bd"=>bds, "ns"=>ns, "time"=>_t)
 	open(data_path, "w") do f
