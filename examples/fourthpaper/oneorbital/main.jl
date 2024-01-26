@@ -27,7 +27,7 @@ function main_tempo_1order_b(V_over_Gamma, U_over_Gamma, tall, dt, order, k)
 	β = Inf
 	D = 2
 	chi = 160
-	prony=1.0e-5
+	prony=1.0e-4
 
 	Γ = 0.1
 	V = V_over_Gamma * Γ
@@ -64,7 +64,7 @@ function main_tempo_1order_b(V_over_Gamma, U_over_Gamma, tall, dt, order, k)
 		println("computing MPS-IF...")
 		corr = leftcorr + rightcorr
 		algevo = WII()
-		algexpan = PronyExpansion(tol=prony, verbosity=4)
+		algexpan = PronyExpansion(n=15, tol=prony, verbosity=4)
 		algmult = DMRG1(trunc)
 		alg = TranslationInvariantIF(algevo=algevo, algexpan=algexpan, algmult=algmult, k=k)
 
