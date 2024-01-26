@@ -135,20 +135,32 @@ ts_pa = [item[-1] for item in r_pa]
 r_ti = [read_ti(mu, beta, dt, N, order) for N in Ns]
 ts_ti = [item[-1] for item in r_ti]
 
-ax[1,0].plot(ts, ts_pa, ls='--', color=colors[0], markersize=markersize, linewidth=linewidth, label=r'Partial IF')
-ax[1,0].plot(ts, ts_ti, ls='--', color=colors[1], markersize=markersize, linewidth=linewidth, label=r'TTI IF')
+ax[1,0].loglog(ts, ts_pa, ls='--', color=colors[0], marker=markers[0], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'Partial IF')
+ax[1,0].loglog(ts, ts_ti, ls='--', color=colors[1], marker=markers[1], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'TTI IF')
 
 
 ax[1,0].set_ylabel(r'Run time (s)', fontsize=fontsize)
 ax[1,0].set_xlabel(r'$t$', fontsize=fontsize)
 ax[1,0].tick_params(axis='both', which='major', labelsize=labelsize)
-ax[1,0].locator_params(axis='both', nbins=6)
-ax[1,0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+# ax[1,0].locator_params(axis='both', nbins=6)
+# ax[1,0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 
+# lorentzian spectrum
+t = 60.
+N = round(t / dt)
 
 ts_real_analytic, gf_real_analytic = read_lrz_real_analytic(mu, dt, N)
 ax[0,1].plot(ts_real_analytic, gf_real_analytic, ls='-', color='k', linewidth=linewidth, label=r'Analytic')
+
+
+ts_pa, ns_pa, gf_pa, bd_pa, t_pa = read_lrz_partial(mu, beta, dt, N, order)
+# # # print('partial If takes ', t_pa)
+
+ts_ti, ns_ti, gf_ti, bd_ti, t_ti = read_lrz_ti(mu, beta, dt, N, order)
+
+# ax[0,1].plot(ts_pa, gf_pa, ls='--', color=colors[0], markersize=markersize, linewidth=linewidth, label=r'Partial IF')
+ax[0,1].plot(ts_ti, gf_ti, ls='--', color=colors[1], markersize=markersize, linewidth=linewidth, label=r'TI IF')
 
 
 ax[0,1].set_ylabel(r'$-{\rm Im}[G^R(t)]$', fontsize=fontsize)
@@ -157,31 +169,44 @@ ax[0,1].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[0,1].locator_params(axis='both', nbins=6)
 ax[0,1].set_title(r'Lorentzian', fontsize=fontsize)
 
-# ax.plot(ts_pa, gf_pa, ls='--', color=colors[0], markersize=markersize, linewidth=linewidth, label=r'Partial IF')
-# ax.plot(ts_ti, gf_ti, ls='--', color=colors[1], markersize=markersize, linewidth=linewidth, label=r'TI IF')
+ax1 = ax[0,1].inset_axes([0.45, 0.4, 0.5, 0.5])
+
+ax1.plot(ts_pa, abs(gf_pa - gf_real_analytic[1:]), ls='--', color=colors[0], markersize=markersize, linewidth=linewidth_s, label=r'Partial IF')
+ax1.plot(ts_ti, abs(gf_ti - gf_real_analytic[1:]), ls='--', color=colors[1], markersize=markersize, linewidth=linewidth_s, label=r'TTI IF')
+
+ax1.set_ylabel(r'Error', fontsize=fontsize_s)
+ax1.set_xlabel(r'$t$', fontsize=fontsize_s)
+ax1.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+
+ax1.legend(fontsize=12)
 
 
-# ts_real_tempo_e7, ns_real_tempo_e7, gf_real_tempo_e7, bds_real_tempo_e7 = read_real_tempo(beta, t, mu, dt, 7)
-# ax[0,0].plot(ts_real_tempo_e7, gf_real_tempo_e7, ls='--', color=colors[1], linewidth=linewidth, label=r'$\varsigma=10^{-7}$')
+ts = [10.,20.,30.,40.,50.,60.]
+Ns = [round(t / dt) for t in ts]
 
-# # ts_real_tempo_e8, ns_real_tempo_e8, gf_real_tempo_e8, bds_real_tempo_e8 = read_real_tempo(beta, t, mu, dt, 8)
-# # ax[0,0].plot(ts_real_tempo_e8, gf_real_tempo_e8, ls='--', color=colors[2], linewidth=linewidth, label=r'$\varsigma=10^{-8}$')
+r_pa = [read_lrz_partial(mu, beta, dt, N, order) for N in Ns]
+ts_pa = [item[-1] for item in r_pa]
+
+ax[1,1].loglog(ts, ts_pa, ls='--', color=colors[0], marker=markers[0], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'Partial IF')
 
 
-# ax[0,0].set_ylabel(r'$-{\rm Im}[G^R(t)]$', fontsize=fontsize)
-# ax[0,0].set_xlabel(r'$t$', fontsize=fontsize)
-# ax[0,0].tick_params(axis='both', which='major', labelsize=labelsize)
-# ax[0,0].locator_params(axis='both', nbins=6)
-# ax[0,0].annotate(r'(a)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
-# ax[0,0].legend(loc='upper right', fontsize=12)
+r_ti = [read_lrz_ti(mu, beta, dt, N, order) for N in Ns]
+ts_ti = [item[-1] for item in r_ti]
 
-# ax[0,0].set_ylim(top=1.2)
-# ax.legend(loc='upper center', fontsize=12)
+ax[1,1].loglog(ts, ts_ti, ls='--', color=colors[1], marker=markers[1], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'TTI IF')
+
+
+ax[1,1].set_ylabel(r'Run time (s)', fontsize=fontsize)
+ax[1,1].set_xlabel(r'$t$', fontsize=fontsize)
+ax[1,1].tick_params(axis='both', which='major', labelsize=labelsize)
+# ax[1,1].locator_params(axis='both', nbins=6)
+# ax[1,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+
 
 
 plt.tight_layout(pad=0.5)
 
-# plt.savefig('toulouse1.pdf', bbox_inches='tight')
+plt.savefig('toulouse1.pdf', bbox_inches='tight')
 
 plt.show()
 

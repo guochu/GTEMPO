@@ -50,6 +50,8 @@ println("------------------------------------")
 		@test distance(psi3, psi6) / _n < 1.0e-7
 		psi7 = mult(psi1, psi2, DMRG1(D=bond_dimension(psi6)))
 		@test distance(psi3, psi7) / _n < 1.0e-7
+		psi8 = mult(psi1, psi2, DMRG2(trunc=truncdimcutoff(D=10, ϵ=1.0e-10)))
+		@test distance(psi3, psi8) / _n < 1.0e-7
 	end
 	
 end

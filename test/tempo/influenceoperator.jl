@@ -8,7 +8,7 @@ println("------------------------------------")
 	δτ = 0.2
 	N = round(Int, β/δτ)
 	bath = fermionicbath(spectrum_func(1), β=β, μ=0)
-	trunc = truncdimcutoff(D=300, ϵ=1.0e-6, add_back=0)
+	trunc = truncdimcutoff(D=50, ϵ=1.0e-6, add_back=0)
 	algexpan = PronyExpansion(tol=1.0e-6)
 	for bands in (1,2,3)
 		for ordering in imag_grassmann_orderings
@@ -47,14 +47,18 @@ println("------------------------------------")
 
 					@test distance(mps1, mps0) / norm(mps0) < dt
 
-					mps1 = differentialinfluencefunctional(lattice, corr, dt, WII(), band=band, algexpan=algexpan)
-					mps2 = differentialinfluencefunctional(lattice, corr, dt, WI(), band=band, algexpan=algexpan)
-					mps3 = differentialinfluencefunctional(lattice, corr, dt, ComplexStepper(WI()), band=band, algexpan=algexpan)
-					mps4 = differentialinfluencefunctional(lattice, corr, dt, ComplexStepper(WII()), band=band, algexpan=algexpan)
-					@test distance(mps1, mps0) / norm(mps1) < dt
-					@test distance(mps1, mps0) / norm(mps1) < dt
-					@test distance(mps1, mps0) / norm(mps1) < dt
-					@test distance(mps1, mps0) / norm(mps1) < dt
+					for algmult in (SVDCompression(D=50), DMRG1(D=50), DMRG2(trunc=truncdimcutoff(D=50,ϵ=1.0e-6)))
+						mps1 = differentialinfluencefunctional(lattice, corr, dt, WII(), algmult, band=band, algexpan=algexpan)
+						_n = norm(mps1)
+						mps2 = differentialinfluencefunctional(lattice, corr, dt, WI(), algmult, band=band, algexpan=algexpan)
+						mps3 = differentialinfluencefunctional(lattice, corr, dt, ComplexStepper(WI()), algmult, band=band, algexpan=algexpan)
+						mps4 = differentialinfluencefunctional(lattice, corr, dt, ComplexStepper(WII()), algmult, band=band, algexpan=algexpan)
+						@test distance(mps1, mps0) / _n < dt
+						@test distance(mps1, mps0) / _n < dt
+						@test distance(mps1, mps0) / _n < dt
+						@test distance(mps1, mps0) / _n < dt
+					end
+
 				end
 
 			end
@@ -69,7 +73,7 @@ end
 	δt = 0.2
 	N = round(Int, β/δt)
 	bath = fermionicbath(spectrum_func2(1), β=β, μ=0)
-	trunc = truncdimcutoff(D=300, ϵ=1.0e-6, add_back=0)
+	trunc = truncdimcutoff(D=50, ϵ=1.0e-6, add_back=0)
 	algexpan = PronyExpansion(tol=1.0e-6)
 	tol = 1.0e-5
 	# only supports the following ordering currently
@@ -190,14 +194,17 @@ end
 			mps0 = mult!(mps0, mps2_mp, trunc=trunc)
 			mps0 = mult!(mps0, mps2_mm, trunc=trunc)
 
-			mps1 = differentialinfluencefunctional(lattice, corr, dt, WII(), band=band, algexpan=algexpan)
-			mps2 = differentialinfluencefunctional(lattice, corr, dt, WI(), band=band, algexpan=algexpan)
-			mps3 = differentialinfluencefunctional(lattice, corr, dt, ComplexStepper(WI()), band=band, algexpan=algexpan)
-			mps4 = differentialinfluencefunctional(lattice, corr, dt, ComplexStepper(WII()), band=band, algexpan=algexpan)
-			@test distance(mps1, mps0) / norm(mps1) < dt
-			@test distance(mps2, mps0) / norm(mps1) < dt
-			@test distance(mps3, mps0) / norm(mps1) < dt
-			@test distance(mps4, mps0) / norm(mps1) < dt
+			for algmult in (SVDCompression(D=50), DMRG1(D=50), DMRG2(trunc=truncdimcutoff(D=50,ϵ=1.0e-6)))
+				mps1 = differentialinfluencefunctional(lattice, corr, dt, WII(), algmult, band=band, algexpan=algexpan)
+				_n = norm(mps1)
+				mps2 = differentialinfluencefunctional(lattice, corr, dt, WI(), algmult, band=band, algexpan=algexpan)
+				mps3 = differentialinfluencefunctional(lattice, corr, dt, ComplexStepper(WI()), algmult, band=band, algexpan=algexpan)
+				mps4 = differentialinfluencefunctional(lattice, corr, dt, ComplexStepper(WII()), algmult, band=band, algexpan=algexpan)
+				@test distance(mps1, mps0) / _n < dt
+				@test distance(mps2, mps0) / _n < dt
+				@test distance(mps3, mps0) / _n < dt
+				@test distance(mps4, mps0) / _n < dt
+			end
 		end
 
 	end

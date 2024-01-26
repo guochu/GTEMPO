@@ -37,7 +37,7 @@ function iterativemult(x::GrassmannMPS, y::GrassmannMPS, alg::DMRGAlgorithm)
     return z
 end
 
-DMRG.compute!(env::GMPSIterativeMultCache, alg::DMRG1) = iterative_compute!(env, alg)
+DMRG.compute!(env::GMPSIterativeMultCache, alg::DMRGAlgorithm) = iterative_compute!(env, alg)
 
 
 function iterative_compute!(m, alg)
@@ -57,20 +57,25 @@ function iterative_compute!(m, alg)
     if (alg.verbosity > 0) && (delta >= alg.tol)
         println("fail to converge, required precision: $(alg.tol), actual precision $delta in $iter sweeps")
     end
+    finalize!(m ,alg)
     return kvals
 end
 iterative_error_2(m::AbstractVector) = std(m) / abs(mean(m))
 
+DMRG.sweep!(m::GMPSIterativeMultCache, alg::DMRGAlgorithm) = vcat(leftsweep!(m, alg), rightsweep!(m, alg))
 
-DMRG.sweep!(m::GMPSIterativeMultCache, alg::DMRG1) = vcat(leftsweep!(m, alg), rightsweep!(m, alg))
-
+function finalize!(m::GMPSIterativeMultCache, alg::DMRGAlgorithm) end
+function finalize!(m::GMPSIterativeMultCache, alg::DMRG1)
+    leftsweep!(m, alg)
+    rightsweep_final!(m, alg)
+end
 function DMRG.leftsweep!(m::GMPSIterativeMultCache, alg::DMRG1)
     z, x, y = m.z, m.x, m.y
     hstorage = m.hstorage
     L = length(z)
     kvals = Float64[]
     for site in 1:L-1
-        (alg.verbosity > 3) && println("Sweeping from left to right at bond: $site")
+        (alg.verbosity > 3) && println("Sweeping from left to right at site: $site")
         mpsj = g_ac_prime(x[site], y[site], hstorage[site], hstorage[site+1])
         push!(kvals, norm(mpsj))
         (alg.verbosity > 1) && println("residual is $(kvals[end])...")
@@ -87,7 +92,7 @@ function DMRG.rightsweep!(m::GMPSIterativeMultCache, alg::DMRG1)
     kvals = Float64[]
     local r
     for site in L:-1:2
-        (alg.verbosity > 3) && println("Sweeping from right to left at bond: $site")
+        (alg.verbosity > 3) && println("Sweeping from right to left at site: $site")
         mpsj = g_ac_prime(x[site], y[site], hstorage[site], hstorage[site+1])
         push!(kvals, norm(mpsj))
         (alg.verbosity > 1) && println("residual is $(kvals[end])...")
@@ -98,6 +103,72 @@ function DMRG.rightsweep!(m::GMPSIterativeMultCache, alg::DMRG1)
     end
     # println("norm of r is $(norm(r))")
     z[1] = @tensor tmp[1,2;4] := z[1][1,2,3] * r[3,4]
+    return kvals    
+end
+
+function rightsweep_final!(m::GMPSIterativeMultCache, alg::DMRG1)
+    z, x, y = m.z, m.x, m.y
+    hstorage = m.hstorage
+    L = length(z)
+    kvals = Float64[]
+    trunc = alg.trunc
+    for site in L:-1:2
+        (alg.verbosity > 3) && println("Sweeping from right to left at site: $site")
+        mpsj = g_ac_prime(x[site], y[site], hstorage[site], hstorage[site+1])
+        push!(kvals, norm(mpsj))
+        (alg.verbosity > 1) && println("residual is $(kvals[end])...")
+
+        u, s, v = stable_tsvd(mpsj, (1,), (2,3), trunc=trunc)
+        z[site] = permute(v, (1,2), (3,))
+        if site == 2
+            r = u * s
+            z[1] = @tensor tmp[1,2;4] := z[1][1,2,3] * r[3,4]
+        end
+        z.s[site] = normalize!(s)
+        hstorage[site] = updatemultright(hstorage[site+1], z[site], x[site], y[site])
+    end
+    # println("norm of r is $(norm(r))")
+    return kvals    
+end
+
+function DMRG.leftsweep!(m::GMPSIterativeMultCache, alg::DMRG2)
+    z, x, y = m.z, m.x, m.y
+    hstorage = m.hstorage
+    L = length(z)
+    kvals = Float64[]
+    trunc = alg.trunc
+    for site in 1:L-1
+        (alg.verbosity > 3) && println("Sweeping from left to right at bond: $site")
+        twositemps = g_ac_prime2(x[site], x[site+1], y[site], y[site+1], hstorage[site], hstorage[site+2])
+        push!(kvals, norm(twositemps))
+        (alg.verbosity > 1) && println("residual is $(kvals[end])...")
+        u, s, v = stable_tsvd!(twositemps, trunc=trunc)
+        z[site] = u
+        hstorage[site+1] = updatemultleft(hstorage[site], z[site], x[site], y[site])
+    end
+    return kvals    
+end
+
+function DMRG.rightsweep!(m::GMPSIterativeMultCache, alg::DMRG2)
+    z, x, y = m.z, m.x, m.y
+    hstorage = m.hstorage
+    L = length(z)
+    kvals = Float64[]
+    trunc = alg.trunc
+    for site in L-1:-1:1
+        (alg.verbosity > 3) && println("Sweeping from right to left at bond: $site")
+        twositemps = g_ac_prime2(x[site], x[site+1], y[site], y[site+1], hstorage[site], hstorage[site+2])
+        push!(kvals, norm(twositemps))
+        (alg.verbosity > 1) && println("residual is $(kvals[end])...")
+        u, s, v = stable_tsvd!(twositemps, trunc=trunc)
+        z[site+1] = permute(v, (1,2), (3,))
+        if site == 1
+            z[1] = u * s
+        end
+        z.s[site+1] = normalize!(s)
+        hstorage[site+1] = updatemultright(hstorage[site+2], z[site+1], x[site+1], y[site+1])
+    end
+    # println("norm of r is $(norm(r))")
     return kvals    
 end
 
@@ -169,6 +240,60 @@ function g_ac_prime(xj::MPSTensor, yj::MPSTensor, left::MPSTensor, right::MPSTen
     end
     tmp3 = g_fuse(tmp2, 2)
     @tensor tmp2[1,2;5] := tmp3[1,2,3,4] * right[4,3,5]
+    return tmp2
+end
+
+function g_ac_prime2(xj1::MPSTensor, xj2::MPSTensor, yj1::MPSTensor, yj2::MPSTensor, left::MPSTensor, right::MPSTensor)
+    @tensor tmp1[1,5,4;2] := left[1,2,3] * yj1[3,4,5]
+    for (f1, f2) in fusiontrees(tmp1)
+        coef1 = (isodd(f1.uncoupled[2].n) && isodd(f2.uncoupled[1].n)) ? -1 : 1
+        coef2 = (isodd(f1.uncoupled[3].n) && isodd(f2.uncoupled[1].n)) ? -1 : 1
+        coef3 = (isodd(f1.uncoupled[3].n) && isodd(f1.uncoupled[2].n)) ? -1 : 1
+        # println(coef1, " ", coef2, " ", coef3, " ", coef4, " ", coef5)
+        coef = coef1 * coef2 * coef3
+        if coef != 1
+            lmul!(coef, tmp1[f1, f2])
+        end
+    end
+    @tensor tmp2[1,3,5;6,2] := tmp1[1,2,3,4] * xj1[4,5,6]
+    for (f1, f2) in fusiontrees(tmp2)
+        coef1 = (isodd(f2.uncoupled[2].n) && isodd(f1.uncoupled[2].n)) ? -1 : 1
+        coef2 = (isodd(f2.uncoupled[2].n) && isodd(f1.uncoupled[3].n)) ? -1 : 1
+        coef3 = (isodd(f2.uncoupled[2].n) && isodd(f2.uncoupled[1].n)) ? -1 : 1
+        # println(coef1, " ", coef2, " ", coef3, " ", coef4, " ", coef5)
+        coef = coef1 * coef2 * coef3
+        if coef != 1
+            lmul!(coef, tmp2[f1, f2])
+        end
+    end
+
+    tmp3 = g_fuse(tmp2, 2)
+
+
+    @tensor tmp4[4; 1 2 5] := yj2[1,2,3] * right[3,4,5]
+    for (f1, f2) in fusiontrees(tmp4)
+        coef1 = (isodd(f2.uncoupled[1].n) && isodd(f1.uncoupled[1].n)) ? -1 : 1
+        coef2 = (isodd(f2.uncoupled[2].n) && isodd(f1.uncoupled[1].n)) ? -1 : 1
+
+        coef = coef1 * coef2 
+        if coef != 1
+            lmul!(coef, tmp4[f1, f2])
+        end
+    end 
+    @tensor tmp5[4 1 2 5; 6] := xj2[1,2,3] * tmp4[3,4,5,6]
+    for (f1, f2) in fusiontrees(tmp5)
+        coef1 = (isodd(f1.uncoupled[2].n) && isodd(f1.uncoupled[1].n)) ? -1 : 1
+        coef2 = (isodd(f1.uncoupled[3].n) && isodd(f1.uncoupled[1].n)) ? -1 : 1
+
+        coef = coef1 * coef2 
+        if coef != 1
+            lmul!(coef, tmp5[f1, f2])
+        end
+    end 
+    tmp4 = g_fuse(tmp5, 3)
+
+
+    @tensor tmp2[1,2;5,6] := tmp3[1,2,3,4] * tmp4[4,3,5,6]
     return tmp2
 end
 

@@ -108,9 +108,9 @@ function main_partial_vs_order()
 	end
 end
 
-function main_ti(t; ϵ_d=0, β = 20., order=7, prony=1.0e-5, k=5, δt = 0.05)
+function main_ti(t; ϵ_d=0, β = 20., order=7, prony=4, k=5, δt = 0.05)
 	D = 2.
-	χ = 50
+	χ = 200
 
 	N = round(Int, t / δt)
 
@@ -128,9 +128,10 @@ function main_ti(t; ϵ_d=0, β = 20., order=7, prony=1.0e-5, k=5, δt = 0.05)
 
 	println("computing MPS-IF...")
 	algevo = WII()
-	algexpan = PronyExpansion(tol=prony, verbosity=4)
-	alg = TranslationInvariantIF(algevo=algevo, algexpan=algexpan, k=k)
-	_t = @elapsed mpsI = hybriddynamics(lattice, corr, alg, trunc=trunc, band=1)
+	algexpan = PronyExpansion(n=20, tol=10.0^(-prony), verbosity=4)
+	algmult = DMRG1(trunc)
+	alg = TranslationInvariantIF(algevo=algevo, algexpan=algexpan, algmult=algmult, k=k)
+	_t = @elapsed mpsI = hybriddynamics(lattice, corr, alg, band=1)
 
 	println("time for building Translation Invariant IF ", _t)
 
@@ -139,7 +140,7 @@ function main_ti(t; ϵ_d=0, β = 20., order=7, prony=1.0e-5, k=5, δt = 0.05)
 	println("mpsI bond dimension is ", bond_dimension(mpsI))
 
 
-	@time mpsK = sysdynamics(lattice, exact_model, trunc=truncK)
+	@time mpsK = accsysdynamics_fast(lattice, exact_model, trunc=truncK)
 	println("mpsK bond dimension is ", bond_dimension(mpsK))
 	mpsK = boundarycondition(mpsK, lattice, band=1)
 
@@ -173,6 +174,14 @@ function main_ti_vs_order()
 	t = 30.
 	for order in [6,7,8]
 		main_ti(t, order=order)
+	end
+end
+
+function main_ti_vs_prony()
+	main_ti(0.5)
+	t = 30.
+	for prony in [3,4]
+		main_ti(t, prony=prony)
 	end
 end
 

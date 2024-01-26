@@ -37,6 +37,33 @@ def read_real_analytic(mu, dt, N):
 	return data['ts'], asarray(data['gf'])
 
 
+def read_lrz_partial(mu, beta, dt, N, order):
+	filename = 'result/lrz_partial_if_mu%s_beta%s_dt%s_N%s_order%s.json'%(mu, beta, dt, N, order)
+	with open(filename, 'r') as f:
+		data = f.read()
+		data = json.loads(data)
+	gt = asarray([item['re'] for item in data['gt']])
+	# lt = asarray(data['lt'])
+	return data['ts'], asarray(data['ns']), gt, data['bd'], data['time']
+
+def read_lrz_ti(mu, beta, dt, N, order, k=5):
+	filename = 'result/lrz_ti_if_mu%s_beta%s_dt%s_N%s_order%s_prony1.0e-5_k%s.json'%(mu, beta, dt, N, order, k)
+	with open(filename, 'r') as f:
+		data = f.read()
+		data = json.loads(data)
+	gt = asarray([item['re'] for item in data['gt']])
+	# lt = asarray(data['lt'])
+	return data['ts'], asarray(data['ns']), gt, data['bd'], data['time']
+
+
+def read_lrz_real_analytic(mu, dt, N):
+	filename = 'result/lrz_analytic_mu%s_dt%s_N%s.json'%(mu, dt, N)
+	with open(filename, 'r') as f:
+		data = f.read()
+		data = json.loads(data)
+	return data['ts'], asarray(data['gf'])
+
+
 # print(gf_real_analytic[-20:])
 # print(gf[-20:])
 

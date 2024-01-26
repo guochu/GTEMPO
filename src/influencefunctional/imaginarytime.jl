@@ -41,33 +41,30 @@ function influenceoperatorexponential(lattice::ImagGrassmannLattice1Order, corr2
 	return _fit_to_lattice(lattice, mpo1, _JW, band), _fit_to_lattice(lattice, mpo2, _JW, band) 
 end
 
-function differentialinfluencefunctional(lattice::ImagGrassmannLattice1Order{O}, corr::ImagCorrelationFunction, dt::Real, alg::TimeEvoMPOAlgorithm; 
-										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion(), trunc::TruncationScheme=DefaultMPOTruncation) where O
+function differentialinfluencefunctional(lattice::ImagGrassmannLattice1Order{O}, corr::ImagCorrelationFunction, dt::Real, alg::TimeEvoMPOAlgorithm, algmult::DMRGAlgorithm; 
+										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion()) where O
 	if !(LayoutStyle(lattice) isa TimeLocalLayout)
 		lattice2 = similar(lattice, ordering = A1A1B1B1())
-		mps = _differentialinfluencefunctional(lattice2, corr, dt, alg; band=band, algexpan=algexpan, trunc=trunc)
-		_, mps2 = changeordering(O, lattice2, mps, trunc=trunc)
+		mps = _differentialinfluencefunctional(lattice2, corr, dt, alg, algmult; band=band, algexpan=algexpan)
+		_, mps2 = changeordering(O, lattice2, mps, trunc=algmult.trunc)
 		return mps2
 	else
-		return _differentialinfluencefunctional(lattice, corr, dt, alg; band=band, algexpan=algexpan, trunc=trunc)
+		return _differentialinfluencefunctional(lattice, corr, dt, alg, algmult; band=band, algexpan=algexpan)
 	end
 end
 
 
-function _differentialinfluencefunctional(lattice::ImagGrassmannLattice1Order, corr::ImagCorrelationFunction, dt::Real, alg::FirstOrderStepper; 
-										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion(), trunc::TruncationScheme=DefaultMPOTruncation)
+function _differentialinfluencefunctional(lattice::ImagGrassmannLattice1Order, corr::ImagCorrelationFunction, dt::Real, alg::FirstOrderStepper, algmult::DMRGAlgorithm; 
+										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	mps = influenceoperatorexponential(lattice, corr, dt, alg, band=band, algexpan=algexpan) * vacuumstate(lattice)
-	canonicalize!(mps, alg=Orthogonalize(trunc=trunc, normalize=false))
 	return mps
 end
-function _differentialinfluencefunctional(lattice::ImagGrassmannLattice1Order, corr::ImagCorrelationFunction, dt::Real, alg::ComplexStepper; 
-										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion(), trunc::TruncationScheme=DefaultMPOTruncation)
+function _differentialinfluencefunctional(lattice::ImagGrassmannLattice1Order, corr::ImagCorrelationFunction, dt::Real, alg::ComplexStepper, algmult::DMRGAlgorithm; 
+										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
  	mpo1, mpo2 = influenceoperatorexponential(lattice, corr, dt, alg, band=band, algexpan=algexpan)
-	mps =  mpo1 * vacuumstate(lattice)
-	canonicalize!(mps, alg=Orthogonalize(trunc=trunc, normalize=false))
-	mps =  mpo2 * mps
-	canonicalize!(mps, alg=Orthogonalize(trunc=trunc, normalize=false))
-	return mps
+	mps1 = mpo1 * vacuumstate(lattice)
+	mps2 = mpo2 * vacuumstate(lattice)
+	return mult(mps1, mps2, algmult)
 end
 
 function _fit_to_lattice(lattice::ImagGrassmannLattice, mpo::MPO, _JW::MPSBondTensor, band::Int, trunc::TruncationScheme=DefaultMPOTruncation)

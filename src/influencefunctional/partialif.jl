@@ -1,5 +1,7 @@
-hybriddynamics(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::PartialIF; kwargs...) = hybriddynamics(gmps, lattice, corr; kwargs...)
-hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::PartialIF; kwargs...) = hybriddynamics!(vacuumstate(lattice), lattice, corr; kwargs...)
+hybriddynamics(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::PartialIF; band::Int=1) = hybriddynamics(
+				gmps, lattice, corr; band=band, trunc=alg.trunc)
+hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::PartialIF; band::Int=1) = hybriddynamics!(
+				vacuumstate(lattice), lattice, corr; band=band, trunc=alg.trunc)
 
 hybriddynamics(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = hybriddynamics!(copy(gmps), lattice, corr; kwargs...)
 hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = hybriddynamics!(GrassmannMPS(scalartype(lattice), length(lattice)), lattice, corr; kwargs...)

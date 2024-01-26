@@ -12,7 +12,7 @@ println("------------------------------------")
 
 	trunc = truncdimcutoff(D=300, ϵ=1.0e-6, add_back=0)
 
-	alg1 = PartialIF()
+	alg1 = PartialIF(trunc=trunc)
 	alg2 = TranslationInvariantIF(k=5)
 		
 	for μ in (-5, 0, 5)
@@ -25,8 +25,8 @@ println("------------------------------------")
 				lattice = GrassmannLattice(N=N, δτ=β/N, contour=:imag, ordering=ordering)
 
 				corr = correlationfunction(bath, lattice)
-				mpsI1 = hybriddynamics(lattice, corr, alg1, trunc=trunc) 
-				mpsI2 = hybriddynamics(lattice, corr, alg2, trunc=trunc)
+				mpsI1 = hybriddynamics(lattice, corr, alg1) 
+				mpsI2 = hybriddynamics(lattice, corr, alg2)
 
 				@test distance(mpsI1, mpsI2) / norm(mpsI1) < rtol
 			end
@@ -42,10 +42,13 @@ end
 	β = 1
 
 	rtol = 1.0e-2
-	trunc = truncdimcutoff(D=300, ϵ=1.0e-6, add_back=0)
+	trunc = truncdimcutoff(D=100, ϵ=1.0e-6, add_back=0)
 
-	alg1 = PartialIF()
-	alg2 = TranslationInvariantIF(k=5)
+	alg1 = PartialIF(trunc=trunc)
+	alg2 = TranslationInvariantIF(k=5, algevo=WII(), algmult=SVDCompression(trunc))
+	alg3 = TranslationInvariantIF(k=5, algmult=DMRG1(D=trunc.D, tol=trunc.ϵ))
+	alg4 = TranslationInvariantIF(k=5, algevo=ComplexStepper(WII()), algmult=DMRG2(trunc=trunc))
+
 		
 
 	for spec in (spectrum_func(1), spectrum_func2(1))
@@ -57,14 +60,17 @@ end
 			lattice = GrassmannLattice(N=N, δt=δt, contour=:real, ordering=ordering)
 
 			corr = correlationfunction(bath, lattice)
-			mpsI1 = hybriddynamics(lattice, corr, alg1, trunc=trunc) 
-			mpsI2 = hybriddynamics(lattice, corr, alg2, SVDCompression(trunc), trunc=trunc)
+			mpsI1 = hybriddynamics(lattice, corr, alg1) 
+			mpsI2 = hybriddynamics(lattice, corr, alg2)
 
 			# println(norm(mpsI1), " ", norm(mpsI2), " ", distance(mpsI1, mpsI2))
 			@test distance(mpsI1, mpsI2) / norm(mpsI1) < rtol
 
-			mpsI3 = hybriddynamics(lattice, corr, alg2, trunc=truncdimcutoff(D=bond_dimension(mpsI1), ϵ=trunc.ϵ))
+			mpsI3 = hybriddynamics(lattice, corr, alg3)
 			@test distance(mpsI1, mpsI3) / norm(mpsI1) < rtol
+
+			mpsI4 = hybriddynamics(lattice, corr, alg4)
+			@test distance(mpsI1, mpsI4) / norm(mpsI1) < rtol
 		end
 	end
 

@@ -65,10 +65,11 @@ function main_tempo_1order_b(V_over_Gamma, U_over_Gamma, tall, dt, order, k)
 		corr = leftcorr + rightcorr
 		algevo = WII()
 		algexpan = PronyExpansion(tol=prony, verbosity=4)
-		alg = TranslationInvariantIF(algevo=algevo, algexpan=algexpan, k=k)
+		algmult = DMRG1(trunc)
+		alg = TranslationInvariantIF(algevo=algevo, algexpan=algexpan, algmult=algmult, k=k)
 
-		@time mpsI1 = hybriddynamics(lattice, corr, alg, trunc=trunc, band=1)
-		@time mpsI2 = hybriddynamics(lattice, corr, alg, trunc=trunc, band=2)
+		@time mpsI1 = hybriddynamics(lattice, corr, alg, band=1)
+		@time mpsI2 = hybriddynamics(lattice, corr, alg, band=2)
 		# println("Z is ", integrate(mpsI, lattice))
 		println("save MPS-IF to path ", mpspath)
 		Serialization.serialize(mpspath, (mpsI1, mpsI2))
@@ -84,17 +85,16 @@ function main_tempo_1order_b(V_over_Gamma, U_over_Gamma, tall, dt, order, k)
 	mpsK = boundarycondition!(mpsK, lattice, band=1)
 	mpsK = boundarycondition!(mpsK, lattice, band=2)
 	# println("IF K is ", integrate(mpsK, lattice))
-	
-	cache = environments(lattice, mpsK, mpsI1, mpsI2)
-	@time ns2 = cached_occupation(lattice, mpsK, mpsI1, mpsI2, cache=cache)
 
-	@time currents_left2 = [cached_electriccurrent_fast(lattice, leftcorr, k+1, mpsK, mpsI1, mpsI2, cache=cache) for k in 1:10:N]
-	@time currents_right2 = [cached_electriccurrent_fast(lattice, rightcorr, k+1, mpsK, mpsI1, mpsI2, cache=cache) for k in 1:10:N]
+	Z = integrate(lattice, mpsK, mpsI1, mpsI2)
+
+	@time currents_left2 = [electriccurrent_fast(lattice, leftcorr, k+1, mpsK, mpsI1, mpsI2, Z=Z) for k in 1:10:N]
+	@time currents_right2 = [electriccurrent_fast(lattice, rightcorr, k+1, mpsK, mpsI1, mpsI2, Z=Z) for k in 1:10:N]
 	currents_ts = ts[1:10:N]
 
 	data_path = "result/ti_V$(V_over_Gamma)_U$(U_over_Gamma)_N$(N)_dt$(dt)_order$(order)_chi$(chi)_k$(k).json"
 
-	results = Dict("ts"=>ts, "ns"=>ns2, "Ileft" => real(currents_left2), "ts_I"=>currents_ts, "Iright"=>real(currents_right2), "bd"=>bds)
+	results = Dict("ts"=>ts, "Ileft" => real(currents_left2), "ts_I"=>currents_ts, "Iright"=>real(currents_right2), "bd"=>bds)
 
 	open(data_path, "w") do f
 		write(f, JSON.json(results))

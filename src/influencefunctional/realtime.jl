@@ -89,57 +89,51 @@ function influenceoperatorexponential(lattice::RealGrassmannLattice{<:A1A1a1a1B1
 	mpo4a, mpo4b = _fit_to_lattice(lattice, h4a, _JW, band, false, false), _fit_to_lattice(lattice, h4b, _JW, band, false, false) 
 	return (mpo1a, mpo1b), (mpo2a, mpo2b), (mpo3a, mpo3b), (mpo4a, mpo4b)
 end
-function differentialinfluencefunctional(lattice::RealGrassmannLattice{O}, corr::RealCorrelationFunction, dt::Real, alg::TimeEvoMPOAlgorithm;
-										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion(), trunc::TruncationScheme=DefaultMPOTruncation) where O
+function differentialinfluencefunctional(lattice::RealGrassmannLattice{O}, corr::RealCorrelationFunction, dt::Real, alg::TimeEvoMPOAlgorithm, algmult::DMRGAlgorithm;
+										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion()) where O
 	if !(OrderingStyle(lattice) isa A1A1a1a1B1B1b1b1)
 		lattice2 = similar(lattice, ordering = A1A1a1a1B1B1b1b1())
-		mps = _differentialinfluencefunctional(lattice2, corr, dt, alg; band=band, algexpan=algexpan, trunc=trunc)
-		_, mps2 = changeordering(O, lattice2, mps, trunc=trunc)
+		mps = _differentialinfluencefunctional(lattice2, corr, dt, alg, algmult; band=band, algexpan=algexpan)
+		_, mps2 = changeordering(O, lattice2, mps, trunc=algmult.trunc)
 		return mps2
 	else
-		return _differentialinfluencefunctional(lattice, corr, dt, alg; band=band, algexpan=algexpan, trunc=trunc)
+		return _differentialinfluencefunctional(lattice, corr, dt, alg, algmult; band=band, algexpan=algexpan)
 	end
 end
 
-function _differentialinfluencefunctional(lattice::RealGrassmannLattice{<:A1A1a1a1B1B1b1b1}, corr::RealCorrelationFunction, dt::Real, alg::FirstOrderStepper; 
-										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion(), trunc::TruncationScheme=DefaultMPOTruncation)
+function _differentialinfluencefunctional(lattice::RealGrassmannLattice{<:A1A1a1a1B1B1b1b1}, corr::RealCorrelationFunction, dt::Real, alg::FirstOrderStepper, algmult::DMRGAlgorithm; 
+										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	h1, h2, h3, h4 = influenceoperatorexponential(lattice, corr, dt, alg, band=band, algexpan=algexpan)
 	mps = h1 * vacuumstate(lattice)
 	tmp = h2 * vacuumstate(lattice)
-	orth = Orthogonalize(trunc=trunc, normalize=false)
-	mps = mult!(mps, tmp, trunc=trunc)
+	mps = mult(mps, tmp, algmult)
 	tmp = h3 * vacuumstate(lattice)
-	mps = mult!(mps, tmp, trunc=trunc)
+	mps = mult(mps, tmp, algmult)
 	tmp = h4 * vacuumstate(lattice)
-	mps = mult!(mps, tmp, trunc=trunc)
+	mps = mult(mps, tmp, algmult)
 	return mps
 end
-function _differentialinfluencefunctional(lattice::RealGrassmannLattice{<:A1A1a1a1B1B1b1b1}, corr::RealCorrelationFunction, dt::Real, alg::ComplexStepper; 
-										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion(), trunc::TruncationScheme=DefaultMPOTruncation)
+function _differentialinfluencefunctional(lattice::RealGrassmannLattice{<:A1A1a1a1B1B1b1b1}, corr::RealCorrelationFunction, dt::Real, alg::ComplexStepper, algmult::DMRGAlgorithm; 
+										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	(h1a, h1b), (h2a, h2b), (h3a, h3b), (h4a, h4b) = influenceoperatorexponential(lattice, corr, dt, alg, band=band, algexpan=algexpan)
-	orth = Orthogonalize(trunc=trunc, normalize=false)
-	mps = h1a * vacuumstate(lattice)
-	canonicalize!(mps, alg=orth)
-	mps = h1b * mps
-	canonicalize!(mps, alg=orth)
+	mps1 = h1a * vacuumstate(lattice)
+	tmp = h1b * vacuumstate(lattice)
+	mps = mult(mps1, tmp, algmult)
 
-	tmp = h2a * vacuumstate(lattice)
-	canonicalize!(tmp, alg=orth)
-	tmp = h2b * tmp
-	canonicalize!(tmp, alg=orth)
-	mps = mult!(mps, tmp, trunc=trunc)
+	mps1 = h2a * vacuumstate(lattice)
+	tmp = h2b * vacuumstate(lattice)
+	mps1 = mult(mps1, tmp, algmult)
+	mps = mult(mps, mps1, algmult)
 
-	tmp = h3a * vacuumstate(lattice)
-	canonicalize!(tmp, alg=orth)
-	tmp = h3b * tmp
-	canonicalize!(tmp, alg=orth)
-	mps = mult!(mps, tmp, trunc=trunc)
+	mps1 = h3a * vacuumstate(lattice)
+	tmp = h3b * vacuumstate(lattice)
+	mps1 = mult(mps1, tmp, algmult)
+	mps = mult(mps, mps1, algmult)
 
-	tmp = h4a * vacuumstate(lattice)
-	canonicalize!(tmp, alg=orth)
-	tmp = h4b * tmp
-	canonicalize!(tmp, alg=orth)
-	mps = mult!(mps, tmp, trunc=trunc)
+	mps1 = h4a * vacuumstate(lattice)
+	tmp = h4b * vacuumstate(lattice)
+	mps1 = mult(mps1, tmp, algmult)
+	mps = mult(mps, mps1, algmult)
 
 	return mps
 end
