@@ -108,7 +108,7 @@ function main_partial_vs_order()
 	end
 end
 
-function main_ti(t; ϵ_d=0, β = 20., order=7, prony=4, k=5, δt = 0.05)
+function main_ti(t; ϵ_d=0, β = 20., order=7, prony=5, k=5, δt = 0.05)
 	D = 2.
 	χ = 50
 

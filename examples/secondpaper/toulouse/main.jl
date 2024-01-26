@@ -31,13 +31,13 @@ function main_analytic(β; ϵ_d=1., δτ=0.1)
 	g = [G(τ, spectrum_func(D), β, -ϵ_d, 0.) for τ in τs]	
 
 	g = real(g)
-	data_path = "result/thouless_analytic_beta$(β)_mu$(ϵ_d)_N$(N).json"
+	# data_path = "result/thouless_analytic_beta$(β)_mu$(ϵ_d)_N$(N).json"
 
-	results = Dict("ts"=>τs, "gf" => g)
+	# results = Dict("ts"=>τs, "gf" => g)
 
-	open(data_path, "w") do f
-		write(f, JSON.json(results))
-	end
+	# open(data_path, "w") do f
+	# 	write(f, JSON.json(results))
+	# end
 
 	return g
 end
@@ -61,16 +61,16 @@ function main(β; ϵ_d=1., δτ=0.1)
 	exact_model = SISB(bath, U=0., μ=-ϵ_d)
 	corr = correlationfunction(bath, lattice)
 
-	mpspath = "data/tempo_beta$(β)_N$(N)_chi$(chi).mps"
-	if ispath(mpspath)
-		println("load MPS-IF from path ", mpspath)
-		mpsI = Serialization.deserialize(mpspath)
-	else
+	# mpspath = "data/tempo_beta$(β)_N$(N)_chi$(chi).mps"
+	# if ispath(mpspath)
+	# 	println("load MPS-IF from path ", mpspath)
+	# 	mpsI = Serialization.deserialize(mpspath)
+	# else
 		println("computing MPS-IF...")
 		@time mpsI = hybriddynamics(lattice, corr, trunc=trunc)
-		println("save MPS-IF to path ", mpspath)
-		Serialization.serialize(mpspath, mpsI)
-	end
+		# println("save MPS-IF to path ", mpspath)
+		# Serialization.serialize(mpspath, mpsI)
+	# end
 
 
 	println("bond dimension of mpsI is ", bond_dimension(mpsI))
@@ -87,15 +87,15 @@ function main(β; ϵ_d=1., δτ=0.1)
 
 	@time g = parallel_gf(lattice, mpsKs, mpsI)
 
-	data_path = "result/thouless_tempo_beta$(β)_mu$(ϵ_d)_N$(N)_chi$(chi).json"
+	# data_path = "result/thouless_tempo_beta$(β)_mu$(ϵ_d)_N$(N)_chi$(chi).json"
 
-	results = Dict("ts"=>τs, "gf" => g, "bd"=>bond_dimensions(mpsI))
+	# results = Dict("ts"=>τs, "gf" => g, "bd"=>bond_dimensions(mpsI))
 
-	println("save results to ", data_path)
+	# println("save results to ", data_path)
 
-	open(data_path, "w") do f
-		write(f, JSON.json(results))
-	end
+	# open(data_path, "w") do f
+	# 	write(f, JSON.json(results))
+	# end
 
 	return g
 

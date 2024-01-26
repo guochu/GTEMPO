@@ -19,8 +19,8 @@ def read_partial(mu, beta, dt, N, order):
 	# lt = asarray(data['lt'])
 	return data['ts'], asarray(data['ns']), gt, data['bd'], data['time']
 
-def read_ti(mu, beta, dt, N, order, k=5):
-	filename = 'result/ti_if_mu%s_beta%s_dt%s_N%s_order%s_prony1.0e-5_k%s.json'%(mu, beta, dt, N, order, k)
+def read_ti(mu, beta, dt, N, order, prony=4, k=5):
+	filename = 'result/ti_if_mu%s_beta%s_dt%s_N%s_order%s_prony%s_k%s.json'%(mu, beta, dt, N, order, prony, k)
 	with open(filename, 'r') as f:
 		data = f.read()
 		data = json.loads(data)
@@ -46,8 +46,8 @@ def read_lrz_partial(mu, beta, dt, N, order):
 	# lt = asarray(data['lt'])
 	return data['ts'], asarray(data['ns']), gt, data['bd'], data['time']
 
-def read_lrz_ti(mu, beta, dt, N, order, k=5):
-	filename = 'result/lrz_ti_if_mu%s_beta%s_dt%s_N%s_order%s_prony1.0e-5_k%s.json'%(mu, beta, dt, N, order, k)
+def read_lrz_ti(mu, beta, dt, N, order, prony=4, k=5):
+	filename = 'result/lrz_ti_if_mu%s_beta%s_dt%s_N%s_order%s_prony%s_k%s.json'%(mu, beta, dt, N, order, prony, k)
 	with open(filename, 'r') as f:
 		data = f.read()
 		data = json.loads(data)
@@ -147,7 +147,7 @@ ax[1,0].tick_params(axis='both', which='major', labelsize=labelsize)
 
 
 # lorentzian spectrum
-t = 60.
+t = 50.
 N = round(t / dt)
 
 ts_real_analytic, gf_real_analytic = read_lrz_real_analytic(mu, dt, N)
@@ -181,7 +181,7 @@ ax1.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 ax1.legend(fontsize=12)
 
 
-ts = [10.,20.,30.,40.,50.,60.]
+ts = [10.,20.,30.,40.,50.]
 Ns = [round(t / dt) for t in ts]
 
 r_pa = [read_lrz_partial(mu, beta, dt, N, order) for N in Ns]
