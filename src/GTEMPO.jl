@@ -2,7 +2,7 @@ module GTEMPO
 
 # Grassmann MPS
 export AbstractGTerm, GTerm, ExpGTerm, grassmannpspace
-export AbstractGMPS, AbstractFiniteGMPS, edgespace, GrassmannMPS, scaling, setscaling!, randomgmps, mult!, mult
+export AbstractGMPS, AbstractFiniteGMPS, GrassmannMPS, scaling, setscaling!, randomgmps, mult!, mult
 export GrassmannTransferMatrix
 
 # Ordering of grasmann numbers
