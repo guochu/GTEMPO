@@ -88,8 +88,8 @@ function main_tempo_1order_b(V_over_Gamma, U_over_Gamma, tall, dt, order, k)
 
 	Z = integrate(lattice, mpsK, mpsI1, mpsI2)
 
-	@time currents_left2 = [electriccurrent_fast(lattice, leftcorr, k+1, mpsK, mpsI1, mpsI2, Z=Z) for k in 1:10:N]
-	@time currents_right2 = [electriccurrent_fast(lattice, rightcorr, k+1, mpsK, mpsI1, mpsI2, Z=Z) for k in 1:10:N]
+	@time currents_left2 = [electriccurrent_fast(lattice, leftcorr, k+1, mpsK, mpsI1, mpsI2, Z=Z) for k in 300:10:N]
+	@time currents_right2 = [electriccurrent_fast(lattice, rightcorr, k+1, mpsK, mpsI1, mpsI2, Z=Z) for k in 300:10:N]
 	currents_ts = ts[1:10:N]
 
 	data_path = "result/ti_V$(V_over_Gamma)_U$(U_over_Gamma)_N$(N)_dt$(dt)_order$(order)_chi$(chi)_k$(k).json"
