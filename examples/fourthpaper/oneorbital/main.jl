@@ -86,7 +86,8 @@ function main_tempo_1order_b(V_over_Gamma, U_over_Gamma, tall, dt, order, k)
 	mpsK = boundarycondition!(mpsK, lattice, band=2)
 	# println("IF K is ", integrate(mpsK, lattice))
 
-	Z = integrate(lattice, mpsK, mpsI1, mpsI2)
+	println("compute partition function...")
+	@time Z = integrate(lattice, mpsK, mpsI1, mpsI2)
 
 	@time currents_left2 = [electriccurrent_fast(lattice, leftcorr, k+1, mpsK, mpsI1, mpsI2, Z=Z) for k in 300:10:N]
 	@time currents_right2 = [electriccurrent_fast(lattice, rightcorr, k+1, mpsK, mpsI1, mpsI2, Z=Z) for k in 300:10:N]
