@@ -80,7 +80,7 @@ function main_tempo_1order_b(V_over_Gamma, U_over_Gamma, tall, dt, order, k)
 	# println("IF Z is ", integrate(mpsI1, lattice), " ", integrate(mpsI2, lattice))
 
 	truncK = truncdimcutoff(D=512, ϵ=1.0e-10, add_back=0)
-	@time mpsK = accsysdynamics_fast(lattice, exact_model, trunc=truncK)
+	@time mpsK = sysdynamics(lattice, exact_model, trunc=truncK)
 	println("mpsK bond dimension is ", bond_dimension(mpsK))
 	mpsK = boundarycondition!(mpsK, lattice, band=1)
 	mpsK = boundarycondition!(mpsK, lattice, band=2)
