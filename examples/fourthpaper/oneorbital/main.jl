@@ -16,18 +16,18 @@ spectrum_func(D) = SpectrumFunction(ω -> J(D, ω), lb = -D, ub = D)
 
 const Vs = [0., 0.17857143, 0.35714286, 0.53571429, 0.71428571, 0.89285715, 1.07142857, 1.25, 1.42857143, 1.60714287, 1.78571429, 1.96428573, 2.14285714, 2.32142859, 2.5, 2.67857145, 2.85714286]
 
-function main_tempo_1order_b_all(V_over_Gamma, t=6., dt =0.007, order=7, k=5)
+function main_tempo_1order_b_all(V_over_Gamma, t=6., dt =0.007, order=7, k=5, prony=5)
 	for U in [0., 2., 4., 6., 8.]
-		main_tempo_1order_b(V_over_Gamma, U, t, dt, order, k)
+		main_tempo_1order_b(V_over_Gamma, U, t, dt, order, k, prony)
 	end
 end
 
-function main_tempo_1order_b(V_over_Gamma, U_over_Gamma, tall, dt, order, k)
-	println("run for V= ", V_over_Gamma, ", U= ", U_over_Gamma, " t= ", tall, " dt= ", dt, " order= ", order, " k= ", k)
+function main_tempo_1order_b(V_over_Gamma, U_over_Gamma, tall, dt, order, k, prony)
+	println("run for V= ", V_over_Gamma, ", U= ", U_over_Gamma, " t= ", tall, " dt= ", dt, " order= ", order, " k= ", k, " prony=", prony)
 	β = Inf
 	D = 2
 	chi = 160
-	prony=1.0e-4
+	pronytol=10.0^(-prony)
 
 	Γ = 0.1
 	V = V_over_Gamma * Γ
@@ -56,7 +56,7 @@ function main_tempo_1order_b(V_over_Gamma, U_over_Gamma, tall, dt, order, k)
 
 
 	trunc = truncdimcutoff(D=chi, ϵ=10.0^(-order))
-	mpspath = "data/ti_N$(N)_V$(V_over_Gamma)_dt$(dt)_order$(order)_chi$(chi)_k$(k).mps"
+	mpspath = "data/ti_N$(N)_V$(V_over_Gamma)_dt$(dt)_order$(order)_chi$(chi)_k$(k)_prony$(prony).mps"
 	if ispath(mpspath)
 		println("load MPS-IF from path ", mpspath)
 		mpsI1, mpsI2 = Serialization.deserialize(mpspath)
@@ -64,7 +64,7 @@ function main_tempo_1order_b(V_over_Gamma, U_over_Gamma, tall, dt, order, k)
 		println("computing MPS-IF...")
 		corr = leftcorr + rightcorr
 		algevo = WII()
-		algexpan = PronyExpansion(n=15, tol=prony, verbosity=4)
+		algexpan = PronyExpansion(n=20, tol=pronytol, verbosity=4)
 		algmult = DMRG1(trunc)
 		alg = TranslationInvariantIF(algevo=algevo, algexpan=algexpan, algmult=algmult, k=k)
 
@@ -94,7 +94,7 @@ function main_tempo_1order_b(V_over_Gamma, U_over_Gamma, tall, dt, order, k)
 	@time currents_right2 = [electriccurrent_fast(lattice, rightcorr, k+1, mpsK, mpsI1, mpsI2, Z=Z) for k in N_s:10:N]
 	currents_ts = ts[1:10:N]
 
-	data_path = "result/ti_V$(V_over_Gamma)_U$(U_over_Gamma)_N$(N)_dt$(dt)_order$(order)_chi$(chi)_k$(k).json"
+	data_path = "result/ti_V$(V_over_Gamma)_U$(U_over_Gamma)_N$(N)_dt$(dt)_order$(order)_chi$(chi)_k$(k)_prony$(prony).json"
 
 	results = Dict("ts"=>ts, "Ileft" => real(currents_left2), "ts_I"=>currents_ts, "Iright"=>real(currents_right2), "bd"=>bds)
 

@@ -79,7 +79,7 @@ function main_ed(V_over_Gamma, tall=6.3, dw=0.001)
 end
 
 function main_ed_all(tall=6.3, dw=0.001)
-	Vs = [0.17857143, 0.35714286, 0.53571429, 0.71428571, 0.89285715]
+	Vs = [0.17857143, 0.35714286, 0.53571429, 0.71428571, 0.89285715, 1.07142857]
 	for V in Vs
 		main_ed(V, tall, dw)
 	end
