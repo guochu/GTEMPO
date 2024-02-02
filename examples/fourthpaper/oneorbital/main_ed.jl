@@ -33,7 +33,7 @@ function main_ed(V_over_Gamma, tall=6.3, dw=0.001)
 	rightmu = -V / 2
 	ϵ_d = 0
 
-	δt = 0.014 / Γ
+	δt = tall / Γ
 	t = tall / Γ
 	# t = 0.7 / Γ
 	N = round(Int, t / δt)
