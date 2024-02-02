@@ -19,11 +19,11 @@ def read_ed_data_single(filename):
 		data = json.loads(data)
 	return data['ts'], data['Ileft'], data['Iright']
 
-def read_ed_data(Vs, dw):
+def read_ed_data(Vs, dw=0.001):
 	Ilefts = []
 	Irights = []
 	for V in Vs:
-		filename = 'result/anderson_ed_V%s_dw%s.json'%(V, dw)
+		filename = 'result/anderson_ed_V%s_t6.3_dw%s.json'%(V, dw)
 		ts, Ileft, Iright = read_ed_data_single(filename)
 		Ilefts.append(Ileft[-1])
 		Irights.append(Iright[-1])
@@ -65,9 +65,17 @@ def read_tempo_data2(Vs, U, dt, order=7, k=5, chi=160):
 
 
 Vs = [0.17857143, 0.35714286, 0.53571429, 0.71428571, 0.89285715]
+colors = ['b', 'g', 'c', 'y', 'r']
+
+ed_Ilefts, ed_Irights = read_ed_data(Vs[0:3])
+ed_Imean = 0.5 * ( ed_Ilefts - ed_Irights )
+# print(ed_Ilefts)
+# print(ed_Irights)
+print(ed_Imean)
 
 
 dt = 0.014
+ts = linspace(4.2, 6.3, num=16)
 order = 7
 k = 5
 chi = 160
@@ -76,28 +84,28 @@ U = 0.
 Ilefts_0, Irights_0, bd_0 = read_tempo_data2(Vs, U, dt=dt, order=order, k=k, chi=chi)
 Imean_0 = [0.5 * ( a - b ) for a, b in zip(Ilefts_0, Irights_0)]
 
-print(Ilefts_0[4])
-print(Irights_0[4])
+print(Imean_0[2])
 
-# print([item[-1] for item in Ilefts_0])
-# print([item[-1] for item in Irights_0])
+# print(Ilefts_0[4])
+# print(Irights_0[4])
 
-# print(Imean_0[2])
-print([item[0] for item in Imean_0])
-print([item[-1] for item in Imean_0])
+U = 2.
+Ilefts_2, Irights_2, bd_2 = read_tempo_data2(Vs, U, dt=dt, order=order, k=k, chi=chi)
+Imean_2 = [0.5 * ( a - b ) for a, b in zip(Ilefts_2, Irights_2)]
 
-# U = 2.
-# Ilefts_2, Irights_2, bd_2 = read_tempo_data(Vs2, U)
-# Imean_2 = 0.5 * ( Ilefts_2 - Irights_2 )
+# print([item[0] for item in Imean_2])
+# print([item[-1] for item in Imean_2])
 
-# U = 4.
-# Ilefts_4, Irights_4, bd_4 = read_tempo_data(Vs2, U)
-# Imean_4 = 0.5 * ( Ilefts_4 - Irights_4 )
+U = 4.
+Ilefts_4, Irights_4, bd_4 = read_tempo_data2(Vs, U, dt=dt, order=order, k=k, chi=chi)
+Imean_4 = [0.5 * ( a - b ) for a, b in zip(Ilefts_4, Irights_4)]
 
+# print([item[0] for item in Imean_4])
+# print([item[-1] for item in Imean_4])
 
 # U = 6.
-# Ilefts_6, Irights_6, bd_6 = read_tempo_data(Vs2, U)
-# Imean_6 = 0.5 * ( Ilefts_6 - Irights_6 )
+# Ilefts_6, Irights_6, bd_6 = read_tempo_data2(Vs, U, dt=dt, order=order, k=k, chi=chi)
+# Imean_6 = [0.5 * ( a - b ) for a, b in zip(Ilefts_6, Irights_6)]
 
 # U = 8.
 # Ilefts_8, Irights_8, bd_8 = read_tempo_data(Vs2, U)
@@ -108,37 +116,23 @@ print([item[-1] for item in Imean_0])
 # print(Irights_8)
 # print(asarray(Ilefts_8) + asarray(Irights_8))
 
-# print(bd_2)
-# print(bd_4)
-# print(bd_6)
-# print(bd_8)
 
 
+fontsize = 16
+labelsize = 14
+linewidth = 1.
+markersize = 6
 
-# fontsize = 16
-# labelsize = 14
-# linewidth = 1.
-# markersize = 6
-
-# fig, ax = plt.subplots(1, 1, figsize=(6, 4.5))
+fig, ax = plt.subplots(1, 1, figsize=(6, 4.5))
 
 
-# # U = 0.
-# alpha = 1.
+# U = 0.
+alpha = 1.
 
-# ax.plot(Vs2, Imean_0, alpha=alpha, linewidth=1.5, color='b', marker='+', markersize=markersize, markerfacecolor='none', ls = 'none', label=r'GTEMPO')
+for i, V in enumerate(Vs):
+	ax.plot(ts, Imean_4[i] / V, linewidth=1.5, color=colors[i],  markersize=markersize, markerfacecolor='none', ls = '--', label=r'$V/\Gamma=%s$'%(V))
 
-# alpha = 0.8
-# ax.plot(Vs2, Imean_2, linewidth=1.5, alpha=alpha, color='b', marker='+', markersize=markersize, markerfacecolor='none', ls = 'none')
-
-# alpha = 0.6
-# ax.plot(Vs2, Imean_4, linewidth=1.5, alpha=alpha, color='b', marker='+', markersize=markersize, markerfacecolor='none', ls = 'none')
-
-# alpha = 0.4
-# ax.plot(Vs2, Imean_6, linewidth=1.5, alpha=alpha, color='b', marker='+', markersize=markersize, markerfacecolor='none', ls = 'none')
-
-# alpha = 0.2
-# ax.plot(Vs2, Imean_8, linewidth=1.5, alpha=alpha, color='b', marker='+', markersize=markersize, markerfacecolor='none', ls = 'none')
+# ax.plot(ts, Imean_0[4], linewidth=1.5, color=colors[0],  markersize=markersize, markerfacecolor='none', ls = '--')
 
 # ax.text(2.,1.7,r'$U/\Gamma = 0$',rotation=30, fontsize=10)
 # ax.text(2.,1.48,r'$U/\Gamma = 2$',rotation=30, fontsize=10)
@@ -147,17 +141,17 @@ print([item[-1] for item in Imean_0])
 # ax.text(2.,0.54,r'$U/\Gamma = 8$',rotation=15, fontsize=10)
 
 
-# ax.set_ylabel(r'$2\pi \mathcal{J}/\Gamma$', fontsize=fontsize)
-# ax.set_xlabel(r'$V/\Gamma$', fontsize=fontsize)
-# ax.tick_params(axis='both', which='major', labelsize=labelsize)
-# ax.tick_params(axis='y', which='both')
-# ax.locator_params(axis='both', nbins=6)
+ax.set_ylabel(r'$2\pi \mathcal{J}/\Gamma$', fontsize=fontsize)
+ax.set_xlabel(r'$\Gamma t$', fontsize=fontsize)
+ax.tick_params(axis='both', which='major', labelsize=labelsize)
+ax.tick_params(axis='y', which='both')
+ax.locator_params(axis='both', nbins=6)
 # ax.set_ylim(0, 2.)
 # ax.set_xlim(0, 3)
-# ax.legend(fontsize=12)
+ax.legend(fontsize=12)
 
-# plt.tight_layout(pad=0.5)
+plt.tight_layout(pad=0.5)
 
-# # plt.savefig('fig3.pdf', bbox_inches='tight')
+# plt.savefig('fig3.pdf', bbox_inches='tight')
 
-# plt.show()
+plt.show()
