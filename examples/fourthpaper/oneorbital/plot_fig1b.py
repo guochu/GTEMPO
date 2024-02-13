@@ -152,25 +152,28 @@ Imean_6_old = 0.5 * ( Ilefts_6_old - Irights_6_old )
 Ilefts_6, Irights_6, bd_6 = read_tempo_data2(Vs, U, dt=dt, order=order, k=k, chi=chi)
 Imean_6 = [0.5 * ( a - b ) for a, b in zip(Ilefts_6, Irights_6)]
 
-# U = 8.
-# Ilefts_8, Irights_8, bd_8 = read_tempo_data(Vs2, U)
-# Imean_8 = 0.5 * ( Ilefts_8 - Irights_8 )
+U = 8.
+Ilefts_8_old, Irights_8_old, bd_8_old = read_tempo_data(Vs, U)
+Imean_8_old = 0.5 * ( Ilefts_8_old - Irights_8_old )
+
+Ilefts_8, Irights_8, bd_8 = read_tempo_data2(Vs, U, dt=dt, order=order, k=k, chi=chi)
+Imean_8 = [0.5 * ( a - b ) for a, b in zip(Ilefts_8, Irights_8)]
 
 
-Imeans_allU_0 = [Imean_0[0], Imean_2[0], Imean_4[0], Imean_6[0]]
-Imeans_allU_1 = [Imean_0[1], Imean_2[1], Imean_4[1], Imean_6[1]]
-Imeans_allU_2 = [Imean_0[2], Imean_2[2], Imean_4[2], Imean_6[2]]
-Imeans_allU_3 = [Imean_0[3], Imean_2[3], Imean_4[3], Imean_6[3]]
-Imeans_allU_4 = [Imean_0[4], Imean_2[4], Imean_4[4], Imean_6[4]]
-Imeans_allU_5 = [Imean_0[5], Imean_2[5], Imean_4[5], Imean_6[5]]
+Imeans_allU_0 = [Imean_0[0], Imean_2[0], Imean_4[0], Imean_6[0], Imean_8[0]]
+Imeans_allU_1 = [Imean_0[1], Imean_2[1], Imean_4[1], Imean_6[1], Imean_8[1]]
+Imeans_allU_2 = [Imean_0[2], Imean_2[2], Imean_4[2], Imean_6[2], Imean_8[2]]
+Imeans_allU_3 = [Imean_0[3], Imean_2[3], Imean_4[3], Imean_6[3], Imean_8[3]]
+Imeans_allU_4 = [Imean_0[4], Imean_2[4], Imean_4[4], Imean_6[4], Imean_8[4]]
+Imeans_allU_5 = [Imean_0[5], Imean_2[5], Imean_4[5], Imean_6[5], Imean_8[5]]
 
 
-Imeans_allU_old_0 = [Imean_0_old[0], Imean_2_old[0], Imean_4_old[0], Imean_6_old[0]]
-Imeans_allU_old_1 = [Imean_0_old[1], Imean_2_old[1], Imean_4_old[1], Imean_6_old[1]]
-Imeans_allU_old_2 = [Imean_0_old[2], Imean_2_old[2], Imean_4_old[2], Imean_6_old[2]]
-Imeans_allU_old_3 = [Imean_0_old[3], Imean_2_old[3], Imean_4_old[3], Imean_6_old[3]]
-Imeans_allU_old_4 = [Imean_0_old[4], Imean_2_old[4], Imean_4_old[4], Imean_6_old[4]]
-Imeans_allU_old_5 = [Imean_0_old[5], Imean_2_old[5], Imean_4_old[5], Imean_6_old[5]]
+Imeans_allU_old_0 = [Imean_0_old[0], Imean_2_old[0], Imean_4_old[0], Imean_6_old[0], Imean_8_old[0]]
+Imeans_allU_old_1 = [Imean_0_old[1], Imean_2_old[1], Imean_4_old[1], Imean_6_old[1], Imean_8_old[1]]
+Imeans_allU_old_2 = [Imean_0_old[2], Imean_2_old[2], Imean_4_old[2], Imean_6_old[2], Imean_8_old[2]]
+Imeans_allU_old_3 = [Imean_0_old[3], Imean_2_old[3], Imean_4_old[3], Imean_6_old[3], Imean_8_old[3]]
+Imeans_allU_old_4 = [Imean_0_old[4], Imean_2_old[4], Imean_4_old[4], Imean_6_old[4], Imean_8_old[4]]
+Imeans_allU_old_5 = [Imean_0_old[5], Imean_2_old[5], Imean_4_old[5], Imean_6_old[5], Imean_8_old[5]]
 
 
 # Imeans_allU_0 = [Imean_0[0], Imean_2[0], Imean_4[0]]
@@ -197,7 +200,7 @@ fig, ax = plt.subplots(3, 2, figsize=(6, 8), sharex=True)
 ed_ts = [ts[0], ts[-1]]
 ts_old = [ts[0]]
 
-Us = [0,2,4,6]
+Us = [0,2,4,6,8]
 # U = 0
 
 ed_I = asarray([ed_Imean_old[0], ed_Imean[0]])
