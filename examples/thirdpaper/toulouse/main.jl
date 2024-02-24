@@ -57,7 +57,7 @@ function main_analytic(t::Float64; ϵ_d=1., δt=0.05)
 	return g
 end
 
-function main(t::Real; ϵ_d=1., δt=0.05, β=40)
+function main(t::Real; ϵ_d=1., δt=0.05, order=8, β=40, chi=1024)
 	D = 2.
 	β = convert(Float64, β)
 	t = convert(Float64, t)
@@ -65,9 +65,9 @@ function main(t::Real; ϵ_d=1., δt=0.05, β=40)
 	println("N=", N, " δt=", δt, " ϵ_d=", ϵ_d)
 
 	ts = [i*δt for i in 1:N]
-	chi = 1024
+	# chi = 1024
 
-	trunc = truncdimcutoff(D=chi, ϵ=1e-6, add_back=0)
+	trunc = truncdimcutoff(D=chi, ϵ=10.0^(-order), add_back=0)
 	truncK = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
 
 	bath = fermionicbath(spectrum_func(D), β=β, μ=0)
@@ -108,7 +108,7 @@ function main(t::Real; ϵ_d=1., δt=0.05, β=40)
 
 	# ts = [i*δt for i in 1:N]
 
-	data_path = "result/thouless_tempo_real_beta$(β)_t$(t)_mu$(ϵ_d)_dt$(δt)_e6.json"
+	data_path = "result/thouless_tempo_real_beta$(β)_t$(t)_mu$(ϵ_d)_dt$(δt)_order$(order)_chi$(chi).json"
 
 	results = Dict("ts"=>ts, "ns" => ns, "bd"=>bds, "gt"=>g₁, "lt"=>l₁)
 
@@ -121,3 +121,6 @@ function main(t::Real; ϵ_d=1., δt=0.05, β=40)
 	return real(g₁)
 end
 
+function main_vs_D()
+	
+end
