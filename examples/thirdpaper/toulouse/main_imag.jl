@@ -55,8 +55,8 @@ function main(β; ϵ_d=1., δτ=0.1, order=8, chi=1024)
 	# chi = 1024
 
 
-	trunc = MPSTruncation(D=chi, ϵ=10.0^(-order), add_back=0)
-	truncK = MPSTruncation(D=chi, ϵ=1.0e-10, add_back=0)
+	trunc = truncdimcutoff(D=chi, ϵ=10.0^(-order), add_back=0)
+	truncK = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
 	lattice = GrassmannLattice(N=N, δτ=β/N, bands=1, contour=:imag)
 
 	println("number of sites ", length(lattice), " D=", D)
