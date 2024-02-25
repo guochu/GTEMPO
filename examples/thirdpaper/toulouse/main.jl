@@ -121,6 +121,9 @@ function main(t::Real; ϵ_d=1., δt=0.05, order=8, β=40, chi=1024)
 	return real(g₁)
 end
 
-function main_vs_D()
-	
+function main_vs_D(t::Real; ϵ_d=1., δt=0.05, β=40)
+	for chi in 10:10:200
+		main(t; ϵ_d=ϵ_d, δt=δt, β=β, chi=chi, order=10)
+	end
+
 end
