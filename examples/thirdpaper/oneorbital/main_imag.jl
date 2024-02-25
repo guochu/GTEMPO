@@ -53,7 +53,7 @@ function main(β; U=1., ϵ_d=U/2, δτ=0.1, order=10, chi=1024)
 	println("mpsK scale is ", scaling(mpsK))
 	mpsKs = [mpsK]
 	for band in 1:lattice.bands
-		mpsKs = boundarydynamics2(mpsKs, lattice, band=band)
+		mpsKs = boundarycondition_branching(mpsKs, lattice, band=band)
 	end
 	println("bond dimension of mpsK is ", bond_dimension(mpsKs[1]), ", number of Ks ", length(mpsKs))
 
