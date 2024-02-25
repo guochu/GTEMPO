@@ -25,8 +25,9 @@ function main(t::Real, t₀::Real=t/2; U=1., ϵ_d=U/2, δt=0.05, β=40, order=6,
 	ts = [i*δt for i in 1:N]
 
 	tol = 10.0^(-order)
-	trunc = truncdimcutoff(D=chi, ϵ=tol, add_back=0)
-	truncK = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
+
+	trunc = MPSTruncation(D=chi, ϵ=tol, add_back=0)
+	truncK = MPSTruncation(D=chi, ϵ=1.0e-10, add_back=0)
 
 	
 	bath = fermionicbath(spectrum_func(D), β=β, μ=0.)
@@ -53,6 +54,7 @@ function main(t::Real, t₀::Real=t/2; U=1., ϵ_d=U/2, δt=0.05, β=40, order=6,
 	# println("IF Z is ", integrate(mpsI1, lattice), " ", integrate(mpsI2, lattice))
 
 	@time mpsK = sysdynamics(lattice, exact_model, trunc=truncK)
+	mpsK = systhermalstate!(mpsK, lattice, exact_model, trunc=truncK)
 	println("mpsK bond dimension is ", bond_dimension(mpsK))
 	mpsK = boundarycondition(mpsK, lattice, band=1)
 	mpsK = boundarycondition(mpsK, lattice, band=2)
@@ -70,7 +72,7 @@ function main(t::Real, t₀::Real=t/2; U=1., ϵ_d=U/2, δt=0.05, β=40, order=6,
 	end
 
 
-	data_path = "result/anderson_tempo1_beta$(β)_t$(t)_$(t₀)_U$(U)_mu$(ϵ_d)_dt$(δt)_order$(order)_chi$(chi).json"
+	data_path = "result/anderson_tempo1_beta$(β)_t$(t)_$(t₀)_U$(U)_mu$(ϵ_d)_dt$(δt)_order$(order)_chi$(chi)_2.json"
 
 	results = Dict("ts"=>ts, "ns" => ns, "bd"=>bond_dimensions(mpsI1), "gt"=>g₁, "lt"=>l₁, "gf_ts"=>gf_ts)
 
@@ -83,9 +85,8 @@ function main(t::Real, t₀::Real=t/2; U=1., ϵ_d=U/2, δt=0.05, β=40, order=6,
 	return results
 end
 
-function main_all_U(t₀::Real, t::Real = t₀ + 20.; δt=0.05, β=40, order=6)
+function main_all_U(t₀::Real, t::Real = t₀ + 20.; δt=0.05, β=40, order=6, chi=1024)
 	for U in [0.1, 0.5, 1., 2.]
-		main(t, t₀, U=U, δt=δt, β=β, order=order)
+		main(t, t₀, U=U, δt=δt, β=β, order=order, chi=chi)
 	end
 end
-

@@ -81,7 +81,7 @@ function main(β; ϵ_d=1., δτ=0.1, order=8, chi=1024)
 
 	@time mpsK = sysdynamics(lattice, exact_model, trunc=truncK)
 	println("bond dimension of mpsK is ", bond_dimension(mpsK))
-	println("mpsK scale is ", scale(mpsK))
+	println("mpsK scale is ", scaling(mpsK))
 	mpsKs = [mpsK]
 	for band in 1:lattice.bands
 		mpsKs = boundarycondition_branching(mpsKs, lattice, band=band)
