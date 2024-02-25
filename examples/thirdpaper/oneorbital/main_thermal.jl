@@ -59,8 +59,8 @@ function main(t::Real, t₀::Real=t/2; U=1., ϵ_d=U/2, δt=0.05, β=40, order=6,
 
 	tol = 10.0^(-order)
 
-	trunc = MPSTruncation(D=chi, ϵ=tol, add_back=0)
-	truncK = MPSTruncation(D=chi, ϵ=1.0e-10, add_back=0)
+	trunc = truncdimcutoff(D=chi, ϵ=tol, add_back=0)
+	truncK = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
 
 	
 	bath = fermionicbath(spectrum_func(D), β=β, μ=0.)
