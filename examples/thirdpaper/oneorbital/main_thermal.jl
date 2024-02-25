@@ -12,6 +12,39 @@ end
 
 spectrum_func(D) = SpectrumFunction(ω -> J(D, ω), lb = -D, ub = D)
 
+function cached_vacuum(lattice::RealGrassmannLattice, i::Int, A::GrassmannMPS, B::GrassmannMPS...; 
+            cache=environments(lattice, A, B...))
+    pos1, pos2 = index(lattice, i, conj=false, forward=true, band=1), index(lattice, i, conj=true, forward=true, band=1)
+    pos1′, pos2′ = index(lattice, i, conj=false, forward=true, band=2), index(lattice, i, conj=true, forward=true, band=2)
+    t = GTerm(pos1, pos2, pos1′, pos2′, coeff=1)
+    return expectationvalue(t, cache)
+end
+
+function cached_nup(lattice::RealGrassmannLattice, i::Int, A::GrassmannMPS, B::GrassmannMPS...; 
+            cache=environments(lattice, A, B...))
+    pos1, pos2 = index(lattice, i, conj=false, forward=true, band=1), index(lattice, i, conj=true, forward=false, band=1)
+    pos1′, pos2′ = index(lattice, i, conj=false, forward=true, band=2), index(lattice, i, conj=true, forward=true, band=2)
+    t = GTerm(pos1, pos2, pos1′, pos2′, coeff=1)
+    return expectationvalue(t, cache)
+end
+
+function cached_ndown(lattice::RealGrassmannLattice, i::Int, A::GrassmannMPS, B::GrassmannMPS...; 
+            cache=environments(lattice, A, B...))
+    pos1, pos2 = index(lattice, i, conj=false, forward=true, band=1), index(lattice, i, conj=true, forward=true, band=1)
+    pos1′, pos2′ = index(lattice, i, conj=false, forward=true, band=2), index(lattice, i, conj=true, forward=false, band=2)
+    t = GTerm(pos1, pos2, pos1′, pos2′, coeff=1)
+    return expectationvalue(t, cache)
+end
+
+function cached_nn(lattice::RealGrassmannLattice, i::Int, A::GrassmannMPS, B::GrassmannMPS...; 
+            cache=environments(lattice, A, B...))
+    pos1, pos2 = index(lattice, i, conj=false, forward=true, band=1), index(lattice, i, conj=true, forward=false, band=1)
+    pos1′, pos2′ = index(lattice, i, conj=false, forward=true, band=2), index(lattice, i, conj=true, forward=false, band=2)
+    t = GTerm(pos1, pos2, pos1′, pos2′, coeff=1)
+    return expectationvalue(t, cache)
+end
+
+
 function main(t::Real, t₀::Real=t/2; U=1., ϵ_d=U/2, δt=0.05, β=40, order=6, chi=1024)
 	D = 2.
 	β = convert(Float64, β)
@@ -19,7 +52,7 @@ function main(t::Real, t₀::Real=t/2; U=1., ϵ_d=U/2, δt=0.05, β=40, order=6,
 	t₀ = convert(Float64, t₀)
 	N = round(Int, t / δt)
 	N₀ = round(Int, t₀ / δt)
-	println("N=", N, " N₀=", N₀, " δt=", δt, " U=", U, " ϵ_d=", ϵ_d," order=", order)
+	println("N=", N, " N₀=", N₀, " δt=", δt, " U=", U, " ϵ_d=", ϵ_d," order=", order, " chi=", chi)
 
 
 	ts = [i*δt for i in 1:N]
@@ -64,7 +97,13 @@ function main(t::Real, t₀::Real=t/2; U=1., ϵ_d=U/2, δt=0.05, β=40, order=6,
 	g₁ = zeros(ComplexF64, length(gf_ts))
 	l₁ = zeros(ComplexF64, length(gf_ts))
 	cache = environments(lattice, mpsK, mpsI1, mpsI2)
-	ns = cached_occupation(lattice, mpsK, mpsI1, mpsI2, cache=cache)
+
+	@time ns = cached_occupation(lattice, mpsK, mpsI1, mpsI2, cache=cache)
+	@time nup_ = [cached_nup(lattice, i, mpsK, mpsI1, mpsI2, cache=cache) for i in 1:lattice.N]
+	@time ndown_ = [cached_ndown(lattice, i, mpsK, mpsI1, mpsI2, cache=cache) for i in 1:lattice.N]
+	@time nn_ = [cached_nn(lattice, i, mpsK, mpsI1, mpsI2, cache=cache) for i in 1:lattice.N]
+	@time vacuum_ = [cached_vacuum(lattice, i, mpsK, mpsI1, mpsI2, cache=cache) for i in 1:lattice.N]
+
 
 	for i in 1:length(gf_ts)
 		g₁[i] = cached_gf(lattice, N₀+i, N₀, mpsK, mpsI1, mpsI2, cache=cache, c1=false, c2=true, f1=true, f2=true)
@@ -74,7 +113,8 @@ function main(t::Real, t₀::Real=t/2; U=1., ϵ_d=U/2, δt=0.05, β=40, order=6,
 
 	data_path = "result/anderson_tempo1_beta$(β)_t$(t)_$(t₀)_U$(U)_mu$(ϵ_d)_dt$(δt)_order$(order)_chi$(chi)_2.json"
 
-	results = Dict("ts"=>ts, "ns" => ns, "bd"=>bond_dimensions(mpsI1), "gt"=>g₁, "lt"=>l₁, "gf_ts"=>gf_ts)
+	results = Dict("ts"=>ts, "ns" => ns, "bd"=>bond_dimensions(mpsI1), "gt"=>g₁, "lt"=>l₁, "gf_ts"=>gf_ts,
+					"nup"=>real(nup_), "ndown"=>real(ndown_), "nn"=>real(nn_), "vacuum"=>real(vacuum_))
 
 	println("save results to ", data_path)
 
