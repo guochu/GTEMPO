@@ -20,7 +20,7 @@ end
 
 function G(τ::Float64, spectrum, β, ϵ_d, μ=0)
     res = 0.0
-    for n = -100:101
+    for n = -1000:1001
         ω = (2n-1)*π/β
         res += (Gw(ω, spectrum, ϵ_d, μ)-1/(im*ω))*exp(-im*τ*ω)
     end
