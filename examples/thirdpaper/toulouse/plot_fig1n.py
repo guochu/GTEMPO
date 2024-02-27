@@ -83,7 +83,7 @@ ts_real_analytic, gf_real_analytic = read_real_analytic(t, mu, dt)
 
 ax[0,0].plot(ts_real_analytic, gf_real_analytic, ls='-', color='k', linewidth=linewidth)
 
-chis = [10, 20, 30]
+chis = [10, 20, 30, 40]
 
 errs = []
 bds = []
@@ -169,7 +169,7 @@ ax[1,0].annotate(r'(c)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fonts
 ax[1,0].legend(loc='center', fontsize=12)
 
 
-chis = [20,40,60,80,100, 120, 140, 160, 180, 200]
+chis = [20,40,60,80,100, 120, 140, 160]
 
 errs = []
 bds = []

@@ -73,44 +73,43 @@ function main(t::Real; ϵ_d=1., δt=0.05, order=8, β=40, chi=1024)
 	bath = fermionicbath(spectrum_func(D), β=β, μ=0)
 	exact_model = SISB(bath, μ = -ϵ_d, U=0.)
 
-	lattice_o = GrassmannLattice(N=N, δt=δt, contour=:real, order=1, bands=1)
-	println("number of sites, ", length(lattice_o))
+	lattice = GrassmannLattice(N=N, δt=δt, contour=:real, order=1, bands=1)
+	println("number of sites, ", length(lattice))
 
-	corr = correlationfunction(exact_model.bath, lattice_o)
 
-	lattice = similar(lattice_o, N=0)
-	ns = zeros(Float64, N)
-	g₁ = zeros(ComplexF64, N)
-	l₁ = zeros(ComplexF64, N)
-	bds = zeros(Int, N)
+	mpspath = "data/thouless_tempo_real_beta$(β)_t$(t)_dt$(δt)_order$(order)_chi$(chi).mps"
+	if ispath(mpspath)
+		println("load MPS-IF from path ", mpspath)
+		mpsI = Serialization.deserialize(mpspath)
+	else
+		println("computing MPS-IF...")
+		corr = correlationfunction(exact_model.bath, lattice)
+		@time mpsI = hybriddynamics(lattice, corr, trunc=trunc, band=1)
 
-	mpsI = vacuumstate(lattice)
-	mpsK = vacuumstate(lattice)
+		println("save MPS-IF to path ", mpspath)
+		Serialization.serialize(mpspath, mpsI)
+	end
+
+	println("mpsI bond dimension is ", bond_dimension(mpsI))
+	# println("IF Z is ", integrate(mpsI1, lattice), " ", integrate(mpsI2, lattice))
+	@time mpsK = sysdynamics(lattice, exact_model, trunc=truncK)
+	println("mpsK bond dimension is ", bond_dimension(mpsK))
+	mpsK = boundarycondition(mpsK, lattice, band=1)
+
+	cache = environments(lattice, mpsK, mpsI)
 
 	band = 1
 
-	for k in 2:N+1
-		println("the $k-th evolution step...")
-		lattice, mpsI, mpsK = makestep(lattice, mpsI, mpsK)
-		@assert k == timesteps(mpsI, lattice) == lattice.k
+	@time ns = cached_occupation(lattice, mpsK, mpsI, cache=cache)
+	@time g₁ = [cached_gf(lattice, k, 1, mpsK, mpsI, cache=cache, c1=false, c2=true, f1=true, f2=true, band=band) for k in 2:N+1]
+	@time l₁ = [cached_gf(lattice, 1, k, mpsK, mpsI, cache=cache, c1=true, c2=false, f1=false, f2=true, band=band) for k in 2:N+1]
 
-		@time mpsI = hybriddynamicsstepper(mpsI, lattice, corr, trunc=trunc)
-		@time mpsK = sysdynamicsstepper!(mpsK, lattice, exact_model, trunc=truncK)
-		mpsK′ = boundarycondition(mpsK, lattice, band=band)
-		# observables
-		cache = environments(lattice, mpsK′, mpsI)
-		@time ns[k-1] = cached_occupation(lattice, k-1, mpsK′, mpsI, cache=cache, band=band)
-		@time g₁[k-1] = cached_gf(lattice, k, 1, mpsK′, mpsI, cache=cache, c1=false, c2=true, f1=true, f2=true, band=band)
-		@time l₁[k-1] = cached_gf(lattice, 1, k, mpsK′, mpsI, cache=cache, c1=true, c2=false, f1=false, f2=true, band=band)
-		bds[k-1] = bond_dimension(mpsI)
-
-	end
 
 	# ts = [i*δt for i in 1:N]
 
 	data_path = "result/thouless_tempo_real_beta$(β)_t$(t)_mu$(ϵ_d)_dt$(δt)_order$(order)_chi$(chi).json"
 
-	results = Dict("ts"=>ts, "ns" => ns, "bd"=>bds, "gt"=>g₁, "lt"=>l₁)
+	results = Dict("ts"=>ts, "ns" => ns, "bd"=>bond_dimension(mpsI), "gt"=>g₁, "lt"=>l₁)
 
 	println("save results to ", data_path)
 
