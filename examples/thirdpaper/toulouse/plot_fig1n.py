@@ -83,20 +83,11 @@ ts_real_analytic, gf_real_analytic = read_real_analytic(t, mu, dt)
 
 ax[0,0].plot(ts_real_analytic, gf_real_analytic, ls='-', color='k', linewidth=linewidth)
 
-chis = [10, 20, 30, 40]
-
-errs = []
-bds = []
-diffs = []
+chis = [10, 20,30, 40]
 
 for i, chi in enumerate(chis):
 	ts_real_tempo, ns_real_tempo, gf_real_tempo, bds_real_tempo = read_real_tempo(beta, t, mu, dt, chi=chi)
 	ax[0,0].plot(ts_real_tempo, gf_real_tempo, ls='--', color=colors[i], linewidth=linewidth, label=r'$\chi=%s$'%(chi))
-
-	err = mse_error(gf_real_tempo, gf_real_analytic[1:])
-	errs.append(err)
-	diffs.append(gf_real_analytic[1:] - gf_real_tempo)
-	bds.append(asarray(bds_real_tempo).max())
 
 
 
@@ -110,6 +101,19 @@ ax[0,0].legend(loc='center', fontsize=12)
 # ax[0,0].set_ylim(top=1.2)
 # ax[0,0].legend(loc='upper center', fontsize=12)
 
+chis = [10, 20,30, 40,50, 60,70,80]
+
+errs = []
+bds = []
+diffs = []
+
+for i, chi in enumerate(chis):
+	ts_real_tempo, ns_real_tempo, gf_real_tempo, bds_real_tempo = read_real_tempo(beta, t, mu, dt, chi=chi)
+
+	err = mse_error(gf_real_tempo, gf_real_analytic[1:])
+	errs.append(err)
+	diffs.append(gf_real_analytic[1:] - gf_real_tempo)
+	bds.append(asarray(bds_real_tempo).max())
 
 ax[0,1].semilogy(chis, errs, ls='--', color='k', marker=markers[0], markersize=markersize, linewidth=linewidth, markerfacecolor='none')
 

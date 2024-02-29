@@ -132,7 +132,7 @@ function main_all_U(t₀::Real, t::Real = t₀ + 20.; δt=0.05, β=40, order=6, 
 end
 
 function main_all_t(; U=1., δt=0.05, β=40, order=6, chi=1024)
-	for t₀ in [5., 10., 15., 20., 40., 60., 80.]
+	for t₀ in [5., 10., 15., 20., 40., 80.]
 		main(t₀+20, t₀, U=U, δt=δt, β=β, order=order, chi=chi)
 	end
 end
