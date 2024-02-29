@@ -1,7 +1,6 @@
 push!(LOAD_PATH, "../../../src")
-push!(LOAD_PATH, "../../../../FermionicTCMPS/src")
 
-using GTEMPO, FermionicTCMPS.Utilities
+using GTEMPO, ImpurityModelBase.Utilities
 using JSON, QuadGK
 # using Interpolations
 

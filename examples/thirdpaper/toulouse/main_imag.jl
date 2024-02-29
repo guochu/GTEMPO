@@ -114,7 +114,7 @@ function main_all(;δτ=0.1, kwargs...)
 end
 
 function main_vs_D(β; ϵ_d=1., δτ=0.1)
-	for chi in 20:20:500
+	for chi in 20:20:200
 		main(β, ϵ_d=ϵ_d, δτ=δτ, order=10, chi=chi)
 	end
 end
