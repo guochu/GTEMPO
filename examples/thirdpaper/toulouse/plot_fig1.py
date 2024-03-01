@@ -3,7 +3,7 @@ import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib import rc
 from matplotlib.colors import LogNorm
-from numpy import linspace, asarray, loadtxt, linspace
+from numpy import linspace, asarray, loadtxt, linspace, sqrt
 from numpy.linalg import norm
 import math
 
@@ -51,7 +51,7 @@ def mse_error(a, b):
 	L = len(a)
 	diff = asarray(a) - asarray(b)
 	v = norm(diff)
-	return v * v / L
+	return sqrt(v * v / L)
 
 ts_real_analytic, gf_real_analytic = read_real_analytic(40., 1., 0.05)
 
@@ -81,9 +81,9 @@ dt = 0.05
 
 ts_real_analytic, gf_real_analytic = read_real_analytic(t, mu, dt)
 
-ax[0,0].plot(ts_real_analytic, gf_real_analytic, ls='-', color='k', linewidth=linewidth)
+ax[0,0].plot(ts_real_analytic, gf_real_analytic, ls='-', color='k', linewidth=linewidth, label=r'Exact')
 
-chis = [10, 40]
+chis = [10, 20, 40]
 
 for i, chi in enumerate(chis):
 	ts_real_tempo, ns_real_tempo, gf_real_tempo, bds_real_tempo = read_real_tempo(beta, t, mu, dt, chi=chi)
@@ -115,14 +115,14 @@ for i, chi in enumerate(chis):
 	diffs.append(gf_real_analytic[1:] - gf_real_tempo)
 	bds.append(asarray(bds_real_tempo).max())
 
-ax[0,1].semilogy(chis, errs, ls='--', color='k', marker=markers[0], markersize=markersize, linewidth=linewidth, markerfacecolor='none')
+ax[0,1].plot(chis, errs, ls='--', color='k', marker=markers[0], markersize=markersize, linewidth=linewidth, markerfacecolor='none')
 
 
 ax[0,1].set_xlabel(r'$\chi$', fontsize=fontsize)
-ax[0,1].set_ylabel(r'MSE error', fontsize=fontsize)
+ax[0,1].set_ylabel(r'$\mathcal{E}$', fontsize=fontsize)
 ax[0,1].tick_params(axis='both', which='major', labelsize=labelsize)
-# ax[0,1].locator_params(axis='both', nbins=6)
-# ax[0,1].legend(loc='center right', fontsize=12)
+ax[0,1].locator_params(axis='both', nbins=6)
+ax[0,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 ax[0,1].annotate(r'(b)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
 
 
@@ -146,7 +146,7 @@ ax[0,1].annotate(r'(b)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fonts
 # ax1.locator_params(axis='both', nbins=6)
 
 
-chis = [80, 120]
+chis = [40, 60, 100]
 
 mu = 0.
 dt = 0.1
@@ -154,7 +154,7 @@ ts_imag_analytic, gf_imag_analytic = read_imag_analytic(beta, mu, dt)
 
 # print(ts_imag_analytic)
 
-ax[1,0].plot(ts_imag_analytic, gf_imag_analytic, ls='-', color='k', linewidth=linewidth)
+ax[1,0].plot(ts_imag_analytic, gf_imag_analytic, ls='-', color='k', linewidth=linewidth, label=r'Exact')
 
 
 
@@ -186,14 +186,15 @@ for i, chi in enumerate(chis):
 	bds.append(asarray(bds_real_tempo).max())
 
 
-ax[1,1].semilogy(bds, errs, ls='--', color='k', marker=markers[0], markersize=markersize, linewidth=linewidth, markerfacecolor='none')
+ax[1,1].plot(bds, errs, ls='--', color='k', marker=markers[0], markersize=markersize, linewidth=linewidth, markerfacecolor='none')
 
 
 ax[1,1].set_xlabel(r'$\chi$', fontsize=fontsize)
-ax[1,1].set_ylabel(r'MSE error', fontsize=fontsize)
+ax[1,1].set_ylabel(r'$\mathcal{E}$', fontsize=fontsize)
 ax[1,1].tick_params(axis='both', which='major', labelsize=labelsize)
-# ax[0,1].locator_params(axis='both', nbins=6)
-# ax[0,1].legend(loc='center right', fontsize=12)
+ax[1,1].locator_params(axis='both', nbins=6)
+ax[1,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+
 ax[1,1].annotate(r'(d)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
 
 

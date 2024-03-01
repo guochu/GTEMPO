@@ -101,7 +101,7 @@ ax[0,0].plot(ws, Aw, ls='--', color=color1, alpha=alpha, linewidth=linewidth, la
 ax[0,1].plot(times, gf, ls='--', color=color1, alpha=alpha, linewidth=linewidth)
 
 
-t = 15.
+t = 20.
 
 times, gf, ws, Aw = read_real_tempo_2(beta, t, U)
 
@@ -155,7 +155,7 @@ ax[1,0].plot(ws, Aw, ls='--', color=color1, alpha=alpha, linewidth=linewidth, la
 ax[1,1].plot(times, gf, ls='--', color=color1, alpha=alpha, linewidth=linewidth)
 
 
-t = 15.
+t = 20.
 
 times, gf, ws, Aw = read_real_tempo_2(beta, t, U)
 
@@ -208,7 +208,7 @@ ax[2,0].plot(ws, Aw, ls='--', color=color1, alpha=alpha, linewidth=linewidth, la
 ax[2,1].plot(times, gf, ls='--', color=color1, alpha=alpha, linewidth=linewidth)
 
 
-t = 15.
+t = 20.
 
 times, gf, ws, Aw = read_real_tempo_2(beta, t, U)
 
@@ -242,6 +242,6 @@ ax[2,1].annotate(r'(f)', xy=(0.05, 0.85),xycoords='axes fraction', fontsize=font
 
 plt.tight_layout(pad=0.5)
 
-# plt.savefig('oneorbital2.pdf', bbox_inches='tight')
+plt.savefig('oneorbital3.pdf', bbox_inches='tight')
 
 plt.show()
