@@ -108,7 +108,7 @@ markers = ['o', '^', '+']
 color0 = 'g'
 color1 = 'b'
 
-fig, ax = plt.subplots(3, 2, figsize=(7, 8))
+fig, ax = plt.subplots(3, 2, figsize=(6, 8))
 
 
 beta = 40.

@@ -32,7 +32,7 @@ markersize = 6
 
 colors = ['b', 'g', 'c', 'y', 'r']
 
-fig, ax = plt.subplots(3, 2, figsize=(8, 8.), sharex=True, sharey=True)
+fig, ax = plt.subplots(3, 2, figsize=(6, 8), sharex=True, sharey=True)
 
 # U = 0.1
 t = 25.

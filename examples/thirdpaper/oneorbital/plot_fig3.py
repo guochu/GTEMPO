@@ -70,7 +70,7 @@ color2 = 'r'
 marker1 = 'o'
 marker2 = '+'
 
-fig, ax = plt.subplots(3, 2, figsize=(8, 10))
+fig, ax = plt.subplots(3, 2, figsize=(6, 8))
 
 
 beta = 40.
@@ -125,7 +125,7 @@ ax[0,0].set_xlabel(r'$\omega$', fontsize=fontsize)
 ax[0,0].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[0,0].locator_params(axis='both', nbins=6)
 ax[0,0].annotate(r'(a)', xy=(0.05, 0.85),xycoords='axes fraction', fontsize=fontsize)
-ax[0,0].legend(fontsize=12)
+ax[0,0].legend(fontsize=10)
 
 
 ax[0,1].set_ylabel(r'$G(\tau)$', fontsize=fontsize)

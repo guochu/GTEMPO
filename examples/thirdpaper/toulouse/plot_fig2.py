@@ -173,7 +173,7 @@ ax1.locator_params(axis='both', nbins=5)
 
 plt.tight_layout(pad=0.5)
 
-# plt.savefig('toulouse2.pdf', bbox_inches='tight')
+plt.savefig('toulouse2.pdf', bbox_inches='tight')
 
 plt.show()
 
