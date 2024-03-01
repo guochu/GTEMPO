@@ -53,7 +53,7 @@ end
 function compute_Gτ(retarded_t, t, lb, ub)
 	β = 40.
 	dt = 0.05
-	r = LinearExtrapolation(retarded_t, stepsize=dt)
+	r = LinearPrediction(retarded_t, stepsize=dt)
 	# t = 100.
 	n = round(Int, t/dt)
 	retarded = [r[i] for i in 1:n]
@@ -98,7 +98,7 @@ function main(t; t2=100, ϵ_d=1., lb=-2, ub=2, order=7, chi=1024)
 	ϵ_d = convert(Float64, ϵ_d)
 	β = 40.
 	δt = 0.05
-	ns, retarded = read_data(t, ϵ_d=ϵ_d, δt=δt, order=order)
+	ns, retarded = read_data(t, ϵ_d=ϵ_d, δt=δt, order=order, chi=chi)
 	ws, Aw, τs, Gτ = compute_Gτ(retarded, t2, lb, ub)
 
 	file_name = "result/thouless_tempo_real_beta$(β)_t$(t)_mu$(ϵ_d)_tep$(t2)_lb$(lb)_ub$(ub)_dt0.05_order$(order)_chi$(chi).json"
