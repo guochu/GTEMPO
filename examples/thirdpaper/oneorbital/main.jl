@@ -67,13 +67,13 @@ function main(t::Real, t₀::Real=t/2; U=1., ϵ_d=U/2, δt=0.05, β=40, order=6,
 	lattice = GrassmannLattice(N=N, δt=δt, contour=:real, order=1, bands=2)
 	println("number of sites, ", length(lattice))
 
-	corr = correlationfunction(exact_model.bath, lattice)
 	mpspath = "data/anderson_tempo1_beta$(β)_t$(t)_dt$(δt)_order$(order)_chi$(chi).mps"
 	if ispath(mpspath)
 		println("load MPS-IF from path ", mpspath)
 		mpsI1, mpsI2 = Serialization.deserialize(mpspath)
 	else
 		println("computing MPS-IF...")
+		corr = correlationfunction(exact_model.bath, lattice)
 		@time mpsI1 = hybriddynamics(lattice, corr, trunc=trunc, band=1)
 		@time mpsI2 = hybriddynamics(lattice, corr, trunc=trunc, band=2)
 		# println("Z is ", integrate(mpsI, lattice))
