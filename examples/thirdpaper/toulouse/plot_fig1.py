@@ -83,7 +83,7 @@ ts_real_analytic, gf_real_analytic = read_real_analytic(t, mu, dt)
 
 ax[0,0].plot(ts_real_analytic, gf_real_analytic, ls='-', color='k', linewidth=linewidth)
 
-chis = [40]
+chis = [10, 40]
 
 for i, chi in enumerate(chis):
 	ts_real_tempo, ns_real_tempo, gf_real_tempo, bds_real_tempo = read_real_tempo(beta, t, mu, dt, chi=chi)
@@ -146,7 +146,7 @@ ax[0,1].annotate(r'(b)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fonts
 # ax1.locator_params(axis='both', nbins=6)
 
 
-chis = [120]
+chis = [80, 120]
 
 mu = 0.
 dt = 0.1
