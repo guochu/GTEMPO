@@ -1,9 +1,7 @@
 push!(LOAD_PATH, "../../../src")
-push!(LOAD_PATH, "../../../../FermionicTCMPS/src")
 
-using GTEMPO, FermionicTCMPS.Utilities
+using GTEMPO, ImpurityModelBase.Utilities
 using JSON, QuadGK
-# using Interpolations
 
 
 parse_complex_number(a) = a["re"] + im * a["im"]
@@ -59,7 +57,7 @@ end
 function compute_Gτ(retarded_t, t, lb, ub)
 	β = 40.
 	dt = 0.05
-	r = LinearExtrapolation(retarded_t, stepsize=dt)
+	r = LinearPrediction(retarded_t, stepsize=dt)
 	# t = 100.
 	n = round(Int, t/dt)
 	retarded = [r[i] for i in 1:n]
