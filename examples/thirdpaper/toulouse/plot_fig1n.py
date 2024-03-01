@@ -146,7 +146,7 @@ ax[0,1].annotate(r'(b)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fonts
 # ax1.locator_params(axis='both', nbins=6)
 
 
-chis = [20,40,60,80,100]
+chis = [20,40,60,80]
 
 mu = 0.
 dt = 0.1
@@ -173,7 +173,7 @@ ax[1,0].annotate(r'(c)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fonts
 ax[1,0].legend(loc='center', fontsize=12)
 
 
-chis = [20,40,60,80,100, 120, 140, 160]
+chis = [20,40,60,80,100,120,140,160]
 
 errs = []
 bds = []
