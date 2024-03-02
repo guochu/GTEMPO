@@ -91,28 +91,28 @@ times, gf, ws, Aw = read_real_tempo(beta, t, U)
 alpha = 0.5
 
 ax[0,0].plot(ws, Aw, ls='--', color=color0, alpha=alpha, linewidth=linewidth, label=r'Vacuum, $t_0=%s$'%(round(t)))
-ax[0,1].plot(times, gf, ls='--', color=color0, alpha=alpha, linewidth=linewidth)
+ax[0,1].plot(times, gf, ls='--', color=color0, alpha=alpha, linewidth=linewidth, label=r'Vacuum, $t_0=%s$'%(round(t)))
 
 t = 5.
 
 times, gf, ws, Aw = read_real_tempo_2(beta, t, U)
 
 ax[0,0].plot(ws, Aw, ls='--', color=color1, alpha=alpha, linewidth=linewidth, label=r'Thermal, $t_0=%s$'%(round(t)))
-ax[0,1].plot(times, gf, ls='--', color=color1, alpha=alpha, linewidth=linewidth)
+ax[0,1].plot(times, gf, ls='--', color=color1, alpha=alpha, linewidth=linewidth, label=r'Thermal, $t_0=%s$'%(round(t)))
 
 
-t = 20.
+t = 40.
 
 times, gf, ws, Aw = read_real_tempo_2(beta, t, U)
 
 ax[0,0].plot(ws, Aw, ls='-', color=color2, alpha=alpha, linewidth=linewidth, label=r'Thermal, $t_0=%s$'%(round(t)))
-ax[0,1].plot(times, gf, ls='-', color=color2, alpha=alpha, linewidth=linewidth)
+ax[0,1].plot(times, gf, ls='-', color=color2, alpha=alpha, linewidth=linewidth, label=r'Thermal, $t_0=%s$'%(round(t)))
 
 
 
 
 ts_imag, gf_imag = read_imag_tempo(beta, U, 0.1)
-ax[0,1].plot(ts_imag, gf_imag, ls='-', color='k', linewidth=1)
+ax[0,1].plot(ts_imag, gf_imag, ls='-', color='k', linewidth=1, label=r'imag, $\chi=500$')
 
 mc_data_path = '/Users/guochu/Documents/Since2018/2024/MyPapers/gtempo/paper03/cthyb/1orb/U%s/beta40/G-7.dat'%(U)
 ts1, gf1 = read_mc_data(mc_data_path)
@@ -133,7 +133,7 @@ ax[0,1].set_xlabel(r'$\tau$', fontsize=fontsize)
 ax[0,1].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[0,1].locator_params(axis='x', nbins=6)
 ax[0,1].annotate(r'(b)', xy=(0.05, 0.85),xycoords='axes fraction', fontsize=fontsize)
-
+ax[0,1].legend(fontsize=10)
 
 # U = 0.5
 U = 0.5
@@ -155,7 +155,7 @@ ax[1,0].plot(ws, Aw, ls='--', color=color1, alpha=alpha, linewidth=linewidth, la
 ax[1,1].plot(times, gf, ls='--', color=color1, alpha=alpha, linewidth=linewidth)
 
 
-t = 20.
+t = 40.
 
 times, gf, ws, Aw = read_real_tempo_2(beta, t, U)
 
@@ -208,7 +208,7 @@ ax[2,0].plot(ws, Aw, ls='--', color=color1, alpha=alpha, linewidth=linewidth, la
 ax[2,1].plot(times, gf, ls='--', color=color1, alpha=alpha, linewidth=linewidth)
 
 
-t = 20.
+t = 40.
 
 times, gf, ws, Aw = read_real_tempo_2(beta, t, U)
 

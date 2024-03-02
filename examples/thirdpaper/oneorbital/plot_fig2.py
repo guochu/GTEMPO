@@ -3,7 +3,7 @@ import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib import rc
 from matplotlib.colors import LogNorm
-from numpy import linspace, asarray, loadtxt, linspace
+from numpy import linspace, asarray, loadtxt, linspace, sqrt
 from numpy.linalg import norm
 import math
 
@@ -95,7 +95,7 @@ def mse_error(a, b):
 	L = len(a)
 	diff = asarray(a) - asarray(b)
 	v = norm(diff)
-	return v * v / L
+	return sqrt(v * v / L)
 
 
 fontsize = 20
@@ -117,9 +117,9 @@ dt = 0.05
 # U = 0.1
 U = 0.1
 
-ts = [5., 10., 15.]
+ts = [5., 10., 15., 20.]
 
-t_final = 20.
+t_final = 40.
 
 times_final, ns_final, gf_ts_final, gf_final, bds_final = read_real_tempo(beta, t_final, U, dt)
 
@@ -155,15 +155,15 @@ for i, t in enumerate(ts):
 	err = mse_error(gf, gf_final)
 	errs_2.append(err)
 
-ax[0,1].semilogy(ts, errs, ls='--', color=colors[0], marker=markers[0], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'Vacuum')
-ax[0,1].semilogy(ts, errs_2, ls='--', color=colors[1], marker=markers[1], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'Thermal')
+ax[0,1].plot(ts, errs, ls='--', color=colors[0], marker=markers[0], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'Vacuum')
+ax[0,1].plot(ts, errs_2, ls='--', color=colors[1], marker=markers[1], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'Thermal')
 
 
 ax[0,1].set_ylabel(r'$\mathcal{E}$', fontsize=fontsize)
 ax[0,1].set_xlabel(r'$t_0$', fontsize=fontsize)
 ax[0,1].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[0,1].locator_params(axis='x', nbins=6)
-# ax[0,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+ax[0,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 ax[0,1].annotate(r'(b)', xy=(0.05, 0.85),xycoords='axes fraction', fontsize=fontsize)
 ax[0,1].legend(fontsize=12)
 
@@ -171,9 +171,9 @@ ax[0,1].legend(fontsize=12)
 # U = 0.5
 U = 0.5
 
-ts = [5., 10., 15.]
+ts = [5., 10., 15., 20.]
 
-t_final = 20.
+t_final = 40.
 
 times_final, ns_final, gf_ts_final, gf_final, bds_final = read_real_tempo(beta, t_final, U, dt)
 
@@ -209,15 +209,15 @@ for i, t in enumerate(ts):
 	err = mse_error(gf, gf_final)
 	errs_2.append(err)
 
-ax[1,1].semilogy(ts, errs, ls='--', color=colors[0], marker=markers[0], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'Vacuum')
-ax[1,1].semilogy(ts, errs_2, ls='--', color=colors[1], marker=markers[1], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'Thermal')
+ax[1,1].plot(ts, errs, ls='--', color=colors[0], marker=markers[0], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'Vacuum')
+ax[1,1].plot(ts, errs_2, ls='--', color=colors[1], marker=markers[1], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'Thermal')
 
 
 ax[1,1].set_ylabel(r'$\mathcal{E}$', fontsize=fontsize)
 ax[1,1].set_xlabel(r'$t_0$', fontsize=fontsize)
 ax[1,1].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[1,1].locator_params(axis='x', nbins=6)
-# ax[1,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+ax[1,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 ax[1,1].annotate(r'(d)', xy=(0.05, 0.85),xycoords='axes fraction', fontsize=fontsize)
 ax[1,1].legend(fontsize=12)
 
@@ -225,9 +225,9 @@ ax[1,1].legend(fontsize=12)
 # U = 1.
 U = 1.
 
-ts = [5., 10., 15.]
+ts = [5., 10., 15., 20.]
 
-t_final = 20.
+t_final = 40.
 
 times_final, ns_final, gf_ts_final, gf_final, bds_final = read_real_tempo(beta, t_final, U, dt)
 
@@ -263,15 +263,15 @@ for i, t in enumerate(ts):
 	err = mse_error(gf, gf_final)
 	errs_2.append(err)
 
-ax[2,1].semilogy(ts, errs, ls='--', color=colors[0], marker=markers[0], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'Vacuum')
-ax[2,1].semilogy(ts, errs_2, ls='--', color=colors[1], marker=markers[1], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'Thermal')
+ax[2,1].plot(ts, errs, ls='--', color=colors[0], marker=markers[0], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'Vacuum')
+ax[2,1].plot(ts, errs_2, ls='--', color=colors[1], marker=markers[1], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'Thermal')
 
 
 ax[2,1].set_ylabel(r'$\mathcal{E}$', fontsize=fontsize)
 ax[2,1].set_xlabel(r'$t_0$', fontsize=fontsize)
 ax[2,1].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[2,1].locator_params(axis='x', nbins=6)
-# ax[2,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+ax[2,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 ax[2,1].annotate(r'(d)', xy=(0.05, 0.85),xycoords='axes fraction', fontsize=fontsize)
 ax[2,1].legend(fontsize=12)
 
