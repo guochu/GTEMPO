@@ -125,9 +125,11 @@ times_final, ns_final, gf_ts_final, gf_final, bds_final = read_real_tempo(beta, 
 
 ax[0,0].plot(gf_ts_final, -gf_final.imag, ls='--', color=color0, linewidth=linewidth, label=r'$t_0=%s$'%(round(t_final)))
 
-times_final, ns_final, gf_ts_final, gf_final, bds_final = read_real_tempo_2(beta, t_final, U, dt)
+times_final, ns_final, gf_ts_final, gf_final_2, bds_final = read_real_tempo_2(beta, t_final, U, dt)
 
-ax[0,0].plot(gf_ts_final, -gf_final.imag, ls='-', color=color1, linewidth=1, label=r'$t_0=%s$'%(round(t_final)))
+print(mse_error(gf_final, gf_final_2))
+
+ax[0,0].plot(gf_ts_final, -gf_final_2.imag, ls='-', color=color1, linewidth=1, label=r'$t_0=%s$'%(round(t_final)))
 
 
 ax[0,0].set_ylabel(r'$-{\rm Im}[G^R(t)]$', fontsize=fontsize)
@@ -179,10 +181,11 @@ times_final, ns_final, gf_ts_final, gf_final, bds_final = read_real_tempo(beta, 
 
 ax[1,0].plot(gf_ts_final, -gf_final.imag, ls='--', color=color0, linewidth=linewidth, label=r'$t_0=%s$'%(round(t_final)))
 
-times_final, ns_final, gf_ts_final, gf_final, bds_final = read_real_tempo_2(beta, t_final, U, dt)
+times_final, ns_final, gf_ts_final, gf_final_2, bds_final = read_real_tempo_2(beta, t_final, U, dt)
 
-ax[1,0].plot(gf_ts_final, -gf_final.imag, ls='-', color=color1, linewidth=1, label=r'$t_0=%s$'%(round(t_final)))
+ax[1,0].plot(gf_ts_final, -gf_final_2.imag, ls='-', color=color1, linewidth=1, label=r'$t_0=%s$'%(round(t_final)))
 
+print(mse_error(gf_final, gf_final_2))
 
 ax[1,0].set_ylabel(r'$-{\rm Im}[G^R(t)]$', fontsize=fontsize)
 ax[1,0].set_xlabel(r'$t-t_0$', fontsize=fontsize)
@@ -233,10 +236,11 @@ times_final, ns_final, gf_ts_final, gf_final, bds_final = read_real_tempo(beta, 
 
 ax[2,0].plot(gf_ts_final, -gf_final.imag, ls='--', color=color0, linewidth=linewidth, label=r'$t_0=%s$'%(round(t_final)))
 
-times_final, ns_final, gf_ts_final, gf_final, bds_final = read_real_tempo_2(beta, t_final, U, dt)
+times_final, ns_final, gf_ts_final, gf_final_2, bds_final = read_real_tempo_2(beta, t_final, U, dt)
 
-ax[2,0].plot(gf_ts_final, -gf_final.imag, ls='-', color=color1, linewidth=1, label=r'$t_0=%s$'%(round(t_final)))
+ax[2,0].plot(gf_ts_final, -gf_final_2.imag, ls='-', color=color1, linewidth=1, label=r'$t_0=%s$'%(round(t_final)))
 
+print(mse_error(gf_final, gf_final_2))
 
 ax[2,0].set_ylabel(r'$-{\rm Im}[G^R(t)]$', fontsize=fontsize)
 ax[2,0].set_xlabel(r'$t-t_0$', fontsize=fontsize)
