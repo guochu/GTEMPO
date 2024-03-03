@@ -1,6 +1,7 @@
 abstract type GrassmannOrdering end
 abstract type ImagGrassmannOrdering <: GrassmannOrdering end
 abstract type RealGrassmannOrdering <: GrassmannOrdering end
+abstract type MixedGrassmannOrdering <: GrassmannOrdering end
 
 abstract type ConjugationStyle end
 struct AdjacentConjugation <: ConjugationStyle end
@@ -104,5 +105,18 @@ ConjugationStyle(::Type{A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2}) = AdjacentConjugation
 LayoutStyle(::Type{A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2}) = BranchLocalLayout()
 
 
+# mixed time
+"""
+	struct A1A1B1B1_A1A1a1a1B1B1b1b1
 
+A1A1B1B1 for ImagGrassmannOrdering 
+A1A1a1a1B1B1b1b1 for RealGrassmannOrdering
+"""
+struct A1A1B1B1_A1A1a1a1B1B1b1b1 <: MixedGrassmannOrdering end
+ConjugationStyle(::Type{A1A1B1B1_A1A1a1a1B1B1b1b1}) = AdjacentConjugation()
+LayoutStyle(::Type{A1A1B1B1_A1A1a1a1B1B1b1b1}) = TimeLocalLayout()
+const AABB_AAaaBBbb = A1A1B1B1_A1A1a1a1B1B1b1b1
 
+struct A1B1B1A1_A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2 <: MixedGrassmannOrdering end
+ConjugationStyle(::Type{A1B1B1A1_A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}) = GeneralConjugation()
+LayoutStyle(::Type{A1B1B1A1_A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}) = BranchLocalLayout()

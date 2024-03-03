@@ -190,6 +190,7 @@ function index(x::RealGrassmannLattice{<:A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2}, i::I
 	end
 end
 
+# key is timestep, conj, forward, band
 function indexmappings(lattice::RealGrassmannLattice)
 	r = Dict{Tuple{Int, Bool, Bool, Int}, Int}()
 	for i in 0:lattice.k

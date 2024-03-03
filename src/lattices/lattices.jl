@@ -14,17 +14,20 @@ LayoutStyle(x::AbstractGrassmannLattice) = LayoutStyle(typeof(x))
 
 include("imaginarytime.jl")
 include("realtime.jl")
+include("mixedtime.jl")
 # more complicatd integration
 include("integrate/integrate.jl")
 include("parallelrun.jl")
 
 
 function GrassmannLattice(; contour::Symbol, kwargs...)
-	(contour in (:real, :imag, :Keldysh)) || throw(ArgumentError("contour must be :real (equivalentlt :Keldysh) or :imag"))
+	(contour in (:real, :imag, :Keldysh, :mixed)) || throw(ArgumentError("contour must be :real (equivalentlt :Keldysh) or :imag"))
 	if (contour == :real) || (contour == :Keldysh)
 		return RealGrassmannLattice(; kwargs...)
-	else
+	elseif contour == :imag
 		return ImagGrassmannLattice(; kwargs...)
+	else
+		return MixedGrassmannLattice(; kwargs...)
 	end
 end
 
@@ -37,7 +40,7 @@ vacuumstate(x::AbstractGrassmannLattice) = GrassmannMPS(scalartype(x), length(x)
 Find the permutations that match src to tsc
 """
 function matchindices(tsc::AbstractGrassmannLattice, src::AbstractGrassmannLattice) 
-	((src.N == tsc.N) && (src.bands == tsc.bands)) || throw(ArgumentError("lattice size mismatch"))
+	((length(src) == length(tsc)) && (src.bands == tsc.bands)) || throw(ArgumentError("lattice size mismatch"))
 	r1 = indexmappings(src)
 	r2 = indexmappings(tsc)
 	return Dict(r2[k1]=>v1 for (k1, v1) in r1)
