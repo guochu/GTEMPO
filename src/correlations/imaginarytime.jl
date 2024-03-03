@@ -10,6 +10,7 @@ function Base.show(io::IO, ::MIME"text/plain", A::ImagCorrelationFunction)
 end
 
 Base.:+(A::ImagCorrelationFunction, B::ImagCorrelationFunction) = ImagCorrelationFunction(A.data + B.data)
+index(x::ImagCorrelationFunction, i::Int, j::Int) = x.data[i, j]
 
 # Gτ(f::SpectrumFunction; β::Real, N::Int) = Gτ2(f, β, N)
 """

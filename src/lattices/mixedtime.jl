@@ -53,44 +53,56 @@ end
 Base.length(x::MixedGrassmannLattice1Order) = 4*x.bands * (x.Nt+1) + 2 * x.bands + 2*x.bands * x.Nτ
 
 function index(x::MixedGrassmannLattice1Order{<:A1A1B1B1_A1A1a1a1B1B1b1b1}, i::Int; conj::Bool, branch::Union{Symbol, Nothing}=nothing, band::Int=1)
-	@assert (1 <= band <= x.bands)
+	@boundscheck begin
+		(1 <= band <= x.bands) || throw(ArgumentError("band $band out of range"))
+		if i != 0
+			(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ for non-boundary time step"))
+			if branch == :τ
+				(1 <= i <= x.Nτ) || throw(ArgumentError("imag time step $i out of range"))
+			else
+				(1 <= i <= x.Nt + 1) || throw(ArgumentError("real time step $i out of range"))
+			end
+		end
+	end
+
 	bands = x.bands
 	if i == 0
 		ifelse(conj, 2*band, 2*band-1) + 2*x.bands * x.Nτ
 	else
-		@assert isa(branch, Symbol)
 		k = x.Nt + 1
 		if branch == :+
-			(1 <= i <= k) || throw(ArgumentError("real time step $i out of range"))
 			ifelse(conj, 4*(k-i)*bands+2+4*(band-1), 4*(k-i)*bands+1+4*(band-1)) + 2*x.bands*(x.Nτ+1)
 		elseif branch == :-
-			(1 <= i <= k) || throw(ArgumentError("real time step $i out of range"))
 			ifelse(conj, 4*(k-i)*bands+4+4*(band-1), 4*(k-i)*bands+3+4*(band-1)) + 2*x.bands*(x.Nτ+1)
 		else
-			(branch == :τ) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
-			(1 <= i <= x.Nτ) || throw(ArgumentError("imag time step $i out of range"))
 			ifelse(conj, (x.Nτ-i)*2*bands + 2*band, (x.Nτ-i)*2*bands + 2*band-1) 
 		end
 	end
 end
 
 function index(x::MixedGrassmannLattice1Order{<:A1B1B1A1_A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, i::Int; conj::Bool, branch::Union{Symbol, Nothing}=nothing, band::Int=1)
-	@assert (1 <= band <= x.bands)
+	@boundscheck begin
+		(1 <= band <= x.bands) || throw(ArgumentError("band $band out of range"))
+		if i != 0
+			(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ for non-boundary time step"))
+			if branch == :τ
+				(1 <= i <= x.Nτ) || throw(ArgumentError("imag time step $i out of range"))
+			else
+				(1 <= i <= x.Nt + 1) || throw(ArgumentError("real time step $i out of range"))
+			end
+		end
+	end
+	
 	bands = x.bands
 	if i == 0
 		ifelse(conj, 2*bands+1-band, band) + 2*x.bands * x.Nτ
 	else
-		@assert isa(branch, Symbol)
 		k = x.Nt + 1
 		if branch == :+
-			(1 <= i <= k) || throw(ArgumentError("real time step $i out of range"))
 			ifelse(conj, 2*bands*(k-i) + 2*bands-band+1, 2*bands*(k-i) + band ) + 2*x.bands*(x.Nτ+1)
 		elseif branch == :-
-			(1 <= i <= k) || throw(ArgumentError("real time step $i out of range"))
 			ifelse(conj, 2*bands*(i-1) + 2*bands-band+1, 2*bands*(i-1) + band ) + 2 * bands * k + 2*x.bands*(x.Nτ+1)
 		else
-			(branch == :τ) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
-			(1 <= i <= x.Nτ) || throw(ArgumentError("imag time step $i out of range"))
 			ifelse(conj, (x.Nτ-i)*2*bands + 2bands+1-band, (x.Nτ-i)*2*bands + band) 
 		end
 	end

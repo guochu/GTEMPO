@@ -34,6 +34,7 @@ Base.transpose(x::CorrelationMatrix) = CorrelationMatrix(x.ηₖⱼ, x.ηⱼₖ)
 include("util.jl")
 include("imaginarytime.jl")
 include("realtime.jl")
+include("mixedtime.jl")
 
 
 """

@@ -41,6 +41,7 @@ changetrunc(x::SVDCompression; trunc=x.trunc) = similar(x, D=trunc.D, tol=trunc.
 include("util.jl")
 include("imaginarytime.jl")
 include("realtime.jl")
+include("mixedtime.jl")
 
 # two algorithms to build the IF
 include("partialif.jl")

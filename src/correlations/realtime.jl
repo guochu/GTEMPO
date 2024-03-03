@@ -11,6 +11,7 @@ end
 function Base.show(io::IO, ::MIME"text/plain", A::RealCorrelationFunction)
     print(io, "Real Correlation Function [$(size(A.G₊₊, 1))]")
 end
+index(x::RealCorrelationFunction, i::Int, j::Int; f1::Bool, f2::Bool) = branch(x, f1, f2)[i, j]
 
 Base.:+(A::RealCorrelationFunction, B::RealCorrelationFunction) = RealCorrelationFunction(A.G₊₊ + B.G₊₊, A.G₊₋ + B.G₊₋, A.G₋₊ + B.G₋₊, A.G₋₋ + B.G₋₋)
 branch(x::RealCorrelationFunction, f1::Bool, f2::Bool) = ifelse(f1, ifelse(f2, x.G₊₊, x.G₊₋), ifelse(f2, x.G₋₊, x.G₋₋))
