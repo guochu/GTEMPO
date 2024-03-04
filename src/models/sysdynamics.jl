@@ -54,34 +54,34 @@ function zoomout(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, scaling:
 		for (idx, idx_n) in zip(posa:posb, posa_n:posb_n)
 			gmps_n[idx_n] = gmps[idx] * _scaling(gmps)
 		end
-		for forward in (true, false)
-			posa, posb = band_boundary(lattice, lattice.k, forward=forward)
-			posa_n, posb_n = band_boundary(lattice_n, lattice_n.k, forward=forward)
+		for forward in (:+, :-)
+			posa, posb = band_boundary(lattice, lattice.k, branch=forward)
+			posa_n, posb_n = band_boundary(lattice_n, lattice_n.k, branch=forward)
 			for (idx, idx_n) in zip(posa:posb, posa_n:posb_n)
 				gmps_n[idx_n] = gmps[idx] * _scaling(gmps)
 			end
 		end
 		for j in lattice_n.N:-1:1
-			tmp2 = _contract_band(gmps, lattice, j*scaling, forward=true)
+			tmp2 = _contract_band(gmps, lattice, j*scaling, branch=:+)
 			for kk in j*scaling-1:-1:(j-1)*scaling+2
-				tmp2 = tmp2 * _contract_band(gmps, lattice, kk, forward=true)
+				tmp2 = tmp2 * _contract_band(gmps, lattice, kk, branch=:+)
 			end
-			posa, posb = band_boundary(lattice, (j-1)*scaling+1, forward=true)
-			posa_n, posb_n = band_boundary(lattice_n, j, forward=true)
+			posa, posb = band_boundary(lattice, (j-1)*scaling+1, branch=:+)
+			posa_n, posb_n = band_boundary(lattice_n, j, branch=:+)
 			for (idx, idx_n) in zip(posa:posb, posa_n:posb_n)
 				gmps_n[idx_n] = gmps[idx] * _scaling(gmps)
 			end
 			gmps_n[posa_n] = @tensor tmp3[1,3;4] := tmp2[1,2] * gmps_n[posa_n][2,3,4] 
 		end	
 		for j in 1:lattice_n.N
-			posa, posb = band_boundary(lattice, (j-1)*scaling+1, forward=false)
-			posa_n, posb_n = band_boundary(lattice_n, j, forward=false)
+			posa, posb = band_boundary(lattice, (j-1)*scaling+1, branch=:-)
+			posa_n, posb_n = band_boundary(lattice_n, j, branch=:-)
 			for (idx, idx_n) in zip(posa:posb, posa_n:posb_n)
 				gmps_n[idx_n] = gmps[idx] * _scaling(gmps)
 			end
-			tmp2 = _contract_band(gmps, lattice, (j-1)*scaling+2, forward=false)
+			tmp2 = _contract_band(gmps, lattice, (j-1)*scaling+2, branch=:-)
 			for kk in (j-1)*scaling+3:j*scaling
-				tmp2 = tmp2 * _contract_band(gmps, lattice, kk, forward=false)
+				tmp2 = tmp2 * _contract_band(gmps, lattice, kk, branch=:-)
 			end
 			gmps_n[posb_n] = @tensor tmp3[1,2;4] := gmps_n[posb_n][1,2,3] * tmp2[3,4]
 		end					
@@ -205,10 +205,10 @@ function _accsysdynamics_fast(lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1
 	lattice_n_1 = similar(lattice_n, N=1)
 	gmps_n_1 = sysdynamics(lattice_n_1, model; trunc=trunc, kwargs...)
 	# println(bond_dimensions(gmps_n_1))
-	posa_f = get_left(lattice_n_1, 2, forward=true)
-	posb_f = get_right(lattice_n_1, 1, forward=true)
-	posa_b = get_left(lattice_n_1, 1, forward=false)
-	posb_b = get_right(lattice_n_1, 2, forward=false)
+	posa_f = get_left(lattice_n_1, 2, branch=:+)
+	posb_f = get_right(lattice_n_1, 1, branch=:+)
+	posa_b = get_left(lattice_n_1, 1, branch=:-)
+	posb_b = get_right(lattice_n_1, 2, branch=:-)
 	# println(bond_dimensions(gmps_n_1))
 	# println("posa_f=", posa_f, " posb_f=", posb_f, " posa_b=", posa_b, " posb_b=", posb_b)
 	function check_gmps1(x, tol)
@@ -236,13 +236,13 @@ function _accsysdynamics_fast(lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1
 
 	gmps_n = vacuumstate(lattice_n)
 	for i in 1:lattice_n.N
-		posa_n = get_left(lattice_n, i+1, forward=true)
-		posb_n = get_right(lattice_n, i, forward=true)		
+		posa_n = get_left(lattice_n, i+1, branch=:+)
+		posb_n = get_right(lattice_n, i, branch=:+)		
 		for (idx, idx_n) in zip(posa_f:posb_f, posa_n:posb_n)
 			gmps_n[idx_n] = gmps_n_1[idx] 
 		end
-		posa_n = get_left(lattice_n, i, forward=false)
-		posb_n = get_right(lattice_n, i+1, forward=false)		
+		posa_n = get_left(lattice_n, i, branch=:-)
+		posb_n = get_right(lattice_n, i+1, branch=:-)		
 		for (idx, idx_n) in zip(posa_b:posb_b, posa_n:posb_n)
 			gmps_n[idx_n] = gmps_n_1[idx] 
 		end		
@@ -257,13 +257,13 @@ function _accsysdynamics_fast(lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1
 	gmps1[posa_f] *= s0
 	gmps = vacuumstate(lattice)
 	for i in 1:lattice.N
-		posa_n = get_left(lattice, i+1, forward=true)
-		posb_n = get_right(lattice, i, forward=true)		
+		posa_n = get_left(lattice, i+1, branch=:+)
+		posb_n = get_right(lattice, i, branch=:+)		
 		for (idx, idx_n) in zip(posa_f:posb_f, posa_n:posb_n)
 			gmps[idx_n] = gmps1[idx]
 		end		
-		posa_n = get_left(lattice, i, forward=false)
-		posb_n = get_right(lattice, i+1, forward=false)		
+		posa_n = get_left(lattice, i, branch=:-)
+		posb_n = get_right(lattice, i+1, branch=:-)		
 		for (idx, idx_n) in zip(posa_b:posb_b, posa_n:posb_n)
 			gmps[idx_n] = gmps1[idx]
 		end		
@@ -278,8 +278,8 @@ function accsysdynamics_fast(lattice::RealGrassmannLattice{O}, model::AbstractIm
 	return changeordering(O, lattice2, x, trunc=trunc)[2]
 end
 
-get_left(lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, j::Int; forward::Bool) = index(lattice, j, conj=true, band=lattice.bands, forward=forward)
-get_right(lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, j::Int; forward::Bool) = index(lattice, j, conj=false, band=lattice.bands, forward=forward)
+get_left(lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, j::Int; branch::Symbol) = index(lattice, j, conj=true, band=lattice.bands, branch=branch)
+get_right(lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, j::Int; branch::Symbol) = index(lattice, j, conj=false, band=lattice.bands, branch=branch)
 
 
 function _contract_band(x::GrassmannMPS, lattice::ImagGrassmannLattice{<:A1A1B1B1}, j::Int)
@@ -335,12 +335,12 @@ function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A1A1a1a
 			end
 			tmp2 = rmul!(tmp2, scaling(x)^2)
 		else
-			for f in (true, false)
-				pos1 = index(lattice, j, conj=false, forward=f, band=band)
-				pos2 = index(lattice, j, conj=true, forward=f, band=band)
+			for f in (:+, :-)
+				pos1 = index(lattice, j, conj=false, branch=f, band=band)
+				pos2 = index(lattice, j, conj=true, branch=f, band=band)
 				@assert pos1 + 1 == pos2
 				@tensor tmp4[1,2,4;5] := x[pos1][1,2,3] * x[pos2][3,4,5]
-				if (band == 1) && (f == true)
+				if (band == 1) && (f == :+)
 					tmp2 = g_trace(tmp4, 2)
 				else
 					@assert @isdefined tmp2
@@ -370,11 +370,11 @@ function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A1a1B1b
 			end
 			tmp2 = rmul!(tmp2, scaling(x)^2)
 		else
-			for f in (false, true)
-				pos1 = index(lattice, j, conj=false, forward=f, band=band)
-				pos2 = index(lattice, j, conj=true, forward=f, band=band)
+			for f in (:-, :+)
+				pos1 = index(lattice, j, conj=false, branch=f, band=band)
+				pos2 = index(lattice, j, conj=true, branch=f, band=band)
 				# println("pos1=$(pos1), pos2=$(pos2)")
-				if (band == lattice.bands) && (f == false)
+				if (band == lattice.bands) && (f == :-)
 					@assert pos1 + 1 == pos2
 					@tensor tmp4[1,2,4;5] := x[pos1][1,2,3] * x[pos2][3,4,5]
 					tmp2 = g_trace(tmp4, 2)
@@ -392,7 +392,7 @@ end
 
 
 
-function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2}, j::Int; forward::Bool)
+function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2}, j::Int; branch::Symbol)
 	local tmp2
 	for band in 1:lattice.bands
 		if j == 0
@@ -408,8 +408,8 @@ function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A2A2B2B
 			end
 			tmp2 = rmul!(tmp2, scaling(x)^2)
 		else
-			pos1 = index(lattice, j, conj=false, forward=forward, band=band)
-			pos2 = index(lattice, j, conj=true, forward=forward, band=band)
+			pos1 = index(lattice, j, conj=false, branch=branch, band=band)
+			pos2 = index(lattice, j, conj=true, branch=branch, band=band)
 			@assert pos1 + 1 == pos2
 			@tensor tmp4[1,2,4;5] := x[pos1][1,2,3] * x[pos2][3,4,5]
 			if band == 1
@@ -424,7 +424,7 @@ function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A2A2B2B
 	return tmp2
 end
 
-function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, j::Int; forward::Bool)
+function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, j::Int; branch::Symbol)
 	local tmp2
 	for band in lattice.bands:-1:1
 		if j == 0
@@ -441,8 +441,8 @@ function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A2B2B2A
 			end
 			tmp2 = rmul!(tmp2, scaling(x)^2)
 		else
-			pos1 = index(lattice, j, conj=false, forward=forward, band=band)
-			pos2 = index(lattice, j, conj=true, forward=forward, band=band)
+			pos1 = index(lattice, j, conj=false, branch=branch, band=band)
+			pos2 = index(lattice, j, conj=true, branch=branch, band=band)
 			# println("pos1=$(pos1), pos2=$(pos2)")
 			if (band == lattice.bands) 
 				@assert pos1 + 1 == pos2

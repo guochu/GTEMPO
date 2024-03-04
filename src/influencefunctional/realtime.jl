@@ -1,15 +1,15 @@
-function partialinfluencefunctional(lattice::RealGrassmannLattice, i::Int, cols::AbstractVector; fi::Bool, fj::Bool, band::Int=1)
-	row = index(lattice, i, band=band, conj=true, forward=fi)
-	col_pos = [index(lattice, j, band=band, conj=false, forward=fj) for j in length(cols):-1:1]
+function partialinfluencefunctional(lattice::RealGrassmannLattice, i::Int, cols::AbstractVector; b1::Symbol, b2::Symbol, band::Int=1)
+	row = index(lattice, i, band=band, conj=true, branch=b1)
+	col_pos = [index(lattice, j, band=band, conj=false, branch=b2) for j in length(cols):-1:1]
 	mpo = partialmpo(row, col_pos, reverse(cols))
 	return mpo * vacuumstate(lattice)
 end
-function partialinfluencefunctional(lattice::RealGrassmannLattice, i::Int, cols_f::AbstractVector, cols_b::AbstractVector; fi::Bool, band::Int=1)
-	row = index(lattice, i, band=band, conj=true, forward=fi)
+function partialinfluencefunctional(lattice::RealGrassmannLattice, i::Int, cols_f::AbstractVector, cols_b::AbstractVector; b1::Symbol, band::Int=1)
+	row = index(lattice, i, band=band, conj=true, branch=b1)
 	cols = eltype(cols_f)[]
 	col_pos = Int[]
 	for j in length(cols_f):-1:1
-		pos1, pos2 = index(lattice, j, band=band, conj=false, forward=true), index(lattice, j, band=band, conj=false, forward=false)
+		pos1, pos2 = index(lattice, j, band=band, conj=false, branch=:+), index(lattice, j, band=band, conj=false, branch=:-)
 		push!(col_pos, pos1)
 		push!(col_pos, pos2)
 		push!(cols, cols_f[j])
@@ -18,18 +18,18 @@ function partialinfluencefunctional(lattice::RealGrassmannLattice, i::Int, cols_
 	mpo = partialmpo(row, col_pos, cols)
 	return mpo * vacuumstate(lattice)
 end
-function partialinfluencefunctional(lattice::RealGrassmannLattice, rows::AbstractVector, j::Int; fi::Bool, fj::Bool, band::Int=1)
-	col = index(lattice, j, band=band, conj=false, forward=fj)
-	row_pos = [index(lattice, i, band=band, conj=true, forward=fi) for i in length(rows):-1:1]
+function partialinfluencefunctional(lattice::RealGrassmannLattice, rows::AbstractVector, j::Int; b1::Symbol, b2::Symbol, band::Int=1)
+	col = index(lattice, j, band=band, conj=false, branch=b2)
+	row_pos = [index(lattice, i, band=band, conj=true, branch=b1) for i in length(rows):-1:1]
 	mpo = partialmpo(col, row_pos, -reverse(rows))
 	return mpo * vacuumstate(lattice)
 end
-function partialinfluencefunctional(lattice::RealGrassmannLattice, rows_f::AbstractVector, rows_b::AbstractVector, j::Int; fj::Bool, band::Int=1)
-	col = index(lattice, j, band=band, conj=false, forward=fj)
+function partialinfluencefunctional(lattice::RealGrassmannLattice, rows_f::AbstractVector, rows_b::AbstractVector, j::Int; b2::Symbol, band::Int=1)
+	col = index(lattice, j, band=band, conj=false, branch=b2)
 	rows = eltype(rows_f)[]
 	row_pos = Int[]
 	for i in length(rows_f):-1:1
-		pos1, pos2 = index(lattice, i, band=band, conj=true, forward=true), index(lattice, i, band=band, conj=true, forward=false)
+		pos1, pos2 = index(lattice, i, band=band, conj=true, branch=:+), index(lattice, i, band=band, conj=true, branch=:-)
 		push!(row_pos, pos1)
 		push!(row_pos, pos2)
 		push!(rows, -rows_f[i])
@@ -47,11 +47,11 @@ function influenceoperator(lattice::RealGrassmannLattice{<:A1A1a1a1B1B1b1b1}, co
 	# η⁻⁺ = CorrelationMatrix(η⁻⁺.ηₖⱼ, η⁻⁺.ηⱼₖ)
 	h1, h2, h3, h4 = _get_mpo3(mpoj1), _get_mpo3(mpoj2), _get_mpo3(mpoj3), _get_mpo3(mpoj4)
 	_JW = JW
-	mpo1 = _fit_to_lattice(lattice, h1, _JW, band, true, true)
+	mpo1 = _fit_to_lattice(lattice, h1, _JW, band, :+, :+)
 	# noticing the following two!!!
-	mpo2 = _fit_to_lattice(lattice, h2, _JW, band, false, true) 
-	mpo3 = _fit_to_lattice(lattice, h3, _JW, band, true, false) 
-	mpo4 = _fit_to_lattice(lattice, h4, _JW, band, false, false) 
+	mpo2 = _fit_to_lattice(lattice, h2, _JW, band, :-, :+) 
+	mpo3 = _fit_to_lattice(lattice, h3, _JW, band, :+, :-) 
+	mpo4 = _fit_to_lattice(lattice, h4, _JW, band, :-, :-) 
 	return mpo1, mpo2, mpo3, mpo4
 end
 
@@ -62,11 +62,11 @@ function influenceoperatorexponential(lattice::RealGrassmannLattice{<:A1A1a1a1B1
 	mpoj1, mpoj2, mpoj3, mpoj4 = timeevompo(mpoj1, dt, alg), timeevompo(mpoj2, dt, alg), timeevompo(mpoj3, dt, alg), timeevompo(mpoj4, dt, alg)
 	h1, h2, h3, h4 = _get_mpo3(mpoj1), _get_mpo3(mpoj2), _get_mpo3(mpoj3), _get_mpo3(mpoj4)
 	_JW = I2
-	mpo1 = _fit_to_lattice(lattice, h1, _JW, band, true, true)
+	mpo1 = _fit_to_lattice(lattice, h1, _JW, band, :+, :+)
 	# noticing the following two!!!
-	mpo2 = _fit_to_lattice(lattice, h2, _JW, band, false, true) 
-	mpo3 = _fit_to_lattice(lattice, h3, _JW, band, true, false) 
-	mpo4 = _fit_to_lattice(lattice, h4, _JW, band, false, false) 
+	mpo2 = _fit_to_lattice(lattice, h2, _JW, band, :-, :+) 
+	mpo3 = _fit_to_lattice(lattice, h3, _JW, band, :+, :-) 
+	mpo4 = _fit_to_lattice(lattice, h4, _JW, band, :-, :-) 
 	return mpo1, mpo2, mpo3, mpo4
 end
 function influenceoperatorexponential(lattice::RealGrassmannLattice{<:A1A1a1a1B1B1b1b1}, corr::RealCorrelationFunction, dt::Real, alg::ComplexStepper; 
@@ -82,11 +82,11 @@ function influenceoperatorexponential(lattice::RealGrassmannLattice{<:A1A1a1a1B1
 	h3a, h3b = _get_mpo3(mpoj3a), _get_mpo3(mpoj3b)
 	h4a, h4b = _get_mpo3(mpoj4a), _get_mpo3(mpoj4b)
 	_JW = I2
-	mpo1a, mpo1b = _fit_to_lattice(lattice, h1a, _JW, band, true, true), _fit_to_lattice(lattice, h1b, _JW, band, true, true)
+	mpo1a, mpo1b = _fit_to_lattice(lattice, h1a, _JW, band, :+, :+), _fit_to_lattice(lattice, h1b, _JW, band, :+, :+)
 	# noticing the following two!!!
-	mpo2a, mpo2b = _fit_to_lattice(lattice, h2a, _JW, band, false, true), _fit_to_lattice(lattice, h2b, _JW, band, false, true) 
-	mpo3a, mpo3b = _fit_to_lattice(lattice, h3a, _JW, band, true, false), _fit_to_lattice(lattice, h3a, _JW, band, true, false) 
-	mpo4a, mpo4b = _fit_to_lattice(lattice, h4a, _JW, band, false, false), _fit_to_lattice(lattice, h4b, _JW, band, false, false) 
+	mpo2a, mpo2b = _fit_to_lattice(lattice, h2a, _JW, band, :-, :+), _fit_to_lattice(lattice, h2b, _JW, band, :-, :+) 
+	mpo3a, mpo3b = _fit_to_lattice(lattice, h3a, _JW, band, :+, :-), _fit_to_lattice(lattice, h3a, _JW, band, :+, :-) 
+	mpo4a, mpo4b = _fit_to_lattice(lattice, h4a, _JW, band, :-, :-), _fit_to_lattice(lattice, h4b, _JW, band, :-, :-) 
 	return (mpo1a, mpo1b), (mpo2a, mpo2b), (mpo3a, mpo3b), (mpo4a, mpo4b)
 end
 function differentialinfluencefunctional(lattice::RealGrassmannLattice{O}, corr::RealCorrelationFunction, dt::Real, alg::TimeEvoMPOAlgorithm, algmult::DMRGAlgorithm;
@@ -145,22 +145,22 @@ function _get_mpo3(mpoj)
 end
 function _get_signed_corr(lattice::RealGrassmannLattice, corr::RealCorrelationFunction, band::Int)
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
-	if index(lattice, 1, conj=false, forward=true, band=band) > index(lattice, 1, conj=true, forward=true, band=band)
+	if index(lattice, 1, conj=false, branch=:+, band=band) > index(lattice, 1, conj=true, branch=:+, band=band)
 		η⁺⁺ = -transpose(η⁺⁺)
 	end
-	if index(lattice, 1, conj=false, forward=false, band=band) > index(lattice, 1, conj=true, forward=true, band=band)
+	if index(lattice, 1, conj=false, branch=:-, band=band) > index(lattice, 1, conj=true, branch=:+, band=band)
 		η⁺⁻ = -transpose(η⁺⁻)
 	end
-	if index(lattice, 1, conj=false, forward=true, band=band) > index(lattice, 1, conj=true, forward=false, band=band)
+	if index(lattice, 1, conj=false, branch=:+, band=band) > index(lattice, 1, conj=true, branch=:-, band=band)
 		η⁻⁺ = -transpose(η⁻⁺)
 	end
-	if index(lattice, 1, conj=false, forward=false, band=band) > index(lattice, 1, conj=true, forward=false, band=band)
+	if index(lattice, 1, conj=false, branch=:-, band=band) > index(lattice, 1, conj=true, branch=:-, band=band)
 		η⁻⁻ = -transpose(η⁻⁻)
 	end
 	return η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻
 end
 
-function _fit_to_lattice(lattice::RealGrassmannLattice, mpo::MPO, _JW::MPSBondTensor, band::Int, f1::Bool, f2::Bool, trunc::TruncationScheme=DefaultMPOTruncation)
+function _fit_to_lattice(lattice::RealGrassmannLattice, mpo::MPO, _JW::MPSBondTensor, band::Int, f1::Symbol, f2::Symbol, trunc::TruncationScheme=DefaultMPOTruncation)
 	@assert length(mpo) == 3
 	(LayoutStyle(lattice) isa TimeLocalLayout) || throw(ArgumentError("only works lattice with TimeLocalLayout"))
 
@@ -178,7 +178,7 @@ function _fit_to_lattice(lattice::RealGrassmannLattice, mpo::MPO, _JW::MPSBondTe
 	end
 	j = lattice.k
 	posa, posb = band_boundary(lattice, j)
-	pos1, pos2 = index(lattice, j, conj=false, forward=f1, band=band), index(lattice, j, conj=true, forward=f2, band=band)
+	pos1, pos2 = index(lattice, j, conj=false, branch=f1, band=band), index(lattice, j, conj=true, branch=f2, band=band)
 	if pos1 > pos2 # this sign has already been taken care of
 		pos1, pos2 = pos2, pos1
 	end
@@ -201,7 +201,7 @@ function _fit_to_lattice(lattice::RealGrassmannLattice, mpo::MPO, _JW::MPSBondTe
 	end
 	for j in lattice.k-1:-1:2
 		posa, posb = band_boundary(lattice, j)
-		pos1, pos2 = index(lattice, j, conj=false, forward=f1, band=band), index(lattice, j, conj=true, forward=f2, band=band)
+		pos1, pos2 = index(lattice, j, conj=false, branch=f1, band=band), index(lattice, j, conj=true, branch=f2, band=band)
 		if pos1 > pos2 # this sign has already been taken care of
 			pos1, pos2 = pos2, pos1
 		end
@@ -225,7 +225,7 @@ function _fit_to_lattice(lattice::RealGrassmannLattice, mpo::MPO, _JW::MPSBondTe
 	end
 	j = 1
 	posa, posb = band_boundary(lattice, j)
-	pos1, pos2 = index(lattice, j, conj=false, forward=f1, band=band), index(lattice, j, conj=true, forward=f2, band=band)
+	pos1, pos2 = index(lattice, j, conj=false, branch=f1, band=band), index(lattice, j, conj=true, branch=f2, band=band)
 	if pos1 > pos2 # this sign has already been taken care of
 		pos1, pos2 = pos2, pos1
 	end

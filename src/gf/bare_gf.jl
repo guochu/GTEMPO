@@ -41,10 +41,10 @@ end
 
 ###--------------real time 1 order----------------
 function gf(lattice::RealGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
-            f1::Bool, f2::Bool, c1::Bool=true, c2::Bool=false, band::Int=1, 
+            b1::Symbol, b2::Symbol, c1::Bool=true, c2::Bool=false, band::Int=1, 
             alg::IntegrationAlgorithm=ExactIntegrate(), 
             Z::Number = integrate(lattice, A, B..., alg=alg))
-    pos1, pos2 = index(lattice, i, conj=c1, forward=f1, band=band), index(lattice, j, conj=c2, forward=f2, band=band)
+    pos1, pos2 = index(lattice, i, conj=c1, branch=b1, band=band), index(lattice, j, conj=c2, branch=b2, band=band)
     t = GTerm(pos1, pos2, coeff=1)
     A2 = _mult_A(t, A)
     g = integrate(lattice, A2, B..., alg=alg)/Z
@@ -53,7 +53,7 @@ end
 
 
 function occupation(lattice::RealGrassmannLattice1Order, i::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...) 
-    return real(gf(lattice, i, i, A, B...; c1=false, c2=true, f1=true, f2=false, kwargs...))
+    return real(gf(lattice, i, i, A, B...; c1=false, c2=true, b1=:+, b2=:-, kwargs...))
 end
 occupation(lattice::RealGrassmannLattice1Order, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; band::Int=1, 
             alg::IntegrationAlgorithm=ExactIntegrate(), 
@@ -67,8 +67,8 @@ function electriccurrent(lattice::RealGrassmannLattice1Order, corr::RealCorrelat
     curr = complex(0.)
     η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
     for j in max(1, k-max_range):k-1
-        curr += η⁺⁺[k, j] * gf(lattice, k, j, A, B...; f1=true, f2=true, Z=Z, band=band, alg=alg)
-        curr += η⁺⁻[k, j] * gf(lattice, k, j, A, B...; f1=true, f2=false, Z=Z, band=band, alg=alg)
+        curr += η⁺⁺[k, j] * gf(lattice, k, j, A, B...; b1=:+, b2=:+, Z=Z, band=band, alg=alg)
+        curr += η⁺⁻[k, j] * gf(lattice, k, j, A, B...; b1=:+, b2=:-, Z=Z, band=band, alg=alg)
     end
     return 2 * curr / lattice.δt
 end
@@ -96,7 +96,7 @@ electriccurrent_fast(lattice::RealGrassmannLattice1Order, corr::RealCorrelationF
 
 # real-time second order
 function occupation(lattice::RealGrassmannLattice2Order, A::GrassmannMPS, B::GrassmannMPS...; kwargs...) 
-    return real(gf(lattice, lattice.k, lattice.k, A, B...; c1=false, c2=true, f1=true, f2=false, kwargs...))
+    return real(gf(lattice, lattice.k, lattice.k, A, B...; c1=false, c2=true, b1=:+, b2=:-, kwargs...))
 end
 
 function electriccurrent(lattice::RealGrassmannLattice2Order, corr::RealCorrelationFunction, A::GrassmannMPS, B::GrassmannMPS...; 
@@ -106,14 +106,14 @@ function electriccurrent(lattice::RealGrassmannLattice2Order, corr::RealCorrelat
     η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
     @assert  lattice.N <= div(size(η⁺⁺,1)-1, 2) 
     k = lattice.k
-    curr -= η⁺⁺[2*k-1, 1] * gf(lattice, k, 1, A, B...; f1=false, f2=true, Z=Z, band=band, alg=alg)
-    curr -= η⁺⁻[2*k-1, 1] * gf(lattice, k, 1, A, B..., f1=false, f2=false, Z=Z, band=band, alg=alg)
+    curr -= η⁺⁺[2*k-1, 1] * gf(lattice, k, 1, A, B...; b1=:-, b2=:+, Z=Z, band=band, alg=alg)
+    curr -= η⁺⁻[2*k-1, 1] * gf(lattice, k, 1, A, B..., b1=:-, b2=:-, Z=Z, band=band, alg=alg)
     for j in 2:k-1
-        curr -= (η⁺⁺[2*k-1, 2*j-2] + η⁺⁺[2*k-1, 2*j-1]) * gf(lattice, k, j, A, B..., f1=false, f2=true, Z=Z, band=band, alg=alg)
-        curr -= (η⁺⁻[2*k-1, 2*j-2] + η⁺⁻[2*k-1, 2*j-1])  * gf(lattice, k, j, A, B..., f1=false, f2=false, Z=Z, band=band, alg=alg)
+        curr -= (η⁺⁺[2*k-1, 2*j-2] + η⁺⁺[2*k-1, 2*j-1]) * gf(lattice, k, j, A, B..., b1=:-, b2=:+, Z=Z, band=band, alg=alg)
+        curr -= (η⁺⁻[2*k-1, 2*j-2] + η⁺⁻[2*k-1, 2*j-1])  * gf(lattice, k, j, A, B..., b1=:-, b2=:-, Z=Z, band=band, alg=alg)
     end
-    curr -= η⁺⁺[2*k-1, 2*k-2] * gf(lattice, k, k, A, B..., f1=false, f2=true, Z=Z, band=band, alg=alg)
-    curr -= η⁺⁻[2*k-1, 2*k-2] * gf(lattice, k, k, A, B..., f1=false, f2=false, Z=Z, band=band, alg=alg)
+    curr -= η⁺⁺[2*k-1, 2*k-2] * gf(lattice, k, k, A, B..., b1=:-, b2=:+, Z=Z, band=band, alg=alg)
+    curr -= η⁺⁻[2*k-1, 2*k-2] * gf(lattice, k, k, A, B..., b1=:-, b2=:-, Z=Z, band=band, alg=alg)
     return 2 * curr / (0.5*lattice.δt)
 end
 
@@ -126,22 +126,22 @@ function electriccurrent_fast(lattice::RealGrassmannLattice2Order, corr::RealCor
     curr = integrate(lattice, A2, B..., alg=alg) / Z
 
     η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
-    curr -= η⁺⁺[2*k-1, 2*k-2] * gf(lattice, k, k, A, B..., f1=false, f2=true, Z=Z, band=band, alg=alg)
-    curr -= η⁺⁻[2*k-1, 2*k-2] * gf(lattice, k, k, A, B..., f1=false, f2=false, Z=Z, band=band, alg=alg)
+    curr -= η⁺⁺[2*k-1, 2*k-2] * gf(lattice, k, k, A, B..., b1=:-, b2=:+, Z=Z, band=band, alg=alg)
+    curr -= η⁺⁻[2*k-1, 2*k-2] * gf(lattice, k, k, A, B..., b1=:-, b2=:-, Z=Z, band=band, alg=alg)
     return 2 * curr / (0.5*lattice.δt)
 end
 
 # building the current operator as MPO
 function build_current_mpo(lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction, k::Int, band::Int)
     η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
-    row = index(lattice, k, conj=true, forward=true, band=band)
+    row = index(lattice, k, conj=true, branch=:+, band=band)
     cols = Int[]
     coefs = ComplexF64[]
     for j in k-1:-1:1
-        col1 = index(lattice, j, conj=false, forward=true, band=band)
+        col1 = index(lattice, j, conj=false, branch=:+, band=band)
         push!(cols, col1)
         push!(coefs, η⁺⁺[k, j])
-        col2 = index(lattice, j, conj=false, forward=false, band=band)
+        col2 = index(lattice, j, conj=false, branch=:-, band=band)
         push!(cols, col2)
         push!(coefs, η⁺⁻[k, j])
     end
@@ -150,23 +150,23 @@ end
 
 function build_current_mpo(lattice::RealGrassmannLattice2Order, corr::RealCorrelationFunction, k::Int, band::Int)
     η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
-    row = index(lattice, k, conj=true, forward=false, band=band)
+    row = index(lattice, k, conj=true, branch=:-, band=band)
     cols = Int[]
     coefs = ComplexF64[]
     # the last two terms are not includes
     for j in k-1:-1:2
-        col1 = index(lattice, j, conj=false, forward=true, band=band)
+        col1 = index(lattice, j, conj=false, branch=:+, band=band)
         push!(cols, col1)
         push!(coefs, -(η⁺⁺[2*k-1, 2*j-2] + η⁺⁺[2*k-1, 2*j-1]) )
-        col2 = index(lattice, j, conj=false, forward=false, band=band)
+        col2 = index(lattice, j, conj=false, branch=:-, band=band)
         push!(cols, col2)
         push!(coefs, -((η⁺⁻[2*k-1, 2*j-2] + η⁺⁻[2*k-1, 2*j-1])))
     end
     j = 1
-    col1 = index(lattice, j, conj=false, forward=true, band=band)
+    col1 = index(lattice, j, conj=false, branch=:+, band=band)
     push!(cols, col1)
     push!(coefs, -η⁺⁺[2*k-1, 2*j-1]) 
-    col2 = index(lattice, j, conj=false, forward=false, band=band)
+    col2 = index(lattice, j, conj=false, branch=:-, band=band)
     push!(cols, col2)
     push!(coefs, -η⁺⁻[2*k-1, 2*j-1])
    

@@ -40,11 +40,11 @@ println("----------------------------------------------")
 	mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
 
 	Z = integrate(lattice, mpsK, mpsI)
-	g₁ = [-im*gf(lattice, i, 1, mpsK, mpsI, c1=false, c2=true, f1=true, f2=true, band=1, Z=Z) for i in 1:lattice.k]
-	l₁ = [-im*gf(lattice, 1, i, mpsK, mpsI, c1=true, c2=false, f1=false, f2=true, band=1, Z=Z) for i in 1:lattice.k]
+	g₁ = [-im*gf(lattice, i, 1, mpsK, mpsI, c1=false, c2=true, b1=:+, b2=:+, band=1, Z=Z) for i in 1:lattice.k]
+	l₁ = [-im*gf(lattice, 1, i, mpsK, mpsI, c1=true, c2=false, b1=:-, b2=:+, band=1, Z=Z) for i in 1:lattice.k]
 
-	g₂ = [-im*gf(lattice, i, 1, mpsK, mpsI, c1=false, c2=true, f1=true, f2=true, band=2, Z=Z) for i in 1:lattice.k]
-	l₂ = [-im*gf(lattice, 1, i, mpsK, mpsI, c1=true, c2=false, f1=false, f2=true, band=2, Z=Z) for i in 1:lattice.k]
+	g₂ = [-im*gf(lattice, i, 1, mpsK, mpsI, c1=false, c2=true, b1=:+, b2=:+, band=2, Z=Z) for i in 1:lattice.k]
+	l₂ = [-im*gf(lattice, 1, i, mpsK, mpsI, c1=true, c2=false, b1=:-, b2=:+, band=2, Z=Z) for i in 1:lattice.k]
 
 
 	@test norm(g_tcmps - g₁) / norm(g_tcmps) < tol

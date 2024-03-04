@@ -102,7 +102,7 @@ end
 			mps2_pp = nothing
 			for i in 1:lattice.k
 				for j in 1:lattice.k
-					pos1, pos2 = index(lattice, i, forward=true, conj=true, band=band), index(lattice, j, forward=true, conj=false, band=band)
+					pos1, pos2 = index(lattice, i, branch=:+, conj=true, band=band), index(lattice, j, branch=:+, conj=false, band=band)
 					if corr.G₊₊[i, j] != 0
 						t = GTerm(pos1, pos2, coeff=corr.G₊₊[i, j])
 						if !isnothing(mps2_pp)
@@ -120,7 +120,7 @@ end
 			mps2_pm = nothing
 			for i in 1:lattice.k
 				for j in 1:lattice.k
-					pos1, pos2 = index(lattice, i, forward=true, conj=true, band=band), index(lattice, j, forward=false, conj=false, band=band)
+					pos1, pos2 = index(lattice, i, branch=:+, conj=true, band=band), index(lattice, j, branch=:-, conj=false, band=band)
 					if corr.G₊₋[i, j] != 0
 						t = GTerm(pos1, pos2, coeff=corr.G₊₋[i, j])
 						if !isnothing(mps2_pm)
@@ -138,7 +138,7 @@ end
 			mps2_mp = nothing
 			for i in 1:lattice.k
 				for j in 1:lattice.k
-					pos1, pos2 = index(lattice, i, forward=false, conj=true, band=band), index(lattice, j, forward=true, conj=false, band=band)
+					pos1, pos2 = index(lattice, i, branch=:-, conj=true, band=band), index(lattice, j, branch=:+, conj=false, band=band)
 					if corr.G₋₊[i, j] != 0
 						t = GTerm(pos1, pos2, coeff=corr.G₋₊[i, j])
 						if !isnothing(mps2_mp)
@@ -156,7 +156,7 @@ end
 			mps2_mm = nothing
 			for i in 1:lattice.k
 				for j in 1:lattice.k
-					pos1, pos2 = index(lattice, i, forward=false, conj=true, band=band), index(lattice, j, forward=false, conj=false, band=band)
+					pos1, pos2 = index(lattice, i, branch=:-, conj=true, band=band), index(lattice, j, branch=:-, conj=false, band=band)
 					if corr.G₋₋[i, j] != 0
 						t = GTerm(pos1, pos2, coeff=corr.G₋₋[i, j])
 						if !isnothing(mps2_mm)

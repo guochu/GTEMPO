@@ -12,12 +12,13 @@ sysdynamics(lattice::AbstractGrassmannLattice, model::AbstractImpurityModel; kwa
 
 
 function sysdynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::AbstractImpurityModel; 
-						forward::Union{Nothing, Bool}=nothing, trunc::TruncationScheme=DefaultKTruncation)
-	if isnothing(forward)
+						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
+	if isnothing(branch)
 		sysdynamics_forward!(gmps, lattice, model; trunc=trunc)
 		return sysdynamics_backward!(gmps, lattice, model; trunc=trunc)
 	else
-		return forward ? sysdynamics_forward!(gmps, lattice, model; trunc=trunc) : sysdynamics_backward!(gmps, lattice, model; trunc=trunc)
+		(branch in (:+, :-)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
+		return (branch == :+) ? sysdynamics_forward!(gmps, lattice, model; trunc=trunc) : sysdynamics_backward!(gmps, lattice, model; trunc=trunc)
 	end
 end 
 

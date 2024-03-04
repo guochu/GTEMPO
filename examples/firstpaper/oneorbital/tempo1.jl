@@ -14,8 +14,8 @@ spectrum_func(D) = SpectrumFunction(ω -> J(D, ω), lb = -D, ub = D)
 
 function vacuum(lattice::RealGrassmannLattice, i::Int, A::GrassmannMPS, B::GrassmannMPS...; 
             Z::Number = integrate(lattice, A, B...))
-    pos1, pos2 = index(lattice, i, conj=false, forward=true, band=1), index(lattice, i, conj=true, forward=true, band=1)
-    pos1′, pos2′ = index(lattice, i, conj=false, forward=true, band=2), index(lattice, i, conj=true, forward=true, band=2)
+    pos1, pos2 = index(lattice, i, conj=false, branch=:+, band=1), index(lattice, i, conj=true, branch=:+, band=1)
+    pos1′, pos2′ = index(lattice, i, conj=false, branch=:+, band=2), index(lattice, i, conj=true, branch=:+, band=2)
     t = GTerm(pos1, pos2, pos1′, pos2′, coeff=1)
     A2 = mult(t, A)
     g = integrate(lattice, A2, B...)/Z
@@ -24,8 +24,8 @@ end
 
 function nup(lattice::RealGrassmannLattice, i::Int, A::GrassmannMPS, B::GrassmannMPS...; 
             Z::Number = integrate(lattice, A, B...))
-    pos1, pos2 = index(lattice, i, conj=false, forward=true, band=1), index(lattice, i, conj=true, forward=false, band=1)
-    pos1′, pos2′ = index(lattice, i, conj=false, forward=true, band=2), index(lattice, i, conj=true, forward=true, band=2)
+    pos1, pos2 = index(lattice, i, conj=false, branch=:+, band=1), index(lattice, i, conj=true, branch=:-, band=1)
+    pos1′, pos2′ = index(lattice, i, conj=false, branch=:+, band=2), index(lattice, i, conj=true, branch=:+, band=2)
     t = GTerm(pos1, pos2, pos1′, pos2′, coeff=1)
     A2 = mult(t, A)
     g = integrate(lattice, A2, B...)/Z
@@ -34,8 +34,8 @@ end
 
 function ndown(lattice::RealGrassmannLattice, i::Int, A::GrassmannMPS, B::GrassmannMPS...; 
             Z::Number = integrate(lattice, A, B...))
-    pos1, pos2 = index(lattice, i, conj=false, forward=true, band=1), index(lattice, i, conj=true, forward=true, band=1)
-    pos1′, pos2′ = index(lattice, i, conj=false, forward=true, band=2), index(lattice, i, conj=true, forward=false, band=2)
+    pos1, pos2 = index(lattice, i, conj=false, branch=:+, band=1), index(lattice, i, conj=true, branch=:+, band=1)
+    pos1′, pos2′ = index(lattice, i, conj=false, branch=:+, band=2), index(lattice, i, conj=true, branch=:-, band=2)
     t = GTerm(pos1, pos2, pos1′, pos2′, coeff=1)
     A2 = mult(t, A)
     g = integrate(lattice, A2, B...)/Z
@@ -44,8 +44,8 @@ end
 
 function nn(lattice::RealGrassmannLattice, i::Int, A::GrassmannMPS, B::GrassmannMPS...; 
             Z::Number = integrate(lattice, A, B...))
-    pos1, pos2 = index(lattice, i, conj=false, forward=true, band=1), index(lattice, i, conj=true, forward=false, band=1)
-    pos1′, pos2′ = index(lattice, i, conj=false, forward=true, band=2), index(lattice, i, conj=true, forward=false, band=2)
+    pos1, pos2 = index(lattice, i, conj=false, branch=:+, band=1), index(lattice, i, conj=true, branch=:-, band=1)
+    pos1′, pos2′ = index(lattice, i, conj=false, branch=:+, band=2), index(lattice, i, conj=true, branch=:-, band=2)
     t = GTerm(pos1, pos2, pos1′, pos2′, coeff=1)
     A2 = mult(t, A)
     g = integrate(lattice, A2, B...)/Z
@@ -54,8 +54,8 @@ end
 
 function cached_vacuum(lattice::RealGrassmannLattice, i::Int, A::GrassmannMPS, B::GrassmannMPS...; 
             cache=environments(lattice, A, B...))
-    pos1, pos2 = index(lattice, i, conj=false, forward=true, band=1), index(lattice, i, conj=true, forward=true, band=1)
-    pos1′, pos2′ = index(lattice, i, conj=false, forward=true, band=2), index(lattice, i, conj=true, forward=true, band=2)
+    pos1, pos2 = index(lattice, i, conj=false, branch=:+, band=1), index(lattice, i, conj=true, branch=:+, band=1)
+    pos1′, pos2′ = index(lattice, i, conj=false, branch=:+, band=2), index(lattice, i, conj=true, branch=:+, band=2)
     t = GTerm(pos1, pos2, pos1′, pos2′, coeff=1)
     A2 = t * A
     a, b = positions(t)[1], positions(t)[end]
@@ -64,8 +64,8 @@ end
 
 function cached_nup(lattice::RealGrassmannLattice, i::Int, A::GrassmannMPS, B::GrassmannMPS...; 
             cache=environments(lattice, A, B...))
-    pos1, pos2 = index(lattice, i, conj=false, forward=true, band=1), index(lattice, i, conj=true, forward=false, band=1)
-    pos1′, pos2′ = index(lattice, i, conj=false, forward=true, band=2), index(lattice, i, conj=true, forward=true, band=2)
+    pos1, pos2 = index(lattice, i, conj=false, branch=:+, band=1), index(lattice, i, conj=true, branch=:-, band=1)
+    pos1′, pos2′ = index(lattice, i, conj=false, branch=:+, band=2), index(lattice, i, conj=true, branch=:+, band=2)
     t = GTerm(pos1, pos2, pos1′, pos2′, coeff=1)
     A2 = t * A
     a, b = positions(t)[1], positions(t)[end]
@@ -74,8 +74,8 @@ end
 
 function cached_ndown(lattice::RealGrassmannLattice, i::Int, A::GrassmannMPS, B::GrassmannMPS...; 
             cache=environments(lattice, A, B...))
-    pos1, pos2 = index(lattice, i, conj=false, forward=true, band=1), index(lattice, i, conj=true, forward=true, band=1)
-    pos1′, pos2′ = index(lattice, i, conj=false, forward=true, band=2), index(lattice, i, conj=true, forward=false, band=2)
+    pos1, pos2 = index(lattice, i, conj=false, branch=:+, band=1), index(lattice, i, conj=true, branch=:+, band=1)
+    pos1′, pos2′ = index(lattice, i, conj=false, branch=:+, band=2), index(lattice, i, conj=true, branch=:-, band=2)
     t = GTerm(pos1, pos2, pos1′, pos2′, coeff=1)
     A2 = t * A
     a, b = positions(t)[1], positions(t)[end]
@@ -84,8 +84,8 @@ end
 
 function cached_nn(lattice::RealGrassmannLattice, i::Int, A::GrassmannMPS, B::GrassmannMPS...; 
             cache=environments(lattice, A, B...))
-    pos1, pos2 = index(lattice, i, conj=false, forward=true, band=1), index(lattice, i, conj=true, forward=false, band=1)
-    pos1′, pos2′ = index(lattice, i, conj=false, forward=true, band=2), index(lattice, i, conj=true, forward=false, band=2)
+    pos1, pos2 = index(lattice, i, conj=false, branch=:+, band=1), index(lattice, i, conj=true, branch=:-, band=1)
+    pos1′, pos2′ = index(lattice, i, conj=false, branch=:+, band=2), index(lattice, i, conj=true, branch=:-, band=2)
     t = GTerm(pos1, pos2, pos1′, pos2′, coeff=1)
     A2 = t * A
     a, b = positions(t)[1], positions(t)[end]

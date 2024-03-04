@@ -102,16 +102,18 @@ function timesteps(gmps::GrassmannMPS, x::RealGrassmannLattice)
 end
 
 # ab\bar{b}\bar{a} a_2^+a_2^-b_2^+b_2^-\bar{b}_2^-\bar{b}_2^+\bar{a}_2^-\bar{a}_2^+ a_1^+a_1^-b_1^+b_1^-\bar{b}_1^-\bar{b}_1^+\bar{a}_1^-\bar{a}_1^+
-function index(x::RealGrassmannLattice{<:A1a1B1b1b1B1a1A1}, i::Int; conj::Bool, forward::Union{Bool, Nothing}=nothing, band::Int=1)
-	(0 <= i <= x.k) || throw(BoundsError())
-	@assert (1 <= band <= x.bands)
+function index(x::RealGrassmannLattice{<:A1a1B1b1b1B1a1A1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+	@boundscheck begin
+		(1 <= band <= x.bands) || throw(BoundsError("band $band out of range"))
+		(0 <= i <= x.k) || throw(BoundsError("real time step $i out of range"))
+		(branch in (:+, :-)) || throw(ArgumentError("branch must be :+ or :-"))
+	end
 	TL = length(x)
 	bands = x.bands
 	if i == 0
 		ifelse(conj, 2bands+1-band, band)
 	else
-		@assert isa(forward, Bool)
-		if forward
+		if branch == :+
 			ifelse(conj, TL-4(i-1)*bands-2(band-1), TL-4i*bands+1+2(band-1))
 		else
 			ifelse(conj, TL-4(i-1)*bands-1-2(band-1), TL-4i*bands+2band)
@@ -119,16 +121,18 @@ function index(x::RealGrassmannLattice{<:A1a1B1b1b1B1a1A1}, i::Int; conj::Bool, 
 	end
 end
 # a\bar{a}b\bar{b} a_2^+\bar{a}_2^+a_2^-\bar{a}_2^-b_2^+\bar{b}_2^+b_2^-\bar{b}_2^- a_1^+\bar{a}_1^+a_1^-\bar{a}_1^-b_1^+\bar{b}_1^+b_1^-\bar{b}_1^-
-function index(x::RealGrassmannLattice{<:A1A1a1a1B1B1b1b1}, i::Int; conj::Bool, forward::Union{Bool, Nothing}=nothing, band::Int=1)
-	(0 <= i <= x.k) || throw(BoundsError())
-	@assert (1 <= band <= x.bands)
+function index(x::RealGrassmannLattice{<:A1A1a1a1B1B1b1b1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+	@boundscheck begin
+		(1 <= band <= x.bands) || throw(BoundsError("band $band out of range"))
+		(0 <= i <= x.k) || throw(BoundsError("real time step $i out of range"))
+		(branch in (:+, :-)) || throw(ArgumentError("branch must be :+ or :-"))
+	end
 	TL = length(x)
 	bands = x.bands
 	if i == 0
 		ifelse(conj, 2*band, 2*band-1)
 	else
-		@assert isa(forward, Bool)
-		if forward
+		if branch == :+
 			ifelse(conj, TL-4i*bands+2+4*(band-1), TL-4i*bands+1+4*(band-1))
 		else
 			ifelse(conj, TL-4i*bands+4+4*(band-1), TL-4i*bands+3+4*(band-1))
@@ -136,16 +140,18 @@ function index(x::RealGrassmannLattice{<:A1A1a1a1B1B1b1b1}, i::Int; conj::Bool, 
 	end
 end
 # a\bar{a}b\bar{b} a_2^+\bar{a}_2^+a_1^+\bar{a}_1^+ a_2^-\bar{a}_2^-a_1^-\bar{a}_1^- b_2^+\bar{b}_2^+b_1^+\bar{b}_1^+  b_2^-\bar{b}_2^-b_1^-\bar{b}_1^-
-function index(x::RealGrassmannLattice{<:A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1}, i::Int; conj::Bool, forward::Union{Bool, Nothing}=nothing, band::Int=1)
-	(0 <= i <= x.k) || throw(BoundsError())
-	@assert (1 <= band <= x.bands)
+function index(x::RealGrassmannLattice{<:A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+	@boundscheck begin
+		(1 <= band <= x.bands) || throw(BoundsError("band $band out of range"))
+		(0 <= i <= x.k) || throw(BoundsError("real time step $i out of range"))
+		(branch in (:+, :-)) || throw(ArgumentError("branch must be :+ or :-"))
+	end
 	TL = length(x)
 	n = 4 * x.k
 	if i == 0
 		ifelse(conj, 2*band, 2*band-1)
 	else
-		@assert isa(forward, Bool)
-		if forward
+		if branch == :+
 			ifelse(conj, (band-1) * n + 2*(x.k-i) + 2, (band-1) * n + 2*(x.k-i) + 1 ) + 2*x.bands
 		else
 			ifelse(conj, (band-1) * n + 2*x.k+ 2*(x.k-i) + 2, (band-1) * n + 2*x.k+ 2*(x.k-i) + 1 ) + 2*x.bands
@@ -154,16 +160,18 @@ function index(x::RealGrassmannLattice{<:A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1}, i::I
 end
 
 # ab\bar{b}\bar{a} a_2^+b_2^+\bar{b}_2^+\bar{a}_2^+a_1^+b_1^+\bar{b}_1^+\bar{a}_1^+ a_1^-b_1^-\bar{b}_1^-\bar{a}_1^-a_2^-b_2^-\bar{b}_2^-\bar{a}_2^-
-function index(x::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, i::Int; conj::Bool, forward::Union{Bool, Nothing}=nothing, band::Int=1)
-	(0 <= i <= x.k) || throw(BoundsError())
-	@assert (1 <= band <= x.bands)
+function index(x::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+	@boundscheck begin
+		(1 <= band <= x.bands) || throw(BoundsError("band $band out of range"))
+		(0 <= i <= x.k) || throw(BoundsError("real time step $i out of range"))
+		(branch in (:+, :-)) || throw(ArgumentError("branch must be :+ or :-"))
+	end
 	TL = length(x)
 	bands = x.bands
 	if i == 0
 		ifelse(conj, 2*bands+1-band, band)
 	else
-		@assert isa(forward, Bool)
-		if forward
+		if branch == :+
 			ifelse(conj, 2*bands*(x.k-i) + 2*bands-band+1, 2*bands*(x.k-i) + band ) + 2*bands
 		else
 			ifelse(conj, 2*bands*(i-1) + 2*bands-band+1, 2*bands*(i-1) + band ) + 2*bands + 2 * bands * x.k
@@ -173,16 +181,18 @@ end
 
 
 # a\bar{a}b\bar{b} a_2^+\bar{a}_2^+b_2^+\bar{b}_2^+a_1^+\bar{a}_1^+b_1^+\bar{b}_1^+ a_1^-\bar{a}_1^-b_1^-\bar{b}_1^-a_2^-\bar{a}_2^-b_2^-\bar{b}_2^-
-function index(x::RealGrassmannLattice{<:A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2}, i::Int; conj::Bool, forward::Union{Bool, Nothing}=nothing, band::Int=1)
-	(0 <= i <= x.k) || throw(BoundsError())
-	@assert (1 <= band <= x.bands)
+function index(x::RealGrassmannLattice{<:A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+	@boundscheck begin
+		(1 <= band <= x.bands) || throw(BoundsError("band $band out of range"))
+		(0 <= i <= x.k) || throw(BoundsError("real time step $i out of range"))
+		(branch in (:+, :-)) || throw(ArgumentError("branch must be :+ or :-"))
+	end
 	TL = length(x)
 	bands = x.bands
 	if i == 0
 		ifelse(conj, 2*band, 2*band-1)
 	else
-		@assert isa(forward, Bool)
-		if forward
+		if branch == :+
 			ifelse(conj, 2*bands*(x.k-i) + 2*band, 2*bands*(x.k-i) + 2*band - 1 ) + 2*bands
 		else
 			ifelse(conj, 2*bands*(i-1) + 2*band, 2*bands*(i-1) + 2*band - 1 ) + 2*bands + 2 * bands * x.k
@@ -190,17 +200,17 @@ function index(x::RealGrassmannLattice{<:A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2}, i::I
 	end
 end
 
-# key is timestep, conj, forward, band
+# key is timestep, conj, branch, band
 function indexmappings(lattice::RealGrassmannLattice)
-	r = Dict{Tuple{Int, Bool, Bool, Int}, Int}()
+	r = Dict{Tuple{Int, Bool, Symbol, Int}, Int}()
 	for i in 0:lattice.k
 		for c in (true, false)
 			for band in 1:lattice.bands
 				if i == 0
-					r[(i, c, true, band)] = index(lattice, i, conj=c, forward=nothing, band=band)
+					r[(i, c, :+, band)] = index(lattice, i, conj=c, band=band)
 				else
-					for f in (true, false)
-						r[(i, c, f, band)] = index(lattice, i, conj=c, forward=f, band=band)
+					for f in (:+, :-)
+						r[(i, c, f, band)] = index(lattice, i, conj=c, branch=f, band=band)
 					end
 				end
 			end
@@ -214,8 +224,8 @@ function band_boundary(lattice::RealGrassmannLattice{<:A1a1B1b1b1B1a1A1}, j::Int
         posa = index(lattice, j, conj=false, band=1)
         posb = index(lattice, j, conj=true, band=1)     
     else
-        posa = index(lattice, j, conj=false, forward=true, band=1)
-        posb = index(lattice, j, conj=true, forward=true, band=1)
+        posa = index(lattice, j, conj=false, branch=:+, band=1)
+        posb = index(lattice, j, conj=true, branch=:+, band=1)
     end
     return posa, posb
 end
@@ -224,30 +234,28 @@ function band_boundary(lattice::RealGrassmannLattice{<:A1A1a1a1B1B1b1b1}, j::Int
         posa = index(lattice, j, conj=false, band=1)
         posb = index(lattice, j, conj=true, band=lattice.bands)     
     else
-        posa = index(lattice, j, conj=false, forward=true, band=1)
-        posb = index(lattice, j, conj=true, forward=false, band=lattice.bands)
+        posa = index(lattice, j, conj=false, branch=:+, band=1)
+        posb = index(lattice, j, conj=true, branch=:-, band=lattice.bands)
     end
     return posa, posb
 end
-function band_boundary(lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, j::Int; forward::Union{Nothing, Bool}=nothing)
+function band_boundary(lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, j::Int; branch::Symbol=:+)
     if j == 0
         posa = index(lattice, j, conj=false, band=1)
         posb = index(lattice, j, conj=true, band=1)   
     else
-        @assert isa(forward, Bool)
-        posa = index(lattice, j, conj=false, band=1, forward=forward)
-        posb = index(lattice, j, conj=true, band=1, forward=forward) 
+        posa = index(lattice, j, conj=false, band=1, branch=branch)
+        posb = index(lattice, j, conj=true, band=1, branch=branch) 
     end
     return posa, posb
 end
-function band_boundary(lattice::RealGrassmannLattice{<:A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2}, j::Int; forward::Union{Nothing, Bool}=nothing)
+function band_boundary(lattice::RealGrassmannLattice{<:A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2}, j::Int; branch::Symbol=:+)
     if j == 0
         posa = index(lattice, j, conj=false, band=1)
         posb = index(lattice, j, conj=true, band=lattice.bands)   
     else
-        @assert isa(forward, Bool)
-        posa = index(lattice, j, conj=false, band=1, forward=forward)
-        posb = index(lattice, j, conj=true, band=lattice.bands, forward=forward) 
+        posa = index(lattice, j, conj=false, band=1, branch=branch)
+        posb = index(lattice, j, conj=true, band=lattice.bands, branch=branch) 
     end
     return posa, posb
 end

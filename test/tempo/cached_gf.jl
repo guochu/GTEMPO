@@ -45,10 +45,10 @@ println("------------------------------------")
 				cache = environments(lattice, A, B)
 				Z = integrate(lattice, A, B)
 				for i in 1:lattice.k, j in 1:lattice.k
-					for f1 in (true, false), f2 in (true, false), c1 in (true, false), c2 in (true, false)
+					for f1 in (:+, :-), f2 in (:+, :-), c1 in (true, false), c2 in (true, false)
 						if !((i == j) && (f1 == f2) && (c1 == c2))
-							g1 = gf(lattice, i, j, A, B, c1=c1, c2=c2, f1=f1, f2=f2, Z=Z)
-							g2 = cached_gf(lattice, i, j, A, B, cache=cache, c1=c1, c2=c2, f1=f1, f2=f2)
+							g1 = gf(lattice, i, j, A, B, c1=c1, c2=c2, b1=f1, b2=f2, Z=Z)
+							g2 = cached_gf(lattice, i, j, A, B, cache=cache, c1=c1, c2=c2, b1=f1, b2=f2)
 							@test abs(g1-g2)/abs(g1) < rtol
 						end
 					end
@@ -57,10 +57,10 @@ println("------------------------------------")
 				cache = environments(lattice, [A, C], B)
 				Z = integrate(lattice, [A, C], B)
 				for i in 1:lattice.k, j in 1:lattice.k
-					for f1 in (true, false), f2 in (true, false), c1 in (true, false), c2 in (true, false)
+					for f1 in (:+, :-), f2 in (:+, :-), c1 in (true, false), c2 in (true, false)
 						if !((i == j) && (f1 == f2) && (c1 == c2))
-							g1 = gf(lattice, i, j, [A,C], B, c1=c1, c2=c2, f1=f1, f2=f2, Z=Z)
-							g2 = cached_gf(lattice, i, j, [A,C], B, cache=cache, c1=c1, c2=c2, f1=f1, f2=f2)
+							g1 = gf(lattice, i, j, [A,C], B, c1=c1, c2=c2, b1=f1, b2=f2, Z=Z)
+							g2 = cached_gf(lattice, i, j, [A,C], B, cache=cache, c1=c1, c2=c2, b1=f1, b2=f2)
 							@test abs(g1-g2)/abs(g1) < rtol
 						end
 					end
@@ -99,10 +99,10 @@ println("------------------------------------")
 				cache = environments(lattice, A, B, C)
 				Z = integrate(lattice, A, B, C)
 				for i in 1:lattice.k, j in 1:lattice.k
-					for f1 in (true, false), f2 in (true, false), c1 in (true, false), c2 in (true, false)
+					for f1 in (:+, :-), f2 in (:+, :-), c1 in (true, false), c2 in (true, false)
 						if !((i == j) && (f1 == f2) && (c1 == c2))
-							g1 = gf(lattice, i, j, A, B, C, c1=c1, c2=c2, f1=f1, f2=f2, Z=Z)
-							g2 = cached_gf(lattice, i, j, A, B, C, cache=cache, c1=c1, c2=c2, f1=f1, f2=f2)
+							g1 = gf(lattice, i, j, A, B, C, c1=c1, c2=c2, b1=f1, b2=f2, Z=Z)
+							g2 = cached_gf(lattice, i, j, A, B, C, cache=cache, c1=c1, c2=c2, b1=f1, b2=f2)
 							@test abs(g1-g2)/abs(g1) < rtol
 						end
 					end

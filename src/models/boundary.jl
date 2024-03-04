@@ -30,21 +30,21 @@ function boundarycondition_branching(x0::Vector{<:GrassmannMPS}, lattice::Abstra
 	return r
 end
 function boundarycondition!(x::GrassmannMPS, lattice::RealGrassmannLattice; band::Int=1, trunc::TruncationScheme=DefaultIntegrationTruncation)
-	pos1, pos2 = index(lattice, 0, conj=true, band=band, forward=true), index(lattice, lattice.k, conj=false, band=band, forward=true)
+	pos1, pos2 = index(lattice, 0, conj=true, band=band, branch=:+), index(lattice, lattice.k, conj=false, band=band, branch=:+)
 	apply!(exp(GTerm(pos1, pos2, coeff=-1)), x)
 	canonicalize!(x, alg=Orthogonalize(trunc=trunc))
-	pos1, pos2 = index(lattice, lattice.k, conj=true, band=band, forward=false), index(lattice, 0, conj=false, band=band, forward=false)
+	pos1, pos2 = index(lattice, lattice.k, conj=true, band=band, branch=:-), index(lattice, 0, conj=false, band=band, branch=:-)
 	apply!(exp(GTerm(pos1, pos2, coeff=1)), x)
 	canonicalize!(x, alg=Orthogonalize(trunc=trunc))
 	return x
 end
 function boundarycondition_branching(x0::GrassmannMPS, lattice::RealGrassmannLattice; band::Int=1, trunc::TruncationScheme=DefaultIntegrationTruncation) 
 	(LayoutStyle(lattice) isa BranchLocalLayout) || throw(ArgumentError("boundarycondition_branching only work with BranchLocalLayout for RealGrassmannLattice"))
-	pos1, pos2 = index(lattice, 0, conj=true, band=band, forward=true), index(lattice, lattice.k, conj=false, band=band, forward=true)
+	pos1, pos2 = index(lattice, 0, conj=true, band=band, branch=:+), index(lattice, lattice.k, conj=false, band=band, branch=:+)
 	t = exp(GTerm(pos1, pos2, coeff=-1))
 	x = t * x0
 	canonicalize!(x, alg=Orthogonalize(trunc=trunc))
-	pos1, pos2 = index(lattice, lattice.k, conj=true, band=band, forward=false), index(lattice, 0, conj=false, band=band, forward=false)
+	pos1, pos2 = index(lattice, lattice.k, conj=true, band=band, branch=:-), index(lattice, 0, conj=false, band=band, branch=:-)
 	t = GTerm(pos1, pos2, coeff=1)
 	x2 = t * x
 	canonicalize!(x2, alg=Orthogonalize(trunc=trunc))

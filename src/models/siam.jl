@@ -94,7 +94,7 @@ function sysdynamics_forward!(gmps::GrassmannMPS, lattice::RealGrassmannLattice,
 	a = exp(-im*lattice.δt*μ)
 	for band in 1:lattice.bands
 		for i in 1:lattice.k-1
-            pos1, pos2 = index(lattice, i+1, conj=true, forward=true, band=band), index(lattice, i, conj=false, forward=true, band=band)
+            pos1, pos2 = index(lattice, i+1, conj=true, branch=:+, band=band), index(lattice, i, conj=false, branch=:+, band=band)
             apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
             canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))			
 		end
@@ -107,10 +107,10 @@ function sysdynamics_forward!(gmps::GrassmannMPS, lattice::RealGrassmannLattice,
 		b = a^2 * (exp(-im*lattice.δt*U) - 1)
 		for i in 1:lattice.k-1
 			for band in 1:2:lattice.bands
-				pos1 = index(lattice, i+1, conj=true, forward=true, band=band)
-				pos2 = index(lattice, i+1, conj=true, forward=true, band=band+1)
-				pos3 = index(lattice, i, conj=false, forward=true, band=band+1)
-				pos4 = index(lattice, i, conj=false, forward=true, band=band)
+				pos1 = index(lattice, i+1, conj=true, branch=:+, band=band)
+				pos2 = index(lattice, i+1, conj=true, branch=:+, band=band+1)
+				pos3 = index(lattice, i, conj=false, branch=:+, band=band+1)
+				pos4 = index(lattice, i, conj=false, branch=:+, band=band)
 				apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=b)), gmps)
 				canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))			
 			end
@@ -125,7 +125,7 @@ function sysdynamics_backward!(gmps::GrassmannMPS, lattice::RealGrassmannLattice
 	ac = conj(a)
 	for band in 1:lattice.bands
 		for i in 1:lattice.k-1
-			pos1, pos2 = index(lattice, i, conj=true, forward=false, band=band), index(lattice, i+1, conj=false, forward=false, band=band)
+			pos1, pos2 = index(lattice, i, conj=true, branch=:-, band=band), index(lattice, i+1, conj=false, branch=:-, band=band)
 			apply!(exp(GTerm(pos1, pos2, coeff=ac)), gmps)
 			canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))	
 		end
@@ -139,10 +139,10 @@ function sysdynamics_backward!(gmps::GrassmannMPS, lattice::RealGrassmannLattice
 		bc = conj(b)
 		for i in 1:lattice.k-1
 			for band in 1:2:lattice.bands
-				pos1 = index(lattice, i, conj=true, forward=false, band=band)
-				pos2 = index(lattice, i, conj=true, forward=false, band=band+1)
-				pos3 = index(lattice, i+1, conj=false, forward=false, band=band+1)
-				pos4 = index(lattice, i+1, conj=false, forward=false, band=band)
+				pos1 = index(lattice, i, conj=true, branch=:-, band=band)
+				pos2 = index(lattice, i, conj=true, branch=:-, band=band+1)
+				pos3 = index(lattice, i+1, conj=false, branch=:-, band=band+1)
+				pos4 = index(lattice, i+1, conj=false, branch=:-, band=band)
 				apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=bc)), gmps)
 				canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))			
 			end
@@ -249,12 +249,12 @@ function si_sysdynamics_stepper!(gmps::GrassmannMPS, lattice::RealGrassmannLatti
 	a = exp(-im*lattice.δt*μ)
 	i = lattice.k - 1
 	for band in 1:lattice.bands
-		pos1, pos2 = index(lattice, i+1, conj=true, forward=true, band=band), index(lattice, i, conj=false, forward=true, band=band)
+		pos1, pos2 = index(lattice, i+1, conj=true, branch=:+, band=band), index(lattice, i, conj=false, branch=:+, band=band)
 		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
 	end
 	ac = conj(a)
 	for band in 1:lattice.bands
-		pos1, pos2 = index(lattice, i, conj=true, forward=false, band=band), index(lattice, i+1, conj=false, forward=false, band=band)
+		pos1, pos2 = index(lattice, i, conj=true, branch=:-, band=band), index(lattice, i+1, conj=false, branch=:-, band=band)
 		apply!(exp(GTerm(pos1, pos2, coeff=ac)), gmps)
 	end	
 
@@ -265,19 +265,19 @@ function si_sysdynamics_stepper!(gmps::GrassmannMPS, lattice::RealGrassmannLatti
 		# a = -im*lattice.δt*U
 		b = a^2 * (exp(-im*lattice.δt*U) - 1)
 		for band in 1:2:lattice.bands
-			pos1 = index(lattice, i+1, conj=true, forward=true, band=band)
-			pos2 = index(lattice, i+1, conj=true, forward=true, band=band+1)
-			pos3 = index(lattice, i, conj=false, forward=true, band=band+1)
-			pos4 = index(lattice, i, conj=false, forward=true, band=band)
+			pos1 = index(lattice, i+1, conj=true, branch=:+, band=band)
+			pos2 = index(lattice, i+1, conj=true, branch=:+, band=band+1)
+			pos3 = index(lattice, i, conj=false, branch=:+, band=band+1)
+			pos4 = index(lattice, i, conj=false, branch=:+, band=band)
 			apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=b)), gmps)
 		end
 		# a = im*lattice.δt*U
 		bc = conj(b)
 		for band in 1:2:lattice.bands
-			pos1 = index(lattice, i, conj=true, forward=false, band=band)
-			pos2 = index(lattice, i, conj=true, forward=false, band=band+1)
-			pos3 = index(lattice, i+1, conj=false, forward=false, band=band+1)
-			pos4 = index(lattice, i+1, conj=false, forward=false, band=band)
+			pos1 = index(lattice, i, conj=true, branch=:-, band=band)
+			pos2 = index(lattice, i, conj=true, branch=:-, band=band+1)
+			pos3 = index(lattice, i+1, conj=false, branch=:-, band=band+1)
+			pos4 = index(lattice, i+1, conj=false, branch=:-, band=band)
 			apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=bc)), gmps)
 		end
 	end	

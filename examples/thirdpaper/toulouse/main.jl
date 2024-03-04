@@ -101,8 +101,8 @@ function main(t::Real; ϵ_d=1., δt=0.05, order=8, β=40, chi=1024)
 	band = 1
 
 	@time ns = cached_occupation(lattice, mpsK, mpsI, cache=cache)
-	@time g₁ = [cached_gf(lattice, k, 1, mpsK, mpsI, cache=cache, c1=false, c2=true, f1=true, f2=true, band=band) for k in 2:N+1]
-	@time l₁ = [cached_gf(lattice, 1, k, mpsK, mpsI, cache=cache, c1=true, c2=false, f1=false, f2=true, band=band) for k in 2:N+1]
+	@time g₁ = [cached_gf(lattice, k, 1, mpsK, mpsI, cache=cache, c1=false, c2=true, b1=:+, b2=:+, band=band) for k in 2:N+1]
+	@time l₁ = [cached_gf(lattice, 1, k, mpsK, mpsI, cache=cache, c1=true, c2=false, b1=:-, b2=:+, band=band) for k in 2:N+1]
 
 
 	# ts = [i*δt for i in 1:N]

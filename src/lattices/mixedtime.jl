@@ -52,13 +52,13 @@ end
 
 Base.length(x::MixedGrassmannLattice1Order) = 4*x.bands * (x.Nt+1) + 2 * x.bands + 2*x.bands * x.Nτ
 
-function index(x::MixedGrassmannLattice1Order{<:A1A1B1B1_A1A1a1a1B1B1b1b1}, i::Int; conj::Bool, branch::Union{Symbol, Nothing}=nothing, band::Int=1)
+function index(x::MixedGrassmannLattice1Order{<:A1A1B1B1_A1A1a1a1B1B1b1b1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(ArgumentError("band $band out of range"))
+		(branch in (:+, :-, :τ)) || throw(BoundsError("branch must be one of :+, :- or :τ"))
 		if i != 0
-			(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ for non-boundary time step"))
 			if branch == :τ
-				(1 <= i <= x.Nτ) || throw(ArgumentError("imag time step $i out of range"))
+				(1 <= i <= x.Nτ) || throw(BoundsError("imag time step $i out of range"))
 			else
 				(1 <= i <= x.Nt + 1) || throw(ArgumentError("real time step $i out of range"))
 			end
@@ -80,13 +80,13 @@ function index(x::MixedGrassmannLattice1Order{<:A1A1B1B1_A1A1a1a1B1B1b1b1}, i::I
 	end
 end
 
-function index(x::MixedGrassmannLattice1Order{<:A1B1B1A1_A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, i::Int; conj::Bool, branch::Union{Symbol, Nothing}=nothing, band::Int=1)
+function index(x::MixedGrassmannLattice1Order{<:A1B1B1A1_A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(ArgumentError("band $band out of range"))
+		(branch in (:+, :-, :τ)) || throw(BoundsError("branch must be one of :+, :- or :τ"))
 		if i != 0
-			(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ for non-boundary time step"))
 			if branch == :τ
-				(1 <= i <= x.Nτ) || throw(ArgumentError("imag time step $i out of range"))
+				(1 <= i <= x.Nτ) || throw(BoundsError("imag time step $i out of range"))
 			else
 				(1 <= i <= x.Nt + 1) || throw(ArgumentError("real time step $i out of range"))
 			end
@@ -123,7 +123,7 @@ function indexmappings(lattice::MixedGrassmannLattice1Order)
 		for c in (true, false)
 			for band in 1:lattice.bands
 				if i == 0
-					r[(i, c, :+, band)] = index(lattice, i, conj=c, branch=nothing, band=band)
+					r[(i, c, :+, band)] = index(lattice, i, conj=c, branch=:+, band=band)
 				else
 					for f in (:+, :-)
 						r[(i, c, f, band)] = index(lattice, i, conj=c, branch=f, band=band)

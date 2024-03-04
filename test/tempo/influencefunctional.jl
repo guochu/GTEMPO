@@ -41,21 +41,21 @@ end
 			for ordering in real_grassmann_orderings
 				lattice = GrassmannLattice(N=N, δt=0.05, bands=bands, contour=:real, order=1, ordering=ordering)
 				corr = Gt(f, β=β, N=lattice.N, t=lattice.t)
-				for fi in (true, false)
-					for fj in (true, false)
+				for fi in (:+, :-)
+					for fj in (:+, :-)
 						η = branch(corr, fi, fj)
 						@test size(η, 1) == lattice.k
 						for i in 1:lattice.k
 							for band in 1:lattice.bands
 								mps1 = GrassmannMPS(scalartype(lattice), length(lattice))
 								for j in 1:lattice.k
-									pos1, pos2 = index(lattice, i, conj=true, forward=fi, band=band), index(lattice, j, conj=false, forward=fj, band=band)
+									pos1, pos2 = index(lattice, i, conj=true, branch=fi, band=band), index(lattice, j, conj=false, branch=fj, band=band)
 									t = exp(GTerm(pos1, pos2, coeff=η[i, j]))
 									mps1 = t * mps1
 									canonicalize!(mps1, alg=Orthogonalize(TK.SVD(), trunc))
 								end
 
-								mps3 = partialinfluencefunctional(lattice, i, view(η, i, 1:lattice.k), band=band, fi=fi, fj=fj)
+								mps3 = partialinfluencefunctional(lattice, i, view(η, i, 1:lattice.k), band=band, b1=fi, b2=fj)
 								@test bond_dimension(mps3) == 2
 								@test distance(mps1, mps3) / norm(mps1) <= 1.0e-5
 							end
@@ -71,23 +71,23 @@ end
 			for ordering in real_grassmann_orderings
 				lattice = GrassmannLattice(N=N, δt=0.05, bands=bands, contour=:real, order=1, ordering=ordering)
 				corr = Gt(f, β=β, N=lattice.N, t=lattice.t)
-				for fi in (true, false)
-					η₁, η₂ = branch(corr, fi, true), branch(corr, fi, false)
+				for fi in (:+, :-)
+					η₁, η₂ = branch(corr, fi, :+), branch(corr, fi, :-)
 					for i in 1:lattice.k
 						for band in 1:lattice.bands
 							mps1 = GrassmannMPS(scalartype(lattice), length(lattice))
 							for j in 1:lattice.k
-								pos1, pos2 = index(lattice, i, conj=true, forward=fi, band=band), index(lattice, j, conj=false, forward=true, band=band)
+								pos1, pos2 = index(lattice, i, conj=true, branch=fi, band=band), index(lattice, j, conj=false, branch=:+, band=band)
 								t = exp(GTerm(pos1, pos2, coeff=η₁[i, j]))
 								mps1 = t * mps1
 								canonicalize!(mps1, alg=Orthogonalize(trunc = trunc))			
-								pos1, pos2 = index(lattice, i, conj=true, forward=fi, band=band), index(lattice, j, conj=false, forward=false, band=band)
+								pos1, pos2 = index(lattice, i, conj=true, branch=fi, band=band), index(lattice, j, conj=false, branch=:-, band=band)
 								t = exp(GTerm(pos1, pos2, coeff=η₂[i, j]))
 								mps1 = t * mps1
 								canonicalize!(mps1, alg=Orthogonalize(trunc = trunc))															
 							end
 
-							mps3 = partialinfluencefunctional(lattice, i, view(η₁, i, 1:lattice.k), view(η₂, i, 1:lattice.k), band=band, fi=fi)
+							mps3 = partialinfluencefunctional(lattice, i, view(η₁, i, 1:lattice.k), view(η₂, i, 1:lattice.k), band=band, b1=fi)
 							@test bond_dimension(mps3) == 2
 							@test distance(mps1, mps3) / norm(mps1) <= 1.0e-5
 						end
@@ -102,59 +102,59 @@ end
 			for ordering in real_grassmann_orderings
 				lattice = GrassmannLattice(N=N, δt=0.05, bands=bands, contour=:real, order=1, ordering=ordering)
 				η = randn(ComplexF64, lattice.k, lattice.k)
-				for fi in (true, false), fj in (true, false)
+				for fi in (:+, :-), fj in (:+, :-)
 
 					for j in 1:lattice.k
 						for band in 1:lattice.bands
 							mps1 = GrassmannMPS(scalartype(lattice), length(lattice))
 							for i in 1:lattice.k
-								pos1, pos2 = index(lattice, i, conj=true, forward=fi, band=band), index(lattice, j, conj=false, forward=fj, band=band)
+								pos1, pos2 = index(lattice, i, conj=true, branch=fi, band=band), index(lattice, j, conj=false, branch=fj, band=band)
 								t = exp(GTerm(pos1, pos2, coeff=η[i, j]))
 								mps1 = t * mps1
 								canonicalize!(mps1, alg=Orthogonalize(TK.SVD(), trunc))		
 							end
 
-							mps3 = partialinfluencefunctional(lattice, η[1:lattice.k, j], j, band=band, fi=fi, fj=fj)
+							mps3 = partialinfluencefunctional(lattice, η[1:lattice.k, j], j, band=band, b1=fi, b2=fj)
 							@test bond_dimension(mps3) == 2
 							@test distance(mps1, mps3) / norm(mps1) <= 1.0e-5
 						end
 					end
 				end
 				η₂ = randn(ComplexF64, lattice.k, lattice.k)
-				for fi in (true, false)
+				for fi in (:+, :-)
 					for i in 1:lattice.k
 						for band in 1:lattice.bands
 							mps1 = GrassmannMPS(scalartype(lattice), length(lattice))
 							for j in 1:lattice.k
-								pos1, pos2 = index(lattice, i, conj=true, forward=fi, band=band), index(lattice, j, conj=false, forward=true, band=band)
+								pos1, pos2 = index(lattice, i, conj=true, branch=fi, band=band), index(lattice, j, conj=false, branch=:+, band=band)
 								t = exp(GTerm(pos1, pos2, coeff=η[i, j]))
 								mps1 = t * mps1
 								canonicalize!(mps1, alg=Orthogonalize(trunc = trunc))
-								pos1, pos2 = index(lattice, i, conj=true, forward=fi, band=band), index(lattice, j, conj=false, forward=false, band=band)
+								pos1, pos2 = index(lattice, i, conj=true, branch=fi, band=band), index(lattice, j, conj=false, branch=:-, band=band)
 								t = exp(GTerm(pos1, pos2, coeff=η₂[i, j]))
 								mps1 = t * mps1
 								canonicalize!(mps1, alg=Orthogonalize(trunc = trunc))
 							end
-							mps2 = partialinfluencefunctional(lattice, i, η[i, 1:lattice.k], η₂[i, 1:lattice.k], band=band, fi=fi)
+							mps2 = partialinfluencefunctional(lattice, i, η[i, 1:lattice.k], η₂[i, 1:lattice.k], band=band, b1=fi)
 							@test distance(mps1, mps2) / norm(mps1) <= 1.0e-5
 						end
 					end
 				end
-				for fj in (true, false)
+				for fj in (:+, :-)
 					for j in 1:lattice.k
 						for band in 1:lattice.bands
 							mps1 = GrassmannMPS(scalartype(lattice), length(lattice))
 							for i in 1:lattice.k
-								pos1, pos2 = index(lattice, i, conj=true, forward=true, band=band), index(lattice, j, conj=false, forward=fj, band=band)
+								pos1, pos2 = index(lattice, i, conj=true, branch=:+, band=band), index(lattice, j, conj=false, branch=fj, band=band)
 								t = exp(GTerm(pos1, pos2, coeff=η[i, j]))
 								mps1 = t * mps1
 								canonicalize!(mps1, alg=Orthogonalize(trunc = trunc))		
-								pos1, pos2 = index(lattice, i, conj=true, forward=false, band=band), index(lattice, j, conj=false, forward=fj, band=band)
+								pos1, pos2 = index(lattice, i, conj=true, branch=:-, band=band), index(lattice, j, conj=false, branch=fj, band=band)
 								t = exp(GTerm(pos1, pos2, coeff=η₂[i, j]))
 								mps1 = t * mps1
 								canonicalize!(mps1, alg=Orthogonalize(trunc = trunc))		
 							end
-							mps3 = partialinfluencefunctional(lattice, η[1:lattice.k, j], η₂[1:lattice.k, j], j, band=band, fj=fj)
+							mps3 = partialinfluencefunctional(lattice, η[1:lattice.k, j], η₂[1:lattice.k, j], j, band=band, b2=fj)
 							@test bond_dimension(mps3) == 2
 							@test distance(mps1, mps3) / norm(mps1) <= 1.0e-5
 						end

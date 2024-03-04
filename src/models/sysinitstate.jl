@@ -39,10 +39,10 @@ function systhermalstate_iterative!(gmps::GrassmannMPS, lattice::RealGrassmannLa
 
 
 	# # band, conj, forward
-	inds1 = [index(lattice, 1, band=band, conj=false, forward=true) for band in 1:lattice.bands]
-	inds2 = [index(lattice, 1, band=band, conj=true, forward=true) for band in lattice.bands:-1:1]
-	inds3 = [index(lattice, 1, band=band, conj=false, forward=false) for band in 1:lattice.bands]
-	inds4 = [index(lattice, 1, band=band, conj=true, forward=false) for band in lattice.bands:-1:1]
+	inds1 = [index(lattice, 1, band=band, conj=false, branch=:+) for band in 1:lattice.bands]
+	inds2 = [index(lattice, 1, band=band, conj=true, branch=:+) for band in lattice.bands:-1:1]
+	inds3 = [index(lattice, 1, band=band, conj=false, branch=:-) for band in 1:lattice.bands]
+	inds4 = [index(lattice, 1, band=band, conj=true, branch=:-) for band in lattice.bands:-1:1]
 
 	inds = vcat(inds1, inds2, inds3, inds4)
 	# println(inds)

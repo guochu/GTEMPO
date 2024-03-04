@@ -14,32 +14,32 @@ spectrum_func(D) = SpectrumFunction(ω -> J(D, ω), lb = -D, ub = D)
 
 function cached_vacuum(lattice::RealGrassmannLattice, i::Int, A::GrassmannMPS, B::GrassmannMPS...; 
             cache=environments(lattice, A, B...))
-    pos1, pos2 = index(lattice, i, conj=false, forward=true, band=1), index(lattice, i, conj=true, forward=true, band=1)
-    pos1′, pos2′ = index(lattice, i, conj=false, forward=true, band=2), index(lattice, i, conj=true, forward=true, band=2)
+    pos1, pos2 = index(lattice, i, conj=false, branch=:+, band=1), index(lattice, i, conj=true, branch=:+, band=1)
+    pos1′, pos2′ = index(lattice, i, conj=false, branch=:+, band=2), index(lattice, i, conj=true, branch=:+, band=2)
     t = GTerm(pos1, pos2, pos1′, pos2′, coeff=1)
     return expectationvalue(t, cache)
 end
 
 function cached_nup(lattice::RealGrassmannLattice, i::Int, A::GrassmannMPS, B::GrassmannMPS...; 
             cache=environments(lattice, A, B...))
-    pos1, pos2 = index(lattice, i, conj=false, forward=true, band=1), index(lattice, i, conj=true, forward=false, band=1)
-    pos1′, pos2′ = index(lattice, i, conj=false, forward=true, band=2), index(lattice, i, conj=true, forward=true, band=2)
+    pos1, pos2 = index(lattice, i, conj=false, branch=:+, band=1), index(lattice, i, conj=true, branch=:-, band=1)
+    pos1′, pos2′ = index(lattice, i, conj=false, branch=:+, band=2), index(lattice, i, conj=true, branch=:+, band=2)
     t = GTerm(pos1, pos2, pos1′, pos2′, coeff=1)
     return expectationvalue(t, cache)
 end
 
 function cached_ndown(lattice::RealGrassmannLattice, i::Int, A::GrassmannMPS, B::GrassmannMPS...; 
             cache=environments(lattice, A, B...))
-    pos1, pos2 = index(lattice, i, conj=false, forward=true, band=1), index(lattice, i, conj=true, forward=true, band=1)
-    pos1′, pos2′ = index(lattice, i, conj=false, forward=true, band=2), index(lattice, i, conj=true, forward=false, band=2)
+    pos1, pos2 = index(lattice, i, conj=false, branch=:+, band=1), index(lattice, i, conj=true, branch=:+, band=1)
+    pos1′, pos2′ = index(lattice, i, conj=false, branch=:+, band=2), index(lattice, i, conj=true, branch=:-, band=2)
     t = GTerm(pos1, pos2, pos1′, pos2′, coeff=1)
     return expectationvalue(t, cache)
 end
 
 function cached_nn(lattice::RealGrassmannLattice, i::Int, A::GrassmannMPS, B::GrassmannMPS...; 
             cache=environments(lattice, A, B...))
-    pos1, pos2 = index(lattice, i, conj=false, forward=true, band=1), index(lattice, i, conj=true, forward=false, band=1)
-    pos1′, pos2′ = index(lattice, i, conj=false, forward=true, band=2), index(lattice, i, conj=true, forward=false, band=2)
+    pos1, pos2 = index(lattice, i, conj=false, branch=:+, band=1), index(lattice, i, conj=true, branch=:-, band=1)
+    pos1′, pos2′ = index(lattice, i, conj=false, branch=:+, band=2), index(lattice, i, conj=true, branch=:-, band=2)
     t = GTerm(pos1, pos2, pos1′, pos2′, coeff=1)
     return expectationvalue(t, cache)
 end
@@ -103,8 +103,8 @@ function main(t::Real, t₀::Real=t/2; U=1., ϵ_d=U/2, δt=0.05, β=40, order=6,
 
 
 	for i in 1:length(gf_ts)
-		g₁[i] = cached_gf(lattice, N₀+i, N₀, mpsK, mpsI1, mpsI2, cache=cache, c1=false, c2=true, f1=true, f2=true)
-		l₁[i] = cached_gf(lattice, N₀, N₀+i, mpsK, mpsI1, mpsI2, cache=cache, c1=true, c2=false, f1=false, f2=true)
+		g₁[i] = cached_gf(lattice, N₀+i, N₀, mpsK, mpsI1, mpsI2, cache=cache, c1=false, c2=true, b1=:+, b2=:+)
+		l₁[i] = cached_gf(lattice, N₀, N₀+i, mpsK, mpsI1, mpsI2, cache=cache, c1=true, c2=false, b1=:-, b2=:+)
 	end
 
 

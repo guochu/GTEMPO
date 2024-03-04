@@ -49,10 +49,10 @@ println("------------------------------------")
 
 				Z1 = integrate(lattice, A, B, C, D)
 				for i in 1:lattice.k, j in 1:lattice.k
-					for f1 in (true, false), f2 in (true, false), c1 in (true, false), c2 in (true, false)
+					for f1 in (:+, :-), f2 in (:+, :-), c1 in (true, false), c2 in (true, false)
 						if !((i == j) && (f1 == f2) && (c1 == c2))
-							g1 = gf(lattice, i, j, A, B, C, D, c1=c1, c2=c2, f1=f1, f2=f2, Z=Z1)
-							g2 = gf(lattice, i, j, A, B, C, D, c1=c1, c2=c2, f1=f1, f2=f2, alg=BMPSIntegrate(), Z=Z1)
+							g1 = gf(lattice, i, j, A, B, C, D, c1=c1, c2=c2, b1=f1, b2=f2, Z=Z1)
+							g2 = gf(lattice, i, j, A, B, C, D, c1=c1, c2=c2, b1=f1, b2=f2, alg=BMPSIntegrate(), Z=Z1)
 							@test abs(g1-g2)/abs(g1) < rtol
 						end
 					end
@@ -60,10 +60,10 @@ println("------------------------------------")
 
 				Z1 = integrate(lattice, [A, B, C], D)
 				for i in 1:lattice.k, j in 1:lattice.k
-					for f1 in (true, false), f2 in (true, false), c1 in (true, false), c2 in (true, false)
+					for f1 in (:+, :-), f2 in (:+, :-), c1 in (true, false), c2 in (true, false)
 						if !((i == j) && (f1 == f2) && (c1 == c2))
-							g1 = gf(lattice, i, j, [A, B, C], D, c1=c1, c2=c2, f1=f1, f2=f2, Z=Z1)
-							g2 = gf(lattice, i, j, [A, B, C], D, c1=c1, c2=c2, f1=f1, f2=f2, Z=Z1, alg=BMPSIntegrate())
+							g1 = gf(lattice, i, j, [A, B, C], D, c1=c1, c2=c2, b1=f1, b2=f2, Z=Z1)
+							g2 = gf(lattice, i, j, [A, B, C], D, c1=c1, c2=c2, b1=f1, b2=f2, Z=Z1, alg=BMPSIntegrate())
 							@test abs(g1-g2)/abs(g1) < rtol
 						end
 					end

@@ -1,6 +1,6 @@
-function partialinfluencefunctional(lattice::MixedGrassmannLattice, i::Int, cols_f::AbstractVector, cols_b::AbstractVector, cols_i::AbstractVector; bi::Symbol, band::Int=1)
+function partialinfluencefunctional(lattice::MixedGrassmannLattice, i::Int, cols_f::AbstractVector, cols_b::AbstractVector, cols_i::AbstractVector; b1::Symbol, band::Int=1)
 	@assert length(cols_f) == length(cols_b)
-	row = index(lattice, i, band=band, conj=true, branch=bi)
+	row = index(lattice, i, band=band, conj=true, branch=b1)
 	cols = eltype(cols_f)[]
 	col_pos = Int[]
 

@@ -15,6 +15,24 @@ index(x::RealCorrelationFunction, i::Int, j::Int; f1::Bool, f2::Bool) = branch(x
 
 Base.:+(A::RealCorrelationFunction, B::RealCorrelationFunction) = RealCorrelationFunction(A.G₊₊ + B.G₊₊, A.G₊₋ + B.G₊₋, A.G₋₊ + B.G₋₊, A.G₋₋ + B.G₋₋)
 branch(x::RealCorrelationFunction, f1::Bool, f2::Bool) = ifelse(f1, ifelse(f2, x.G₊₊, x.G₊₋), ifelse(f2, x.G₋₊, x.G₋₋))
+function branch(x::RealCorrelationFunction, b1::Symbol, b2::Symbol)
+    (b1 in (:+, :-)) || throw(ArgumentError("branch must be :+ or :-"))
+    (b2 in (:+, :-)) || throw(ArgumentError("branch must be :+ or :-"))
+    if b1 == :+
+        if b2 == :+
+            return x.G₊₊
+        else
+            return x.G₊₋
+        end
+    else
+        if b2 == :+
+            return x.G₋₊
+        else
+            return x.G₋₋
+        end
+    end
+end
+branch(x::RealCorrelationFunction; b1::Symbol, b2::Symbol) = branch(x, b1, b2)
 
 function Gt(f0::SpectrumFunction, β::Real, N::Int, δt::Real, μ::Real)
     f, lb, ub = f0.f, lowerbound(f0), upperbound(f0)

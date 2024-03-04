@@ -25,15 +25,15 @@ function sysdynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::
 	## ε part
 	a = exp(-im*δt*(μ-U))
 	for i in 1:lattice.k-1
-		pos1, pos2 = index(lattice, i+1, conj=true, forward=true, band=2), index(lattice, i, conj=false, forward=true, band=2)
+		pos1, pos2 = index(lattice, i+1, conj=true, branch=:+, band=2), index(lattice, i, conj=false, branch=:+, band=2)
 		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
 
-		pos1, pos2 = index(lattice, i+1, conj=true, forward=true, band=1), index(lattice, i, conj=false, forward=true, band=1)
+		pos1, pos2 = index(lattice, i+1, conj=true, branch=:+, band=1), index(lattice, i, conj=false, branch=:+, band=1)
 		apply!(exp(GTerm(pos1, pos2, coeff=1)), gmps)
 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
 
-		pos1, pos2 = index(lattice, i+1, conj=true, forward=true, band=3), index(lattice, i, conj=false, forward=true, band=3)
+		pos1, pos2 = index(lattice, i+1, conj=true, branch=:+, band=3), index(lattice, i, conj=false, branch=:+, band=3)
 		apply!(exp(GTerm(pos1, pos2, coeff=1)), gmps)
 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
 	end
@@ -41,19 +41,19 @@ function sysdynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::
 	## J part
 	a = -im*δt*J
 	for i in 1:lattice.k-1
-		pos1, pos2 = index(lattice, i+1, conj=true, forward=true, band=2), index(lattice, i, conj=false, forward=true, band=1)
+		pos1, pos2 = index(lattice, i+1, conj=true, branch=:+, band=2), index(lattice, i, conj=false, branch=:+, band=1)
 		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
 
-		pos1, pos2 = index(lattice, i+1, conj=true, forward=true, band=1), index(lattice, i, conj=false, forward=true, band=2)
+		pos1, pos2 = index(lattice, i+1, conj=true, branch=:+, band=1), index(lattice, i, conj=false, branch=:+, band=2)
 		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
 
-		pos1, pos2 = index(lattice, i+1, conj=true, forward=true, band=2), index(lattice, i, conj=false, forward=true, band=3)
+		pos1, pos2 = index(lattice, i+1, conj=true, branch=:+, band=2), index(lattice, i, conj=false, branch=:+, band=3)
 		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
 
-		pos1, pos2 = index(lattice, i+1, conj=true, forward=true, band=3), index(lattice, i, conj=false, forward=true, band=2)
+		pos1, pos2 = index(lattice, i+1, conj=true, branch=:+, band=3), index(lattice, i, conj=false, branch=:+, band=2)
 		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
 	end
@@ -61,17 +61,17 @@ function sysdynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::
 	## U part
 	a = -im*δt*U
 	for i in 1:lattice.k-1
-		pos1 = index(lattice, i+1, conj=true, forward=true, band=1)
-		pos2 = index(lattice, i+1, conj=true, forward=true, band=2)
-		pos3 = index(lattice, i, conj=false, forward=true, band=2)
-		pos4 = index(lattice, i, conj=false, forward=true, band=1)
+		pos1 = index(lattice, i+1, conj=true, branch=:+, band=1)
+		pos2 = index(lattice, i+1, conj=true, branch=:+, band=2)
+		pos3 = index(lattice, i, conj=false, branch=:+, band=2)
+		pos4 = index(lattice, i, conj=false, branch=:+, band=1)
 		apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=a)), gmps)
 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))	
 
-		pos1 = index(lattice, i+1, conj=true, forward=true, band=3)
-		pos2 = index(lattice, i+1, conj=true, forward=true, band=2)
-		pos3 = index(lattice, i, conj=false, forward=true, band=2)
-		pos4 = index(lattice, i, conj=false, forward=true, band=3)
+		pos1 = index(lattice, i+1, conj=true, branch=:+, band=3)
+		pos2 = index(lattice, i+1, conj=true, branch=:+, band=2)
+		pos3 = index(lattice, i, conj=false, branch=:+, band=2)
+		pos4 = index(lattice, i, conj=false, branch=:+, band=3)
 		apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=a)), gmps)
 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))					
 	end
@@ -80,15 +80,15 @@ function sysdynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::
 	## ε part
 	a = exp(im*δt*(μ-U))
 	for i in 1:lattice.k-1
-		pos1, pos2 = index(lattice, i, conj=true, forward=false, band=2), index(lattice, i+1, conj=false, forward=false, band=2)
+		pos1, pos2 = index(lattice, i, conj=true, branch=:-, band=2), index(lattice, i+1, conj=false, branch=:-, band=2)
 		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
 
-		pos1, pos2 = index(lattice, i, conj=true, forward=false, band=1), index(lattice, i+1, conj=false, forward=false, band=1)
+		pos1, pos2 = index(lattice, i, conj=true, branch=:-, band=1), index(lattice, i+1, conj=false, branch=:-, band=1)
 		apply!(exp(GTerm(pos1, pos2, coeff=1)), gmps)
 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
 
-		pos1, pos2 = index(lattice, i, conj=true, forward=false, band=3), index(lattice, i+1, conj=false, forward=false, band=3)
+		pos1, pos2 = index(lattice, i, conj=true, branch=:-, band=3), index(lattice, i+1, conj=false, branch=:-, band=3)
 		apply!(exp(GTerm(pos1, pos2, coeff=1)), gmps)
 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
 	end
@@ -96,19 +96,19 @@ function sysdynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::
 	## J part
 	a = im*δt*J
 	for i in 1:lattice.k-1
-		pos1, pos2 = index(lattice, i, conj=true, forward=false, band=2), index(lattice, i+1, conj=false, forward=false, band=1)
+		pos1, pos2 = index(lattice, i, conj=true, branch=:-, band=2), index(lattice, i+1, conj=false, branch=:-, band=1)
 		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
 
-		pos1, pos2 = index(lattice, i, conj=true, forward=false, band=1), index(lattice, i+1, conj=false, forward=false, band=2)
+		pos1, pos2 = index(lattice, i, conj=true, branch=:-, band=1), index(lattice, i+1, conj=false, branch=:-, band=2)
 		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
 
-		pos1, pos2 = index(lattice, i, conj=true, forward=false, band=2), index(lattice, i+1, conj=false, forward=false, band=3)
+		pos1, pos2 = index(lattice, i, conj=true, branch=:-, band=2), index(lattice, i+1, conj=false, branch=:-, band=3)
 		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
 
-		pos1, pos2 = index(lattice, i, conj=true, forward=false, band=3), index(lattice, i+1, conj=false, forward=false, band=2)
+		pos1, pos2 = index(lattice, i, conj=true, branch=:-, band=3), index(lattice, i+1, conj=false, branch=:-, band=2)
 		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
 	end
@@ -116,17 +116,17 @@ function sysdynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::
 	## U part
 	a = im*δt*U
 	for i in 1:lattice.k-1
-		pos1 = index(lattice, i, conj=true, forward=false, band=1)
-		pos2 = index(lattice, i, conj=true, forward=false, band=2)
-		pos3 = index(lattice, i+1, conj=false, forward=false, band=2)
-		pos4 = index(lattice, i+1, conj=false, forward=false, band=1)
+		pos1 = index(lattice, i, conj=true, branch=:-, band=1)
+		pos2 = index(lattice, i, conj=true, branch=:-, band=2)
+		pos3 = index(lattice, i+1, conj=false, branch=:-, band=2)
+		pos4 = index(lattice, i+1, conj=false, branch=:-, band=1)
 		apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=a)), gmps)
 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))	
 
-		pos1 = index(lattice, i, conj=true, forward=false, band=3)
-		pos2 = index(lattice, i, conj=true, forward=false, band=2)
-		pos3 = index(lattice, i+1, conj=false, forward=false, band=2)
-		pos4 = index(lattice, i+1, conj=false, forward=false, band=3)
+		pos1 = index(lattice, i, conj=true, branch=:-, band=3)
+		pos2 = index(lattice, i, conj=true, branch=:-, band=2)
+		pos3 = index(lattice, i+1, conj=false, branch=:-, band=2)
+		pos4 = index(lattice, i+1, conj=false, branch=:-, band=3)
 		apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=a)), gmps)
 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))					
 	end
