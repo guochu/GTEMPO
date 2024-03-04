@@ -6,8 +6,7 @@ function gf(lattice::ImagGrassmannLattice, i::Int, A::Union{GrassmannMPS, Vector
 	A2 = _mult_A(t, A)
 	return integrate(lattice, A2, B..., alg=alg)/Z
 end
-
-
+        
 
 function parallel_gf(lattice::ImagGrassmannLattice, i::Int, A::Vector{<:GrassmannMPS}, B::GrassmannMPS...; 
             band::Int=1, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Real = parallel_integrate(lattice, A, B..., alg=alg) )

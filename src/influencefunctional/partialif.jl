@@ -21,6 +21,25 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order
 	return gmps
 end
 
+"""
+	hybriddynamics(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::MixedCorrelationFunction; band::Int, trunc)
+
+real-time MPS-IF for a single band 
+"""
+function hybriddynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::MixedCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
+	k = lattice.k
+	for i in 1:k
+		for b1 in (:+, :-, :τ)
+			cols_f = [index(corr, i, j, b1=b1, b2=:+) for j in 1:k]
+			cols_b = [index(corr, i, j, b1=b1, b2=:-) for j in 1:k]
+			cols_i = [index(corr, i, j, b1=b1, b2=:τ) for j in 1:k]
+			tmp = partialinfluencefunctional(lattice, i, cols_f, cols_b, cols_i, bi=b1, band=band)
+			gmps = mult!(gmps, tmp, trunc=trunc)
+		end
+	end
+	return gmps		
+end
+
 
 """
 	hybriddynamics(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction; band::Int, trunc)
