@@ -26,7 +26,7 @@ Base.:+(A::MixedCorrelationFunction, B::MixedCorrelationFunction) = MixedCorrela
 isize(x::MixedCorrelationFunction) = length(A.ξⱼₖ)
 rsize(x::MixedCorrelationFunction) = length(A.ηⱼₖ)
 
-function Gm(f0::SpectrumFunction; β::Real, Nτ::Int, t::Real, Nt::Int, μ::Real=0, δτ::Real=β/Nτ)
+function Δm(f0::SpectrumFunction; β::Real, Nτ::Int, t::Real, Nt::Int, μ::Real=0, δτ::Real=β/Nτ)
 	f, lb, ub = f0.f, lowerbound(f0), upperbound(f0)
     g₁(ε) = _g₁(β, μ, ε); g₂(ε) = _g₂(β, μ, ε)
     # real time

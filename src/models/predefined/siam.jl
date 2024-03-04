@@ -1,4 +1,8 @@
+"""
+	struct SISB{B <: AbstractFermionicBath}
 
+Single-orbital Anderson impurity model with one bath
+"""
 struct SISB{B <: AbstractFermionicBath} <: AbstractImpurityModel
 	bath::B
 	U::Float64

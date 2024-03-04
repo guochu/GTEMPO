@@ -1,5 +1,5 @@
-Gτ(bath::AbstractFermionicBath; N::Int, δτ::Real=bath.β/N) = Gτ(bath.spectrum, β=bath.β, N=N, μ=bath.μ, δτ=δτ)
-Gτ(f::SpectrumFunction; β::Real, N::Int, μ::Real=0, δτ::Real=β/N) = Gτ(f, β, N, μ, δτ)
+Δτ(bath::AbstractFermionicBath; N::Int, δτ::Real=bath.β/N) = Δτ(bath.spectrum, β=bath.β, N=N, μ=bath.μ, δτ=δτ)
+Δτ(f::SpectrumFunction; β::Real, N::Int, μ::Real=0, δτ::Real=β/N) = Δτ(f, β, N, μ, δτ)
 
 struct ImagCorrelationFunction{M<:AbstractMatrix{Float64}} <: AbstractCorrelationFunction
     data::M
@@ -12,13 +12,13 @@ end
 Base.:+(A::ImagCorrelationFunction, B::ImagCorrelationFunction) = ImagCorrelationFunction(A.data + B.data)
 index(x::ImagCorrelationFunction, i::Int, j::Int) = x.data[i, j]
 
-# Gτ(f::SpectrumFunction; β::Real, N::Int) = Gτ2(f, β, N)
+
 """
-    Gτ(f, β::Real, N::Int)
+    Δτ(f, β::Real, N::Int)
 
 f is the spectrum function
 """
-function Gτ(f0::SpectrumFunction, β::Real, N::Int, μ::Real, δτ::Real=β / N)
+function Δτ(f0::SpectrumFunction, β::Real, N::Int, μ::Real, δτ::Real=β / N)
     f′, lb, ub = f0.f, lowerbound(f0), upperbound(f0)
     β = convert(Float64, β)
     μ = convert(Float64, μ)

@@ -78,8 +78,8 @@ function main_partial(t; ϵ_d=0, β=20., order=7, δt = 0.05)
 
 	cache = environments(lattice, mpsK, mpsI)
 
-	greater = [cached_gf(lattice, k, 1, mpsK, mpsI, cache=cache, c1=false, c2=true, f1=true, f2=true, band=1) for k in 2:lattice.k]
-	lesser = [cached_gf(lattice, 1, k, mpsK, mpsI, cache=cache, c1=true, c2=false, f1=false, f2=true, band=1) for k in 2:lattice.k]
+	greater = [cached_Gt(lattice, k, 1, mpsK, mpsI, cache=cache, c1=false, c2=true, b1=:+, b2=:+, band=1) for k in 2:lattice.k]
+	lesser = [cached_Gt(lattice, 1, k, mpsK, mpsI, cache=cache, c1=true, c2=false, b1=:-, b2=:+, band=1) for k in 2:lattice.k]
 	ns = cached_occupation(lattice, mpsK, mpsI, cache=cache)
 
 	ts = [i*δt for i in 1:N]
@@ -146,8 +146,8 @@ function main_ti(t; ϵ_d=0, β = 20., order=7, prony=5, k=5, δt = 0.05)
 
 	cache = environments(lattice, mpsK, mpsI)
 
-	greater = [cached_gf(lattice, k, 1, mpsK, mpsI, cache=cache, c1=false, c2=true, f1=true, f2=true, band=1) for k in 2:lattice.k]
-	lesser = [cached_gf(lattice, 1, k, mpsK, mpsI, cache=cache, c1=true, c2=false, f1=false, f2=true, band=1) for k in 2:lattice.k]
+	greater = [cached_Gt(lattice, k, 1, mpsK, mpsI, cache=cache, c1=false, c2=true, b1=:+, b2=:+, band=1) for k in 2:lattice.k]
+	lesser = [cached_Gt(lattice, 1, k, mpsK, mpsI, cache=cache, c1=true, c2=false, b1=:-, b2=:+, band=1) for k in 2:lattice.k]
 	ns = cached_occupation(lattice, mpsK, mpsI, cache=cache)
 
 	ts = [i*δt for i in 1:N]

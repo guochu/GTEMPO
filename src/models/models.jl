@@ -1,3 +1,4 @@
+# interface
 abstract type AbstractImpurityModel end
 sys_size(x::AbstractImpurityModel) = error("sys_size not implemented for model type $(typeof(x))")
 
@@ -56,9 +57,11 @@ function systhermalstate!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, mod
 	return systhermalstate_iterative!(gmps, lattice, model; kwargs...)
 end 
 
-include("boundary.jl")
-include("sysdynamics.jl")
-include("siam.jl")
-include("irlm.jl")
-include("skmodel.jl")
+include("boundarycondition.jl")
+include("accsysdynamics.jl")
 include("sysinitstate.jl")
+
+# predefined models
+include("predefined/siam.jl")
+include("predefined/irlm.jl")
+include("predefined/skmodel.jl")

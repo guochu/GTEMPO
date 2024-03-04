@@ -89,7 +89,7 @@ function main(β; ϵ_d=1., δτ=0.1, order=8, chi=1024)
 	println("bond dimension of mpsK is ", bond_dimension(mpsKs[1]), ", number of Ks ", length(mpsKs))
 
 
-	@time g = parallel_gf(lattice, mpsKs, mpsI)
+	@time g = parallel_Gτ(lattice, mpsKs, mpsI)
 
 	data_path = "result/toulouse_tempo_beta$(β)_mu$(ϵ_d)_N$(N)_order$(order)_chi$(chi).json"
 

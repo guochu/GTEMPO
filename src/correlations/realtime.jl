@@ -1,5 +1,5 @@
-Gt(bath::AbstractFermionicBath; N::Int, t::Real) = Gt(bath.spectrum, β=bath.β, N=N, t=t, μ=bath.μ)
-Gt(f::SpectrumFunction; β::Real, N::Int, t::Real, μ::Real=0) = Gt(f, β, N, t/N, μ)
+Δt(bath::AbstractFermionicBath; N::Int, t::Real) = Δt(bath.spectrum, β=bath.β, N=N, t=t, μ=bath.μ)
+Δt(f::SpectrumFunction; β::Real, N::Int, t::Real, μ::Real=0) = Δt(f, β, N, t/N, μ)
 
 struct RealCorrelationFunction{A<:AbstractMatrix{ComplexF64}, B<:AbstractMatrix{ComplexF64}, C<:AbstractMatrix{ComplexF64}, D<:AbstractMatrix{ComplexF64}} <: AbstractCorrelationFunction
     G₊₊::A
@@ -34,7 +34,7 @@ function branch(x::RealCorrelationFunction, b1::Symbol, b2::Symbol)
 end
 branch(x::RealCorrelationFunction; b1::Symbol, b2::Symbol) = branch(x, b1, b2)
 
-function Gt(f0::SpectrumFunction, β::Real, N::Int, δt::Real, μ::Real)
+function Δt(f0::SpectrumFunction, β::Real, N::Int, δt::Real, μ::Real)
     f, lb, ub = f0.f, lowerbound(f0), upperbound(f0)
     β = convert(Float64, β)
     μ = convert(Float64, μ)

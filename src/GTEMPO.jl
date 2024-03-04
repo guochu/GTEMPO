@@ -13,7 +13,7 @@ export LayoutStyle, TimeLocalLayout, BandLocalLayout, BranchLocalLayout
 export A1A1B1B1, AABB, A1B1B1A1, ABBA, A2A2A1A1B2B2B1B1
 export A1A1a1a1B1B1b1b1, AAaaBBbb, A1a1B1b1b1B1a1A1, AaBbbBaA, A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1
 export A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2, A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2 #band local ordering
-export A1A1B1B1_A1A1a1a1B1B1b1b1, A1B1B1A1_A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2 #mixedtime lattice
+export A1A1B1B1_A1A1a1a1B1B1b1b1A2A2a2a2B2B2b2b2, AABB_AAaaBBbb, A1B1B1A1_A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2 #mixedtime lattice
 export changeordering, toadjacentordering
 
 export vacuumstate, makestep, timesteps
@@ -21,7 +21,7 @@ export ImagGrassmannLattice1Order, RealGrassmannLattice1Order, RealGrassmannLatt
 export IntegrationAlgorithm, ExactIntegrate, BMPSIntegrate, Zvalue
 
 # correlation functions
-export Gτ, Gt, Gm, branch, CorrelationMatrix, correlationfunction
+export Δτ, Δt, Δm, branch, CorrelationMatrix, correlationfunction
 
 # influence functional
 export InfluenceFunctionalAlgorithm, PartialIF, TranslationInvariantIF
@@ -30,7 +30,7 @@ export influenceoperator, influenceoperatorexponential, differentialinfluencefun
 export hybriddynamics, hybriddynamics!, hybriddynamicsstepper, hybriddynamicsstepper!
 
 # GF and other observables
-export gf, parallel_gf, occupation, electriccurrent, electriccurrent_fast
+export Gτ, parallel_Gτ, Gt, parallel_Gt, occupation, electriccurrent, electriccurrent_fast
 export cached_gf, cached_occupation, cached_electriccurrent, cached_electriccurrent_fast
 
 # utilities for TEMPO

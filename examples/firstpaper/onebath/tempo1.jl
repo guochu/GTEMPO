@@ -52,8 +52,8 @@ function main(β, δt=0.05, order=7)
 		# observables
 		cache = environments(lattice, mpsK′, mpsI)
 		@time ns[k-1] = cached_occupation(lattice, k-1, mpsK′, mpsI, cache=cache, band=band)
-		@time g₁[k-1] = cached_gf(lattice, k, 1, mpsK′, mpsI, cache=cache, c1=false, c2=true, b1=:+, b2=:+, band=band)
-		@time l₁[k-1] = cached_gf(lattice, 1, k, mpsK′, mpsI, cache=cache, c1=true, c2=false, b1=:-, b2=:+, band=band)
+		@time g₁[k-1] = cached_Gt(lattice, k, 1, mpsK′, mpsI, cache=cache, c1=false, c2=true, b1=:+, b2=:+, band=band)
+		@time l₁[k-1] = cached_Gt(lattice, 1, k, mpsK′, mpsI, cache=cache, c1=true, c2=false, b1=:-, b2=:+, band=band)
 		bds[k-1] = bond_dimension(mpsI)
 
 

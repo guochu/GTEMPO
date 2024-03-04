@@ -16,8 +16,8 @@ println("------------------------------------")
 				Z = integrate(lattice, A, B)
 				for i in 1:lattice.k
 					for band in 1:lattice.bands
-						g1 = gf(lattice, i, A, B, band=band, Z=Z)
-						g2 = cached_gf(lattice, i, A, B, cache=cache, band=band)
+						g1 = Gτ(lattice, i, A, B, band=band, Z=Z)
+						g2 = cached_Gτ(lattice, i, A, B, cache=cache, band=band)
 						@test abs(g1-g2)/abs(g1) < rtol
 					end
 				end
@@ -26,8 +26,8 @@ println("------------------------------------")
 				Z = integrate(lattice, [A, C], B)
 				for i in 1:lattice.k
 					for band in 1:lattice.bands
-						g1 = gf(lattice, i, [A, C], B, band=band, Z=Z)
-						g2 = cached_gf(lattice, i, [A,C], B, cache=cache, band=band)
+						g1 = Gτ(lattice, i, [A, C], B, band=band, Z=Z)
+						g2 = cached_Gτ(lattice, i, [A,C], B, cache=cache, band=band)
 						@test abs(g1-g2)/abs(g1) < rtol
 					end
 				end				
@@ -47,8 +47,8 @@ println("------------------------------------")
 				for i in 1:lattice.k, j in 1:lattice.k
 					for f1 in (:+, :-), f2 in (:+, :-), c1 in (true, false), c2 in (true, false)
 						if !((i == j) && (f1 == f2) && (c1 == c2))
-							g1 = gf(lattice, i, j, A, B, c1=c1, c2=c2, b1=f1, b2=f2, Z=Z)
-							g2 = cached_gf(lattice, i, j, A, B, cache=cache, c1=c1, c2=c2, b1=f1, b2=f2)
+							g1 = Gt(lattice, i, j, A, B, c1=c1, c2=c2, b1=f1, b2=f2, Z=Z)
+							g2 = cached_Gt(lattice, i, j, A, B, cache=cache, c1=c1, c2=c2, b1=f1, b2=f2)
 							@test abs(g1-g2)/abs(g1) < rtol
 						end
 					end
@@ -59,8 +59,8 @@ println("------------------------------------")
 				for i in 1:lattice.k, j in 1:lattice.k
 					for f1 in (:+, :-), f2 in (:+, :-), c1 in (true, false), c2 in (true, false)
 						if !((i == j) && (f1 == f2) && (c1 == c2))
-							g1 = gf(lattice, i, j, [A,C], B, c1=c1, c2=c2, b1=f1, b2=f2, Z=Z)
-							g2 = cached_gf(lattice, i, j, [A,C], B, cache=cache, c1=c1, c2=c2, b1=f1, b2=f2)
+							g1 = Gt(lattice, i, j, [A,C], B, c1=c1, c2=c2, b1=f1, b2=f2, Z=Z)
+							g2 = cached_Gt(lattice, i, j, [A,C], B, cache=cache, c1=c1, c2=c2, b1=f1, b2=f2)
 							@test abs(g1-g2)/abs(g1) < rtol
 						end
 					end
@@ -80,8 +80,8 @@ println("------------------------------------")
 				Z = integrate(lattice, A, B, C)
 				for i in 1:lattice.k
 					for band in 1:lattice.bands
-						g1 = gf(lattice, i, A, B, C, band=band, Z=Z)
-						g2 = cached_gf(lattice, i, A, B, C, cache=cache, band=band)
+						g1 = Gτ(lattice, i, A, B, C, band=band, Z=Z)
+						g2 = cached_Gτ(lattice, i, A, B, C, cache=cache, band=band)
 						@test abs(g1-g2)/abs(g1) < rtol
 					end
 				end
@@ -101,8 +101,8 @@ println("------------------------------------")
 				for i in 1:lattice.k, j in 1:lattice.k
 					for f1 in (:+, :-), f2 in (:+, :-), c1 in (true, false), c2 in (true, false)
 						if !((i == j) && (f1 == f2) && (c1 == c2))
-							g1 = gf(lattice, i, j, A, B, C, c1=c1, c2=c2, b1=f1, b2=f2, Z=Z)
-							g2 = cached_gf(lattice, i, j, A, B, C, cache=cache, c1=c1, c2=c2, b1=f1, b2=f2)
+							g1 = Gt(lattice, i, j, A, B, C, c1=c1, c2=c2, b1=f1, b2=f2, Z=Z)
+							g2 = cached_Gt(lattice, i, j, A, B, C, cache=cache, c1=c1, c2=c2, b1=f1, b2=f2)
 							@test abs(g1-g2)/abs(g1) < rtol
 						end
 					end
@@ -130,8 +130,8 @@ end
 				Z = integrate(lattice, AB, CD)
 				for i in 1:lattice.k
 					for band in 1:lattice.bands
-						g1 = gf(lattice, i, AB, CD, band=band, Z=Z)
-						g2 = cached_gf(lattice, i, A, B, C, D, cache=cache, band=band)
+						g1 = Gτ(lattice, i, AB, CD, band=band, Z=Z)
+						g2 = cached_Gτ(lattice, i, A, B, C, D, cache=cache, band=band)
 						@test abs(g1-g2)/abs(g1) < rtol
 					end
 				end
@@ -159,8 +159,8 @@ end
 				Z = integrate(lattice, ABC, DE)
 				for i in 1:lattice.k
 					for band in 1:lattice.bands
-						g1 = gf(lattice, i, ABC, DE, band=band, Z=Z)
-						g2 = cached_gf(lattice, i, E,D,C,B,A, cache=cache, band=band)
+						g1 = Gτ(lattice, i, ABC, DE, band=band, Z=Z)
+						g2 = cached_Gτ(lattice, i, E,D,C,B,A, cache=cache, band=band)
 						@test abs(g1-g2)/abs(g1) < rtol
 					end
 				end

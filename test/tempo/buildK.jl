@@ -60,8 +60,8 @@ end
 				@test _error(Z1, Z2, tol) < tol
 				for i in 1:lattice.N
 					for band in 1:lattice.bands
-						g1 = gf(lattice_scaling, (i-1)*scaling+1, K1, band=band, Z=Z1)
-						g2 = gf(lattice, i, K2, band=band, Z=Z2)
+						g1 = Gτ(lattice_scaling, (i-1)*scaling+1, K1, band=band, Z=Z1)
+						g2 = Gτ(lattice, i, K2, band=band, Z=Z2)
 						@test _error(g1, g2, tol) < tol
 					end
 				end	
@@ -85,8 +85,8 @@ end
 					for j in 1:lattice.k-1
 						for f1 in (:+, :-), f2 in (:+, :-)
 							for band in 1:lattice.bands
-								g1 = gf(lattice_scaling, (i-1)*scaling+1, (j-1)*scaling+1, K1, b1=f1, b2=f2, band=band, Z=Z1)
-								g2 = gf(lattice, i, j, K2, b1=f1, b2=f2, band=band, Z=Z2)
+								g1 = Gt(lattice_scaling, (i-1)*scaling+1, (j-1)*scaling+1, K1, b1=f1, b2=f2, band=band, Z=Z1)
+								g2 = Gt(lattice, i, j, K2, b1=f1, b2=f2, band=band, Z=Z2)
 								@test _error(g1, g2, tol) < tol
 							end		
 						end
@@ -132,10 +132,10 @@ end
 			@test _error(Z1, Z3, tol) < tol
 			for i in 1:lattice.N
 				for band in 1:lattice.bands
-					g1 = gf(lattice_scaling, (i-1)*scaling+1, K1, band=band, Z=Z1)
-					g2 = gf(lattice, i, K2, band=band, Z=Z2)
+					g1 = Gτ(lattice_scaling, (i-1)*scaling+1, K1, band=band, Z=Z1)
+					g2 = Gτ(lattice, i, K2, band=band, Z=Z2)
 					@test _error(g1, g2, tol) < tol
-					g3 = gf(lattice, i, K3, band=band, Z=Z3)
+					g3 = Gτ(lattice, i, K3, band=band, Z=Z3)
 					@test _error(g1, g3, tol) < tol
 				end
 			end
@@ -168,10 +168,10 @@ end
 				@test _error(Z1, Z3, tol) < tol
 				for i in 1:lattice.N
 					for band in 1:lattice.bands
-						g1 = gf(lattice_scaling, (i-1)*scaling+1, K1, band=band, Z=Z1)
-						g2 = gf(lattice, i, K2, band=band, Z=Z2)
+						g1 = Gτ(lattice_scaling, (i-1)*scaling+1, K1, band=band, Z=Z1)
+						g2 = Gτ(lattice, i, K2, band=band, Z=Z2)
 						@test _error(g1, g2, tol) < tol
-						g3 = gf(lattice, i, K3, band=band, Z=Z3)
+						g3 = Gτ(lattice, i, K3, band=band, Z=Z3)
 						@test _error(g1, g3, tol) < tol
 					end
 				end
@@ -211,8 +211,8 @@ end
 				for j in 1:lattice.k-1
 					for f1 in (:+, :-), f2 in (:+, :-)
 						for band in 1:lattice.bands
-							g1 = gf(lattice_scaling, (i-1)*scaling+1, (j-1)*scaling+1, K1, b1=f1, b2=f2, band=band,Z=Z1)
-							g2 = gf(lattice, i, j, K2, b1=f1, b2=f2, band=band,Z=Z2)
+							g1 = Gt(lattice_scaling, (i-1)*scaling+1, (j-1)*scaling+1, K1, b1=f1, b2=f2, band=band,Z=Z1)
+							g2 = Gt(lattice, i, j, K2, b1=f1, b2=f2, band=band,Z=Z2)
 							@test _error(g1, g2, tol) < tol
 						end		
 					end
@@ -249,10 +249,10 @@ end
 				for j in 1:lattice.k-1
 					for f1 in (:+, :-), f2 in (:+, :-)
 						for band in 1:lattice.bands
-							g1 = gf(lattice_scaling, (i-1)*scaling+1, (j-1)*scaling+1, K1, b1=f1, b2=f2, band=band,Z=Z1)
-							g2 = gf(lattice, i, j, K2, b1=f1, b2=f2, band=band,Z=Z2)
+							g1 = Gt(lattice_scaling, (i-1)*scaling+1, (j-1)*scaling+1, K1, b1=f1, b2=f2, band=band,Z=Z1)
+							g2 = Gt(lattice, i, j, K2, b1=f1, b2=f2, band=band,Z=Z2)
 							@test _error(g1, g2, tol) < tol
-							g3 = gf(lattice, i, j, K3, b1=f1, b2=f2, band=band,Z=Z3)
+							g3 = Gt(lattice, i, j, K3, b1=f1, b2=f2, band=band,Z=Z3)
 							@test _error(g1, g3, tol) < tol
 						end		
 					end
@@ -288,10 +288,10 @@ end
 					for j in 1:lattice.k-1
 						for f1 in (:+, :-), f2 in (:+, :-)
 							for band in 1:lattice.bands
-								g1 = gf(lattice_scaling, (i-1)*scaling+1, (j-1)*scaling+1, K1, b1=f1, b2=f2, band=band,Z=Z1)
-								g2 = gf(lattice, i, j, K2, b1=f1, b2=f2, band=band,Z=Z2)
+								g1 = Gt(lattice_scaling, (i-1)*scaling+1, (j-1)*scaling+1, K1, b1=f1, b2=f2, band=band,Z=Z1)
+								g2 = Gt(lattice, i, j, K2, b1=f1, b2=f2, band=band,Z=Z2)
 								@test _error(g1, g2, tol) < tol
-								g3 = gf(lattice, i, j, K3, b1=f1, b2=f2, band=band,Z=Z3)
+								g3 = Gt(lattice, i, j, K3, b1=f1, b2=f2, band=band,Z=Z3)
 								@test _error(g1, g3, tol) < tol
 							end		
 						end
@@ -323,8 +323,8 @@ end
 					for j in 1:lattice.k-1
 						for f1 in (:+, :-), f2 in (:+, :-)
 							for band in 1:lattice.bands
-								g1 = gf(lattice_scaling, (i-1)*scaling+1, (j-1)*scaling+1, K1, b1=f1, b2=f2, band=band,Z=Z1)
-								g2 = gf(lattice, i, j, K2, b1=f1, b2=f2, band=band,Z=Z2)
+								g1 = Gt(lattice_scaling, (i-1)*scaling+1, (j-1)*scaling+1, K1, b1=f1, b2=f2, band=band,Z=Z1)
+								g2 = Gt(lattice, i, j, K2, b1=f1, b2=f2, band=band,Z=Z2)
 								@test _error(g1, g2, tol) < tol
 							end		
 						end

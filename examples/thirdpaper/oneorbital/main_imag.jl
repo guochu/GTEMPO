@@ -58,7 +58,7 @@ function main(β; U=1., ϵ_d=U/2, δτ=0.1, order=10, chi=1024)
 	println("bond dimension of mpsK is ", bond_dimension(mpsKs[1]), ", number of Ks ", length(mpsKs))
 
 
-	@time g = parallel_gf(lattice, mpsKs, mpsI1, mpsI2)
+	@time g = parallel_Gτ(lattice, mpsKs, mpsI1, mpsI2)
 
 	data_path = "result/anderson_tempo1_beta$(β)_U$(U)_mu$(ϵ_d)_N$(N)_dt$(δτ)_imag_order$(order)_chi$(chi).json"
 

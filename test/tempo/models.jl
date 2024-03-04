@@ -89,7 +89,7 @@ end
 			mpsI = hybriddynamics(lattice, exact_model, trunc=trunc) 
 			mpsI = boundarycondition(mpsI, lattice)
 			mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
-			g₃ = gf(lattice, mpsK, mpsI)
+			g₃ = Gτ(lattice, mpsK, mpsI)
 			@test norm(g₁ - g₃) / norm(g₁) < rtol
 		end
 	end
@@ -126,7 +126,7 @@ end
 			end
 
 			for band in 1:lattice.bands
-				n1 = 1-gf(lattice, 1, mpsKs, band=band)
+				n1 = 1-Gτ(lattice, 1, mpsKs, band=band)
 				for i in 1:lattice_r.N
 					n2 = occupation(lattice_r, i, mps, band=band)
 					@test abs((n2-n1)/n1) < 1.0e-2
@@ -164,7 +164,7 @@ end
 			end
 
 			for band in 1:lattice.bands
-				n1 = 1-gf(lattice, 1, mpsKs, band=band)
+				n1 = 1-Gτ(lattice, 1, mpsKs, band=band)
 				for i in 1:lattice_r.N
 					n2 = occupation(lattice_r, i, mps, band=band)
 					@test abs((n2-n1)/n1) < 1.0e-2
@@ -205,7 +205,7 @@ end
 		end
 
 		for band in 1:lattice.bands
-			n1 = 1-gf(lattice, 1, mpsKs, band=band)
+			n1 = 1-Gτ(lattice, 1, mpsKs, band=band)
 			for i in 1:lattice_r.N
 				n2 = occupation(lattice_r, i, mps, band=band)
 				@test abs((n2-n1)/n1) < 1.0e-2

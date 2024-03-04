@@ -40,7 +40,7 @@ end
 		for N in (1, 2, 3)
 			for ordering in real_grassmann_orderings
 				lattice = GrassmannLattice(N=N, δt=0.05, bands=bands, contour=:real, order=1, ordering=ordering)
-				corr = Gt(f, β=β, N=lattice.N, t=lattice.t)
+				corr = Δt(f, β=β, N=lattice.N, t=lattice.t)
 				for fi in (:+, :-)
 					for fj in (:+, :-)
 						η = branch(corr, fi, fj)
@@ -70,7 +70,7 @@ end
 		for N in (1, 2, 3)
 			for ordering in real_grassmann_orderings
 				lattice = GrassmannLattice(N=N, δt=0.05, bands=bands, contour=:real, order=1, ordering=ordering)
-				corr = Gt(f, β=β, N=lattice.N, t=lattice.t)
+				corr = Δt(f, β=β, N=lattice.N, t=lattice.t)
 				for fi in (:+, :-)
 					η₁, η₂ = branch(corr, fi, :+), branch(corr, fi, :-)
 					for i in 1:lattice.k

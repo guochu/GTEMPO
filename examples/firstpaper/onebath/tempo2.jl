@@ -37,8 +37,8 @@ function main(β, U)
 
 	band = 1
 	ns[1] = occupation(lattice, mpsK, mpsI, band=band)
-	g₁[1] = gf(lattice, 1, 1, mpsK, mpsI, c1=false, c2=true, b1=:+, b2=:+, band=band)
-	l₁[1] = gf(lattice, 1, 1, mpsK, mpsI, c1=true, c2=false, b1=:-, b2=:+, band=band)
+	g₁[1] = Gt(lattice, 1, 1, mpsK, mpsI, c1=false, c2=true, b1=:+, b2=:+, band=band)
+	l₁[1] = Gt(lattice, 1, 1, mpsK, mpsI, c1=true, c2=false, b1=:-, b2=:+, band=band)
 	bds[1] = 1
 
 	for k in 2:N+1
@@ -58,8 +58,8 @@ function main(β, U)
 		# observables
 		cache = environments(lattice, mpsK′, mpsI2)
 		@time ns[k] = cached_occupation(lattice, mpsK′, mpsI2, cache=cache, band=band)
-		@time g₁[k] = cached_gf(lattice, k, 1, mpsK′, mpsI2, cache=cache, c1=false, c2=true, b1=:+, b2=:+, band=band)
-		@time l₁[k] = cached_gf(lattice, 1, k, mpsK′, mpsI2, cache=cache, c1=true, c2=false, b1=:-, b2=:+, band=band)
+		@time g₁[k] = cached_Gt(lattice, k, 1, mpsK′, mpsI2, cache=cache, c1=false, c2=true, b1=:+, b2=:+, band=band)
+		@time l₁[k] = cached_Gt(lattice, 1, k, mpsK′, mpsI2, cache=cache, c1=true, c2=false, b1=:-, b2=:+, band=band)
 	end
 
 	ts = [i*δt for i in 0:N]

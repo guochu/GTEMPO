@@ -63,7 +63,7 @@ function main(β, J=0.5)
 	end
 	println("bond dimension of mpsK is ", bond_dimension(mpsKs[1]), ", number of Ks ", length(mpsKs))
 
-	@time g = parallel_gf(lattice, mpsKs, mpsI1, mpsI2)
+	@time g = parallel_Gτ(lattice, mpsKs, mpsI1, mpsI2)
 
 	data_path = "result/anderson_tempo1_norb$(norb)_beta$(β)_U$(U)_J$(J)_mu$(μ)_N$(N)_b.json"
 

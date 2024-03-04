@@ -103,8 +103,8 @@ function main(t::Real, t₀::Real=t/2; U=1., ϵ_d=U/2, δt=0.05, β=40, order=6,
 
 
 	for i in 1:length(gf_ts)
-		g₁[i] = cached_gf(lattice, N₀+i, N₀, mpsK, mpsI1, mpsI2, cache=cache, c1=false, c2=true, b1=:+, b2=:+)
-		l₁[i] = cached_gf(lattice, N₀, N₀+i, mpsK, mpsI1, mpsI2, cache=cache, c1=true, c2=false, b1=:-, b2=:+)
+		g₁[i] = cached_Gt(lattice, N₀+i, N₀, mpsK, mpsI1, mpsI2, cache=cache, c1=false, c2=true, b1=:+, b2=:+)
+		l₁[i] = cached_Gt(lattice, N₀, N₀+i, mpsK, mpsI1, mpsI2, cache=cache, c1=true, c2=false, b1=:-, b2=:+)
 	end
 
 
