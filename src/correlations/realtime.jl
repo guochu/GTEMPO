@@ -118,3 +118,10 @@ function _fⱼⱼ_r(f, ε::Float64, δt)
     end
 end
 
+function _fₖₖ_r(f, ε::Float64, δt)
+    if (abs(ε) > tol)
+        f(ε)/ε^2*((1+im*ε*δt)-exp(im*ε*δt))
+    else
+        0.5*f(ε)*δt^2
+    end
+end

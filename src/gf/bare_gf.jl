@@ -52,7 +52,26 @@ function Gt(lattice::RealGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS
     return g
 end
 
+###--------------mixed time 1 order----------------
 
+"""
+    Gm(lattice::MixedGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...)
+
+Mixed time Green's functions
+"""
+function Gm(lattice::MixedGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
+            b1::Symbol, b2::Symbol, c1::Bool=true, c2::Bool=false, band::Int=1, 
+            alg::IntegrationAlgorithm=ExactIntegrate(), 
+            Z::Number = integrate(lattice, A, B..., alg=alg))
+    pos1, pos2 = index(lattice, i, conj=c1, branch=b1, band=band), index(lattice, j, conj=c2, branch=b2, band=band)
+    t = GTerm(pos1, pos2, coeff=1)
+    A2 = _mult_A(t, A)
+    g = integrate(lattice, A2, B..., alg=alg)/Z
+    return g
+end
+
+
+# other real-time observables
 function occupation(lattice::RealGrassmannLattice1Order, i::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...) 
     return real(Gt(lattice, i, i, A, B...; c1=false, c2=true, b1=:+, b2=:-, kwargs...))
 end

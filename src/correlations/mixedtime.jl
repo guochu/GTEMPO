@@ -26,19 +26,22 @@ Base.:+(A::MixedCorrelationFunction, B::MixedCorrelationFunction) = MixedCorrela
 isize(x::MixedCorrelationFunction) = length(A.ξⱼₖ)
 rsize(x::MixedCorrelationFunction) = length(A.ηⱼₖ)
 
+Δm(bath::AbstractFermionicBath; Nτ::Int, t::Real, Nt::Int, δτ::Real=bath.β/Nτ) = Δm(bath.spectrum, β=bath.β, μ=bath.μ, Nτ=Nτ, t=t, Nt=Nt, δτ=δτ)
 function Δm(f0::SpectrumFunction; β::Real, Nτ::Int, t::Real, Nt::Int, μ::Real=0, δτ::Real=β/Nτ)
 	f, lb, ub = f0.f, lowerbound(f0), upperbound(f0)
+    δt = t / Nt
     g₁(ε) = _g₁(β, μ, ε); g₂(ε) = _g₂(β, μ, ε)
     # real time
     fⱼₖ(Δk, ε) = _fⱼₖ_r(f, Δk, ε, δt)
     fⱼⱼ(ε) = _fⱼⱼ_r(f, ε, δt)
+    fₖₖ(ε) = _fₖₖ_r(f, ε, δt)
     # imaginary time
     hⱼₖ(Δk::Int, ε::Float64) = _fⱼₖ_i(f, Δk, ε, δτ)
     hⱼⱼ(ε::Float64) = _fⱼⱼ_i(f, ε, δτ)
     hₖₖ(ε::Float64) = _fₖₖ_i(f, ε, δτ)
     # mixed time
-    lⱼₖ(j::Int, k::Int, ε::Float64) = lⱼₖ(f, j, k, ε, δt, δτ)
-    lₖⱼ(k::Int, j::Int, ε::Float64) = lₖⱼ(f, k, j, ε, δt, δτ)
+    lⱼₖ(j::Int, k::Int, ε::Float64) = _lⱼₖ(f, j, k, ε, δt, δτ)
+    lₖⱼ(k::Int, j::Int, ε::Float64) = _lₖⱼ(f, k, j, ε, δt, δτ)
     N, M = Nt, Nτ
 
     # real time
@@ -149,7 +152,7 @@ end
 
 
 # mixed part lⱼₖ for G31 and lₖⱼ for G13
-function lⱼₖ(f, j::Int, k::Int, ε::Float64, δt, δτ)
+function _lⱼₖ(f, j::Int, k::Int, ε::Float64, δt, δτ)
     if (abs(ε) > tol)
         im*f(ε)/ε^2*exp(-ε*j*δτ)*exp(im*ε*k*δt)*(exp(-ε*δτ)-1)*(exp(im*ε*δt)-1)
     else
@@ -157,7 +160,7 @@ function lⱼₖ(f, j::Int, k::Int, ε::Float64, δt, δτ)
     end
 end
 
-function lₖⱼ(f, k::Int, j::Int, ε::Float64, δt, δτ)
+function _lₖⱼ(f, k::Int, j::Int, ε::Float64, δt, δτ)
     if (abs(ε) > tol)
         -im*f(ε)/ε^2*exp(ε*j*δτ)*exp(-im*ε*k*δt)*(exp(ε*δτ)-1)*(exp(-im*ε*δt)-1)
     else

@@ -49,3 +49,7 @@ function correlationfunction(bath::AbstractFermionicBath, lattice::ImagGrassmann
 end 
 correlationfunction(bath::AbstractFermionicBath, lattice::RealGrassmannLattice1Order) = Δt(bath, N=lattice.N, t=lattice.t) 
 correlationfunction(bath::AbstractFermionicBath, lattice::RealGrassmannLattice2Order) = Δt(bath, N=2*lattice.N, t=lattice.t)
+function correlationfunction(bath::AbstractFermionicBath, lattice::MixedGrassmannLattice1Order)
+    (lattice.β == bath.β) || @warn "lattice.β=$(lattice.β), but bath.β=$(bath.β)"
+    Δm(bath, Nτ=lattice.Nτ, t=lattice.t, Nt=lattice.Nt)
+end  

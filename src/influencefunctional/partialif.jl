@@ -27,13 +27,13 @@ end
 real-time MPS-IF for a single band 
 """
 function hybriddynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::MixedCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
-	k = lattice.k
+	k = lattice.Nt + 1
 	for i in 1:k
 		for b1 in (:+, :-, :τ)
 			cols_f = [index(corr, i, j, b1=b1, b2=:+) for j in 1:k]
 			cols_b = [index(corr, i, j, b1=b1, b2=:-) for j in 1:k]
 			cols_i = [index(corr, i, j, b1=b1, b2=:τ) for j in 1:k]
-			tmp = partialinfluencefunctional(lattice, i, cols_f, cols_b, cols_i, bi=b1, band=band)
+			tmp = partialinfluencefunctional(lattice, i, cols_f, cols_b, cols_i, b1=b1, band=band)
 			gmps = mult!(gmps, tmp, trunc=trunc)
 		end
 	end

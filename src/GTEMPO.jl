@@ -30,8 +30,9 @@ export influenceoperator, influenceoperatorexponential, differentialinfluencefun
 export hybriddynamics, hybriddynamics!, hybriddynamicsstepper, hybriddynamicsstepper!
 
 # GF and other observables
-export Gτ, parallel_Gτ, Gt, parallel_Gt, occupation, electriccurrent, electriccurrent_fast
-export cached_gf, cached_occupation, cached_electriccurrent, cached_electriccurrent_fast
+export Gτ, parallel_Gτ, Gt, parallel_Gt, Gm
+export occupation, electriccurrent, electriccurrent_fast
+export cached_Gτ, cached_Gt, cached_occupation, cached_electriccurrent, cached_electriccurrent_fast
 
 # utilities for TEMPO
 # exact models

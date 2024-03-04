@@ -160,11 +160,17 @@ function sysdynamics_imaginary!(gmps::GrassmannMPS, lattice::MixedGrassmannLatti
 	μ, U = model.μ, model.U
 	a = exp(-lattice.δτ*μ)
 	for band in 1:lattice.bands
-		for i in 1:lattice.k-1
+		for i in 1:lattice.Nτ-1
             pos1, pos2 = index(lattice, i+1, conj=true, branch=:τ, band=band), index(lattice, i, conj=false, branch=:τ, band=band)
             apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
             canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))			
 		end
+	end
+
+	for band in 1:lattice.bands
+        pos1, pos2 = index(lattice, 1, conj=true, branch=:τ, band=band), index(lattice, 1, conj=false, branch=:-, band=band)
+        apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
+        canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))			
 	end
 
 	# interacting dynamics
@@ -172,7 +178,7 @@ function sysdynamics_imaginary!(gmps::GrassmannMPS, lattice::MixedGrassmannLatti
 		(lattice.bands == 2) || throw(ArgumentError("lattice should have two bands"))
 		# a = -im*lattice.δt*U
 		b = a^2 * (exp(-lattice.δτ*U) - 1)
-		for i in 1:lattice.k-1
+		for i in 1:lattice.Nτ-1
 			for band in 1:2:lattice.bands
 				pos1 = index(lattice, i+1, conj=true, branch=:τ, band=band)
 				pos2 = index(lattice, i+1, conj=true, branch=:τ, band=band+1)
@@ -182,6 +188,15 @@ function sysdynamics_imaginary!(gmps::GrassmannMPS, lattice::MixedGrassmannLatti
 				canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))			
 			end
 		end
+
+		for band in 1:2:lattice.bands
+			pos1 = index(lattice, 1, conj=true, branch=:τ, band=band)
+			pos2 = index(lattice, 1, conj=true, branch=:τ, band=band+1)
+			pos3 = index(lattice, 1, conj=false, branch=:-, band=band+1)
+			pos4 = index(lattice, 1, conj=false, branch=:-, band=band)
+			apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=b)), gmps)
+			canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))			
+		end
 	end
 	return gmps
 end
@@ -190,7 +205,7 @@ function sysdynamics_forward!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice
 	μ, U = model.μ, model.U
 	a = exp(-im*lattice.δt*μ)
 	for band in 1:lattice.bands
-		for i in 1:lattice.k-1
+		for i in 1:lattice.Nt
             pos1, pos2 = index(lattice, i+1, conj=true, branch=:+, band=band), index(lattice, i, conj=false, branch=:+, band=band)
             apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
             canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))			
@@ -202,7 +217,7 @@ function sysdynamics_forward!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice
 		(lattice.bands == 2) || throw(ArgumentError("lattice should have two bands"))
 		# a = -im*lattice.δt*U
 		b = a^2 * (exp(-im*lattice.δt*U) - 1)
-		for i in 1:lattice.k-1
+		for i in 1:lattice.Nt
 			for band in 1:2:lattice.bands
 				pos1 = index(lattice, i+1, conj=true, branch=:+, band=band)
 				pos2 = index(lattice, i+1, conj=true, branch=:+, band=band+1)
@@ -221,7 +236,7 @@ function sysdynamics_backward!(gmps::GrassmannMPS, lattice::MixedGrassmannLattic
 	a = exp(-im*lattice.δt*μ)
 	ac = conj(a)
 	for band in 1:lattice.bands
-		for i in 1:lattice.k-1
+		for i in 1:lattice.Nt
 			pos1, pos2 = index(lattice, i, conj=true, branch=:-, band=band), index(lattice, i+1, conj=false, branch=:-, band=band)
 			apply!(exp(GTerm(pos1, pos2, coeff=ac)), gmps)
 			canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))	
@@ -234,7 +249,7 @@ function sysdynamics_backward!(gmps::GrassmannMPS, lattice::MixedGrassmannLattic
 		# a = -im*lattice.δt*U
 		b = a^2 * (exp(-im*lattice.δt*U) - 1)
 		bc = conj(b)
-		for i in 1:lattice.k-1
+		for i in 1:lattice.Nt
 			for band in 1:2:lattice.bands
 				pos1 = index(lattice, i, conj=true, branch=:-, band=band)
 				pos2 = index(lattice, i, conj=true, branch=:-, band=band+1)
