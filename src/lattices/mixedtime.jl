@@ -41,6 +41,10 @@ function Base.getproperty(x::MixedGrassmannLattice1Order, s::Symbol)
 		return x.Nτ * x.δτ
 	elseif s == :T
 		return 1 / x.β
+	elseif s == :kt
+		return x.Nt + 1
+	elseif s == :kτ
+		return x.Nτ + 1
 	elseif s == :ts
 		return 0:x.δt:x.t
 	elseif s == :τs
@@ -59,7 +63,7 @@ function index(x::MixedGrassmannLattice1Order{<:A1A1B1B1_A1A1a1a1B1B1b1b1A2A2a2a
 		(branch in (:+, :-, :τ)) || throw(BoundsError("branch must be one of :+, :- or :τ"))
 		if i != 0
 			if branch == :τ
-				(1 <= i <= x.Nτ) || throw(BoundsError("imag time step $i out of range"))
+				(1 <= i <= x.Nτ + 1) || throw(BoundsError("imag time step $i out of range"))
 			else
 				(1 <= i <= x.Nt + 1) || throw(ArgumentError("real time step $i out of range"))
 			end
@@ -76,7 +80,11 @@ function index(x::MixedGrassmannLattice1Order{<:A1A1B1B1_A1A1a1a1B1B1b1b1A2A2a2a
 		elseif branch == :-
 			ifelse(conj, 4*(i-1)*bands+4+4*(band-1), 4*(i-1)*bands+3+4*(band-1)) + 2*x.bands*(x.Nτ+1)
 		else
-			ifelse(conj, (x.Nτ-i)*2*bands + 2*band, (x.Nτ-i)*2*bands + 2*band-1) + 2*x.bands
+			if i == 1
+				index(x, 1, conj=conj, branch=:-, band=band)
+			else
+				ifelse(conj, (x.Nτ+1-i)*2*bands + 2*band, (x.Nτ+1-i)*2*bands + 2*band-1) + 2*x.bands
+			end
 		end
 	end
 end
@@ -87,7 +95,7 @@ function index(x::MixedGrassmannLattice1Order{<:A1A1B1B1_a1a1A1A1b1b1B1B1a2a2A2A
 		(branch in (:+, :-, :τ)) || throw(BoundsError("branch must be one of :+, :- or :τ"))
 		if i != 0
 			if branch == :τ
-				(1 <= i <= x.Nτ) || throw(BoundsError("imag time step $i out of range"))
+				(1 <= i <= x.Nτ + 1) || throw(BoundsError("imag time step $i out of range"))
 			else
 				(1 <= i <= x.Nt + 1) || throw(ArgumentError("real time step $i out of range"))
 			end
@@ -104,7 +112,11 @@ function index(x::MixedGrassmannLattice1Order{<:A1A1B1B1_a1a1A1A1b1b1B1B1a2a2A2A
 		elseif branch == :+
 			ifelse(conj, 4*(i-1)*bands+4+4*(band-1), 4*(i-1)*bands+3+4*(band-1)) + 2*x.bands*(x.Nτ+1)
 		else
-			ifelse(conj, (x.Nτ-i)*2*bands + 2*band, (x.Nτ-i)*2*bands + 2*band-1) + 2*x.bands
+			if i == 1
+				index(x, 1, conj=conj, branch=:-, band=band)
+			else
+				ifelse(conj, (x.Nτ+1-i)*2*bands + 2*band, (x.Nτ+1-i)*2*bands + 2*band-1) + 2*x.bands
+			end
 		end
 	end
 end
@@ -116,7 +128,7 @@ function index(x::MixedGrassmannLattice1Order{<:A1B1B1A1_A2B2B2A2A1B1B1A1a1b1b1a
 		(branch in (:+, :-, :τ)) || throw(BoundsError("branch must be one of :+, :- or :τ"))
 		if i != 0
 			if branch == :τ
-				(1 <= i <= x.Nτ) || throw(BoundsError("imag time step $i out of range"))
+				(1 <= i <= x.Nτ + 1) || throw(BoundsError("imag time step $i out of range"))
 			else
 				(1 <= i <= x.Nt + 1) || throw(ArgumentError("real time step $i out of range"))
 			end
@@ -133,7 +145,11 @@ function index(x::MixedGrassmannLattice1Order{<:A1B1B1A1_A2B2B2A2A1B1B1A1a1b1b1a
 		elseif branch == :-
 			ifelse(conj, 2*bands*(i-1) + 2*bands-band+1, 2*bands*(i-1) + band ) + 2 * bands * k + 2*x.bands*(x.Nτ+1)
 		else
-			ifelse(conj, (x.Nτ-i)*2*bands + 2bands+1-band, (x.Nτ-i)*2*bands + band) + 2*x.bands
+			if i == 1
+				index(x, 1, conj=conj, branch=:-, band=band)
+			else
+				ifelse(conj, (x.Nτ+1-i)*2*bands + 2bands+1-band, (x.Nτ+1-i)*2*bands + band) + 2*x.bands
+			end
 		end
 	end
 end
@@ -142,7 +158,7 @@ end
 # key is timestep, conj, branch, band
 function indexmappings(lattice::MixedGrassmannLattice1Order)
 	r = Dict{Tuple{Int, Bool, Symbol, Int}, Int}()
-	for i in 1:lattice.Nτ
+	for i in 2:lattice.kτ
 		for c in (true, false)
 			for band in 1:lattice.bands
 				f = :τ
@@ -150,7 +166,7 @@ function indexmappings(lattice::MixedGrassmannLattice1Order)
 			end
 		end
 	end
-	for i in 0:lattice.Nt+1
+	for i in 0:lattice.kt
 		for c in (true, false)
 			for band in 1:lattice.bands
 				if i == 0
