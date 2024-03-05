@@ -68,7 +68,7 @@ function index(x::MixedGrassmannLattice1Order{<:A1A1B1B1_A1A1a1a1B1B1b1b1A2A2a2a
 
 	bands = x.bands
 	if i == 0
-		ifelse(conj, 2*band, 2*band-1) + 2*x.bands * x.Nτ
+		ifelse(conj, 2*band, 2*band-1) 
 	else
 		k = x.Nt + 1
 		if branch == :+
@@ -76,7 +76,35 @@ function index(x::MixedGrassmannLattice1Order{<:A1A1B1B1_A1A1a1a1B1B1b1b1A2A2a2a
 		elseif branch == :-
 			ifelse(conj, 4*(i-1)*bands+4+4*(band-1), 4*(i-1)*bands+3+4*(band-1)) + 2*x.bands*(x.Nτ+1)
 		else
-			ifelse(conj, (x.Nτ-i)*2*bands + 2*band, (x.Nτ-i)*2*bands + 2*band-1) 
+			ifelse(conj, (x.Nτ-i)*2*bands + 2*band, (x.Nτ-i)*2*bands + 2*band-1) + 2*x.bands
+		end
+	end
+end
+
+function index(x::MixedGrassmannLattice1Order{<:A1A1B1B1_a1a1A1A1b1b1B1B1a2a2A2A2b2b2B2B2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+	@boundscheck begin
+		(1 <= band <= x.bands) || throw(ArgumentError("band $band out of range"))
+		(branch in (:+, :-, :τ)) || throw(BoundsError("branch must be one of :+, :- or :τ"))
+		if i != 0
+			if branch == :τ
+				(1 <= i <= x.Nτ) || throw(BoundsError("imag time step $i out of range"))
+			else
+				(1 <= i <= x.Nt + 1) || throw(ArgumentError("real time step $i out of range"))
+			end
+		end
+	end
+
+	bands = x.bands
+	if i == 0
+		ifelse(conj, 2*band, 2*band-1) 
+	else
+		k = x.Nt + 1
+		if branch == :-
+			ifelse(conj, 4*(i-1)*bands+2+4*(band-1), 4*(i-1)*bands+1+4*(band-1)) + 2*x.bands*(x.Nτ+1)
+		elseif branch == :+
+			ifelse(conj, 4*(i-1)*bands+4+4*(band-1), 4*(i-1)*bands+3+4*(band-1)) + 2*x.bands*(x.Nτ+1)
+		else
+			ifelse(conj, (x.Nτ-i)*2*bands + 2*band, (x.Nτ-i)*2*bands + 2*band-1) + 2*x.bands
 		end
 	end
 end
@@ -97,7 +125,7 @@ function index(x::MixedGrassmannLattice1Order{<:A1B1B1A1_A2B2B2A2A1B1B1A1a1b1b1a
 	
 	bands = x.bands
 	if i == 0
-		ifelse(conj, 2*bands+1-band, band) + 2*x.bands * x.Nτ
+		ifelse(conj, 2*bands+1-band, band) 
 	else
 		k = x.Nt + 1
 		if branch == :+
@@ -105,66 +133,11 @@ function index(x::MixedGrassmannLattice1Order{<:A1B1B1A1_A2B2B2A2A1B1B1A1a1b1b1a
 		elseif branch == :-
 			ifelse(conj, 2*bands*(i-1) + 2*bands-band+1, 2*bands*(i-1) + band ) + 2 * bands * k + 2*x.bands*(x.Nτ+1)
 		else
-			ifelse(conj, (x.Nτ-i)*2*bands + 2bands+1-band, (x.Nτ-i)*2*bands + band) 
+			ifelse(conj, (x.Nτ-i)*2*bands + 2bands+1-band, (x.Nτ-i)*2*bands + band) + 2*x.bands
 		end
 	end
 end
 
-# function index(x::MixedGrassmannLattice1Order{<:A1A1B1B1_A1A1a1a1B1B1b1b1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
-# 	@boundscheck begin
-# 		(1 <= band <= x.bands) || throw(ArgumentError("band $band out of range"))
-# 		(branch in (:+, :-, :τ)) || throw(BoundsError("branch must be one of :+, :- or :τ"))
-# 		if i != 0
-# 			if branch == :τ
-# 				(1 <= i <= x.Nτ) || throw(BoundsError("imag time step $i out of range"))
-# 			else
-# 				(1 <= i <= x.Nt + 1) || throw(ArgumentError("real time step $i out of range"))
-# 			end
-# 		end
-# 	end
-
-# 	bands = x.bands
-# 	if i == 0
-# 		ifelse(conj, 2*band, 2*band-1) + 2*x.bands * x.Nτ
-# 	else
-# 		k = x.Nt + 1
-# 		if branch == :+
-# 			ifelse(conj, 4*(k-i)*bands+2+4*(band-1), 4*(k-i)*bands+1+4*(band-1)) + 2*x.bands*(x.Nτ+1)
-# 		elseif branch == :-
-# 			ifelse(conj, 4*(k-i)*bands+4+4*(band-1), 4*(k-i)*bands+3+4*(band-1)) + 2*x.bands*(x.Nτ+1)
-# 		else
-# 			ifelse(conj, (x.Nτ-i)*2*bands + 2*band, (x.Nτ-i)*2*bands + 2*band-1) 
-# 		end
-# 	end
-# end
-
-# function index(x::MixedGrassmannLattice1Order{<:A1B1B1A1_A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
-# 	@boundscheck begin
-# 		(1 <= band <= x.bands) || throw(ArgumentError("band $band out of range"))
-# 		(branch in (:+, :-, :τ)) || throw(BoundsError("branch must be one of :+, :- or :τ"))
-# 		if i != 0
-# 			if branch == :τ
-# 				(1 <= i <= x.Nτ) || throw(BoundsError("imag time step $i out of range"))
-# 			else
-# 				(1 <= i <= x.Nt + 1) || throw(ArgumentError("real time step $i out of range"))
-# 			end
-# 		end
-# 	end
-	
-# 	bands = x.bands
-# 	if i == 0
-# 		ifelse(conj, 2*bands+1-band, band) + 2*x.bands * x.Nτ
-# 	else
-# 		k = x.Nt + 1
-# 		if branch == :+
-# 			ifelse(conj, 2*bands*(k-i) + 2*bands-band+1, 2*bands*(k-i) + band ) + 2*x.bands*(x.Nτ+1)
-# 		elseif branch == :-
-# 			ifelse(conj, 2*bands*(i-1) + 2*bands-band+1, 2*bands*(i-1) + band ) + 2 * bands * k + 2*x.bands*(x.Nτ+1)
-# 		else
-# 			ifelse(conj, (x.Nτ-i)*2*bands + 2bands+1-band, (x.Nτ-i)*2*bands + band) 
-# 		end
-# 	end
-# end
 
 # key is timestep, conj, branch, band
 function indexmappings(lattice::MixedGrassmannLattice1Order)
