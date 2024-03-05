@@ -166,3 +166,87 @@ end
 
 end
 
+
+
+@testset "InfluenceFunctional: mixed time" begin
+	D = 1
+	β=0.2
+	Nτ = 2
+	δτ = β / Nτ
+	J(ω) = (D/(2*pi)) * sqrt(1 - (ω/D)^2 ) * 0.1
+	f = SpectrumFunction(J, lb = -D, ub = D)
+	trunc = truncdimcutoff(D=300, ϵ=1.0e-6, add_back=0)
+
+	for bands in (1, 2)
+		for N in (1, 2, 3)
+			for ordering in mixed_grassmann_orderings
+				lattice = GrassmannLattice(Nt=N, δt=0.05, δτ=δτ, Nτ=Nτ, bands=bands, contour=:mixed, order=1, ordering=ordering)
+				corr = Δm(f, β=β, Nt=lattice.Nt, t=lattice.t, Nτ=lattice.Nτ)
+				for fi in (:+, :-)
+					for i in 1:lattice.kt
+						cols_f = [index(corr, i, j, b1=fi, b2=:+) for j in 1:lattice.kt]
+						cols_b = [index(corr, i, j, b1=fi, b2=:-) for j in 1:lattice.kt]
+						cols_i = [index(corr, i, j, b1=fi, b2=:τ) for j in 1:lattice.Nτ]
+
+						for band in 1:lattice.bands
+							mps1 = vacuumstate(lattice)
+							for j in 1:lattice.kt
+								pos1, pos2 = index(lattice, i, conj=true, branch=fi, band=band), index(lattice, j, conj=false, branch=:+, band=band)
+								t = exp(GTerm(pos1, pos2, coeff=index(corr, i, j, b1=fi, b2=:+)))
+								mps1 = t * mps1
+								canonicalize!(mps1, alg=Orthogonalize(trunc = trunc))			
+								pos1, pos2 = index(lattice, i, conj=true, branch=fi, band=band), index(lattice, j, conj=false, branch=:-, band=band)
+								t = exp(GTerm(pos1, pos2, coeff=index(corr, i, j, b1=fi, b2=:-)))
+								mps1 = t * mps1
+								canonicalize!(mps1, alg=Orthogonalize(trunc = trunc))															
+							end
+							for j in 1:lattice.Nτ
+								pos1, pos2 = index(lattice, i, conj=true, branch=fi, band=band), index(lattice, j+1, conj=false, branch=:τ, band=band)
+								t = exp(GTerm(pos1, pos2, coeff=index(corr, i, j, b1=fi, b2=:τ)))
+								mps1 = t * mps1
+								canonicalize!(mps1, alg=Orthogonalize(trunc = trunc))			
+							end
+
+							mps3 = partialinfluencefunctional(lattice, i, cols_f, cols_b, cols_i, band=band, b1=fi)
+							@test bond_dimension(mps3) == 2
+							@test distance(mps1, mps3) / norm(mps1) <= 1.0e-5
+						end
+					end						
+				end
+				fi = :τ
+				for i in 1:lattice.Nτ
+					cols_f = [index(corr, i, j, b1=fi, b2=:+) for j in 1:lattice.kt]
+					cols_b = [index(corr, i, j, b1=fi, b2=:-) for j in 1:lattice.kt]
+					cols_i = [index(corr, i, j, b1=fi, b2=:τ) for j in 1:lattice.Nτ]
+
+					for band in 1:lattice.bands
+						mps1 = vacuumstate(lattice)
+						for j in 1:lattice.kt
+							pos1, pos2 = index(lattice, i+1, conj=true, branch=fi, band=band), index(lattice, j, conj=false, branch=:+, band=band)
+							t = exp(GTerm(pos1, pos2, coeff=index(corr, i, j, b1=fi, b2=:+)))
+							mps1 = t * mps1
+							canonicalize!(mps1, alg=Orthogonalize(trunc = trunc))			
+							pos1, pos2 = index(lattice, i+1, conj=true, branch=fi, band=band), index(lattice, j, conj=false, branch=:-, band=band)
+							t = exp(GTerm(pos1, pos2, coeff=index(corr, i, j, b1=fi, b2=:-)))
+							mps1 = t * mps1
+							canonicalize!(mps1, alg=Orthogonalize(trunc = trunc))															
+						end
+						for j in 1:lattice.Nτ
+							pos1, pos2 = index(lattice, i+1, conj=true, branch=fi, band=band), index(lattice, j+1, conj=false, branch=:τ, band=band)
+							t = exp(GTerm(pos1, pos2, coeff=index(corr, i, j, b1=fi, b2=:τ)))
+							mps1 = t * mps1
+							canonicalize!(mps1, alg=Orthogonalize(trunc = trunc))			
+						end
+
+						mps3 = partialinfluencefunctional(lattice, i, cols_f, cols_b, cols_i, band=band, b1=fi)
+						@test bond_dimension(mps3) == 2
+						@test distance(mps1, mps3) / norm(mps1) <= 1.0e-5
+					end
+				end						
+			end
+		end
+	end
+
+end
+
+
