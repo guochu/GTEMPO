@@ -95,6 +95,47 @@ end
 	end
 end
 
+@testset "GF-mixed time: benchmarking ED" begin
+
+	N = 25
+	δτ = 0.01
+	ϵ_d = 1.25*pi
+	dw = 0.1
+	β = N * δτ
+	τs = collect(0:δτ:β)
+	δt = 0.01
+	Nt = 20
+	t = δt * Nt
+	ts = [i*δt for i in 0:Nt]
+
+	rtol = 1.0e-2
+
+	trunc = truncdimcutoff(D=100, ϵ=1.0e-10, add_back=0)
+		
+	bath = fermionicbath(spectrum_func(), β=β, μ=0)
+	config = star(bath, dw=dw)
+	model = FreeSISBD(config, μ=ϵ_d)
+	gτ = gf_greater_τ(model, τs)
+	gt1, gt2 = gf_greater_lesser_t(model, ts)
+	gt1, gt2 = im*gt1, -im*gt2
+
+	exact_model = SISB(bath, μ=ϵ_d, U=0)
+	for ordering in mixed_ac_grassmann_orderings
+		lattice = GrassmannLattice(Nt=Nt, δt=δt, Nτ=N, δτ=β/N, contour=:mixed, ordering=ordering)
+		mpsI = hybriddynamics(lattice, exact_model, trunc=trunc) 
+		mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
+		mpsK = boundarycondition(mpsK, lattice)
+		cache = environments(lattice, mpsK, mpsI)
+		g1 = [cached_Gm(lattice, k, 1, mpsK, mpsI, c1=false, c2=true, b1=:+, b2=:+, cache=cache) for k in 1:lattice.kt]
+		g2 = [cached_Gm(lattice, 1, k, mpsK, mpsI, c1=true, c2=false, b1=:-, b2=:+, cache=cache) for k in 1:lattice.kt]
+		g3 = [cached_Gm(lattice, k, 1, mpsK, mpsI, c1=false, c2=true, b1=:τ, b2=:τ, cache=cache) for k in 1:lattice.kτ]
+		@test norm(gt1 - g1) / norm(gt1) < rtol
+		@test norm(gt2 - g2) / norm(gt2) < rtol
+		@test norm(gτ - g3) / norm(gτ) < rtol
+	end
+
+end
+
 @testset "GF-real time, thermal initial state" begin
 
 	function _test_sisb(U, ϵ_d)

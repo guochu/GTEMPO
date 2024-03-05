@@ -42,6 +42,15 @@ function hybriddynamics(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model
 	return qim_hybriddynamics(gmps, lattice, corr, trunc=trunc)
 end
 
+function hybriddynamics(gmps::GrassmannMPS, lattice::MixedGrassmannLattice, model::SISB; 
+					corr::Union{Nothing, <:RealCorrelationFunction}=nothing, 
+					trunc::TruncationScheme=DefaultITruncation)
+	@assert lattice.β == model.bath.β
+	if isnothing(corr)
+		corr = correlationfunction(model.bath, lattice)
+	end
+	return qim_hybriddynamics(gmps, lattice, corr, trunc=trunc)
+end
 
 function hybriddynamics(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, model::SIDB; 
 					corr::Union{Nothing, <:ImagCorrelationFunction}=nothing, trunc::TruncationScheme=DefaultITruncation)

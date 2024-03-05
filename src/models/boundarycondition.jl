@@ -70,15 +70,20 @@ function boundarycondition!(x::GrassmannMPS, lattice::MixedGrassmannLattice; ban
 	canonicalize!(x, alg=Orthogonalize(trunc=trunc))
 	return x
 end
-# function boundarycondition_branching(x0::GrassmannMPS, lattice::MixedGrassmannLattice; band::Int=1, trunc::TruncationScheme=DefaultIntegrationTruncation) 
-# 	(LayoutStyle(lattice) isa BranchLocalLayout) || throw(ArgumentError("boundarycondition_branching only work with BranchLocalLayout for MixedGrassmannLattice"))
-# 	pos1, pos2 = index(lattice, 0, conj=true, band=band), index(lattice, lattice.Nτ, conj=false, band=band, branch=:τ)
-# 	t = exp(GTerm(pos1, pos2, coeff=-1))
-# 	x = t * x0
+# function boundarycondition_branching(x0::GrassmannMPS, lattice::MixedGrassmannLattice; band::Int=1, trunc::TruncationScheme=DefaultIntegrationTruncation)
+# 	pos1, pos2 = index(lattice, lattice.kt, conj=true, band=band, branch=:-), index(lattice, lattice.kt, conj=false, band=band, branch=:+)
+# 	x = exp(GTerm(pos1, pos2, coeff=1)) * x0
+	
+# 	pos1, pos2 = index(lattice, 1, conj=true, band=band, branch=:τ), index(lattice, 1, conj=false, band=band, branch=:-)
+# 	x = exp(GTerm(pos1, pos2, coeff=1)) * x
 # 	canonicalize!(x, alg=Orthogonalize(trunc=trunc))
+
 # 	pos1, pos2 = index(lattice, 1, conj=true, band=band, branch=:+), index(lattice, 0, conj=false, band=band)
-# 	t = GTerm(pos1, pos2, coeff=1)
-# 	x2 = t * x
+# 	x = exp(GTerm(pos1, pos2, coeff=1)) * x
+# 	canonicalize!(x, alg=Orthogonalize(trunc=trunc))
+
+# 	pos1, pos2 = index(lattice, 0, conj=true, band=band), index(lattice, lattice.kτ, conj=false, band=band, branch=:τ)
+# 	x2 = GTerm(pos1, pos2, coeff=-1) * x
 # 	canonicalize!(x2, alg=Orthogonalize(trunc=trunc))
 # 	return x, x2
 # end
