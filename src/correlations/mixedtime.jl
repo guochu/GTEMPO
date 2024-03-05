@@ -76,8 +76,8 @@ function Δm(f0::SpectrumFunction; β::Real, Nτ::Int, t::Real, Nt::Int, μ::Rea
     ζₖⱼ = zeros(ComplexF64, N+1, M)
 
     for j = 1:M, k = 1:N+1
-        ζⱼₖ[j,k] = quadgk(ε -> im*g₁(ε)*lⱼₖ(j-1,k-1,ε), lb, ub)[1]
-        ζₖⱼ[k,j] = quadgk(ε -> -im*g₂(ε)*lₖⱼ(k-1,j-1,ε), lb, ub)[1]
+        ζⱼₖ[j,k] = quadgk(ε -> -g₁(ε)*lⱼₖ(j-1,k-1,ε), lb, ub)[1]
+        ζₖⱼ[k,j] = quadgk(ε -> g₂(ε)*lₖⱼ(k-1,j-1,ε), lb, ub)[1]
     end
     MixedCorrelationFunction(ηⱼₖ,ηₖⱼ,ξⱼₖ,ξₖⱼ,ζⱼₖ,ζₖⱼ)
 end
@@ -130,9 +130,9 @@ function index(A::MixedCorrelationFunction, i::Int, j::Int; b1::Symbol, b2::Symb
         if (i == j)
             A.ηⱼₖ[1]+A.ηₖⱼ[1]
         elseif (i > j)
-            A.ηₖⱼ[i-j+1]
+            A.ηₖⱼ[i-j+1]'
         else
-            A.ηⱼₖ[j-i+1]
+            A.ηⱼₖ[j-i+1]'
         end
     elseif (b₁ == :- && b₂ == :τ) # G²³
         im*A.ζₖⱼ[i,j]
@@ -142,7 +142,7 @@ function index(A::MixedCorrelationFunction, i::Int, j::Int; b1::Symbol, b2::Symb
         im*A.ζⱼₖ[i,j]
     elseif (b₁ == :τ && b₂ == :τ) # G³³=G(τ)
         if (i == j)
-            -A.ξⱼₖ[1]+A.ξₖⱼ[1]
+            -(A.ξⱼₖ[1]+A.ξₖⱼ[1])
         elseif (i > j)
             -A.ξⱼₖ[i-j+1]
         else
@@ -163,9 +163,9 @@ end
 
 function _lₖⱼ(f, k::Int, j::Int, ε::Float64, δt, δτ)
     if (abs(ε) > tol)
-        -im*f(ε)/ε^2*exp(ε*j*δτ)*exp(-im*ε*k*δt)*(exp(ε*δτ)-1)*(exp(-im*ε*δt)-1)
+        im*f(ε)/ε^2*exp(ε*j*δτ)*exp(-im*ε*k*δt)*(exp(ε*δτ)-1)*(exp(-im*ε*δt)-1)
     else
-        -f(ε)*exp(ε*j*δτ)*exp(-im*ε*k*δt)*δτ*δt
+        f(ε)*exp(ε*j*δτ)*exp(-im*ε*k*δt)*δτ*δt
     end
 end
 
