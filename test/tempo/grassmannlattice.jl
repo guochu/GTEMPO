@@ -881,7 +881,7 @@ end
 	@test isa(lattice, MixedGrassmannLattice)
 	@test lattice.ordering == A1A1B1B1_A1A1a1a1B1B1b1b1A2A2a2a2B2B2b2b2()
 	@test scalartype(lattice) == ComplexF64
-	@test length(lattice) == 18
+	@test length(lattice) == 20
 	@test lattice.Nt == 2
 	@test lattice.Nτ == 2
 	@test lattice.t == 0.1
@@ -898,23 +898,23 @@ end
 	@test index(lattice, 3, conj=true, branch=:τ) == 4
 	@test index(lattice, 2, conj=false, branch=:τ) == 5
 	@test index(lattice, 2, conj=true, branch=:τ) == 6	
+	@test index(lattice, 1, conj=false, branch=:τ) == 7 
+	@test index(lattice, 1, conj=true, branch=:τ) == 8
 
 
-	@test index(lattice, 1, conj=false, branch=:+) == 7
-	@test index(lattice, 1, conj=true, branch=:+) == 8
-	@test index(lattice, 1, conj=false, branch=:-) == 9
-	@test index(lattice, 1, conj=true, branch=:-) == 10
-	@test index(lattice, 2, conj=false, branch=:+) == 11
-	@test index(lattice, 2, conj=true, branch=:+) == 12
-	@test index(lattice, 2, conj=false, branch=:-) == 13
-	@test index(lattice, 2, conj=true, branch=:-) == 14
-	@test index(lattice, 3, conj=false, branch=:+) == 15
-	@test index(lattice, 3, conj=true, branch=:+) == 16
-	@test index(lattice, 3, conj=false, branch=:-) == 17
-	@test index(lattice, 3, conj=true, branch=:-) == 18
+	@test index(lattice, 1, conj=false, branch=:+) == 9
+	@test index(lattice, 1, conj=true, branch=:+) == 10
+	@test index(lattice, 1, conj=false, branch=:-) == 11
+	@test index(lattice, 1, conj=true, branch=:-) == 12
+	@test index(lattice, 2, conj=false, branch=:+) == 13
+	@test index(lattice, 2, conj=true, branch=:+) == 14
+	@test index(lattice, 2, conj=false, branch=:-) == 15
+	@test index(lattice, 2, conj=true, branch=:-) == 16
+	@test index(lattice, 3, conj=false, branch=:+) == 17
+	@test index(lattice, 3, conj=true, branch=:+) == 18
+	@test index(lattice, 3, conj=false, branch=:-) == 19
+	@test index(lattice, 3, conj=true, branch=:-) == 20
 
-	@test index(lattice, 1, conj=true, branch=:τ) == index(lattice, 1, conj=true, branch=:-) 
-	@test index(lattice, 1, conj=false, branch=:τ) == index(lattice, 1, conj=false, branch=:-)
 
 	mps = GrassmannMPS(scalartype(lattice), length(lattice))
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
@@ -923,7 +923,7 @@ end
 	# real part: a_2^+\bar{a}_2^+a_2^-\bar{a}_2^-b_2^+\bar{b}_2^+b_2^-\bar{b}_2^- a_1^+\bar{a}_1^+a_1^-\bar{a}_1^-b_1^+\bar{b}_1^+b_1^-\bar{b}_1^-
 	lattice = GrassmannLattice(Nt=1, δt=0.1, Nτ=2, δτ=0.1, contour=:mixed, bands=2, ordering=A1A1B1B1_A1A1a1a1B1B1b1b1A2A2a2a2B2B2b2b2())
 	@test isa(lattice, MixedGrassmannLattice)
-	@test length(lattice) == 28
+	@test length(lattice) == 32
 	@test lattice.Nt == 1
 	@test lattice.Nτ == 2
 	@test lattice.t == 0.1
@@ -946,29 +946,29 @@ end
 	@test index(lattice, 2, conj=true, branch=:τ, band=1) == 10
 	@test index(lattice, 2, conj=false, branch=:τ, band=2) == 11
 	@test index(lattice, 2, conj=true, branch=:τ, band=2) == 12
+	@test index(lattice, 1, conj=false, branch=:τ, band=1) == 13
+	@test index(lattice, 1, conj=true, branch=:τ, band=1) == 14
+	@test index(lattice, 1, conj=false, branch=:τ, band=2) == 15
+	@test index(lattice, 1, conj=true, branch=:τ, band=2) == 16
 
-	@test index(lattice, 1, conj=false, branch=:+, band=1) == 13
-	@test index(lattice, 1, conj=true, branch=:+, band=1) == 14
-	@test index(lattice, 1, conj=false, branch=:-, band=1) == 15
-	@test index(lattice, 1, conj=true, branch=:-, band=1) == 16
-	@test index(lattice, 1, conj=false, branch=:+, band=2) == 17
-	@test index(lattice, 1, conj=true, branch=:+, band=2) == 18
-	@test index(lattice, 1, conj=false, branch=:-, band=2) == 19
-	@test index(lattice, 1, conj=true, branch=:-, band=2) == 20
 
-	@test index(lattice, 2, conj=false, branch=:+, band=1) == 21
-	@test index(lattice, 2, conj=true, branch=:+, band=1) == 22
-	@test index(lattice, 2, conj=false, branch=:-, band=1) == 23
-	@test index(lattice, 2, conj=true, branch=:-, band=1) == 24
-	@test index(lattice, 2, conj=false, branch=:+, band=2) == 25
-	@test index(lattice, 2, conj=true, branch=:+, band=2) == 26
-	@test index(lattice, 2, conj=false, branch=:-, band=2) == 27
-	@test index(lattice, 2, conj=true, branch=:-, band=2) == 28
+	@test index(lattice, 1, conj=false, branch=:+, band=1) == 17
+	@test index(lattice, 1, conj=true, branch=:+, band=1) == 18
+	@test index(lattice, 1, conj=false, branch=:-, band=1) == 19
+	@test index(lattice, 1, conj=true, branch=:-, band=1) == 20
+	@test index(lattice, 1, conj=false, branch=:+, band=2) == 21
+	@test index(lattice, 1, conj=true, branch=:+, band=2) == 22
+	@test index(lattice, 1, conj=false, branch=:-, band=2) == 23
+	@test index(lattice, 1, conj=true, branch=:-, band=2) == 24
 
-	@test index(lattice, 1, conj=false, branch=:τ, band=1) == index(lattice, 1, conj=false, branch=:-, band=1)
-	@test index(lattice, 1, conj=true, branch=:τ, band=1) == index(lattice, 1, conj=true, branch=:-, band=1) 
-	@test index(lattice, 1, conj=false, branch=:τ, band=2) == index(lattice, 1, conj=false, branch=:-, band=2)
-	@test index(lattice, 1, conj=true, branch=:τ, band=2) == index(lattice, 1, conj=true, branch=:-, band=2)
+	@test index(lattice, 2, conj=false, branch=:+, band=1) == 25
+	@test index(lattice, 2, conj=true, branch=:+, band=1) == 26
+	@test index(lattice, 2, conj=false, branch=:-, band=1) == 27
+	@test index(lattice, 2, conj=true, branch=:-, band=1) == 28
+	@test index(lattice, 2, conj=false, branch=:+, band=2) == 29
+	@test index(lattice, 2, conj=true, branch=:+, band=2) == 30
+	@test index(lattice, 2, conj=false, branch=:-, band=2) == 31
+	@test index(lattice, 2, conj=true, branch=:-, band=2) == 32
 
 	mps = vacuumstate(lattice)
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
@@ -978,7 +978,7 @@ end
 	# a_1^+\bar{a}_1^+a_1^-\bar{a}_1^-b_1^+\bar{b}_1^+b_1^-\bar{b}_1^-c_1^+\bar{c}_1^+c_1^-\bar{c}_1^-
 	lattice = GrassmannLattice(Nt=1, δt=0.1, Nτ=1, δτ=0.1, contour=:mixed, bands=3, ordering=A1A1B1B1_A1A1a1a1B1B1b1b1A2A2a2a2B2B2b2b2())
 	@test isa(lattice, MixedGrassmannLattice)
-	@test length(lattice) == 36
+	@test length(lattice) == 42
 	@test lattice.Nt == 1
 	@test lattice.Nτ == 1
 	@test lattice.t == 0.1
@@ -1001,39 +1001,39 @@ end
 	@test index(lattice, 2, conj=true, branch=:τ, band=2) == 10
 	@test index(lattice, 2, conj=false, branch=:τ, band=3) == 11
 	@test index(lattice, 2, conj=true, branch=:τ, band=3) == 12
+	@test index(lattice, 1, conj=false, branch=:τ, band=1) == 13
+	@test index(lattice, 1, conj=true, branch=:τ, band=1) == 14
+	@test index(lattice, 1, conj=false, branch=:τ, band=2) == 15
+	@test index(lattice, 1, conj=true, branch=:τ, band=2) == 16
+	@test index(lattice, 1, conj=false, branch=:τ, band=3) == 17
+	@test index(lattice, 1, conj=true, branch=:τ, band=3) == 18
 
-	@test index(lattice, 1, conj=false, branch=:+, band=1) == 13
-	@test index(lattice, 1, conj=true, branch=:+, band=1) == 14
-	@test index(lattice, 1, conj=false, branch=:-, band=1) == 15
-	@test index(lattice, 1, conj=true, branch=:-, band=1) == 16
-	@test index(lattice, 1, conj=false, branch=:+, band=2) == 17
-	@test index(lattice, 1, conj=true, branch=:+, band=2) == 18
-	@test index(lattice, 1, conj=false, branch=:-, band=2) == 19
-	@test index(lattice, 1, conj=true, branch=:-, band=2) == 20
-	@test index(lattice, 1, conj=false, branch=:+, band=3) == 21
-	@test index(lattice, 1, conj=true, branch=:+, band=3) == 22
-	@test index(lattice, 1, conj=false, branch=:-, band=3) == 23
-	@test index(lattice, 1, conj=true, branch=:-, band=3) == 24
 
-	@test index(lattice, 2, conj=false, branch=:+, band=1) == 25
-	@test index(lattice, 2, conj=true, branch=:+, band=1) == 26
-	@test index(lattice, 2, conj=false, branch=:-, band=1) == 27
-	@test index(lattice, 2, conj=true, branch=:-, band=1) == 28
-	@test index(lattice, 2, conj=false, branch=:+, band=2) == 29
-	@test index(lattice, 2, conj=true, branch=:+, band=2) == 30
-	@test index(lattice, 2, conj=false, branch=:-, band=2) == 31
-	@test index(lattice, 2, conj=true, branch=:-, band=2) == 32
-	@test index(lattice, 2, conj=false, branch=:+, band=3) == 33
-	@test index(lattice, 2, conj=true, branch=:+, band=3) == 34
-	@test index(lattice, 2, conj=false, branch=:-, band=3) == 35
-	@test index(lattice, 2, conj=true, branch=:-, band=3) == 36
+	@test index(lattice, 1, conj=false, branch=:+, band=1) == 19
+	@test index(lattice, 1, conj=true, branch=:+, band=1) == 20
+	@test index(lattice, 1, conj=false, branch=:-, band=1) == 21
+	@test index(lattice, 1, conj=true, branch=:-, band=1) == 22
+	@test index(lattice, 1, conj=false, branch=:+, band=2) == 23
+	@test index(lattice, 1, conj=true, branch=:+, band=2) == 24
+	@test index(lattice, 1, conj=false, branch=:-, band=2) == 25
+	@test index(lattice, 1, conj=true, branch=:-, band=2) == 26
+	@test index(lattice, 1, conj=false, branch=:+, band=3) == 27
+	@test index(lattice, 1, conj=true, branch=:+, band=3) == 28
+	@test index(lattice, 1, conj=false, branch=:-, band=3) == 29
+	@test index(lattice, 1, conj=true, branch=:-, band=3) == 30
 
-	@test index(lattice, 1, conj=false, branch=:τ, band=1) == index(lattice, 1, conj=false, branch=:-, band=1)
-	@test index(lattice, 1, conj=true, branch=:τ, band=1) == index(lattice, 1, conj=true, branch=:-, band=1) 
-	@test index(lattice, 1, conj=false, branch=:τ, band=2) == index(lattice, 1, conj=false, branch=:-, band=2)
-	@test index(lattice, 1, conj=true, branch=:τ, band=2) == index(lattice, 1, conj=true, branch=:-, band=2) 
-	@test index(lattice, 1, conj=false, branch=:τ, band=3) == index(lattice, 1, conj=false, branch=:-, band=3)
-	@test index(lattice, 1, conj=true, branch=:τ, band=3) == index(lattice, 1, conj=true, branch=:-, band=3)
+	@test index(lattice, 2, conj=false, branch=:+, band=1) == 31
+	@test index(lattice, 2, conj=true, branch=:+, band=1) == 32
+	@test index(lattice, 2, conj=false, branch=:-, band=1) == 33
+	@test index(lattice, 2, conj=true, branch=:-, band=1) == 34
+	@test index(lattice, 2, conj=false, branch=:+, band=2) == 35
+	@test index(lattice, 2, conj=true, branch=:+, band=2) == 36
+	@test index(lattice, 2, conj=false, branch=:-, band=2) == 37
+	@test index(lattice, 2, conj=true, branch=:-, band=2) == 38
+	@test index(lattice, 2, conj=false, branch=:+, band=3) == 39
+	@test index(lattice, 2, conj=true, branch=:+, band=3) == 40
+	@test index(lattice, 2, conj=false, branch=:-, band=3) == 41
+	@test index(lattice, 2, conj=true, branch=:-, band=3) == 42
 
 	mps = GrassmannMPS(scalartype(lattice), length(lattice))
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
@@ -1048,7 +1048,7 @@ end
 	@test isa(lattice, MixedGrassmannLattice)
 	@test lattice.ordering == A1A1B1B1_a1a1A1A1b1b1B1B1a2a2A2A2b2b2B2B2()
 	@test scalartype(lattice) == ComplexF64
-	@test length(lattice) == 18
+	@test length(lattice) == 20
 	@test lattice.Nt == 2
 	@test lattice.Nτ == 2
 	@test lattice.t == 0.1
@@ -1065,23 +1065,21 @@ end
 	@test index(lattice, 3, conj=true, branch=:τ) == 4
 	@test index(lattice, 2, conj=false, branch=:τ) == 5
 	@test index(lattice, 2, conj=true, branch=:τ) == 6	
+	@test index(lattice, 1, conj=false, branch=:τ) == 7
+	@test index(lattice, 1, conj=true, branch=:τ) == 8
 
-
-	@test index(lattice, 1, conj=false, branch=:-) == 7
-	@test index(lattice, 1, conj=true, branch=:-) == 8
-	@test index(lattice, 1, conj=false, branch=:+) == 9
-	@test index(lattice, 1, conj=true, branch=:+) == 10
-	@test index(lattice, 2, conj=false, branch=:-) == 11
-	@test index(lattice, 2, conj=true, branch=:-) == 12
-	@test index(lattice, 2, conj=false, branch=:+) == 13
-	@test index(lattice, 2, conj=true, branch=:+) == 14
-	@test index(lattice, 3, conj=false, branch=:-) == 15
-	@test index(lattice, 3, conj=true, branch=:-) == 16
-	@test index(lattice, 3, conj=false, branch=:+) == 17
-	@test index(lattice, 3, conj=true, branch=:+) == 18
-
-	@test index(lattice, 1, conj=true, branch=:τ) == index(lattice, 1, conj=true, branch=:-) 
-	@test index(lattice, 1, conj=false, branch=:τ) == index(lattice, 1, conj=false, branch=:-)
+	@test index(lattice, 1, conj=false, branch=:-) == 9
+	@test index(lattice, 1, conj=true, branch=:-) == 10
+	@test index(lattice, 1, conj=false, branch=:+) == 11
+	@test index(lattice, 1, conj=true, branch=:+) == 12
+	@test index(lattice, 2, conj=false, branch=:-) == 13
+	@test index(lattice, 2, conj=true, branch=:-) == 14
+	@test index(lattice, 2, conj=false, branch=:+) == 15
+	@test index(lattice, 2, conj=true, branch=:+) == 16
+	@test index(lattice, 3, conj=false, branch=:-) == 17
+	@test index(lattice, 3, conj=true, branch=:-) == 18
+	@test index(lattice, 3, conj=false, branch=:+) == 19
+	@test index(lattice, 3, conj=true, branch=:+) == 20
 
 	mps = GrassmannMPS(scalartype(lattice), length(lattice))
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
@@ -1089,7 +1087,7 @@ end
 	# two bands
 	lattice = GrassmannLattice(Nt=1, δt=0.1, Nτ=2, δτ=0.1, contour=:mixed, bands=2, ordering=A1A1B1B1_a1a1A1A1b1b1B1B1a2a2A2A2b2b2B2B2())
 	@test isa(lattice, MixedGrassmannLattice)
-	@test length(lattice) == 28
+	@test length(lattice) == 32
 	@test lattice.Nt == 1
 	@test lattice.Nτ == 2
 	@test lattice.t == 0.1
@@ -1112,29 +1110,28 @@ end
 	@test index(lattice, 2, conj=true, branch=:τ, band=1) == 10
 	@test index(lattice, 2, conj=false, branch=:τ, band=2) == 11
 	@test index(lattice, 2, conj=true, branch=:τ, band=2) == 12
+	@test index(lattice, 1, conj=false, branch=:τ, band=1) == 13
+	@test index(lattice, 1, conj=true, branch=:τ, band=1) == 14
+	@test index(lattice, 1, conj=false, branch=:τ, band=2) == 15
+	@test index(lattice, 1, conj=true, branch=:τ, band=2) == 16
 
-	@test index(lattice, 1, conj=false, branch=:-, band=1) == 13
-	@test index(lattice, 1, conj=true, branch=:-, band=1) == 14
-	@test index(lattice, 1, conj=false, branch=:+, band=1) == 15
-	@test index(lattice, 1, conj=true, branch=:+, band=1) == 16
-	@test index(lattice, 1, conj=false, branch=:-, band=2) == 17
-	@test index(lattice, 1, conj=true, branch=:-, band=2) == 18
-	@test index(lattice, 1, conj=false, branch=:+, band=2) == 19
-	@test index(lattice, 1, conj=true, branch=:+, band=2) == 20
+	@test index(lattice, 1, conj=false, branch=:-, band=1) == 17
+	@test index(lattice, 1, conj=true, branch=:-, band=1) == 18
+	@test index(lattice, 1, conj=false, branch=:+, band=1) == 19
+	@test index(lattice, 1, conj=true, branch=:+, band=1) == 20
+	@test index(lattice, 1, conj=false, branch=:-, band=2) == 21
+	@test index(lattice, 1, conj=true, branch=:-, band=2) == 22
+	@test index(lattice, 1, conj=false, branch=:+, band=2) == 23
+	@test index(lattice, 1, conj=true, branch=:+, band=2) == 24
 
-	@test index(lattice, 2, conj=false, branch=:-, band=1) == 21
-	@test index(lattice, 2, conj=true, branch=:-, band=1) == 22
-	@test index(lattice, 2, conj=false, branch=:+, band=1) == 23
-	@test index(lattice, 2, conj=true, branch=:+, band=1) == 24
-	@test index(lattice, 2, conj=false, branch=:-, band=2) == 25
-	@test index(lattice, 2, conj=true, branch=:-, band=2) == 26
-	@test index(lattice, 2, conj=false, branch=:+, band=2) == 27
-	@test index(lattice, 2, conj=true, branch=:+, band=2) == 28
-
-	@test index(lattice, 1, conj=false, branch=:τ, band=1) == index(lattice, 1, conj=false, branch=:-, band=1)
-	@test index(lattice, 1, conj=true, branch=:τ, band=1) == index(lattice, 1, conj=true, branch=:-, band=1) 
-	@test index(lattice, 1, conj=false, branch=:τ, band=2) == index(lattice, 1, conj=false, branch=:-, band=2)
-	@test index(lattice, 1, conj=true, branch=:τ, band=2) == index(lattice, 1, conj=true, branch=:-, band=2)
+	@test index(lattice, 2, conj=false, branch=:-, band=1) == 25
+	@test index(lattice, 2, conj=true, branch=:-, band=1) == 26
+	@test index(lattice, 2, conj=false, branch=:+, band=1) == 27
+	@test index(lattice, 2, conj=true, branch=:+, band=1) == 28
+	@test index(lattice, 2, conj=false, branch=:-, band=2) == 29
+	@test index(lattice, 2, conj=true, branch=:-, band=2) == 30
+	@test index(lattice, 2, conj=false, branch=:+, band=2) == 31
+	@test index(lattice, 2, conj=true, branch=:+, band=2) == 32
 
 	mps = vacuumstate(lattice)
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
@@ -1142,7 +1139,7 @@ end
 	# three bands
 	lattice = GrassmannLattice(Nt=1, δt=0.1, Nτ=1, δτ=0.1, contour=:mixed, bands=3, ordering=A1A1B1B1_a1a1A1A1b1b1B1B1a2a2A2A2b2b2B2B2())
 	@test isa(lattice, MixedGrassmannLattice)
-	@test length(lattice) == 36
+	@test length(lattice) == 42
 	@test lattice.Nt == 1
 	@test lattice.Nτ == 1
 	@test lattice.t == 0.1
@@ -1165,39 +1162,38 @@ end
 	@test index(lattice, 2, conj=true, branch=:τ, band=2) == 10
 	@test index(lattice, 2, conj=false, branch=:τ, band=3) == 11
 	@test index(lattice, 2, conj=true, branch=:τ, band=3) == 12
+	@test index(lattice, 1, conj=false, branch=:τ, band=1) == 13
+	@test index(lattice, 1, conj=true, branch=:τ, band=1) == 14
+	@test index(lattice, 1, conj=false, branch=:τ, band=2) == 15
+	@test index(lattice, 1, conj=true, branch=:τ, band=2) == 16
+	@test index(lattice, 1, conj=false, branch=:τ, band=3) == 17
+	@test index(lattice, 1, conj=true, branch=:τ, band=3) == 18
 
-	@test index(lattice, 1, conj=false, branch=:-, band=1) == 13
-	@test index(lattice, 1, conj=true, branch=:-, band=1) == 14
-	@test index(lattice, 1, conj=false, branch=:+, band=1) == 15
-	@test index(lattice, 1, conj=true, branch=:+, band=1) == 16
-	@test index(lattice, 1, conj=false, branch=:-, band=2) == 17
-	@test index(lattice, 1, conj=true, branch=:-, band=2) == 18
-	@test index(lattice, 1, conj=false, branch=:+, band=2) == 19
-	@test index(lattice, 1, conj=true, branch=:+, band=2) == 20
-	@test index(lattice, 1, conj=false, branch=:-, band=3) == 21
-	@test index(lattice, 1, conj=true, branch=:-, band=3) == 22
-	@test index(lattice, 1, conj=false, branch=:+, band=3) == 23
-	@test index(lattice, 1, conj=true, branch=:+, band=3) == 24
+	@test index(lattice, 1, conj=false, branch=:-, band=1) == 19
+	@test index(lattice, 1, conj=true, branch=:-, band=1) == 20
+	@test index(lattice, 1, conj=false, branch=:+, band=1) == 21
+	@test index(lattice, 1, conj=true, branch=:+, band=1) == 22
+	@test index(lattice, 1, conj=false, branch=:-, band=2) == 23
+	@test index(lattice, 1, conj=true, branch=:-, band=2) == 24
+	@test index(lattice, 1, conj=false, branch=:+, band=2) == 25
+	@test index(lattice, 1, conj=true, branch=:+, band=2) == 26
+	@test index(lattice, 1, conj=false, branch=:-, band=3) == 27
+	@test index(lattice, 1, conj=true, branch=:-, band=3) == 28
+	@test index(lattice, 1, conj=false, branch=:+, band=3) == 29
+	@test index(lattice, 1, conj=true, branch=:+, band=3) == 30
 
-	@test index(lattice, 2, conj=false, branch=:-, band=1) == 25
-	@test index(lattice, 2, conj=true, branch=:-, band=1) == 26
-	@test index(lattice, 2, conj=false, branch=:+, band=1) == 27
-	@test index(lattice, 2, conj=true, branch=:+, band=1) == 28
-	@test index(lattice, 2, conj=false, branch=:-, band=2) == 29
-	@test index(lattice, 2, conj=true, branch=:-, band=2) == 30
-	@test index(lattice, 2, conj=false, branch=:+, band=2) == 31
-	@test index(lattice, 2, conj=true, branch=:+, band=2) == 32
-	@test index(lattice, 2, conj=false, branch=:-, band=3) == 33
-	@test index(lattice, 2, conj=true, branch=:-, band=3) == 34
-	@test index(lattice, 2, conj=false, branch=:+, band=3) == 35
-	@test index(lattice, 2, conj=true, branch=:+, band=3) == 36
-
-	@test index(lattice, 1, conj=false, branch=:τ, band=1) == index(lattice, 1, conj=false, branch=:-, band=1)
-	@test index(lattice, 1, conj=true, branch=:τ, band=1) == index(lattice, 1, conj=true, branch=:-, band=1) 
-	@test index(lattice, 1, conj=false, branch=:τ, band=2) == index(lattice, 1, conj=false, branch=:-, band=2)
-	@test index(lattice, 1, conj=true, branch=:τ, band=2) == index(lattice, 1, conj=true, branch=:-, band=2) 
-	@test index(lattice, 1, conj=false, branch=:τ, band=3) == index(lattice, 1, conj=false, branch=:-, band=3)
-	@test index(lattice, 1, conj=true, branch=:τ, band=3) == index(lattice, 1, conj=true, branch=:-, band=3)
+	@test index(lattice, 2, conj=false, branch=:-, band=1) == 31
+	@test index(lattice, 2, conj=true, branch=:-, band=1) == 32
+	@test index(lattice, 2, conj=false, branch=:+, band=1) == 33
+	@test index(lattice, 2, conj=true, branch=:+, band=1) == 34
+	@test index(lattice, 2, conj=false, branch=:-, band=2) == 35
+	@test index(lattice, 2, conj=true, branch=:-, band=2) == 36
+	@test index(lattice, 2, conj=false, branch=:+, band=2) == 37
+	@test index(lattice, 2, conj=true, branch=:+, band=2) == 38
+	@test index(lattice, 2, conj=false, branch=:-, band=3) == 39
+	@test index(lattice, 2, conj=true, branch=:-, band=3) == 40
+	@test index(lattice, 2, conj=false, branch=:+, band=3) == 41
+	@test index(lattice, 2, conj=true, branch=:+, band=3) == 42
 
 	mps = GrassmannMPS(scalartype(lattice), length(lattice))
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
@@ -1213,7 +1209,7 @@ end
 	@test isa(lattice, MixedGrassmannLattice)
 	@test lattice.ordering == A1B1B1A1_A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2()
 	@test scalartype(lattice) == ComplexF64
-	@test length(lattice) == 18
+	@test length(lattice) == 20
 	@test lattice.Nt == 2
 	@test lattice.Nτ == 2
 	@test lattice.t == 0.1
@@ -1230,23 +1226,22 @@ end
 	@test index(lattice, 3, conj=true, branch=:τ) == 4
 	@test index(lattice, 2, conj=false, branch=:τ) == 5
 	@test index(lattice, 2, conj=true, branch=:τ) == 6
+	@test index(lattice, 1, conj=false, branch=:τ) == 7
+	@test index(lattice, 1, conj=true, branch=:τ) == 8
 
-	@test index(lattice, 3, conj=false, branch=:+) == 7
-	@test index(lattice, 3, conj=true, branch=:+) == 8
-	@test index(lattice, 2, conj=false, branch=:+) == 9
-	@test index(lattice, 2, conj=true, branch=:+) == 10
-	@test index(lattice, 1, conj=false, branch=:+) == 11
-	@test index(lattice, 1, conj=true, branch=:+) == 12
+	@test index(lattice, 3, conj=false, branch=:+) == 9
+	@test index(lattice, 3, conj=true, branch=:+) == 10
+	@test index(lattice, 2, conj=false, branch=:+) == 11
+	@test index(lattice, 2, conj=true, branch=:+) == 12
+	@test index(lattice, 1, conj=false, branch=:+) == 13
+	@test index(lattice, 1, conj=true, branch=:+) == 14
 
-	@test index(lattice, 1, conj=false, branch=:-) == 13
-	@test index(lattice, 1, conj=true, branch=:-) == 14
-	@test index(lattice, 2, conj=false, branch=:-) == 15
-	@test index(lattice, 2, conj=true, branch=:-) == 16
-	@test index(lattice, 3, conj=false, branch=:-) == 17
-	@test index(lattice, 3, conj=true, branch=:-) == 18
-
-	@test index(lattice, 1, conj=true, branch=:τ) == index(lattice, 1, conj=true, branch=:-) 
-	@test index(lattice, 1, conj=false, branch=:τ) == index(lattice, 1, conj=false, branch=:-)
+	@test index(lattice, 1, conj=false, branch=:-) == 15
+	@test index(lattice, 1, conj=true, branch=:-) == 16
+	@test index(lattice, 2, conj=false, branch=:-) == 17
+	@test index(lattice, 2, conj=true, branch=:-) == 18
+	@test index(lattice, 3, conj=false, branch=:-) == 19
+	@test index(lattice, 3, conj=true, branch=:-) == 20
 
 	mps = GrassmannMPS(scalartype(lattice), length(lattice))
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
@@ -1255,7 +1250,7 @@ end
 	# real part: a\bar{a}b\bar{b} a_2^+\bar{a}_2^+a_2^-\bar{a}_2^-b_2^+\bar{b}_2^+b_2^-\bar{b}_2^- a_1^+\bar{a}_1^+a_1^-\bar{a}_1^-b_1^+\bar{b}_1^+b_1^-\bar{b}_1^-
 	lattice = GrassmannLattice(Nt=1, δt=0.1, Nτ=2, δτ=0.1, contour=:mixed, bands=2, ordering=A1B1B1A1_A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2())
 	@test isa(lattice, MixedGrassmannLattice)
-	@test length(lattice) == 28
+	@test length(lattice) == 32
 	@test lattice.Nt == 1
 	@test lattice.Nτ == 2
 	@test lattice.t == 0.1
@@ -1278,30 +1273,28 @@ end
 	@test index(lattice, 2, conj=false, branch=:τ, band=2) == 10
 	@test index(lattice, 2, conj=true, branch=:τ, band=2) == 11
 	@test index(lattice, 2, conj=true, branch=:τ, band=1) == 12
+	@test index(lattice, 1, conj=false, branch=:τ, band=1) == 13
+	@test index(lattice, 1, conj=false, branch=:τ, band=2) == 14
+	@test index(lattice, 1, conj=true, branch=:τ, band=2) == 15
+	@test index(lattice, 1, conj=true, branch=:τ, band=1) == 16
 
-	@test index(lattice, 2, conj=false, branch=:+, band=1) == 13
-	@test index(lattice, 2, conj=false, branch=:+, band=2) == 14
-	@test index(lattice, 2, conj=true, branch=:+, band=2) == 15
-	@test index(lattice, 2, conj=true, branch=:+, band=1) == 16
-	@test index(lattice, 1, conj=false, branch=:+, band=1) == 17
-	@test index(lattice, 1, conj=false, branch=:+, band=2) == 18
-	@test index(lattice, 1, conj=true, branch=:+, band=2) == 19
-	@test index(lattice, 1, conj=true, branch=:+, band=1) == 20
+	@test index(lattice, 2, conj=false, branch=:+, band=1) == 17
+	@test index(lattice, 2, conj=false, branch=:+, band=2) == 18
+	@test index(lattice, 2, conj=true, branch=:+, band=2) == 19
+	@test index(lattice, 2, conj=true, branch=:+, band=1) == 20
+	@test index(lattice, 1, conj=false, branch=:+, band=1) == 21
+	@test index(lattice, 1, conj=false, branch=:+, band=2) == 22
+	@test index(lattice, 1, conj=true, branch=:+, band=2) == 23
+	@test index(lattice, 1, conj=true, branch=:+, band=1) == 24
 
-
-	@test index(lattice, 1, conj=false, branch=:-, band=1) == 21
-	@test index(lattice, 1, conj=false, branch=:-, band=2) == 22
-	@test index(lattice, 1, conj=true, branch=:-, band=2) == 23
-	@test index(lattice, 1, conj=true, branch=:-, band=1) == 24
-	@test index(lattice, 2, conj=false, branch=:-, band=1) == 25
-	@test index(lattice, 2, conj=false, branch=:-, band=2) == 26
-	@test index(lattice, 2, conj=true, branch=:-, band=2) == 27
-	@test index(lattice, 2, conj=true, branch=:-, band=1) == 28
-
-	@test index(lattice, 1, conj=false, branch=:τ, band=1) == index(lattice, 1, conj=false, branch=:-, band=1)
-	@test index(lattice, 1, conj=true, branch=:τ, band=1) == index(lattice, 1, conj=true, branch=:-, band=1) 
-	@test index(lattice, 1, conj=false, branch=:τ, band=2) == index(lattice, 1, conj=false, branch=:-, band=2)
-	@test index(lattice, 1, conj=true, branch=:τ, band=2) == index(lattice, 1, conj=true, branch=:-, band=2)
+	@test index(lattice, 1, conj=false, branch=:-, band=1) == 25
+	@test index(lattice, 1, conj=false, branch=:-, band=2) == 26
+	@test index(lattice, 1, conj=true, branch=:-, band=2) == 27
+	@test index(lattice, 1, conj=true, branch=:-, band=1) == 28
+	@test index(lattice, 2, conj=false, branch=:-, band=1) == 29
+	@test index(lattice, 2, conj=false, branch=:-, band=2) == 30
+	@test index(lattice, 2, conj=true, branch=:-, band=2) == 31
+	@test index(lattice, 2, conj=true, branch=:-, band=1) == 32
 
 	mps = vacuumstate(lattice)
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
@@ -1309,7 +1302,7 @@ end
 	# imag part: a_1b_1c_1\bar{c}_1\bar{b}_1\bar{a}_1
 	lattice = GrassmannLattice(Nt=1, δt=0.1, Nτ=1, δτ=0.1, contour=:mixed, bands=3, ordering=A1B1B1A1_A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2())
 	@test isa(lattice, MixedGrassmannLattice)
-	@test length(lattice) == 36
+	@test length(lattice) == 42
 	@test lattice.Nt == 1
 	@test lattice.Nτ == 1
 	@test lattice.t == 0.1
@@ -1332,40 +1325,38 @@ end
 	@test index(lattice, 2, conj=true, branch=:τ, band=3) == 10
 	@test index(lattice, 2, conj=true, branch=:τ, band=2) == 11
 	@test index(lattice, 2, conj=true, branch=:τ, band=1) == 12
+	@test index(lattice, 1, conj=false, branch=:τ, band=1) == 13
+	@test index(lattice, 1, conj=false, branch=:τ, band=2) == 14
+	@test index(lattice, 1, conj=false, branch=:τ, band=3) == 15
+	@test index(lattice, 1, conj=true, branch=:τ, band=3) == 16
+	@test index(lattice, 1, conj=true, branch=:τ, band=2) == 17
+	@test index(lattice, 1, conj=true, branch=:τ, band=1) == 18
 
-	@test index(lattice, 2, conj=false, branch=:+, band=1) == 13
-	@test index(lattice, 2, conj=false, branch=:+, band=2) == 14
-	@test index(lattice, 2, conj=false, branch=:+, band=3) == 15
-	@test index(lattice, 2, conj=true, branch=:+, band=3) == 16
-	@test index(lattice, 2, conj=true, branch=:+, band=2) == 17
-	@test index(lattice, 2, conj=true, branch=:+, band=1) == 18
-	@test index(lattice, 1, conj=false, branch=:+, band=1) == 19
-	@test index(lattice, 1, conj=false, branch=:+, band=2) == 20
-	@test index(lattice, 1, conj=false, branch=:+, band=3) == 21
-	@test index(lattice, 1, conj=true, branch=:+, band=3) == 22
-	@test index(lattice, 1, conj=true, branch=:+, band=2) == 23
-	@test index(lattice, 1, conj=true, branch=:+, band=1) == 24
+	@test index(lattice, 2, conj=false, branch=:+, band=1) == 19
+	@test index(lattice, 2, conj=false, branch=:+, band=2) == 20
+	@test index(lattice, 2, conj=false, branch=:+, band=3) == 21
+	@test index(lattice, 2, conj=true, branch=:+, band=3) == 22
+	@test index(lattice, 2, conj=true, branch=:+, band=2) == 23
+	@test index(lattice, 2, conj=true, branch=:+, band=1) == 24
+	@test index(lattice, 1, conj=false, branch=:+, band=1) == 25
+	@test index(lattice, 1, conj=false, branch=:+, band=2) == 26
+	@test index(lattice, 1, conj=false, branch=:+, band=3) == 27
+	@test index(lattice, 1, conj=true, branch=:+, band=3) == 28
+	@test index(lattice, 1, conj=true, branch=:+, band=2) == 29
+	@test index(lattice, 1, conj=true, branch=:+, band=1) == 30
 
-
-	@test index(lattice, 1, conj=false, branch=:-, band=1) == 25
-	@test index(lattice, 1, conj=false, branch=:-, band=2) == 26
-	@test index(lattice, 1, conj=false, branch=:-, band=3) == 27
-	@test index(lattice, 1, conj=true, branch=:-, band=3) == 28
-	@test index(lattice, 1, conj=true, branch=:-, band=2) == 29
-	@test index(lattice, 1, conj=true, branch=:-, band=1) == 30
-	@test index(lattice, 2, conj=false, branch=:-, band=1) == 31
-	@test index(lattice, 2, conj=false, branch=:-, band=2) == 32
-	@test index(lattice, 2, conj=false, branch=:-, band=3) == 33
-	@test index(lattice, 2, conj=true, branch=:-, band=3) == 34
-	@test index(lattice, 2, conj=true, branch=:-, band=2) == 35
-	@test index(lattice, 2, conj=true, branch=:-, band=1) == 36
-
-	@test index(lattice, 1, conj=false, branch=:τ, band=1) == index(lattice, 1, conj=false, branch=:-, band=1)
-	@test index(lattice, 1, conj=true, branch=:τ, band=1) == index(lattice, 1, conj=true, branch=:-, band=1) 
-	@test index(lattice, 1, conj=false, branch=:τ, band=2) == index(lattice, 1, conj=false, branch=:-, band=2)
-	@test index(lattice, 1, conj=true, branch=:τ, band=2) == index(lattice, 1, conj=true, branch=:-, band=2) 
-	@test index(lattice, 1, conj=false, branch=:τ, band=3) == index(lattice, 1, conj=false, branch=:-, band=3)
-	@test index(lattice, 1, conj=true, branch=:τ, band=3) == index(lattice, 1, conj=true, branch=:-, band=3)
+	@test index(lattice, 1, conj=false, branch=:-, band=1) == 31
+	@test index(lattice, 1, conj=false, branch=:-, band=2) == 32
+	@test index(lattice, 1, conj=false, branch=:-, band=3) == 33
+	@test index(lattice, 1, conj=true, branch=:-, band=3) == 34
+	@test index(lattice, 1, conj=true, branch=:-, band=2) == 35
+	@test index(lattice, 1, conj=true, branch=:-, band=1) == 36
+	@test index(lattice, 2, conj=false, branch=:-, band=1) == 37
+	@test index(lattice, 2, conj=false, branch=:-, band=2) == 38
+	@test index(lattice, 2, conj=false, branch=:-, band=3) == 39
+	@test index(lattice, 2, conj=true, branch=:-, band=3) == 40
+	@test index(lattice, 2, conj=true, branch=:-, band=2) == 41
+	@test index(lattice, 2, conj=true, branch=:-, band=1) == 42
 
 	mps = GrassmannMPS(scalartype(lattice), length(lattice))
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6

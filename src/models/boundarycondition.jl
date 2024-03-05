@@ -58,6 +58,9 @@ end
 function boundarycondition!(x::GrassmannMPS, lattice::MixedGrassmannLattice; band::Int=1, trunc::TruncationScheme=DefaultIntegrationTruncation)
 	pos1, pos2 = index(lattice, lattice.kt, conj=true, band=band, branch=:-), index(lattice, lattice.kt, conj=false, band=band, branch=:+)
 	apply!(exp(GTerm(pos1, pos2, coeff=1)), x)
+
+	pos1, pos2 = index(lattice, 1, conj=true, band=band, branch=:τ), index(lattice, 1, conj=false, band=band, branch=:-)
+	apply!(exp(GTerm(pos1, pos2, coeff=1)), x)
 	
 	pos1, pos2 = index(lattice, 0, conj=true, band=band), index(lattice, lattice.kτ, conj=false, band=band, branch=:τ)
 	apply!(exp(GTerm(pos1, pos2, coeff=-1)), x)

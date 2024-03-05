@@ -172,7 +172,7 @@ function sysdynamics_imaginary!(gmps::GrassmannMPS, lattice::MixedGrassmannLatti
 		(lattice.bands == 2) || throw(ArgumentError("lattice should have two bands"))
 		# a = -im*lattice.δt*U
 		b = a^2 * (exp(-lattice.δτ*U) - 1)
-		for i in 1:lattice.Nτ-1
+		for i in 1:lattice.Nτ
 			for band in 1:2:lattice.bands
 				pos1 = index(lattice, i+1, conj=true, branch=:τ, band=band)
 				pos2 = index(lattice, i+1, conj=true, branch=:τ, band=band+1)
