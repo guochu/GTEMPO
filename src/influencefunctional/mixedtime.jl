@@ -1,11 +1,12 @@
 function partialinfluencefunctional(lattice::MixedGrassmannLattice, i::Int, cols_f::AbstractVector, cols_b::AbstractVector, cols_i::AbstractVector; b1::Symbol, band::Int=1)
 	@assert length(cols_f) == length(cols_b)
+	@assert length(cols_i) == lattice.Nτ
 	row = index(lattice, i, band=band, conj=true, branch=b1)
 	cols = eltype(cols_f)[]
 	col_pos = Int[]
 
 	for j in length(cols_i):-1:1
-		pos = index(lattice, j, band=band, conj=false, branch=:τ)
+		pos = index(lattice, j+1, band=band, conj=false, branch=:τ)
 		push!(col_pos, pos)
 		push!(cols, cols_i[j])
 	end

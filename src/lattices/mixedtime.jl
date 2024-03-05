@@ -59,13 +59,13 @@ Base.length(x::MixedGrassmannLattice1Order) = 4*x.bands * (x.Nt+1) + 2 * x.bands
 # acending order for real branch, descending order for imag time
 function index(x::MixedGrassmannLattice1Order{<:A1A1B1B1_A1A1a1a1B1B1b1b1A2A2a2a2B2B2b2b2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
-		(1 <= band <= x.bands) || throw(ArgumentError("band $band out of range"))
-		(branch in (:+, :-, :τ)) || throw(BoundsError("branch must be one of :+, :- or :τ"))
+		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
+		(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
 		if i != 0
 			if branch == :τ
-				(1 <= i <= x.Nτ + 1) || throw(BoundsError("imag time step $i out of range"))
+				(1 <= i <= x.Nτ + 1) || throw(BoundsError(1:x.kτ, i))
 			else
-				(1 <= i <= x.Nt + 1) || throw(ArgumentError("real time step $i out of range"))
+				(1 <= i <= x.Nt + 1) || throw(BoundsError(1:x.kt, i))
 			end
 		end
 	end
@@ -91,13 +91,13 @@ end
 
 function index(x::MixedGrassmannLattice1Order{<:A1A1B1B1_a1a1A1A1b1b1B1B1a2a2A2A2b2b2B2B2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
-		(1 <= band <= x.bands) || throw(ArgumentError("band $band out of range"))
-		(branch in (:+, :-, :τ)) || throw(BoundsError("branch must be one of :+, :- or :τ"))
+		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
+		(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
 		if i != 0
 			if branch == :τ
-				(1 <= i <= x.Nτ + 1) || throw(BoundsError("imag time step $i out of range"))
+				(1 <= i <= x.Nτ + 1) || throw(BoundsError(1:x.kτ, i))
 			else
-				(1 <= i <= x.Nt + 1) || throw(ArgumentError("real time step $i out of range"))
+				(1 <= i <= x.Nt + 1) || throw(BoundsError(1:x.kt, i))
 			end
 		end
 	end
@@ -124,13 +124,13 @@ end
 # acending order for real branch, descending order for imag time
 function index(x::MixedGrassmannLattice1Order{<:A1B1B1A1_A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
-		(1 <= band <= x.bands) || throw(ArgumentError("band $band out of range"))
-		(branch in (:+, :-, :τ)) || throw(BoundsError("branch must be one of :+, :- or :τ"))
+		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
+		(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
 		if i != 0
 			if branch == :τ
-				(1 <= i <= x.Nτ + 1) || throw(BoundsError("imag time step $i out of range"))
+				(1 <= i <= x.Nτ + 1) || throw(BoundsError(1:x.kτ, i))
 			else
-				(1 <= i <= x.Nt + 1) || throw(ArgumentError("real time step $i out of range"))
+				(1 <= i <= x.Nt + 1) || throw(BoundsError(1:x.kt, i))
 			end
 		end
 	end

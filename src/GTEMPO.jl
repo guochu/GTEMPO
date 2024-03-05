@@ -33,7 +33,7 @@ export hybriddynamics, hybriddynamics!, hybriddynamicsstepper, hybriddynamicsste
 # GF and other observables
 export Gτ, parallel_Gτ, Gt, parallel_Gt, Gm
 export occupation, electriccurrent, electriccurrent_fast
-export cached_Gτ, cached_Gt, cached_occupation, cached_electriccurrent, cached_electriccurrent_fast
+export cached_Gτ, cached_Gt, cached_Gm, cached_occupation, cached_electriccurrent, cached_electriccurrent_fast
 
 # utilities for TEMPO
 # exact models

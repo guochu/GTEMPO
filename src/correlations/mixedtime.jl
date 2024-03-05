@@ -83,19 +83,20 @@ function Δm(f0::SpectrumFunction; β::Real, Nτ::Int, t::Real, Nt::Int, μ::Rea
 end
 
 function index(A::MixedCorrelationFunction, i::Int, j::Int; b1::Symbol, b2::Symbol)
-	(b1 in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
-	(b2 in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
 	b₁, b₂ = b1, b2
 	@boundscheck begin
+        (b₁ in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
+        (b₂ in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
+
 		if b₁ == :τ
-			(1 <= i <= isize(A)) || throw(ArgumentError("imag time step $i out of range"))
+			(1 <= i <= isize(A)) || throw(BoundsError(1:isize(A), i))
 		else
-			(1 <= i <= rsize(A)) || throw(ArgumentError("real time step $i out of range"))
+			(1 <= i <= rsize(A)) || throw(BoundsError(1:rsize(A), i))
 		end
 		if b₂ == :τ
-			(1 <= j <= isize(A)) || throw(ArgumentError("imag time step $j out of range"))
+			(1 <= j <= isize(A)) || throw(BoundsError(1:isize(A), j))
 		else
-			(1 <= j <= rsize(A)) || throw(ArgumentError("real time step $j out of range"))
+			(1 <= j <= rsize(A)) || throw(BoundsError(1:rsize(A), j))
 		end
 	end
     # here b₁ and b₂ are branches

@@ -26,6 +26,14 @@ function cached_Gt(lattice::RealGrassmannLattice, i::Int, j::Int, A::Union{Grass
     return expectationvalue(t, cache; kwargs...)
 end
 
+# mixed-time 
+function cached_Gm(lattice::MixedGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
+                    cache::AbstractExpectationCache=environments(lattice, A, B...), b1::Symbol, b2::Symbol, c1::Bool=true, c2::Bool=false, band::Int=1, kwargs...)
+    pos1, pos2 = index(lattice, i, conj=c1, branch=b1, band=band), index(lattice, j, conj=c2, branch=b2, band=band)
+    t = GTerm(pos1, pos2, coeff=1)
+    return expectationvalue(t, cache; kwargs...)
+end
+
 # real-time first order
 function cached_occupation(lattice::RealGrassmannLattice1Order, i::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...) 
     return real(cached_Gt(lattice, i, i, A, B...; c1=false, c2=true, b1=:+, b2=:-, kwargs...))
