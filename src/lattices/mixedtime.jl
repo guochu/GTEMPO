@@ -20,7 +20,7 @@ struct MixedGrassmannLattice1Order{O<:MixedGrassmannOrdering} <: MixedGrassmannL
 end
 
 # the default is that the system starts from 0 temperature (state 0)
-MixedGrassmannLattice1Order(; δt::Real, Nt::Int, δτ::Real, Nτ::Int, bands::Int=1, ordering::MixedGrassmannOrdering=AABB_AAaaBBbb()) = MixedGrassmannLattice1Order(
+MixedGrassmannLattice1Order(; δt::Real, Nt::Int, δτ::Real, Nτ::Int, bands::Int=1, ordering::MixedGrassmannOrdering=AABB_aaAAbbBB()) = MixedGrassmannLattice1Order(
 							δt, Nt, δτ, Nτ, bands, ordering)
 Base.similar(x::MixedGrassmannLattice1Order; δt::Real=x.δt, Nt::Int=x.Nt, δτ::Real=x.δτ, Nτ::Int=x.Nτ, bands::Int=x.bands, ordering::MixedGrassmannOrdering=x.ordering) = MixedGrassmannLattice1Order(
 			δt, Nt, δτ, Nτ, bands, ordering)
