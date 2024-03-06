@@ -7,7 +7,6 @@ push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/FermionicTCMPS/src")
 using Test, Random
 using SphericalTensors, DMRG, FermionicTCMPS
 const TK = SphericalTensors
-using ImpurityModelBase.Utilities
 
 # include("../src/includes.jl")
 

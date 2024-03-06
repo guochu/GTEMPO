@@ -11,6 +11,7 @@ zoom out gmps by scaling
 function zoomout(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, scaling::Int)
 	@assert scaling >= 1
 	@assert length(gmps) == length(lattice)
+	isa(lattice, MixedGrassmannLattice) && throw(ArgumentError("zoomout does not support MixedGrassmannLattice currently"))
 	(scaling == 1) && return gmps
 	@assert lattice.N % scaling == 0
 	N2 = div(lattice.N, scaling)

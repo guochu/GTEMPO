@@ -3,7 +3,7 @@ println("|              Models              |")
 println("------------------------------------")
 
 
-using QuadGK
+# using QuadGK
 
 @testset "Grassmann Ordering" begin
 	N = 5
@@ -109,6 +109,49 @@ end
 		g2 = [cached_Gt(lattice, 1, k, mpsK, mpsI, c1=true, c2=false, b1=:-, b2=:+, cache=cache) for k in 1:lattice.k]
 		@test norm(gt - g1) / norm(gt) < rtol
 		@test norm(g2) / length(g2) < rtol
+	end
+end
+
+@testset "Bare impurity dynamics: benchmarking mixed-time and imaginary GTEMPO with Analytic" begin
+	N = 25
+	δτ = 0.05
+	ϵ_d = 1.25*pi
+	β = N * δτ
+	τs = collect(0:δτ:β)
+	δt = 0.1
+	Nt = 20
+	t = δt * Nt
+	ts = [i*δt for i in 0:Nt]
+
+	rtol = 1.0e-5
+
+	trunc = truncdimcutoff(D=100, ϵ=1.0e-10, add_back=0)
+	bath = fermionicbath(spectrum_func(), β=β, μ=0)
+	gt1 = [free_greater(tj, β=β, μ=ϵ_d) for tj in ts]
+	gt2 = [free_lesser(tj, β=β, μ=ϵ_d) for tj in ts]
+	gτ = [free_Gτ(τ, β=β, μ=ϵ_d) for τ in τs]
+
+	exact_model = SISB(bath, μ=-ϵ_d, U=0)
+	for ordering in mixed_ac_grassmann_orderings
+		lattice = GrassmannLattice(Nt=Nt, δt=δt, Nτ=N, δτ=β/N, contour=:mixed, ordering=ordering)
+		mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
+		mpsK = boundarycondition(mpsK, lattice)
+		cache = environments(lattice, mpsK)
+		g1 = [cached_Gm(lattice, k, 1, mpsK, c1=false, c2=true, b1=:+, b2=:+, cache=cache) for k in 1:lattice.kt]
+		g2 = [cached_Gm(lattice, 1, k, mpsK, c1=true, c2=false, b1=:-, b2=:+, cache=cache) for k in 1:lattice.kt]
+		g3 = [cached_Gm(lattice, k, 1, mpsK, c1=false, c2=true, b1=:τ, b2=:τ, cache=cache) for k in 1:lattice.kτ]
+		@test norm(gt1 - g1) / norm(gt1) < rtol
+		@test norm(gt2 - g2) / norm(gt2) < rtol
+		@test norm(gτ - g3) / norm(gτ) < rtol
+	end
+
+	for ordering in imag_ac_grassmann_orderings
+		lattice = GrassmannLattice(N=N, δτ=δτ, contour=:imag, ordering=ordering)
+		mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
+		mpsK = boundarycondition(mpsK, lattice)
+		cache = environments(lattice, mpsK)
+		g3 = [cached_Gτ(lattice, k, 1, mpsK, c1=false, c2=true, cache=cache) for k in 1:lattice.k]
+		@test norm(gτ - g3) / norm(gτ) < rtol		
 	end
 end
 
