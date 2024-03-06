@@ -50,20 +50,6 @@ using QuadGK
 end
 
 @testset "GF-imaginary time: benchmarking ED, Analytic, TEMPO" begin
-	function Gw(ω::Float64, spectrum, ϵ_d, μ)
-		f, lb, ub = spectrum.f, lowerbound(spectrum), upperbound(spectrum)
-	    1.0/(im*ω-ϵ_d-quadgk(ε -> f(ε)/(im*ω+μ-ε), lb, ub)[1])
-	end
-
-	function G(τ::Float64, spectrum, β, ϵ_d, μ)
-	    res = 0.0
-	    for n = -100:101
-	        ω = (2n-1)*π/β
-	        res += (Gw(ω, spectrum, ϵ_d, μ)-1/(im*ω))*exp(-im*τ*ω)
-	    end
-	    res = -(res/β-0.5)
-	end
-
 	N = 25
 	δτ = 0.01
 	ϵ_d = 1.25*pi
@@ -80,7 +66,7 @@ end
 		config = star(bath, dw=dw)
 		model = FreeSISBD(config, μ=ϵ_d)
 		g₁ = gf_greater_τ(model, τs)
-		g₂ = [G(τ, spectrum_func(), β, ϵ_d, μ) for τ in τs]
+		g₂ = [toulouse_Gτ(spectrum_func(), τ, β = β, ϵ_d = ϵ_d, μ = μ) for τ in τs]
 		@test norm(g₁ - g₂) / norm(g₁) < rtol
 
 		exact_model = SISB(bath, μ=ϵ_d, U=0)
@@ -92,6 +78,37 @@ end
 			g₃ = Gτ(lattice, mpsK, mpsI)
 			@test norm(g₁ - g₃) / norm(g₁) < rtol
 		end
+	end
+end
+
+@testset "GF-real time: benchmarking with Analytic" begin
+	N = 10
+	δt = 0.01
+	t = N * δt
+	ϵ_d = 1.25*pi
+	β = 1.
+	ts = [i*δt for i in 0:N]
+	rtol = 5*1.0e-2
+
+	trunc = truncdimcutoff(D=100, ϵ=1.0e-10, add_back=0)
+		
+
+	# println("μ = ", μ)
+	bath = fermionicbath(spectrum_func(), β=β, μ=0.)
+	gt = [toulouse_Gt(spectrum_func(), tj, ϵ_d = ϵ_d, μ = 0.) for tj in ts]
+
+	exact_model = SISB(bath, μ=ϵ_d, U=0)
+	corr = Δt(bath, N=N, t=t)
+	for ordering in real_ac_grassmann_orderings
+		lattice = GrassmannLattice(N=N, δt=δt, contour=:real, ordering=ordering)
+		mpsI = hybriddynamics(lattice, corr, trunc=trunc) 
+		mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
+		mpsK = boundarycondition(mpsK, lattice)
+		cache = environments(lattice, mpsK, mpsI)
+		g1 = [cached_Gt(lattice, k, 1, mpsK, mpsI, c1=false, c2=true, b1=:+, b2=:+, cache=cache) for k in 1:lattice.k]
+		g2 = [cached_Gt(lattice, 1, k, mpsK, mpsI, c1=true, c2=false, b1=:-, b2=:+, cache=cache) for k in 1:lattice.k]
+		@test norm(gt - g1) / norm(gt) < rtol
+		@test norm(g2) / length(g2) < rtol
 	end
 end
 
