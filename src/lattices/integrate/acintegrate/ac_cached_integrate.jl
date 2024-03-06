@@ -15,8 +15,8 @@ Cache at the right of the j-th time step
 """
 DMRG.rightenv(x::AbstractExpectationCache, j::Int) = error("rightenv not implemented for cache type $(typeof(x))")
 
-DMRG.environments(lattice::AbstractGrassmannLattice, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS, C::GrassmannMPS...; 
-						alg::IntegrationAlgorithm=ExactIntegrate(), kwargs...) = _environments(alg, lattice, A, B, C...; kwargs...)
+DMRG.environments(lattice::AbstractGrassmannLattice, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
+						alg::IntegrationAlgorithm=ExactIntegrate(), kwargs...) = _environments(alg, lattice, A, B...; kwargs...)
 
 # cached_integrate_util(lattice::AbstractGrassmannLattice, j::Int, k::Int, cache::AbstractExpectationCache, A::Union{GrassmannMPS, Vector}, Bs::GrassmannMPS...; kwargs...) = _cached_integrate_util(
 # 	lattice, j, k, cache, A, Bs...; kwargs...) / Zvalue(cache)
