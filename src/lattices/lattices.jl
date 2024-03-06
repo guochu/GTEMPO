@@ -21,7 +21,7 @@ include("parallelrun.jl")
 
 
 function GrassmannLattice(; contour::Symbol, kwargs...)
-	(contour in (:real, :imag, :Keldysh, :mixed)) || throw(ArgumentError("contour must be :real (equivalentlt :Keldysh) or :imag"))
+	(contour in (:real, :imag, :Keldysh, :mixed, :Kadanoff)) || throw(ArgumentError("contour must be :real (equivalentlt :Keldysh), :imag or :mixed (equivalentlt :Kadanoff)"))
 	if (contour == :real) || (contour == :Keldysh)
 		return RealGrassmannLattice(; kwargs...)
 	elseif contour == :imag
