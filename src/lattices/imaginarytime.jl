@@ -42,10 +42,11 @@ end
 
 
 # ab\bar{b}\bar{a} a_2b_2\bar{b}_2\bar{a}_2 a_1b_1\bar{b}_1\bar{a}_1
-function index(x::ImagGrassmannLattice{<:A1B1B1A1}, i::Int; conj::Bool, band::Int=1)
+function index(x::ImagGrassmannLattice{<:A1B1B1A1}, i::Int; conj::Bool, band::Int=1, branch::Symbol=:τ)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
+		(branch == :τ) || throw(ArgumentError("branch must be :τ"))
 	end
 	# TL = length(x)
 	bands = x.bands
@@ -56,10 +57,11 @@ function index(x::ImagGrassmannLattice{<:A1B1B1A1}, i::Int; conj::Bool, band::In
 	end	
 end
 # a\bar{a}b\bar{b} a_2\bar{a}_2b_2\bar{b}_2 a_1\bar{a}_1b_1\bar{b}_1
-function index(x::ImagGrassmannLattice{<:A1A1B1B1}, i::Int; conj::Bool, band::Int=1)
+function index(x::ImagGrassmannLattice{<:A1A1B1B1}, i::Int; conj::Bool, band::Int=1, branch::Symbol=:τ)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
+		(branch == :τ) || throw(ArgumentError("branch must be :τ"))
 	end
 	# TL = length(x)
 	bands = x.bands
@@ -70,10 +72,11 @@ function index(x::ImagGrassmannLattice{<:A1A1B1B1}, i::Int; conj::Bool, band::In
 	end	
 end
 # a\bar{a}b\bar{b} a_2\bar{a}_2a_1\bar{a}_1 b_2\bar{b}_2b_1\bar{b}_1
-function index(x::ImagGrassmannLattice{<:A2A2A1A1B2B2B1B1}, i::Int; conj::Bool, band::Int=1)
+function index(x::ImagGrassmannLattice{<:A2A2A1A1B2B2B1B1}, i::Int; conj::Bool, band::Int=1, branch::Symbol=:τ)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
+		(branch == :τ) || throw(ArgumentError("branch must be :τ"))
 	end
 	n = 2 * x.k 
 	if i == 0

@@ -40,6 +40,7 @@ export cached_Gτ, cached_Gt, cached_Gm, cached_occupation, cached_electriccurre
 export AbstractImpurityModel, SISB, SIDB, IRLM, SKIM, boundarycondition!, boundarycondition, boundarycondition_branching
 export systhermalstate, systhermalstate!, sysdynamics, sysdynamics!, sysdynamicsstepper!, accsysdynamics, accsysdynamics_fast
 export zoomin, zoomout
+export ImpurityHamiltonian, twobody, fourbody
 
 using Base: @boundscheck
 using Logging: @warn

@@ -2,15 +2,6 @@ println("------------------------------------")
 println("|      Accurate GMPS for K         |")
 println("------------------------------------")
 
-function _error(a, b, tol)
-	ab = a - b
-	if abs(a) < tol
-		return abs(ab)
-	else
-		return abs(ab / a)
-	end
-end
-
 @testset "change Grassmann ordering" begin
 	U = 1.
 	ϵ_d = 0.3
