@@ -54,74 +54,74 @@ function gSKIM(; U::Real, J::Real, norb::Int, μ::Real=-U/2)
 	return h
 end
 
-# @testset "SIAM: imag-time" begin
-# 	ϵ_d = 0.7
-# 	δτ = 0.1
-# 	β = 1
-# 	N = round(Int, β / δτ)
-# 	bath = fermionicbath(spectrum_func(1), β=β, μ=0.5)
+@testset "SIAM: imag-time" begin
+	ϵ_d = 0.7
+	δτ = 0.1
+	β = 1
+	N = round(Int, β / δτ)
+	bath = fermionicbath(spectrum_func(1), β=β, μ=0.5)
 
-# 	rtol = 1.0e-3
-# 	tol = 1.0e-4
+	rtol = 1.0e-3
+	tol = 1.0e-4
 
-# 	# 1 orb
-# 	for U in [0, 1]
-# 		model1 = SISB(bath, U=U, μ=ϵ_d)
-# 		model2 = gSISB(U=U, μ=ϵ_d)
-# 		bands = (U == zero(U)) ? 1 : 2
-# 		lattice = GrassmannLattice(δτ=δτ, N=N, bands=bands, contour=:imag)
-# 		K1 = accsysdynamics(lattice, model1)
-# 		K2 = accsysdynamics_fast(lattice, model2, scaling=1000)
-# 		@test distance(K1, K2) / norm(K1) < rtol
-# 		for band in 1:lattice.bands
-# 			K1 = boundarycondition!(K1, lattice, band=band)
-# 			K2 = boundarycondition!(K2, lattice, band=band)
-# 		end
-# 		cache1 = environments(lattice, K1)
-# 		cache2 = environments(lattice, K2)
-# 		for band in 1:lattice.bands
-# 			g1 = cached_Gτ(lattice, K1, cache=cache1, band=band)
-# 			g2 = cached_Gτ(lattice, K2, cache=cache2, band=band)
-# 			@test norm(g1-g2) / norm(g1) < tol
-# 		end
-# 	end
-# end
+	# 1 orb
+	for U in [0, 1]
+		model1 = SISB(bath, U=U, μ=ϵ_d)
+		model2 = gSISB(U=U, μ=ϵ_d)
+		bands = (U == zero(U)) ? 1 : 2
+		lattice = GrassmannLattice(δτ=δτ, N=N, bands=bands, contour=:imag)
+		K1 = accsysdynamics(lattice, model1)
+		K2 = accsysdynamics_fast(lattice, model2, scaling=1000)
+		@test distance(K1, K2) / norm(K1) < rtol
+		for band in 1:lattice.bands
+			K1 = boundarycondition!(K1, lattice, band=band)
+			K2 = boundarycondition!(K2, lattice, band=band)
+		end
+		cache1 = environments(lattice, K1)
+		cache2 = environments(lattice, K2)
+		for band in 1:lattice.bands
+			g1 = cached_Gτ(lattice, K1, cache=cache1, band=band)
+			g2 = cached_Gτ(lattice, K2, cache=cache2, band=band)
+			@test norm(g1-g2) / norm(g1) < tol
+		end
+	end
+end
 
-# @testset "SIAM: real-time" begin
-# 	ϵ_d = 0.5
-# 	δt = 0.1
-# 	N = 5
-# 	bath = fermionicbath(spectrum_func(1), β=10, μ=0.5)
+@testset "SIAM: real-time" begin
+	ϵ_d = 0.5
+	δt = 0.1
+	N = 5
+	bath = fermionicbath(spectrum_func(1), β=10, μ=0.5)
 
-# 	rtol = 1.0e-3
-# 	tol = 1.0e-4
+	rtol = 1.0e-3
+	tol = 1.0e-4
 
-# 	# 1 orb
-# 	for U in [0, 1]
-# 		model1 = SISB(bath, U=U, μ=ϵ_d)
-# 		model2 = gSISB(U=U, μ=ϵ_d)
-# 		bands = (U == zero(U)) ? 1 : 2
-# 		lattice = GrassmannLattice(δt=δt, N=N, bands=bands, contour=:real)
-# 		K1 = accsysdynamics(lattice, model1)
-# 		K2 = accsysdynamics_fast(lattice, model2, scaling=100)
-# 		@test distance(K1, K2) / norm(K1) < rtol
-# 		for band in 1:lattice.bands
-# 			K1 = boundarycondition!(K1, lattice, band=band)
-# 			K2 = boundarycondition!(K2, lattice, band=band)
-# 		end
-# 		cache1 = environments(lattice, K1)
-# 		cache2 = environments(lattice, K2)
-# 		for band in 1:lattice.bands
-# 			for i in 1:lattice.k, j in 1:lattice.k
-# 				for b1 in (:+, :-), b2 in (:+, :-), c1 in (true, false)
-# 					g1 = cached_Gt(lattice, i, j, K1, b1=b1, b2=b2, c1=c1, c2=!c1, cache=cache1, band=band)
-# 					g2 = cached_Gt(lattice, i, j, K2, b1=b1, b2=b2, c1=c1, c2=!c1, cache=cache2, band=band)
-# 					@test _error(g1, g2, tol) < tol
-# 				end
-# 			end
-# 		end
-# 	end
-# end
+	# 1 orb
+	for U in [0, 1]
+		model1 = SISB(bath, U=U, μ=ϵ_d)
+		model2 = gSISB(U=U, μ=ϵ_d)
+		bands = (U == zero(U)) ? 1 : 2
+		lattice = GrassmannLattice(δt=δt, N=N, bands=bands, contour=:real)
+		K1 = accsysdynamics(lattice, model1)
+		K2 = accsysdynamics_fast(lattice, model2, scaling=100)
+		@test distance(K1, K2) / norm(K1) < rtol
+		for band in 1:lattice.bands
+			K1 = boundarycondition!(K1, lattice, band=band)
+			K2 = boundarycondition!(K2, lattice, band=band)
+		end
+		cache1 = environments(lattice, K1)
+		cache2 = environments(lattice, K2)
+		for band in 1:lattice.bands
+			for i in 1:lattice.k, j in 1:lattice.k
+				for b1 in (:+, :-), b2 in (:+, :-), c1 in (true, false)
+					g1 = cached_Gt(lattice, i, j, K1, b1=b1, b2=b2, c1=c1, c2=!c1, cache=cache1, band=band)
+					g2 = cached_Gt(lattice, i, j, K2, b1=b1, b2=b2, c1=c1, c2=!c1, cache=cache2, band=band)
+					@test _error(g1, g2, tol) < tol
+				end
+			end
+		end
+	end
+end
 
 @testset "SKIM: imag-time" begin
 	U = 1.
