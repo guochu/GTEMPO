@@ -35,7 +35,7 @@ def read_ed_data_n(Vs, dw=0.001):
 	Ilefts = []
 	Irights = []
 	for V in Vs:
-		filename = 'result/anderson_ed_V%s_t6.3_dw%s.json'%(V, dw)
+		filename = 'result/anderson_ed_V%s_t8.4_dw%s.json'%(V, dw)
 		ts, Ileft, Iright = read_ed_data_single(filename)
 		Ilefts.append(Ileft[-1])
 		Irights.append(Iright[-1])

@@ -31,7 +31,7 @@ def read_mixed_tempo(beta, t, U, dt=0.05, order=10, chi=60):
 
 
 def read_real_tempo(beta, t0, U, dt, order=10, chi=60):
-	mpath = '/Users/guochu/Documents/Missile/GTEMPO/examples/thirdpaper/oneorbital/'
+	mpath = '../../thirdpaper/oneorbital/'
 	mu = U/2
 	# t2 = t/2
 	t = t0 + 20.
