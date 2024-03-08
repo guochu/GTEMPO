@@ -34,6 +34,28 @@ function cached_Gm(lattice::MixedGrassmannLattice, i::Int, j::Int, A::Union{Gras
     return expectationvalue(t, cache; kwargs...)
 end
 
+function cached_Gt(lattice::MixedGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; b1::Symbol, b2::Symbol, kwargs...)
+    (b1 in (:+, :-)) || throw(ArgumentError("branch must be :+ or :-"))
+    (b2 in (:+, :-)) || throw(ArgumentError("branch must be :+ or :-"))
+    return cached_Gm(lattice, i, j, A, B...; b1=b1, b2=b2, kwargs...)
+end
+function cached_Gτ(lattice::MixedGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; c1::Bool=false, c2::Bool=true, kwargs...)
+    return cached_Gm(lattice, i, j, A, B...; b1=:τ, b2=:τ, c1=c1, c2=c2, kwargs...)
+end
+cached_Gτ(lattice::MixedGrassmannLattice, i::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...) = cached_Gτ(lattice, i, 1, A, B...; kwargs...)
+
+function cached_greater(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...)
+    @assert i >= j
+    return cached_Gt(lattice, i, j, A, B...; b1=:+, b2=:+, c1=false, c2=true, kwargs...)
+end
+cached_greater(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...) = cached_greater(lattice, i, 1, A, B...; kwargs...)
+function cached_lesser(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...)
+    @assert i <= j
+    return cached_Gt(lattice, i, j, A, B...; b1=:-, b2=:+, c1=true, c2=false, kwargs...)
+end
+cached_lesser(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...) = cached_lesser(lattice, 1, i, A, B...; kwargs...)
+
+
 # real-time first order
 function cached_occupation(lattice::RealGrassmannLattice1Order, i::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...) 
     return real(cached_Gt(lattice, i, i, A, B...; c1=false, c2=true, b1=:+, b2=:-, kwargs...))

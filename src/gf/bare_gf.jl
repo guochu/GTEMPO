@@ -70,6 +70,30 @@ function Gm(lattice::MixedGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMP
     return g
 end
 
+function Gt(lattice::MixedGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; b1::Symbol, b2::Symbol, kwargs...)
+    (b1 in (:+, :-)) || throw(ArgumentError("branch must be :+ or :-"))
+    (b2 in (:+, :-)) || throw(ArgumentError("branch must be :+ or :-"))
+    return Gm(lattice, i, j, A, B...; b1=b1, b2=b2, kwargs...)
+end
+
+function Gτ(lattice::MixedGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; c1::Bool=false, c2::Bool=true, kwargs...)
+    return Gm(lattice, i, j, A, B...; b1=:τ, b2=:τ, c1=c1, c2=c2, kwargs...)
+end
+Gτ(lattice::MixedGrassmannLattice, i::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...) = Gτ(lattice, i, 1, A, B...; kwargs...)
+
+function greater(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
+                 band::Int=1, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Number = integrate(lattice, A, B..., alg=alg))
+    @assert i >= j
+    return Gt(lattice, i, j, A, B...; b1=:+, b2=:+, c1=false, c2=true, band=band, alg=alg, Z=Z)
+end
+greater(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...) = greater(lattice, i, 1, A, B...; kwargs...)
+function lesser(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
+                 band::Int=1, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Number = integrate(lattice, A, B..., alg=alg))
+    @assert i <= j
+    return Gt(lattice, i, j, A, B...; b1=:-, b2=:+, c1=true, c2=false, band=band, alg=alg, Z=Z)
+end
+lesser(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...) = lesser(lattice, 1, i, A, B...; kwargs...)
+
 
 # other real-time observables
 function occupation(lattice::RealGrassmannLattice1Order, i::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...) 

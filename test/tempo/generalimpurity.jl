@@ -5,12 +5,12 @@ println("------------------------------------")
 function gSISB(;μ::Real, U::Real)
 	if U != zero(U)
 		h = ImpurityHamiltonian(bands=2)
-		push!(h, fourbody(1,2,2,1, coeff=U))
+		push!(h, interaction(1,2,2,1, coeff=U))
 	else
 		h = ImpurityHamiltonian(bands=1)
 	end
 	for band in 1:h.bands
-		push!(h, twobody(band, band, coeff=μ))
+		push!(h, tunneling(band, band, coeff=μ))
 	end
 	return h
 end
@@ -19,35 +19,35 @@ function gSKIM(; U::Real, J::Real, norb::Int, μ::Real=-U/2)
 	h = ImpurityHamiltonian(bands = 2*norb)
 
 	for band in 1:h.bands
-		push!(h, twobody(band, band, coeff=μ))
+		push!(h, tunneling(band, band, coeff=μ))
 	end
 	for a in 1:norb
 		i, j = 2 * a - 1, 2 * a
-		push!(h, fourbody(i,j,j,i, coeff=U))
+		push!(h, interaction(i,j,j,i, coeff=U))
 	end
 	for a in 1:norb
 		for b in 1:norb
 			if a != b
 				i, j = 2*a-1, 2*b
-				push!(h, fourbody(i,j,j,i, coeff=U-2*J))
+				push!(h, interaction(i,j,j,i, coeff=U-2*J))
 			end
 		end
 	end
 	for b in 1:norb
 		for a in (b+1):norb
 			i, j = 2*a-1, 2*b-1
-			push!(h, fourbody(i,j,j,i, coeff=U-3*J))
+			push!(h, interaction(i,j,j,i, coeff=U-3*J))
 			i, j = 2*a, 2*b
-			push!(h, fourbody(i,j,j,i, coeff=U-3*J))
+			push!(h, interaction(i,j,j,i, coeff=U-3*J))
 		end
 	end
 	for a in 1:norb
 		for b in 1:norb
 			if a != b
 				i, j, k, l = 2*a-1, 2*a, 2*b-1, 2*b
-				push!(h, fourbody(i,j,k,l, coeff=-J))
+				push!(h, interaction(i,j,k,l, coeff=-J))
 				i, j, k, l = 2*a-1, 2*b, 2*b-1, 2*a
-				push!(h, fourbody(i,j,k,l, coeff=-J))
+				push!(h, interaction(i,j,k,l, coeff=-J))
 			end
 		end
 	end

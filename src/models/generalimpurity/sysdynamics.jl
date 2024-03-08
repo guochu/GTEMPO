@@ -59,7 +59,7 @@ function sysdynamics_onestep_util!(gmps::GrassmannMPS, lattice::AbstractGrassman
 end
 
 # aᵢ+ aⱼ
-function get_Gterm(lattice::AbstractGrassmannLattice, h::TwoBodyFTerm, j::Int, dt::Number, branch::Symbol)
+function get_Gterm(lattice::AbstractGrassmannLattice, h::TunnelingTerm, j::Int, dt::Number, branch::Symbol)
 	b1, b2 = positions(h)
 	c = exp(h.coeff * dt)
 	a, b = (branch == :-) ? (j, j+1) : (j+1, j)
@@ -67,7 +67,7 @@ function get_Gterm(lattice::AbstractGrassmannLattice, h::TwoBodyFTerm, j::Int, d
 	return exp(GTerm(pos1, pos2, coeff=c))
 end
 
-function get_Gterm(lattice::AbstractGrassmannLattice, h::FourBodyFTerm, j::Int, dt::Number, branch::Symbol)
+function get_Gterm(lattice::AbstractGrassmannLattice, h::InteractionTerm, j::Int, dt::Number, branch::Symbol)
 	b1, b2, b3, b4 = positions(h)
 	c = h.coeff * dt
 	a, b = (branch == :-) ? (j, j+1) : (j+1, j)

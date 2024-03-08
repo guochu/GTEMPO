@@ -3,30 +3,30 @@ abstract type AbstractFTerm end
 DMRG.positions(x::AbstractFTerm) = x.positions
 
 """
-	struct TwoBodyFTerm <: AbstractFTerm
+	struct TunnelingTerm <: AbstractFTerm
 
 Fermionic twobody term
 """
-struct TwoBodyFTerm{T <: Number} <: AbstractFTerm
+struct TunnelingTerm{T <: Number} <: AbstractFTerm
 	positions::Tuple{Int, Int}
 	coeff::T
 end
 
-TwoBodyFTerm(pos::Tuple{Int, Int}; coeff::Number=1) = TwoBodyFTerm(pos, float(coeff))
-TwoBodyFTerm(i::Int, j::Int; kwargs...) = TwoBodyFTerm((i, j); kwargs...)
+TunnelingTerm(pos::Tuple{Int, Int}; coeff::Number=1) = TunnelingTerm(pos, float(coeff))
+TunnelingTerm(i::Int, j::Int; kwargs...) = TunnelingTerm((i, j); kwargs...)
 
-twobody(i::Int, j::Int; kwargs...) = TwoBodyFTerm(i, j; kwargs...)
+tunneling(i::Int, j::Int; kwargs...) = TunnelingTerm(i, j; kwargs...)
 
-TK.scalartype(::Type{TwoBodyFTerm{T}}) where {T} = T
+TK.scalartype(::Type{TunnelingTerm{T}}) where {T} = T
 
-function Base.adjoint(x::TwoBodyFTerm)
+function Base.adjoint(x::TunnelingTerm)
 	i, j = positions(x)
-	return TwoBodyFTerm((j, i), coeff=conj(x.coeff))
+	return TunnelingTerm((j, i), coeff=conj(x.coeff))
 end
 
-Base.copy(x::TwoBodyFTerm) = TwoBodyFTerm(positions(x), copy(x.coeff))
+Base.copy(x::TunnelingTerm) = TunnelingTerm(positions(x), copy(x.coeff))
 
-Base.:*(s::TwoBodyFTerm, m::Number) = TwoBodyFTerm(positions(s), coeff=s.coeff * m)
+Base.:*(s::TunnelingTerm, m::Number) = TunnelingTerm(positions(s), coeff=s.coeff * m)
 Base.:*(m::Number, s::AbstractFTerm) = s * m
 Base.:/(s::AbstractFTerm, m::Number) = s * (1 / m)
 Base.:+(s::AbstractFTerm) = s
@@ -38,24 +38,24 @@ Base.:-(s::AbstractFTerm) = (-1) * s
 
 Fermionic fourbody term
 """
-struct FourBodyFTerm{T<:Number} <: AbstractFTerm
+struct InteractionTerm{T<:Number} <: AbstractFTerm
 	positions::NTuple{4, Int}
 	coeff::T
 end
 
-FourBodyFTerm(pos::NTuple{4, Int}; coeff::Real=1) = FourBodyFTerm(pos, float(coeff))
-FourBodyFTerm(i::Int, j::Int, k::Int, l::Int; kwargs...) = FourBodyFTerm((i, j, k, l); kwargs...)
+InteractionTerm(pos::NTuple{4, Int}; coeff::Real=1) = InteractionTerm(pos, float(coeff))
+InteractionTerm(i::Int, j::Int, k::Int, l::Int; kwargs...) = InteractionTerm((i, j, k, l); kwargs...)
 
-fourbody(i::Int, j::Int, k::Int, l::Int; kwargs...) = FourBodyFTerm(i, j, k, l; kwargs...)
+interaction(i::Int, j::Int, k::Int, l::Int; kwargs...) = InteractionTerm(i, j, k, l; kwargs...)
 
-TK.scalartype(::Type{FourBodyFTerm{T}}) where {T} = T
+TK.scalartype(::Type{InteractionTerm{T}}) where {T} = T
 
-function Base.adjoint(x::FourBodyFTerm)
+function Base.adjoint(x::InteractionTerm)
 	i, j, k, l = positions(x)
-	return fourbody((l,k,j,i), coeff=conj(x.coeff))
+	return interaction((l,k,j,i), coeff=conj(x.coeff))
 end
 
-Base.:*(s::FourBodyFTerm, m::Number) = FourBodyFTerm(positions(s), coeff=s.coeff * m)
+Base.:*(s::InteractionTerm, m::Number) = InteractionTerm(positions(s), coeff=s.coeff * m)
 
 
 struct ImpurityHamiltonian <: AbstractImpurityHamiltonian

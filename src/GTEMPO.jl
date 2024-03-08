@@ -31,16 +31,17 @@ export influenceoperator, influenceoperatorexponential, differentialinfluencefun
 export hybriddynamics, hybriddynamics!, hybriddynamicsstepper, hybriddynamicsstepper!
 
 # GF and other observables
-export Gτ, parallel_Gτ, Gt, parallel_Gt, Gm
+export Gτ, parallel_Gτ, Gt, parallel_Gt, Gm, greater, lesser
 export occupation, electriccurrent, electriccurrent_fast
-export cached_Gτ, cached_Gt, cached_Gm, cached_occupation, cached_electriccurrent, cached_electriccurrent_fast
+export cached_Gτ, cached_Gt, cached_Gm, cached_greater, cached_lesser
+export cached_occupation, cached_electriccurrent, cached_electriccurrent_fast
 
 # utilities for TEMPO
 # exact models
 export AbstractImpurityModel, SISB, SIDB, IRLM, SKIM, boundarycondition!, boundarycondition, boundarycondition_branching
 export systhermalstate, systhermalstate!, sysdynamics, sysdynamics!, sysdynamicsstepper!, accsysdynamics, accsysdynamics_fast
 export zoomin, zoomout
-export ImpurityHamiltonian, twobody, fourbody
+export ImpurityHamiltonian, tunneling, interaction, TunnelingTerm, InteractionTerm
 
 using Base: @boundscheck
 using Logging: @warn
