@@ -76,6 +76,17 @@ LayoutStyle(::Type{A1a1B1b1b1B1a1A1}) = TimeLocalLayout()
 const AaBbbBaA = A1a1B1b1b1B1a1A1
 
 """
+	struct A1a1B1b1b1B1a1A1
+
+GrassmannOrdering a\bar{a}b\bar{b} a₂^+b₂^+ā₂^-b̄₂^-ā₂^+b̄₂^+a₂^-b₂^-  a₁^+b₁^+ā₁^-b̄₁^-ā₁^+b̄₁^+a₁^-b₁^-
+This ordering is convenient to build the impurity dynamics for time local ordering
+"""
+struct A1B1ā1b̄1A1B1a1b1 <: RealGrassmannOrdering end
+ConjugationStyle(::Type{A1B1ā1b̄1A1B1a1b1}) = GeneralConjugation()
+LayoutStyle(::Type{A1B1ā1b̄1A1B1a1b1}) = TimeLocalLayout()
+
+
+"""
 	struct A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1
 
 GrassmannOrdering a\bar{a}b\bar{b} a_2^+\bar{a}_2^+a_1^+\bar{a}_1^+ a_2^-\bar{a}_2^-a_1^-\bar{a}_1^- b_2^+\bar{b}_2^+b_1^+\bar{b}_1^+  b_2^-\bar{b}_2^-b_1^-\bar{b}_1^-
@@ -88,7 +99,7 @@ LayoutStyle(::Type{A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1}) = BandLocalLayout()
 	struct A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2
 
 GrassmannOrdering ab\bar{b}\bar{a} a_2^+b_2^+\bar{b}_2^+\bar{a}_2^+a_1^+b_1^+\bar{b}_1^+\bar{a}_1^+ a_1^-b_1^-\bar{b}_1^-\bar{a}_1^-a_2^-b_2^-\bar{b}_2^-\bar{a}_2^-
-This ordering is convenient to build the impurity dynamics
+This ordering is convenient to build the impurity dynamics for band local ordering
 """
 struct A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2 <: RealGrassmannOrdering end
 ConjugationStyle(::Type{A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}) = GeneralConjugation()

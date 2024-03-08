@@ -20,7 +20,7 @@ function sysdynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::
 		sysdynamics_forward!(gmps, lattice, model; trunc=trunc)
 		return sysdynamics_backward!(gmps, lattice, model; trunc=trunc)
 	else
-		(branch in (:+, :-)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
+		(branch in (:+, :-)) || throw(ArgumentError("branch must be one of :+ or :-"))
 		return (branch == :+) ? sysdynamics_forward!(gmps, lattice, model; trunc=trunc) : sysdynamics_backward!(gmps, lattice, model; trunc=trunc)
 	end
 end 
@@ -60,7 +60,7 @@ function systhermalstate!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, mod
 end 
 
 include("boundarycondition.jl")
-include("accsysdynamics.jl")
+include("accsysdynamics/accsysdynamics.jl")
 include("sysinitstate.jl")
 
 # predefined models

@@ -77,9 +77,17 @@ This function a simple wrapper of changeordering, by specifying a particular ord
 """
 toadjacentordering(lattice::AbstractGrassmannLattice, x::GrassmannMPS...; kwargs...) = error("toadjacentordering not implemented for lattice type $(typeof(lattice))")
 toadjacentordering(lattice::ImagGrassmannLattice{<:A1B1B1A1}, x::GrassmannMPS...; kwargs...) = changeordering(A1A1B1B1, lattice, x...; kwargs...)
-toadjacentordering(lattice::RealGrassmannLattice{<:A1a1B1b1b1B1a1A1}, x::GrassmannMPS...; kwargs...) = changeordering(A1A1a1a1B1B1b1b1, lattice, x...; kwargs...)
-toadjacentordering(lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, x::GrassmannMPS...; kwargs...) = changeordering(
-                    A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2, lattice, x...; kwargs...)
+# toadjacentordering(lattice::RealGrassmannLattice{<:A1a1B1b1b1B1a1A1}, x::GrassmannMPS...; kwargs...) = changeordering(A1A1a1a1B1B1b1b1, lattice, x...; kwargs...)
+# toadjacentordering(lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, x::GrassmannMPS...; kwargs...) = changeordering(
+#                     A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2, lattice, x...; kwargs...)
+function toadjacentordering(lattice::RealGrassmannLattice, x::GrassmannMPS...; kwargs...)
+    if LayoutStyle(lattice) isa TimeLocalLayout
+        return changeordering(A1A1a1a1B1B1b1b1, lattice, x...; kwargs...)
+    else
+        return changeordering(A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2, lattice, x...; kwargs...)
+    end
+end 
+
 toadjacentordering(lattice::MixedGrassmannLattice{<:A1B1B1A1_A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, x::GrassmannMPS...; kwargs...) = changeordering(
                     A1A1B1B1_A1A1a1a1B1B1b1b1A2A2a2a2B2B2b2b2, lattice, x...; kwargs...)
 

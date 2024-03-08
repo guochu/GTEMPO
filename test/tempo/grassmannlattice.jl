@@ -399,6 +399,123 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 end
 
+@testset "GrassmannLattice: real time A1B1ā1b̄1A1B1a1b1" begin
+	# aā a₃^+ā₃^-ā₃^+a₃^- a₂^+ā₂^-ā₂^+a₂^-  a₁^+ā₁^-ā₁^+a₁^-
+	lattice = GrassmannLattice(N=2, δt=0.05, contour=:real, ordering=A1B1ā1b̄1A1B1a1b1())
+	@test isa(ConjugationStyle(lattice), GeneralConjugation)
+	@test isa(LayoutStyle(lattice), TimeLocalLayout)
+	@test isa(lattice, RealGrassmannLattice)
+	@test lattice.ordering == A1B1ā1b̄1A1B1a1b1()
+	@test scalartype(lattice) == ComplexF64
+	@test length(lattice) == 14
+	@test lattice.N == 2
+	@test lattice.k == 3
+	@test lattice.t == 0.1
+	@test lattice.bands == 1
+	@test lattice.δt == 0.05
+	@test lattice.ts == 0:0.05:0.1
+	@test index(lattice, 0, conj=false) == 1
+	@test index(lattice, 0, conj=true) == 2
+	@test index(lattice, 3, conj=false, branch=:+) == 3
+	@test index(lattice, 3, conj=true, branch=:-) == 4
+	@test index(lattice, 3, conj=true, branch=:+) == 5
+	@test index(lattice, 3, conj=false, branch=:-) == 6
+	
+	@test index(lattice, 2, conj=false, branch=:+) == 7
+	@test index(lattice, 2, conj=true, branch=:-) == 8
+	@test index(lattice, 2, conj=true, branch=:+) == 9
+	@test index(lattice, 2, conj=false, branch=:-) == 10
+	@test index(lattice, 1, conj=false, branch=:+) == 11
+	@test index(lattice, 1, conj=true, branch=:-) == 12
+	@test index(lattice, 1, conj=true, branch=:+) == 13
+	@test index(lattice, 1, conj=false, branch=:-) == 14
+
+	mps = GrassmannMPS(scalartype(lattice), length(lattice))
+	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
+
+	# aābb̄ a₂^+b₂^+ā₂^-b̄₂^-ā₂^+b̄₂^+a₂^-b₂^-  a₁^+b₁^+ā₁^-b̄₁^-ā₁^+b̄₁^+a₁^-b₁^-
+	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=2, ordering=A1B1ā1b̄1A1B1a1b1())
+	@test isa(lattice, RealGrassmannLattice)
+	@test length(lattice) == 20
+	@test lattice.N == 1
+	@test lattice.k == 2
+	@test lattice.t == 0.1
+	@test lattice.bands == 2
+	@test lattice.δt == 0.1
+	@test lattice.ts == 0:0.1:0.1
+	@test index(lattice, 0, conj=false, band=1) == 1
+	@test index(lattice, 0, conj=true, band=1) == 2
+	@test index(lattice, 0, conj=false, band=2) == 3
+	@test index(lattice, 0, conj=true, band=2) == 4
+
+	@test index(lattice, 2, conj=false, branch=:+, band=1) == 5
+	@test index(lattice, 2, conj=false, branch=:+, band=2) == 6
+	@test index(lattice, 2, conj=true, branch=:-, band=1) == 7
+	@test index(lattice, 2, conj=true, branch=:-, band=2) == 8
+	@test index(lattice, 2, conj=true, branch=:+, band=1) == 9
+	@test index(lattice, 2, conj=true, branch=:+, band=2) == 10
+	@test index(lattice, 2, conj=false, branch=:-, band=1) == 11
+	@test index(lattice, 2, conj=false, branch=:-, band=2) == 12
+
+	@test index(lattice, 1, conj=false, branch=:+, band=1) == 13
+	@test index(lattice, 1, conj=false, branch=:+, band=2) == 14
+	@test index(lattice, 1, conj=true, branch=:-, band=1) == 15
+	@test index(lattice, 1, conj=true, branch=:-, band=2) == 16
+	@test index(lattice, 1, conj=true, branch=:+, band=1) == 17
+	@test index(lattice, 1, conj=true, branch=:+, band=2) == 18
+	@test index(lattice, 1, conj=false, branch=:-, band=1) == 19
+	@test index(lattice, 1, conj=false, branch=:-, band=2) == 20
+
+	mps = GrassmannMPS(scalartype(lattice), length(lattice))
+	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
+
+	# aābb̄cc̄ a₂^+b₂^+c₂^+ā₂^-b̄₂^-c̄₂^-ā₂^+b̄₂^+c̄₂^+a₂^-b₂^-c₂^-  a₁^+b₁^+c₁^+ā₁^-b̄₁^-c̄₁^-ā₁^+b̄₁^+c̄₁^+a₁^-b₁^-c₁^-
+	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=3, ordering=A1B1ā1b̄1A1B1a1b1())
+	@test isa(lattice, RealGrassmannLattice)
+	@test length(lattice) == 30
+	@test lattice.N == 1
+	@test lattice.k == 2
+	@test lattice.t == 0.1
+	@test lattice.bands == 3
+	@test lattice.δt == 0.1
+	@test lattice.ts == 0:0.1:0.1
+	@test index(lattice, 0, conj=false, band=1) == 1
+	@test index(lattice, 0, conj=true, band=1) == 2
+	@test index(lattice, 0, conj=false, band=2) == 3
+	@test index(lattice, 0, conj=true, band=2) == 4
+	@test index(lattice, 0, conj=false, band=3) == 5	
+	@test index(lattice, 0, conj=true, band=3) == 6
+
+	@test index(lattice, 2, conj=false, branch=:+, band=1) == 7
+	@test index(lattice, 2, conj=false, branch=:+, band=2) == 8
+	@test index(lattice, 2, conj=false, branch=:+, band=3) == 9
+	@test index(lattice, 2, conj=true, branch=:-, band=1) == 10
+	@test index(lattice, 2, conj=true, branch=:-, band=2) == 11
+	@test index(lattice, 2, conj=true, branch=:-, band=3) == 12
+	@test index(lattice, 2, conj=true, branch=:+, band=1) == 13
+	@test index(lattice, 2, conj=true, branch=:+, band=2) == 14
+	@test index(lattice, 2, conj=true, branch=:+, band=3) == 15
+	@test index(lattice, 2, conj=false, branch=:-, band=1) == 16
+	@test index(lattice, 2, conj=false, branch=:-, band=2) == 17
+	@test index(lattice, 2, conj=false, branch=:-, band=3) == 18
+
+	@test index(lattice, 1, conj=false, branch=:+, band=1) == 19
+	@test index(lattice, 1, conj=false, branch=:+, band=2) == 20
+	@test index(lattice, 1, conj=false, branch=:+, band=3) == 21
+	@test index(lattice, 1, conj=true, branch=:-, band=1) == 22
+	@test index(lattice, 1, conj=true, branch=:-, band=2) == 23
+	@test index(lattice, 1, conj=true, branch=:-, band=3) == 24
+	@test index(lattice, 1, conj=true, branch=:+, band=1) == 25
+	@test index(lattice, 1, conj=true, branch=:+, band=2) == 26
+	@test index(lattice, 1, conj=true, branch=:+, band=3) == 27
+	@test index(lattice, 1, conj=false, branch=:-, band=1) == 28
+	@test index(lattice, 1, conj=false, branch=:-, band=2) == 29
+	@test index(lattice, 1, conj=false, branch=:-, band=3) == 30
+
+	mps = GrassmannMPS(scalartype(lattice), length(lattice))
+	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
+end
+
 @testset "GrassmannLattice: real time A1A1a1a1B1B1b1b1" begin
 	# a\bar{a} a_3^+\bar{a}_3^+a_3^-\bar{a}_3^- a_2^+\bar{a}_2^+a_2^-\bar{a}_2^- a_1^+\bar{a}_1^+a_1^-\bar{a}_1^-
 	lattice = GrassmannLattice(N=2, δt=0.05, contour=:real, ordering=A1A1a1a1B1B1b1b1())

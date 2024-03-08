@@ -6,17 +6,39 @@ function sysdynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, h
 	return sysdynamics_util!(gmps, lattice, h, lattice.N, -lattice.δτ, :τ, trunc)
 end
 
-function sysdynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, h::ImpurityHamiltonian; trunc::TruncationScheme=DefaultKTruncation)
+function sysdynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, h::ImpurityHamiltonian; 
+						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
 	@assert lattice.bands == h.bands
-	sysdynamics_util!(gmps, lattice, h, lattice.N, -im*lattice.δt, :+, trunc)
-	return sysdynamics_util!(gmps, lattice, h, lattice.N, im*lattice.δt, :-, trunc)
+	if isnothing(branch)
+		sysdynamics_util!(gmps, lattice, h, lattice.N, -im*lattice.δt, :+, trunc)
+		return sysdynamics_util!(gmps, lattice, h, lattice.N, im*lattice.δt, :-, trunc)
+	else
+		(branch in (:+, :-)) || throw(ArgumentError("branch must be one of :+ or :-"))
+		if branch == :+
+			return sysdynamics_util!(gmps, lattice, h, lattice.N, -im*lattice.δt, :+, trunc)
+		else
+			return sysdynamics_util!(gmps, lattice, h, lattice.N, im*lattice.δt, :-, trunc)
+		end
+	end
 end
 
-function sysdynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, h::ImpurityHamiltonian; trunc::TruncationScheme=DefaultKTruncation)
+function sysdynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, h::ImpurityHamiltonian; 
+						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
 	@assert lattice.bands == h.bands
-	sysdynamics_util!(gmps, lattice, h, lattice.Nt, -im*lattice.δt, :+, trunc)
-	sysdynamics_util!(gmps, lattice, h, lattice.Nt, im*lattice.δt, :-, trunc)
-	return sysdynamics_util!(gmps, lattice, h, lattice.Nτ, -lattice.δτ, :τ, trunc)
+	if isnothing(branch)
+		sysdynamics_util!(gmps, lattice, h, lattice.Nt, -im*lattice.δt, :+, trunc)
+		sysdynamics_util!(gmps, lattice, h, lattice.Nt, im*lattice.δt, :-, trunc)
+		return sysdynamics_util!(gmps, lattice, h, lattice.Nτ, -lattice.δτ, :τ, trunc)
+	else
+		(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
+		if branch == :+
+			return sysdynamics_util!(gmps, lattice, h, lattice.Nt, -im*lattice.δt, :+, trunc)
+		elseif branch == :-
+			return sysdynamics_util!(gmps, lattice, h, lattice.Nt, im*lattice.δt, :-, trunc)
+		else
+			return sysdynamics_util!(gmps, lattice, h, lattice.Nτ, -lattice.δτ, :τ, trunc)
+		end
+	end
 end
 
 function sysdynamics_util!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, h::ImpurityHamiltonian, N::Int, dt::Number, branch::Symbol, trunc)

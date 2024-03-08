@@ -49,7 +49,7 @@ println("------------------------------------")
 	end
 end
 
-@testset "GF-imaginary time: benchmarking ED, Analytic, TEMPO" begin
+@testset "GF-imaginary time: benchmarking with ED, Analytic, TEMPO" begin
 	N = 25
 	δτ = 0.01
 	ϵ_d = 1.25*pi
