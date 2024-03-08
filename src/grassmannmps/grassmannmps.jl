@@ -154,6 +154,12 @@ function easy_swap!(x::AbstractGMPS, bond::Int; trunc::TruncationScheme=DMRG.Def
 	return x
 end
 
+function naive_swap!(x::AbstractGMPS, bond::Int; trunc::TruncationScheme=DMRG.DefaultTruncation)
+	x[bond], x[bond+1] = _swap_gate(x[bond], x[bond+1], trunc=trunc)
+	# x[bond], x[bond+1] = _swap_gate(x[bond], x[bond+1], trunc=trunc)
+	return x
+end
+
 # function _mult_site(xj, yj)
 # 	S = spacetype(xj)
 # 	zj = permute(xj, (1,2,3), ()) ⊗ permute(yj, (1,2,3), ())

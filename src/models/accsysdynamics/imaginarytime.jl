@@ -4,8 +4,11 @@ function accsysdynamics_fast(lattice::ImagGrassmannLattice{O}, model::AbstractIm
 	return changeordering(O, lattice2, x, trunc=trunc)[2]
 end
 
+_accsysdynamics_fast(lattice::ImagGrassmannLattice{<:A1B1B1A1}, model::AbstractImpurityHamiltonian; kwargs...) = _accsysdynamics_fast_timelocal(lattice, model; kwargs...)
+
 # accsysdynamics_fast(lattice::ImagGrassmannLattice, model::AbstractImpurityHamiltonian; kwargs...) = error("accsysdynamics_fast only support TimeLocalLayout for ImagGrassmannLattice")
-function _accsysdynamics_fast(lattice::ImagGrassmannLattice{<:A1B1B1A1}, model::AbstractImpurityHamiltonian; scaling::Int=10, trunc::TruncationScheme=DefaultKTruncation, kwargs...)
+function _accsysdynamics_fast_timelocal(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian; 
+										scaling::Int=10, trunc::TruncationScheme=DefaultKTruncation, kwargs...)
 	lattice1 = similar(lattice, N=1)
 	lattice_n = zoomin(lattice1, scaling=scaling)
 	lattice_n_1 = similar(lattice_n, N=1)

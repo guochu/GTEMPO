@@ -71,6 +71,59 @@ function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A1A1a1a
 	return tmp2
 end
 
+function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A1B1ā1b̄1A1B1a1b1}, j::Int)
+	local tmp2
+	if j == 0
+		for band in 1:lattice.bands
+			pos1 = index(lattice, 0, conj=false, band=band)
+			pos2 = index(lattice, 0, conj=true, band=band)
+			@tensor tmp4[1,2,4;5] := x[pos1][1,2,3] * x[pos2][3,4,5]
+			@assert pos1 + 1 == pos2
+			if band == 1
+				tmp2 = g_trace(tmp4, 2)
+			else
+				@assert @isdefined tmp2
+				tmp2 = tmp2 * g_trace(tmp4, 2)
+			end
+			tmp2 = rmul!(tmp2, scaling(x)^2)
+		end
+	else
+		y = copy(x)
+		pos_f, pos_e = band_boundary(lattice, j)
+		posa, posb = pos_f, pos_f+2*lattice.bands
+		while posb < pos_f + 3*lattice.bands
+			@assert posa < posb
+			for i in 1:posb-posa-1
+				naive_swap!(y, posb-i, trunc=DefaultIntegrationTruncation)
+			end
+			pos1, pos2 = posa, posa + 1
+			@tensor tmp4[1,2,4;5] := y[pos1][1,2,3] * y[pos2][3,4,5]
+			if @isdefined tmp2
+				tmp2 = tmp2 * g_trace(tmp4, 2)
+			else
+				tmp2 = g_trace(tmp4, 2)
+			end
+			tmp2 = rmul!(tmp2, scaling(x)^2)	
+			posa += 2
+			posb += 1
+		end
+		posa, posb = pos_f+2*lattice.bands, pos_f+3*lattice.bands
+		while posb <= pos_e
+			@assert posa < posb
+			for i in 1:posb-posa
+				naive_swap!(y, posb-i, trunc=DefaultIntegrationTruncation)
+			end
+			pos1, pos2 = posa, posa + 1
+			@tensor tmp4[1,2,4;5] := y[pos1][1,2,3] * y[pos2][3,4,5]
+			tmp2 = tmp2 * g_trace(tmp4, 2)
+			tmp2 = rmul!(tmp2, scaling(x)^2)	
+			posa += 2
+			posb += 1
+		end		
+	end
+	return tmp2
+end
+
 function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A1a1B1b1b1B1a1A1}, j::Int)
 	local tmp2
 	for band in lattice.bands:-1:1

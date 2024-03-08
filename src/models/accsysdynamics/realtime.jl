@@ -1,11 +1,19 @@
-function accsysdynamics_fast(lattice::RealGrassmannLattice{O}, model::AbstractImpurityHamiltonian; scaling::Int=10, trunc::TruncationScheme=DefaultKTruncation, kwargs...) where O
-	lattice2 = similar(lattice, ordering=A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2())
+function accsysdynamics_fast(lattice::RealGrassmannLattice{O}, model::AbstractImpurityHamiltonian; 
+							 scaling::Int=10, trunc::TruncationScheme=DefaultKTruncation, kwargs...) where {O}
+	if LayoutStyle(lattice) isa TimeLocalLayout
+		lattice2 = similar(lattice, ordering=A1B1ā1b̄1A1B1a1b1())
+	else
+		lattice2 = similar(lattice, ordering=A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2())
+	end
 	x = _accsysdynamics_fast(lattice2, model; scaling=scaling, trunc=trunc, kwargs...)
 	return changeordering(O, lattice2, x, trunc=trunc)[2]
 end
 
+_accsysdynamics_fast(lattice::RealGrassmannLattice{<:A1B1ā1b̄1A1B1a1b1}, model::AbstractImpurityHamiltonian; kwargs...) = _accsysdynamics_fast_timelocal(lattice, model; kwargs...)
+
 # accsysdynamics_fast(lattice::RealGrassmannLattice, model::AbstractImpurityHamiltonian; kwargs...) = error("accsysdynamics_fast only support BranchLocalLayout for RealGrassmannLattice")
-function _accsysdynamics_fast(lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, model::AbstractImpurityHamiltonian; scaling::Int=10, trunc::TruncationScheme=DefaultKTruncation, kwargs...)
+function _accsysdynamics_fast(lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, model::AbstractImpurityHamiltonian; 
+								scaling::Int=10, trunc::TruncationScheme=DefaultKTruncation, kwargs...)
 	lattice1 = similar(lattice, N=1)
 	lattice_n = zoomin(lattice1, scaling=scaling)
 	lattice_n_1 = similar(lattice_n, N=1)
@@ -80,8 +88,8 @@ function _accsysdynamics_fast(lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1
 	return gmps
 end
 
-get_left(lattice::ImagGrassmannLattice{<:A1B1ā1b̄1A1B1a1b1}, j::Int) = index(lattice, j, conj=true, band=1, branch=:+)
-get_right(lattice::ImagGrassmannLattice{<:A1B1ā1b̄1A1B1a1b1}, j::Int) = index(lattice, j, conj=true, band=lattice.bands, branch=:-)
+get_left(lattice::RealGrassmannLattice{<:A1B1ā1b̄1A1B1a1b1}, j::Int) = index(lattice, j, conj=true, band=1, branch=:+)
+get_right(lattice::RealGrassmannLattice{<:A1B1ā1b̄1A1B1a1b1}, j::Int) = index(lattice, j, conj=true, band=lattice.bands, branch=:-)
 
 get_left(lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, j::Int; branch::Symbol) = index(lattice, j, conj=true, band=lattice.bands, branch=branch)
 get_right(lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, j::Int; branch::Symbol) = index(lattice, j, conj=false, band=lattice.bands, branch=branch)

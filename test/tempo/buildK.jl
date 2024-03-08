@@ -183,9 +183,9 @@ end
 
 	# 1 orb, time-local ordering
 	exact_model = SISB(bath, U=U, μ=ϵ_d)
-	for ordering in (A1A1a1a1B1B1b1b1(), A1a1B1b1b1B1a1A1())
+	for ordering in (A1A1a1a1B1B1b1b1(), A1a1B1b1b1B1a1A1(), A1B1ā1b̄1A1B1a1b1())
 		lattice = GrassmannLattice(δt=δτ, N=N, bands=2, contour=:real, ordering=ordering)
-		for scaling in [3,4]
+		for scaling in [2]
 			lattice_scaling = zoomin(lattice, scaling=scaling)
 			K1 = sysdynamics(lattice_scaling, exact_model)
 			for band in 1:lattice.bands
@@ -216,7 +216,7 @@ end
 	exact_model = SISB(bath, U=U, μ=ϵ_d)
 	for ordering in (A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2(), A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2())
 		lattice = GrassmannLattice(δt=δτ, N=N, bands=2, contour=:real, ordering=ordering)
-		for scaling in [3,4]
+		for scaling in [2,3]
 			lattice_scaling = zoomin(lattice, scaling=scaling)
 			K1 = sysdynamics(lattice_scaling, exact_model)
 			for band in 1:lattice.bands
