@@ -83,7 +83,7 @@ function main(t::Real; U=1., ϵ_d=U/2, δt=0.05, β=40, δτ=0.1, order=10, chi=
 end
 
 function main_all_U(t::Real; δt=0.05, β=40, δτ=0.1, order=10, chi=100)
-	for U in [0.1, 0.5, 1.]
+	for U in 0.1:0.1:1
 		main(t, U=U, δt=δt, β=β, δτ=δτ, order=order, chi=chi)
 	end
 end
