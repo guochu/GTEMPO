@@ -96,7 +96,7 @@ function main(t::Real; ϵ_d=1., δt=0.05, δτ=0.1, order=8, β=40, chi=1024)
 end
 
 function main_vs_D(t::Real; ϵ_d=1., δt=0.05, β=40)
-	for chi in 20:20:200
+	for chi in 20:20:120
 		main(t; ϵ_d=ϵ_d, δt=δt, β=β, chi=chi, order=10)
 	end
 

@@ -26,8 +26,8 @@ def read_mixed_tempo(beta, t, U, dt=0.05, order=10, chi=60):
 	gt = parse_complex_array(data['gt'])
 	lt = parse_complex_array(data['lt'])
 	gf = -1j * gt - 1j * lt
-
-	return data['ts'], gf, gt, lt
+	ts = asarray(data['ts'])
+	return ts-ts[0], gf, gt, lt
 
 
 def read_real_tempo(beta, t0, U, dt, order=10, chi=60):
@@ -90,6 +90,7 @@ ax.plot(gf_ts_final, -gf_final.imag, ls='--', color=color0, linewidth=linewidth,
 chi = 100
 mixed_ts, mixed_gf, mixed_gt, mixed_lt = read_mixed_tempo(beta, t0, U, dt, chi=chi)
 
+# print(gf_ts_final)
 # print(-mixed_lt[-10:])
 
 ax.plot(mixed_ts, -mixed_gf.imag, ls='--', color=color1, linewidth=linewidth, label=r'mixed, $\chi=%s$'%(chi))
