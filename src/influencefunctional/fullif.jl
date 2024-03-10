@@ -14,7 +14,7 @@ function hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrela
 	# mps = differentialinfluencefunctional(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
 	if alg.verbosity > 1
 		t = @elapsed mps = differentialinfluencefunctional(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
-		println("building the initial MPS-IF takes $t seconds")
+		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bond_dimension(mps))
 	else
 		mps = differentialinfluencefunctional(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
 	end
@@ -30,7 +30,7 @@ function hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrela
 		# mps = mult(mps, mps, algmult)
 		if alg.verbosity > 1
 			t = @elapsed mps = mult(mps, mps, algmult)
-			println("the $i-th iteration takes $t seconds, mps bond dimension is ", bond_dimension(mps))
+			println("the $i-th iteration takes $t seconds, bond dimension is ", bond_dimension(mps))
 		else
 			mps = mult(mps, mps, algmult)
 		end
