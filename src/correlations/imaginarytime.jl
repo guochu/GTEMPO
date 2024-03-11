@@ -5,6 +5,8 @@ struct ImagCorrelationFunction{M<:AbstractMatrix{Float64}} <: AbstractCorrelatio
     data::M
 end
 
+Base.size(x::ImagCorrelationFunction, i::Int...) = size(x.data, i...)
+
 function Base.show(io::IO, ::MIME"text/plain", A::ImagCorrelationFunction)
     print(io, "Imaginary Correlation Function [$(size(A.data, 1))]")
 end
