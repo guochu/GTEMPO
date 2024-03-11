@@ -19,12 +19,15 @@ struct TranslationInvariantIF{T<:ExponentialExpansionAlgorithm, E<:TimeEvoMPOAlg
 	algmult::M
 	# trunc::TruncationDimCutoff
 	k::Int
+	fast::Bool
 	verbosity::Int
 end
 TranslationInvariantIF(; algexpan::ExponentialExpansionAlgorithm=PronyExpansion(n=15, tol=1.0e-4, verbosity=0), 
 						 algevo::TimeEvoMPOAlgorithm=WII(), 
 						 algmult::DMRGAlgorithm=DefaultMultAlg,
-						 k::Int=5, verbosity::Int=0) = TranslationInvariantIF(algexpan, algevo, algmult, k, verbosity)
+						 k::Int=5, 
+						 fast::Bool=true,
+						 verbosity::Int=0) = TranslationInvariantIF(algexpan, algevo, algmult, k, fast, verbosity)
 
 function Base.getproperty(x::TranslationInvariantIF, s::Symbol)
 	if s == :trunc

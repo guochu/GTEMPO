@@ -12,8 +12,8 @@ println("------------------------------------")
 
 	trunc = truncdimcutoff(D=300, ϵ=1.0e-6, add_back=0)
 
-	alg1 = PartialIF(trunc=trunc)
-	alg2 = TranslationInvariantIF(k=5)
+	base_alg = PartialIF(trunc=trunc)
+	algs = [TranslationInvariantIF(k=5, fast=true), TranslationInvariantIF(k=5, fast=false)]
 		
 	for μ in (-5, 0, 5)
 		# println("μ = ", μ)
@@ -25,12 +25,13 @@ println("------------------------------------")
 				lattice = GrassmannLattice(N=N, δτ=β/N, contour=:imag, ordering=ordering)
 
 				corr = correlationfunction(bath, lattice)
-				mpsI1 = hybriddynamics(lattice, corr, alg1) 
-				mpsI2 = hybriddynamics(lattice, corr, alg2)
+				mpsI1 = hybriddynamics(lattice, corr, base_alg) 
 
-				@test distance(mpsI1, mpsI2) / norm(mpsI1) < rtol
+				for alg in algs
+					mpsI2 = hybriddynamics(lattice, corr, alg)
+					@test distance(mpsI1, mpsI2) / norm(mpsI1) < rtol
+				end
 			end
-		
 		end
 	end
 end
@@ -44,10 +45,12 @@ end
 	rtol = 1.0e-2
 	trunc = truncdimcutoff(D=100, ϵ=1.0e-6, add_back=0)
 
-	alg1 = PartialIF(trunc=trunc)
+	base_alg = PartialIF(trunc=trunc)
 	alg2 = TranslationInvariantIF(k=5, algevo=WII(), algmult=SVDCompression(trunc))
-	alg3 = TranslationInvariantIF(k=5, algmult=DMRG1(D=trunc.D, tol=trunc.ϵ))
+	alg3 = TranslationInvariantIF(k=5, algmult=DMRG1(D=trunc.D, tol=trunc.ϵ, tolgauge=trunc.ϵ))
 	alg4 = TranslationInvariantIF(k=5, algevo=ComplexStepper(WII()), algmult=DMRG2(trunc=trunc))
+	alg5 = TranslationInvariantIF(k=5, algmult=DMRG1(D=trunc.D, tol=trunc.ϵ, tolgauge=trunc.ϵ), fast=false)
+	algs = [alg2, alg3, alg4, alg5]
 
 		
 
@@ -60,17 +63,12 @@ end
 			lattice = GrassmannLattice(N=N, δt=δt, contour=:real, ordering=ordering)
 
 			corr = correlationfunction(bath, lattice)
-			mpsI1 = hybriddynamics(lattice, corr, alg1) 
-			mpsI2 = hybriddynamics(lattice, corr, alg2)
+			mpsI1 = hybriddynamics(lattice, corr, base_alg) 
+			for alg in algs
+				mpsI2 = hybriddynamics(lattice, corr, alg)
+				@test distance(mpsI1, mpsI2) / norm(mpsI1) < rtol
+			end
 
-			# println(norm(mpsI1), " ", norm(mpsI2), " ", distance(mpsI1, mpsI2))
-			@test distance(mpsI1, mpsI2) / norm(mpsI1) < rtol
-
-			mpsI3 = hybriddynamics(lattice, corr, alg3)
-			@test distance(mpsI1, mpsI3) / norm(mpsI1) < rtol
-
-			mpsI4 = hybriddynamics(lattice, corr, alg4)
-			@test distance(mpsI1, mpsI4) / norm(mpsI1) < rtol
 		end
 	end
 

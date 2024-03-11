@@ -5,8 +5,18 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, 
 	return mult!(gmps, mps, alg.algmult)
 end
 
-
 function hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::TranslationInvariantIF; band::Int=1)
+	if alg.fast
+		(alg.verbosity > 1) && println("Tree bipartition scheme using $(alg.k) multiplications")
+		return _hybriddynamics_fast(lattice, corr, alg, band=band)
+	else
+		(alg.verbosity > 1) && println("Serial scheme using 2^$(alg.k)-1 multiplications")
+		return _hybriddynamics_slow(lattice, corr, alg, band=band)
+	end
+end
+
+
+function _hybriddynamics_fast(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::TranslationInvariantIF; band::Int=1)
 	algmult0 = alg.algmult
 	trunc0 = algmult0.trunc
 	D, ϵ0 = trunc0.D, trunc0.ϵ
@@ -39,16 +49,28 @@ function hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrela
 	return mps
 end
 
-# function _exp_mult(mps, k::Int, trunc::TruncationDimCutoff)
-# 	D, ϵ0 = trunc.D, trunc.ϵ
-# 	scale = 2
-# 	dtt = 1/scale^k	
-# 	for i in 1:k
-# 		dtt *= scale
-# 		# mps = mult(mps, mps, trunc=truncdimcutoff(D=D, ϵ=ϵ0*dtt, add_back=0))
-# 		mps = iterativemult(mps, mps, trunc=truncdimcutoff(D=D, ϵ=ϵ0*dtt, add_back=0))
-# 		# println("mps bond dimension is ", bond_dimension(mps), " at ", i, "-th iteration")
-# 	end	
-# 	return mps
-# end
+function _hybriddynamics_slow(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::TranslationInvariantIF; band::Int=1)
+	algmult0 = alg.algmult
+	trunc0 = algmult0.trunc
+	D, ϵ0 = trunc0.D, trunc0.ϵ
+	algmult = changetrunc(algmult0, trunc=truncdimcutoff(D=D, ϵ=ϵ0/2^(alg.k)))
+	# mps = differentialinfluencefunctional(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
+	if alg.verbosity > 1
+		t = @elapsed mps0 = differentialinfluencefunctional(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
+		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bond_dimension(mps))
+	else
+		mps0 = differentialinfluencefunctional(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
+	end
+	mps = mps0
+
+	for i in 1:2^(alg.k)-1
+		if alg.verbosity > 1
+			t = @elapsed mps = mult(mps, mps0, algmult0)
+			println("the $i-th iteration takes $t seconds, bond dimension is ", bond_dimension(mps))
+		else
+			mps = mult(mps, mps0, algmult0)
+		end		
+	end
+	return mps
+end
 
