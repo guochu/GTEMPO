@@ -176,7 +176,9 @@ function electriccurrent_fast(lattice::RealGrassmannLattice2Order, corr::RealCor
 end
 
 # building the current operator as MPO
-function build_current_mpo(lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction, k::Int, band::Int)
+build_current_mpo(lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction, k::Int, band::Int) = build_current_mpo_1order(lattice, corr, k, band)
+
+function build_current_mpo_1order(lattice::RealGrassmannLattice, corr::RealCorrelationFunction, k::Int, band::Int)
     η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
     row = index(lattice, k, conj=true, branch=:+, band=band)
     cols = Int[]
