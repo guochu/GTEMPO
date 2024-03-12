@@ -92,7 +92,7 @@ fig, ax = plt.subplots(2, 2, figsize=(8, 7))
 
 t = 40.
 beta = 40.
-mu = 1.
+mu = 0.
 dt = 0.05
 
 ts_real_analytic, gf_real_analytic = read_real_analytic(t, mu, dt)
@@ -140,7 +140,7 @@ for i, chi in enumerate(chis):
 
 ax[0,1].plot(chis, errs, ls='--', color='g', marker=markers[0], markersize=markersize, linewidth=linewidth, markerfacecolor='none', label=r'real')
 
-chis = [20, 40, 60]
+chis = [20, 40, 60, 80]
 errs = []
 bds = []
 
@@ -182,7 +182,7 @@ ax[0,1].legend(loc='center', fontsize=12)
 # ax1.locator_params(axis='both', nbins=6)
 
 
-chi = 20
+chi = 80
 
 dtau = 0.1
 ts_imag_analytic, gf_imag_analytic = read_imag_analytic(beta, mu, dt=dtau)
@@ -206,7 +206,7 @@ ax[1,0].annotate(r'(c)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fonts
 ax[1,0].legend(loc='center', fontsize=12)
 
 
-chis = [20,40,60,80,100,120,140,160]
+chis = [20,40,60,80,100,120]
 
 errs = []
 bds = []
@@ -222,7 +222,7 @@ for i, chi in enumerate(chis):
 ax[1,1].plot(bds, errs, ls='--', color='g', marker=markers[0], markersize=markersize, linewidth=linewidth, markerfacecolor='none', label=r'imag')
 
 
-chis = [20, 40, 60]
+chis = [20, 40, 60, 80]
 errs = []
 bds = []
 
