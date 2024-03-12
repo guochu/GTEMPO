@@ -72,7 +72,7 @@ fig, ax = plt.subplots(1, 1, figsize=(6, 5))
 beta = 40.
 dt = 0.05
 
-U = 0.5
+U = 0.1
 
 t_final = 80.
 
@@ -84,13 +84,12 @@ times_final, ns_final, gf_ts_final, gf_final, gt_final, lt_final = read_real_tem
 
 ax.plot(gf_ts_final, -gf_final.imag, ls='--', color=color0, linewidth=linewidth, label=r'real, $t_0=%s, \chi=%s$'%(round(t_final), chi))
 
-# print(lt_final[-10:])
+# print(gf_ts_final[:10])
 
 chi = 100
 mixed_ts, mixed_gf, mixed_gt, mixed_lt = read_mixed_tempo(beta, t0, U, dt, chi=chi)
 
-# print(gf_ts_final)
-# print(-mixed_lt[-10:])
+# print(mixed_ts[:10])
 
 ax.plot(mixed_ts, -mixed_gf.imag, ls='--', color=color1, linewidth=linewidth, label=r'mixed, $\chi=%s$'%(chi))
 

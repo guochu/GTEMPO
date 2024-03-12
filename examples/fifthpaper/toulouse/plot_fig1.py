@@ -92,7 +92,7 @@ fig, ax = plt.subplots(2, 2, figsize=(8, 7))
 
 t = 40.
 beta = 40.
-mu = 1.
+mu = 0.
 dt = 0.05
 
 ts_real_analytic, gf_real_analytic = read_real_analytic(t, mu, dt)
