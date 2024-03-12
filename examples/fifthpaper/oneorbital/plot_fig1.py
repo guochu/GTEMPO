@@ -72,7 +72,7 @@ fig, ax = plt.subplots(1, 1, figsize=(6, 5))
 beta = 40.
 dt = 0.05
 
-U = 0.1
+U = 0.5
 
 t_final = 80.
 
