@@ -38,7 +38,7 @@ function Base.getproperty(x::TranslationInvariantIF, s::Symbol)
 end
 
 # temporary solution
-changetrunc(x::DMRG1; trunc=x.trunc) = similar(x, D=trunc.D, tolgauge=trunc.ϵ, tol=trunc.ϵ)
+changetrunc(x::DMRG1; trunc=x.trunc) = similar(x, D=trunc.D, tolgauge=trunc.ϵ)
 changetrunc(x::DMRG2; trunc=x.trunc) = similar(x, trunc=trunc)
 changetrunc(x::SVDCompression; trunc=x.trunc) = similar(x, D=trunc.D, tol=trunc.ϵ)
 
