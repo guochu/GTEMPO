@@ -102,7 +102,7 @@ function right_embedders(::Type{T}, a::S...) where {T <: Number, S <: Elementary
     return ts
 end
 
-function _permute!(x::AbstractGMPS, perm::Vector{Int}; trunc::TruncationScheme=DMRG.DefaultTruncation)
+function _permute!(x::AbstractGMPS, perm::Vector{Int}; trunc::TruncationScheme=DefaultIntegrationTruncation)
     @assert length(x) == length(perm)
     if svectors_uninitialized(x)
         canonicalize!(x, alg=Orthogonalize(trunc=trunc, normalize=false))

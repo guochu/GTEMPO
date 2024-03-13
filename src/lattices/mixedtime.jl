@@ -1,6 +1,6 @@
 abstract type MixedGrassmannLattice{O<:MixedGrassmannOrdering} <: AbstractGrassmannLattice{O} end
 TK.scalartype(::Type{<:MixedGrassmannLattice}) = ComplexF64
-
+branches(::Type{<:MixedGrassmannLattice}) = (:+, :-, :τ)
 
 """
 	struct MixedGrassmannLattice1Order <: MixedGrassmannLattice

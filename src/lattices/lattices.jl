@@ -58,6 +58,31 @@ This is an internal function used for changing lattice ordering
 """
 indexmappings(lattice::AbstractGrassmannLattice) = error("indexmappings not implemented for lattice type $(typeof(lattice))")
 
+branches(lattice::AbstractGrassmannLattice) = branches(typeof(lattice))
 
 # This function is used in some special cases
 band_boundary(lattice::AbstractGrassmannLattice, j::Int; kwargs...) = error("indexmappings not implemented for lattice type $(typeof(lattice))")
+
+swapband(mps::GrassmannMPS, x::AbstractGrassmannLattice, b1::Int, b2::Int; kwargs...) = swapband!(copy(mps), x, b1, b2; kwargs...)
+swapband!(mps::GrassmannMPS, x::AbstractGrassmannLattice, b1::Int, b2::Int; kwargs...) = _swapband!(mps, x, b1, b2; kwargs...)
+
+function _swapband!(mps, x::AbstractGrassmannLattice, b1::Int, b2::Int; kwargs...)
+	(length(mps) == length(x)) || throw(DimensionMismatch("size mismatch"))
+	(b1 == b2) && return mps
+	perm = swapbandperm(x, b1, b2)
+	return permute!(mps, [perm[i] for i in 1:length(perm)]; kwargs...)
+end
+
+
+function swapbandperm(x::AbstractGrassmannLattice, b1::Int, b2::Int)
+	@boundscheck begin
+		(1 <= b1 <= x.bands) || throw(BoundsError(1:x.bands, b1))
+		(1 <= b2 <= x.bands) || throw(BoundsError(1:x.bands, b2))
+	end
+	change_band(b) = ifelse(b == b1, b2, ifelse(b == b2, b1, b))
+	r1 = indexmappings(x)
+	r2 = Dict((j, c, b, change_band(band))=>pos for ((j, c, b, band), pos) in r1)
+	return Dict(r2[k1]=>v1 for (k1, v1) in r1)	
+end
+
+

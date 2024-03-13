@@ -1,5 +1,6 @@
 abstract type ImagGrassmannLattice{O<:ImagGrassmannOrdering} <: AbstractGrassmannLattice{O} end
 TK.scalartype(::Type{<:ImagGrassmannLattice}) = Float64
+branches(::Type{<:ImagGrassmannLattice}) = (:τ,)
 
 struct ImagGrassmannLattice1Order{O<:ImagGrassmannOrdering} <: ImagGrassmannLattice{O}
 	δτ::Float64
@@ -89,11 +90,11 @@ end
 
 
 function indexmappings(lattice::ImagGrassmannLattice)
-	r = Dict{Tuple{Int, Bool, Int}, Int}()
+	r = Dict{Tuple{Int, Bool, Symbol, Int}, Int}()
 	for i in 0:lattice.k
 		for c in (true, false)
 			for band in 1:lattice.bands
-				r[(i, c, band)] = index(lattice, i, conj=c, band=band)
+				r[(i, c, :τ, band)] = index(lattice, i, conj=c, band=band)
 			end
 		end
 	end

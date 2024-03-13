@@ -1574,3 +1574,54 @@ end
 	end
 end
 
+@testset "GrassmannLattice: swapbandperm" begin
+	N = 2
+	bands = 3
+
+	change_band(b, b1, b2) = ifelse(b == b1, b2, ifelse(b == b2, b1, b))
+
+	for o1 in imag_grassmann_orderings
+		x = GrassmannLattice(δτ=0.1, N=N, contour=:imag, bands=bands, ordering=o1)
+		perm = swapbandperm(x, 1, 2)
+		m = indexmappings(x)
+		for ((j, c, b, band), pos) in m
+			@test m[(j, c, b, change_band(band, 1, 2))] == perm[pos]
+		end
+
+		# mps = randomgmps(scalartype(x), length(x), D=4)
+		# mps2 = swapband(swapband(mps, x, 1, 2), x, 1, 2)
+		# @test distance(mps2, mps) / norm(mps) < 1.0e-6
+	end
+
+	for o1 in real_grassmann_orderings
+		x = GrassmannLattice(δt=0.1, N=N, contour=:real, bands=bands, ordering=o1)
+
+		perm = swapbandperm(x, 1, 3)
+		m = indexmappings(x)
+		for ((j, c, b, band), pos) in m
+			@test m[(j, c, b, change_band(band, 1, 3))] == perm[pos]
+		end		
+
+		# mps = randomgmps(scalartype(x), length(x), D=4)
+		# mps2 = swapband(swapband(mps, x, 1, 3), x, 1, 3)
+		# @test distance(mps2, mps) / norm(mps) < 1.0e-6
+	end
+
+	Nt = 1
+	Nτ = 2
+	bands = 3
+	for o1 in mixed_grassmann_orderings
+		x = GrassmannLattice(δt=0.1, Nt=Nt, δτ=0.03, Nτ=Nτ, contour=:mixed, bands=bands, ordering=o1)
+
+		perm = swapbandperm(x, 2, 3)
+		m = indexmappings(x)
+		for ((j, c, b, band), pos) in m
+			@test m[(j, c, b, change_band(band, 3, 2))] == perm[pos]
+		end		
+
+		# mps = randomgmps(scalartype(x), length(x), D=4)
+		# mps2 = swapband(swapband(mps, x, 2, 3), x, 3, 2)
+		# @test distance(mps2, mps) / norm(mps) < 1.0e-6
+	end
+end
+
