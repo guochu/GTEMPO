@@ -63,6 +63,11 @@ branches(lattice::AbstractGrassmannLattice) = branches(typeof(lattice))
 # This function is used in some special cases
 band_boundary(lattice::AbstractGrassmannLattice, j::Int; kwargs...) = error("indexmappings not implemented for lattice type $(typeof(lattice))")
 
+"""
+	swapband(mps::GrassmannMPS, x::AbstractGrassmannLattice, b1::Int, b2::Int; kwargs...)
+
+Swap the two bands b1 b2 of a mps
+"""
 swapband(mps::GrassmannMPS, x::AbstractGrassmannLattice, b1::Int, b2::Int; kwargs...) = swapband!(copy(mps), x, b1, b2; kwargs...)
 swapband!(mps::GrassmannMPS, x::AbstractGrassmannLattice, b1::Int, b2::Int; kwargs...) = _swapband!(mps, x, b1, b2; kwargs...)
 
