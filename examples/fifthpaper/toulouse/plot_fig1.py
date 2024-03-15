@@ -183,7 +183,7 @@ ax[0,1].legend(loc='center', fontsize=12)
 # ax1.locator_params(axis='both', nbins=6)
 
 
-chi = 100
+chi = 120
 
 dtau = 0.1
 ts_imag_analytic, gf_imag_analytic = read_imag_analytic(beta, mu, dt=dtau)
@@ -223,7 +223,7 @@ for i, chi in enumerate(chis):
 ax[1,1].plot(bds, errs, ls='--', color='g', marker=markers[0], markersize=markersize, linewidth=linewidth, markerfacecolor='none', label=r'imag')
 
 
-chis = [20, 40, 60, 80, 100]
+chis = [20, 40, 60, 80, 100,120]
 errs = []
 bds = []
 
