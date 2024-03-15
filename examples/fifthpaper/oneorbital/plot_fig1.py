@@ -72,7 +72,7 @@ fig, ax = plt.subplots(1, 1, figsize=(6, 5))
 beta = 40.
 dt = 0.05
 
-U = 1.
+U = 0.1
 
 t_final = 80.
 
@@ -86,12 +86,14 @@ ax.plot(gf_ts_final, -gf_final.imag, ls='--', color=color0, linewidth=linewidth,
 
 # print(gf_ts_final[:10])
 
-chi = 100
+chi = 120
 mixed_ts, mixed_gf, mixed_gt, mixed_lt = read_mixed_tempo(beta, t0, U, dt, chi=chi)
 
 # print(mixed_ts[:10])
 
 ax.plot(mixed_ts, -mixed_gf.imag, ls='--', color=color1, linewidth=linewidth, label=r'mixed, $\chi=%s$'%(chi))
+
+print(mse_error(gf_final.imag, mixed_gf.imag))
 
 ax.set_xlabel(r'$\Gamma t$', fontsize=fontsize)
 ax.set_ylabel(r'$-{\rm Im}[G^R(t)]$', fontsize=fontsize)
