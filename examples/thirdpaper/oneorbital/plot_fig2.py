@@ -117,9 +117,9 @@ dt = 0.05
 # U = 0.1
 U = 0.1
 
-ts = [5., 10., 15., 20.]
+ts = [5., 10., 15., 20., 40.]
 
-t_final = 40.
+t_final = 80.
 
 times_final, ns_final, gf_ts_final, gf_final, bds_final = read_real_tempo(beta, t_final, U, dt)
 
@@ -173,9 +173,9 @@ ax[0,1].legend(fontsize=12)
 # U = 0.5
 U = 0.5
 
-ts = [5., 10., 15., 20.]
+# ts = [5., 10., 15., 20.]
 
-t_final = 40.
+# t_final = 40.
 
 times_final, ns_final, gf_ts_final, gf_final, bds_final = read_real_tempo(beta, t_final, U, dt)
 
@@ -228,9 +228,9 @@ ax[1,1].legend(fontsize=12)
 # U = 1.
 U = 1.
 
-ts = [5., 10., 15., 20.]
+# ts = [5., 10., 15., 20.]
 
-t_final = 40.
+# t_final = 40.
 
 times_final, ns_final, gf_ts_final, gf_final, bds_final = read_real_tempo(beta, t_final, U, dt)
 

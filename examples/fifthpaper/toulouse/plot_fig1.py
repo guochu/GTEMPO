@@ -299,6 +299,6 @@ ax[1,3].legend(loc='center', fontsize=12)
 
 plt.tight_layout(pad=0.5)
 
-# plt.savefig('toulouse1.pdf', bbox_inches='tight')
+plt.savefig('toulouse1.pdf', bbox_inches='tight')
 
 plt.show()

@@ -1,6 +1,6 @@
 push!(LOAD_PATH, "../../../src")
 
-using GTEMPO, ImpurityModelBase.Utilities
+using ImpurityModelBase
 using JSON, QuadGK
 
 

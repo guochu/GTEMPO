@@ -17,7 +17,7 @@ def parse_complex_array(data):
 
 def read_real_tempo(beta, t, U, order=10, chi=60):
 	mu = U/2
-	t2 = 100.
+	t2 = 500.
 	lb = -2.
 	ub = 2.
 	dt = 0.05
@@ -30,7 +30,7 @@ def read_real_tempo(beta, t, U, order=10, chi=60):
 
 def read_real_tempo_2(beta, t, U, order=10, chi=60):
 	mu = U/2
-	t2 = 100.
+	t2 = 500.
 	lb = -2.
 	ub = 2.
 	dt = 0.05
@@ -53,6 +53,13 @@ def read_imag_tempo(beta, U, dt=0.1, order=10, chi=500):
 def read_mc_data(filename):
 	data = loadtxt(filename)
 	return data[:, 0], data[:, 1]
+
+def mse_error(a, b):
+	assert len(a) == len(b)
+	L = len(a)
+	diff = asarray(a) - asarray(b)
+	v = norm(diff)
+	return sqrt(v * v / L)
 
 
 fontsize = 20
@@ -84,29 +91,27 @@ ts = [5., 15.]
 U = 0.1
 
 
-t = 5.
+t_small = 5.
 
-times, gf, ws, Aw = read_real_tempo(beta, t, U)
+times, gf, ws, Aw = read_real_tempo(beta, t_small, U)
 
 alpha = 0.5
 
-ax[0,0].plot(ws, Aw, ls='--', color=color0, alpha=alpha, linewidth=linewidth, label=r'Vacuum, $t_0=%s$'%(round(t)))
-ax[0,1].plot(times, gf, ls='--', color=color0, alpha=alpha, linewidth=linewidth, label=r'Vacuum, $t_0=%s$'%(round(t)))
+ax[0,0].plot(ws, Aw, ls='--', color=color0, alpha=alpha, linewidth=linewidth, label=r'Vacuum, $t_0=%s$'%(round(t_small)))
+ax[0,1].plot(times, gf, ls='--', color=color0, alpha=alpha, linewidth=linewidth, label=r'Vacuum, $t_0=%s$'%(round(t_small)))
 
-t = 5.
+times, gf, ws, Aw = read_real_tempo_2(beta, t_small, U)
 
-times, gf, ws, Aw = read_real_tempo_2(beta, t, U)
-
-ax[0,0].plot(ws, Aw, ls='--', color=color1, alpha=alpha, linewidth=linewidth, label=r'Thermal, $t_0=%s$'%(round(t)))
-ax[0,1].plot(times, gf, ls='--', color=color1, alpha=alpha, linewidth=linewidth, label=r'Thermal, $t_0=%s$'%(round(t)))
+ax[0,0].plot(ws, Aw, ls='--', color=color1, alpha=alpha, linewidth=linewidth, label=r'Thermal, $t_0=%s$'%(round(t_small)))
+ax[0,1].plot(times, gf, ls='--', color=color1, alpha=alpha, linewidth=linewidth, label=r'Thermal, $t_0=%s$'%(round(t_small)))
 
 
-t = 40.
+t_large = 80.
 
-times, gf, ws, Aw = read_real_tempo_2(beta, t, U)
+times, gf, ws, Aw = read_real_tempo_2(beta, t_large, U)
 
-ax[0,0].plot(ws, Aw, ls='-', color=color2, alpha=alpha, linewidth=linewidth, label=r'Thermal, $t_0=%s$'%(round(t)))
-ax[0,1].plot(times, gf, ls='-', color=color2, alpha=alpha, linewidth=linewidth, label=r'Thermal, $t_0=%s$'%(round(t)))
+ax[0,0].plot(ws, Aw, ls='-', color=color2, alpha=alpha, linewidth=linewidth, label=r'Thermal, $t_0=%s$'%(round(t_large)))
+ax[0,1].plot(times, gf, ls='-', color=color2, alpha=alpha, linewidth=linewidth, label=r'Thermal, $t_0=%s$'%(round(t_large)))
 
 
 
@@ -138,28 +143,22 @@ ax[0,1].legend(fontsize=10)
 # U = 0.5
 U = 0.5
 
-t = 5.
-
-times, gf, ws, Aw = read_real_tempo(beta, t, U)
+times, gf, ws, Aw = read_real_tempo(beta, t_small, U)
 
 alpha = 0.5
 
-ax[1,0].plot(ws, Aw, ls='--', color=color0, alpha=alpha, linewidth=linewidth, label=r'$t_0=%s$'%(round(t)))
+ax[1,0].plot(ws, Aw, ls='--', color=color0, alpha=alpha, linewidth=linewidth, label=r'$t_0=%s$'%(round(t_small)))
 ax[1,1].plot(times, gf, ls='--', color=color0, alpha=alpha, linewidth=linewidth)
 
-t = 5.
+times, gf, ws, Aw = read_real_tempo_2(beta, t_small, U)
 
-times, gf, ws, Aw = read_real_tempo_2(beta, t, U)
-
-ax[1,0].plot(ws, Aw, ls='--', color=color1, alpha=alpha, linewidth=linewidth, label=r'$t_0=%s$'%(round(t)))
+ax[1,0].plot(ws, Aw, ls='--', color=color1, alpha=alpha, linewidth=linewidth, label=r'$t_0=%s$'%(round(t_small)))
 ax[1,1].plot(times, gf, ls='--', color=color1, alpha=alpha, linewidth=linewidth)
 
 
-t = 40.
+times, gf, ws, Aw = read_real_tempo_2(beta, t_large, U)
 
-times, gf, ws, Aw = read_real_tempo_2(beta, t, U)
-
-ax[1,0].plot(ws, Aw, ls='-', color=color2, alpha=alpha, linewidth=linewidth, label=r'$t_0=%s$'%(round(t)))
+ax[1,0].plot(ws, Aw, ls='-', color=color2, alpha=alpha, linewidth=linewidth, label=r'$t_0=%s$'%(round(t_large)))
 ax[1,1].plot(times, gf, ls='-', color=color2, alpha=alpha, linewidth=linewidth)
 
 
@@ -191,28 +190,22 @@ ax[1,1].annotate(r'(d)', xy=(0.05, 0.85),xycoords='axes fraction', fontsize=font
 # U = 1.
 U = 1.
 
-t = 5.
-
-times, gf, ws, Aw = read_real_tempo(beta, t, U)
+times, gf, ws, Aw = read_real_tempo(beta, t_small, U)
 
 alpha = 0.5
 
-ax[2,0].plot(ws, Aw, ls='--', color=color0, alpha=alpha, linewidth=linewidth, label=r'$t_0=%s$'%(round(t)))
+ax[2,0].plot(ws, Aw, ls='--', color=color0, alpha=alpha, linewidth=linewidth, label=r'$t_0=%s$'%(round(t_small)))
 ax[2,1].plot(times, gf, ls='--', color=color0, alpha=alpha, linewidth=linewidth)
 
-t = 5.
+times, gf, ws, Aw = read_real_tempo_2(beta, t_small, U)
 
-times, gf, ws, Aw = read_real_tempo_2(beta, t, U)
-
-ax[2,0].plot(ws, Aw, ls='--', color=color1, alpha=alpha, linewidth=linewidth, label=r'$t_0=%s$'%(round(t)))
+ax[2,0].plot(ws, Aw, ls='--', color=color1, alpha=alpha, linewidth=linewidth, label=r'$t_0=%s$'%(round(t_small)))
 ax[2,1].plot(times, gf, ls='--', color=color1, alpha=alpha, linewidth=linewidth)
 
 
-t = 40.
+times, gf, ws, Aw = read_real_tempo_2(beta, t_large, U)
 
-times, gf, ws, Aw = read_real_tempo_2(beta, t, U)
-
-ax[2,0].plot(ws, Aw, ls='-', color=color2, alpha=alpha, linewidth=linewidth, label=r'$t_0=%s$'%(round(t)))
+ax[2,0].plot(ws, Aw, ls='-', color=color2, alpha=alpha, linewidth=linewidth, label=r'$t_0=%s$'%(round(t_large)))
 ax[2,1].plot(times, gf, ls='-', color=color2, alpha=alpha, linewidth=linewidth)
 
 
