@@ -85,7 +85,7 @@ function main(t::Real, t₀::Real=t/2; U=1., ϵ_d=U/2, δt=0.05, β=40, order=6,
 	println("mpsI bond dimension is ", bond_dimension(mpsI1), " ", bond_dimension(mpsI2))
 	# println("IF Z is ", integrate(mpsI1, lattice), " ", integrate(mpsI2, lattice))
 
-	@time mpsK = sysdynamics(lattice, exact_model, trunc=truncK)
+	@time mpsK = accsysdynamics_fast(lattice, exact_model, trunc=truncK, scaling=1)
 	println("mpsK bond dimension is ", bond_dimension(mpsK))
 	mpsK = boundarycondition(mpsK, lattice, band=1)
 	mpsK = boundarycondition(mpsK, lattice, band=2)
