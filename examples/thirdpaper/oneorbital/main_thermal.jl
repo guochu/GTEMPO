@@ -127,12 +127,12 @@ function main(t::Real, t₀::Real=t/2; U=1., ϵ_d=U/2, δt=0.05, β=40, order=6,
 end
 
 function main_all_U(t₀::Real, t::Real = t₀ + 20.; δt=0.05, β=40, order=6, chi=1024)
-	# for U in [0.1, 0.5, 1.]
-	# 	main(t, t₀, U=U, δt=δt, β=β, order=order, chi=chi)
-	# end
-	for U in [0.2, 0.3,0.4, 0.6,0.7,0.8,0.9]
+	for U in [0.1, 0.5, 1.]
 		main(t, t₀, U=U, δt=δt, β=β, order=order, chi=chi)
 	end
+	# for U in [0.2, 0.3,0.4, 0.6,0.7,0.8,0.9]
+	# 	main(t, t₀, U=U, δt=δt, β=β, order=order, chi=chi)
+	# end
 end
 
 function main_all_t(; U=1., δt=0.05, β=40, order=6, chi=1024)
