@@ -61,6 +61,8 @@ function compute_Gτ(retarded_t, t, lb, ub)
 	# t = 100.
 	n = round(Int, t/dt)
 	retarded = [r[i] for i in 1:n]
+	println(retarded[1:10])
+	retarded = im * imag(retarded)
 
 	# println(retarded[end-10:end])
 
