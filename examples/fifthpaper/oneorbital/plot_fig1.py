@@ -25,7 +25,7 @@ def read_mixed_tempo(beta, t, U, dt=0.05, order=10, chi=60):
 		data = json.loads(data)
 	gt = parse_complex_array(data['gt'])
 	lt = parse_complex_array(data['lt'])
-	gf = -1j * gt - 1j * lt
+	gf = 1j * gt + 1j * lt
 	ts = asarray(data['ts'])
 	return ts-ts[0], gf, gt, lt
 
@@ -40,8 +40,8 @@ def read_real_tempo(beta, t0, U, dt, order=10, chi=60):
 		data = f.read()
 		data = json.loads(data)
 	gt = parse_complex_array(data['gt'])
-	lt = parse_complex_array(data['lt'])
-	gf = -1j * gt + 1j * lt
+	lt = -parse_complex_array(data['lt'])
+	gf = 1j * gt + 1j * lt
 
 	gf_ts = dt * asarray([i for i in range(len(data['gf_ts']))])
 
@@ -61,12 +61,12 @@ labelsize = 16
 linewidth = 2.
 markersize = 10
 
-colors = ['b', 'c', 'g']
+colors = ['b', 'c', 'orange', 'g', 'y', 'r', 'k']
 markers = ['o', '^', '+']
 color0 = 'g'
 color1 = 'r'
 
-fig, ax = plt.subplots(1, 1, figsize=(6, 5))
+fig, ax = plt.subplots(1, 2, figsize=(8, 4))
 
 
 beta = 40.
@@ -78,33 +78,55 @@ t_final = 80.
 
 t0 = 20.
 
-chi = 60
+chi_r = 60
 
-times_final, ns_final, gf_ts_final, gf_final, gt_final, lt_final = read_real_tempo(beta, t_final, U, dt, chi=chi)
+Us = [0.1,0.2, 0.3, 0.4, 0.5, 0.6]
 
-ax.plot(gf_ts_final, -gf_final.imag, ls='--', color=color0, linewidth=linewidth, label=r'real, $t_0=%s, \chi=%s$'%(round(t_final), chi))
+chi_m = 100
 
-# print(gf_ts_final[:10])
+for i, U in enumerate(Us):
+	times_final, ns_final, gf_ts_final, gf_final, gt_final, lt_final = read_real_tempo(beta, t_final, U, dt, chi=chi_r)
 
-chi = 120
-mixed_ts, mixed_gf, mixed_gt, mixed_lt = read_mixed_tempo(beta, t0, U, dt, chi=chi)
+	ax[0].plot(gf_ts_final, gf_final.imag, ls='-', color=colors[i], linewidth=linewidth, label=r'$U/\Gamma=%s$'%(round(U/0.1)))
 
-# print(mixed_ts[:10])
+	mixed_ts, mixed_gf, mixed_gt, mixed_lt = read_mixed_tempo(beta, t0, U, dt, chi=chi_m)
 
-ax.plot(mixed_ts, -mixed_gf.imag, ls='--', color=color1, linewidth=linewidth, label=r'mixed, $\chi=%s$'%(chi))
+	ax[0].plot(mixed_ts, mixed_gf.imag, ls='--', color=colors[i], linewidth=linewidth)
 
-print(mse_error(gf_final.imag, mixed_gf.imag))
+	print(mse_error(gf_final.imag, mixed_gf.imag))
 
-ax.set_xlabel(r'$\Gamma t$', fontsize=fontsize)
-ax.set_ylabel(r'$-{\rm Im}[G^R(t)]$', fontsize=fontsize)
-ax.tick_params(axis='both', which='major', labelsize=labelsize)
-ax.tick_params(axis='y', which='both')
-ax.locator_params(axis='both', nbins=6)
-# ax.set_ylim(0, 1)
-# ax.set_xlim(0, t * 0.1)
 
-ax.legend(fontsize=12)
+ax[0].set_xlabel(r'$\Gamma t$', fontsize=fontsize)
+ax[0].set_ylabel(r'$-{\rm Im}[G^R(t)]$', fontsize=fontsize)
+ax[0].tick_params(axis='both', which='major', labelsize=labelsize)
+ax[0].tick_params(axis='y', which='both')
+ax[0].locator_params(axis='both', nbins=6)
 
+
+ax[0].legend(fontsize=12)
+
+chi_ms = [40, 60, 80, 100, 120]
+U = 0.1
+
+times_final, ns_final, gf_ts_final, gf_final, gt_final, lt_final = read_real_tempo(beta, t_final, U, dt, chi=chi_r)
+
+errs = []
+
+for i, chi_m in enumerate(chi_ms):
+	
+	mixed_ts, mixed_gf, mixed_gt, mixed_lt = read_mixed_tempo(beta, t0, U, dt, chi=chi_m)
+
+	errs.append(mse_error(gf_final.imag, mixed_gf.imag))
+
+
+ax[1].plot(chi_ms, errs, ls='--', color='k', marker='o', markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'$U/\Gamma=%s$'%(round(U/0.1)))
+
+ax[1].set_xlabel(r'$\chi$', fontsize=fontsize)
+ax[1].set_ylabel(r'$\mathcal{E}$', fontsize=fontsize)
+ax[1].tick_params(axis='both', which='major', labelsize=labelsize)
+ax[1].tick_params(axis='y', which='both')
+ax[1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+ax[1].locator_params(axis='both', nbins=6)
 
 plt.tight_layout(pad=0.5)
 
