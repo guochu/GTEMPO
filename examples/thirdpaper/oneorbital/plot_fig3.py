@@ -3,11 +3,14 @@ import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib import rc
 from matplotlib.colors import LogNorm
-from numpy import linspace, asarray, loadtxt, linspace
+from numpy import linspace, asarray, loadtxt, linspace, sqrt
+from numpy.linalg import norm
 import math
 
 
 rc('text', usetex=True)
+
+tep = 100.
 
 def parse_complex_array(data):
 	re = [item['re'] for item in data]
@@ -17,7 +20,7 @@ def parse_complex_array(data):
 
 def read_real_tempo(beta, t, U, order=10, chi=60):
 	mu = U/2
-	t2 = 500.
+	t2 = tep
 	lb = -2.
 	ub = 2.
 	dt = 0.05
@@ -30,7 +33,7 @@ def read_real_tempo(beta, t, U, order=10, chi=60):
 
 def read_real_tempo_2(beta, t, U, order=10, chi=60):
 	mu = U/2
-	t2 = 500.
+	t2 = tep
 	lb = -2.
 	ub = 2.
 	dt = 0.05
@@ -85,7 +88,7 @@ beta = 40.
 linewidths = [2, 1.5, 1]
 # alphas = [1, 0.7, 0.4]
 alphas =  [0.3, 0.7, 1.]
-ts = [5., 15.]
+# ts = [5., 15.]
 
 # the first row with U=0.1
 U = 0.1
@@ -108,16 +111,18 @@ ax[0,1].plot(times, gf, ls='--', color=color1, alpha=alpha, linewidth=linewidth,
 
 t_large = 80.
 
-times, gf, ws, Aw = read_real_tempo_2(beta, t_large, U)
+times, gf_large, ws_large, Aw_large = read_real_tempo_2(beta, t_large, U)
 
-ax[0,0].plot(ws, Aw, ls='-', color=color2, alpha=alpha, linewidth=linewidth, label=r'Thermal, $t_0=%s$'%(round(t_large)))
-ax[0,1].plot(times, gf, ls='-', color=color2, alpha=alpha, linewidth=linewidth, label=r'Thermal, $t_0=%s$'%(round(t_large)))
+ax[0,0].plot(ws_large, Aw_large, ls='-', color=color2, alpha=alpha, linewidth=linewidth, label=r'Thermal, $t_0=%s$'%(round(t_large)))
+ax[0,1].plot(times, gf_large, ls='-', color=color2, alpha=alpha, linewidth=linewidth, label=r'Thermal, $t_0=%s$'%(round(t_large)))
 
 
 
 
 ts_imag, gf_imag = read_imag_tempo(beta, U, 0.1)
 ax[0,1].plot(ts_imag, gf_imag, ls='-', color='k', linewidth=1, label=r'imag, $\chi=500$')
+
+# print(gf_imag[:100])
 
 mc_data_path = '/Users/guochu/Documents/Since2018/2024/MyPapers/gtempo/paper03/cthyb/1orb/U%s/beta40/G-7.dat'%(U)
 ts1, gf1 = read_mc_data(mc_data_path)
@@ -138,7 +143,43 @@ ax[0,1].set_xlabel(r'$\tau$', fontsize=fontsize)
 ax[0,1].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[0,1].locator_params(axis='x', nbins=6)
 ax[0,1].annotate(r'(b)', xy=(0.05, 0.85),xycoords='axes fraction', fontsize=fontsize)
-ax[0,1].legend(fontsize=10)
+# ax[0,1].legend(fontsize=10)
+
+
+linewidth_s = 1.
+markersize_s = 4
+fontsize_s = 16
+labelsize_s = 12
+
+ax1 = ax[0,1].inset_axes([0.25, 0.15, 0.5, 0.5])
+
+errs = []
+errs_2 = []
+
+ts = asarray([5., 10., 15., 20., 40., 80.])
+
+for i, t in enumerate(ts):
+
+	times, gf, ws, Aw  = read_real_tempo(beta, t, U)
+
+	err = mse_error(gf, gf_imag)
+	errs.append(err)
+
+	times, gf, ws, Aw = read_real_tempo_2(beta, t, U)
+
+	err = mse_error(gf, gf_imag)
+	errs_2.append(err)
+
+
+ax1.plot(0.1 * ts, errs, ls='--', color=colors[0], marker=markers[0], markersize=markersize_s, markerfacecolor='none', linewidth=linewidth_s, label=r'Vacuum')
+ax1.plot(0.1 * ts, errs_2, ls='--', color=colors[1], marker=markers[1], markersize=markersize_s, markerfacecolor='none', linewidth=linewidth_s, label=r'Thermal')
+
+
+ax1.set_ylabel(r'$\mathcal{E}$', fontsize=fontsize)
+ax1.set_xlabel(r'$t_0$', fontsize=fontsize)
+
+ax1.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+
 
 # U = 0.5
 U = 0.5
@@ -187,6 +228,31 @@ ax[1,1].locator_params(axis='x', nbins=6)
 ax[1,1].annotate(r'(d)', xy=(0.05, 0.85),xycoords='axes fraction', fontsize=fontsize)
 
 
+ax1 = ax[1,1].inset_axes([0.25, 0.15, 0.5, 0.5])
+
+errs = []
+errs_2 = []
+
+
+for i, t in enumerate(ts):
+
+	times, gf, ws, Aw  = read_real_tempo(beta, t, U)
+
+	err = mse_error(gf, gf_imag)
+	errs.append(err)
+
+	times, gf, ws, Aw = read_real_tempo_2(beta, t, U)
+
+	err = mse_error(gf, gf_imag)
+	errs_2.append(err)
+
+
+ax1.plot(0.1 * ts, errs, ls='--', color=colors[0], marker=markers[0], markersize=markersize_s, markerfacecolor='none', linewidth=linewidth_s, label=r'Vacuum')
+ax1.plot(0.1 * ts, errs_2, ls='--', color=colors[1], marker=markers[1], markersize=markersize_s, markerfacecolor='none', linewidth=linewidth_s, label=r'Thermal')
+
+ax1.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+
+
 # U = 1.
 U = 1.
 
@@ -232,6 +298,29 @@ ax[2,1].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[2,1].locator_params(axis='x', nbins=6)
 ax[2,1].annotate(r'(f)', xy=(0.05, 0.85),xycoords='axes fraction', fontsize=fontsize)
 
+ax1 = ax[2,1].inset_axes([0.25, 0.15, 0.5, 0.5])
+
+errs = []
+errs_2 = []
+
+
+for i, t in enumerate(ts):
+
+	times, gf, ws, Aw  = read_real_tempo(beta, t, U)
+
+	err = mse_error(gf, gf_imag)
+	errs.append(err)
+
+	times, gf, ws, Aw = read_real_tempo_2(beta, t, U)
+
+	err = mse_error(gf, gf_imag)
+	errs_2.append(err)
+
+
+ax1.plot(0.1 * ts, errs, ls='--', color=colors[0], marker=markers[0], markersize=markersize_s, markerfacecolor='none', linewidth=linewidth_s, label=r'Vacuum')
+ax1.plot(0.1 * ts, errs_2, ls='--', color=colors[1], marker=markers[1], markersize=markersize_s, markerfacecolor='none', linewidth=linewidth_s, label=r'Thermal')
+
+ax1.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 plt.tight_layout(pad=0.5)
 

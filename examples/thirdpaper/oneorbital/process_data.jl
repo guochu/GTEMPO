@@ -55,14 +55,22 @@ end
 
 
 function compute_Gτ(retarded_t, t, lb, ub)
+	println("final retarded_t value ", retarded_t[end])
 	β = 40.
 	dt = 0.05
+	# r = LinearPrediction(retarded_t, stepsize=dt, nfit=div(length(retarded_t), 2))
 	r = LinearPrediction(retarded_t, stepsize=dt)
 	# t = 100.
-	n = round(Int, t/dt)
-	retarded = [r[i] for i in 1:n]
-	println(retarded[1:10])
-	retarded = im * imag(retarded)
+	# n = round(Int, t/dt)
+	# retarded = [r[i] for i in 1:n]
+
+	dt2 = 0.001
+	n = round(Int, t/dt2)
+	retarded = [r(i*dt2) for i in 1:n]
+
+
+	println("final retarded value ", retarded[end])
+	# retarded = im * imag(retarded)
 
 	# println(retarded[end-10:end])
 
@@ -71,7 +79,7 @@ function compute_Gτ(retarded_t, t, lb, ub)
 	# # retarded, dt = scaling_down(retarded, dt, m)
 	# retarded = r.(0:dt:200)
 
-	Gw = FourierTransform(retarded, δt=dt, δ=1.0e-8)
+	Gw = FourierTransform(retarded, δt=dt2, δ=1.0e-8)
 	Aw(ϵ) = begin 
 		x = -imag(Gw(ϵ))/π
 		return (x >= 0) ? x : zero(x)
@@ -126,6 +134,13 @@ function main_all_U(t₀, t = t₀ + 20.; t2=100, lb=-2, ub=2, order=6, chi=1024
 	end
 end
 
+function main_all(; kwargs...)
+	for t0 in [5., 10., 15., 20., 40., 80.]
+		main_all_U(t0; kwargs...)
+	end
+end
+
+
 function main2(t, t₀=t/2; t2=100, U=1, μ=U/2, lb=-2, ub=2, order=6, chi=1024)
 	t2 = convert(Float64, t2)
 	t₀ = convert(Float64, t₀)
@@ -155,3 +170,10 @@ function main2_all_U(t₀, t = t₀ + 20.; t2=100, lb=-2, ub=2, order=6, chi=102
 		main2(t, t₀; t2=t2, U=U, lb=lb, ub=ub, order=order, chi=chi)
 	end
 end
+
+function main2_all(; kwargs...)
+	for t0 in [5., 10., 15., 20., 40., 80.]
+		main2_all_U(t0; kwargs...)
+	end
+end
+
