@@ -156,7 +156,7 @@ ax1 = ax[0,1].inset_axes([0.25, 0.15, 0.5, 0.5])
 errs = []
 errs_2 = []
 
-ts = asarray([5., 10., 15., 20., 40., 80.])
+ts = asarray([5., 10., 15., 20., 40., 60., 80.])
 
 for i, t in enumerate(ts):
 
