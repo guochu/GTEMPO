@@ -80,9 +80,9 @@ t0 = 20.
 
 chi_r = 60
 
-Us = [0.1,0.2, 0.3, 0.4, 0.5, 0.6]
+Us = [0.1,0.2, 0.3, 0.4, 0.5, 1.]
 
-chi_m = 100
+chi_m = 40
 
 for i, U in enumerate(Us):
 	times_final, ns_final, gf_ts_final, gf_final, gt_final, lt_final = read_real_tempo(beta, t_final, U, dt, chi=chi_r)

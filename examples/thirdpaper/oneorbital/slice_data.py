@@ -19,7 +19,7 @@ def read_real_tempo_2(beta, U, dt, order=10, chi=60):
 	t = 100.
 	mu = U/2
 	# t2 = t/2
-	filename = 'result/anderson_tempo1_beta%s_t%s_%s_U%s_mu%s_dt%s_order%s_chi%s_2.json'%(beta, t, t0, U, mu, dt, order, chi)
+	filename = 'result/anderson_tempo1_beta%s_t%s_%s_U%s_mu%s_dt%s_order%s_chi%s.json'%(beta, t, t0, U, mu, dt, order, chi)
 	with open(filename, 'r') as f:
 		data = f.read()
 		data = json.loads(data)
@@ -30,7 +30,7 @@ def read_real_tempo_2(beta, U, dt, order=10, chi=60):
 
 	new_data = {'gt':gt, 'lt':lt, 'gf_ts':gf_ts, 'ns':data['ns'], 'ts':data['ts'], 'bd':data['bd']}
 
-	filename2 = 'result/anderson_tempo1_beta%s_t%s_%s_U%s_mu%s_dt%s_order%s_chi%s_2.json'%(beta, 80., t0, U, mu, dt, order, chi)
+	filename2 = 'result/anderson_tempo1_beta%s_t%s_%s_U%s_mu%s_dt%s_order%s_chi%s.json'%(beta, 80., t0, U, mu, dt, order, chi)
 
 	with open(filename2, 'w') as f:
 		json.dump(new_data, f)
@@ -42,5 +42,5 @@ beta = 40.
 U = 0.1
 dt = 0.05
 
-
-x = read_real_tempo_2(beta, U, dt)
+for U in [0.1, 0.5, 1.]:
+	x = read_real_tempo_2(beta, U, dt)
