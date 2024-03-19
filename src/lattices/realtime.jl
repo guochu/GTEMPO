@@ -161,6 +161,27 @@ function index(x::RealGrassmannLattice{<:A1A1a1a1B1B1b1b1}, i::Int; conj::Bool, 
 		end
 	end
 end
+
+# aābb̄ a₂^+ā₂^+b₂^+b̄₂^+a₂^-ā₂^-b₂^-b̄₂^- a₁^+ā₁^+b₁^+b̄₁^+a₁^-ā₁^-b₁^-b̄₁^-
+function index(x::RealGrassmannLattice{<:A1A1B1B1a1a1b1b1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+	@boundscheck begin
+		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
+		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
+		(branch in (:+, :-)) || throw(ArgumentError("branch must be :+ or :-"))
+	end
+	TL = length(x)
+	bands = x.bands
+	if i == 0
+		ifelse(conj, 2*band, 2*band-1)
+	else
+		if branch == :+
+			ifelse(conj, TL-4i*bands+2+2*(band-1), TL-4i*bands+1+2*(band-1))
+		else
+			ifelse(conj, TL-4i*bands+2*bands+2+2*(band-1), TL-4i*bands+2*bands+1+2*(band-1))
+		end
+	end
+end
+
 # a\bar{a}b\bar{b} a_2^+\bar{a}_2^+a_1^+\bar{a}_1^+ a_2^-\bar{a}_2^-a_1^-\bar{a}_1^- b_2^+\bar{b}_2^+b_1^+\bar{b}_1^+  b_2^-\bar{b}_2^-b_1^-\bar{b}_1^-
 function index(x::RealGrassmannLattice{<:A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
@@ -252,6 +273,16 @@ function band_boundary(lattice::RealGrassmannLattice{<:A1a1B1b1b1B1a1A1}, j::Int
     return posa, posb
 end
 function band_boundary(lattice::RealGrassmannLattice{<:A1A1a1a1B1B1b1b1}, j::Int)
+    if j == 0
+        posa = index(lattice, j, conj=false, band=1)
+        posb = index(lattice, j, conj=true, band=lattice.bands)     
+    else
+        posa = index(lattice, j, conj=false, branch=:+, band=1)
+        posb = index(lattice, j, conj=true, branch=:-, band=lattice.bands)
+    end
+    return posa, posb
+end
+function band_boundary(lattice::RealGrassmannLattice{<:A1A1B1B1a1a1b1b1}, j::Int)
     if j == 0
         posa = index(lattice, j, conj=false, band=1)
         posb = index(lattice, j, conj=true, band=lattice.bands)     

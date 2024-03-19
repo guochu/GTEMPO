@@ -57,6 +57,16 @@ LayoutStyle(::Type{A2A2A1A1B2B2B1B1}) = BandLocalLayout()
 """
 	struct A1A1a1a1B1B1b1b1
 
+GrassmannOrdering aābb̄ a₂^+ā₂^+b₂^+b̄₂^+a₂^-ā₂^-b₂^-b̄₂^- a₁^+ā₁^+b₁^+b̄₁^+a₁^-ā₁^-b₁^-b̄₁^-
+"""
+struct A1A1B1B1a1a1b1b1 <: RealGrassmannOrdering end
+ConjugationStyle(::Type{A1A1B1B1a1a1b1b1}) = AdjacentConjugation()
+LayoutStyle(::Type{A1A1B1B1a1a1b1b1}) = TimeLocalLayout()
+const AABBaabb = A1A1B1B1a1a1b1b1
+
+"""
+	struct A1A1a1a1B1B1b1b1
+
 GrassmannOrdering a\bar{a}b\bar{b} a_2^+\bar{a}_2^+a_2^-\bar{a}_2^-b_2^+\bar{b}_2^+b_2^-\bar{b}_2^- a_1^+\bar{a}_1^+a_1^-\bar{a}_1^-b_1^+\bar{b}_1^+b_1^-\bar{b}_1^-
 """
 struct A1A1a1a1B1B1b1b1 <: RealGrassmannOrdering end

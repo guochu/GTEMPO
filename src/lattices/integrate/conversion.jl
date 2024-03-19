@@ -8,7 +8,7 @@
 # end 
 # changeordering(::Type{A}, lattice::AbstractGrassmannLattice, x::GrassmannMPS; kwargs...) where A = convert_ordering(A, lattice, x; kwargs...)
 
-function changeordering(::Type{A}, lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS, zs::GrassmannMPS...; 
+function changeordering(::Type{A}, lattice::AbstractGrassmannLattice, x::AbstractGMPS, y::AbstractGMPS, zs::AbstractGMPS...; 
                         trunc::TruncationScheme=DefaultKTruncation) where {A <: GrassmannOrdering} 
     if OrderingStyle(lattice) isa A
         return lattice, x, y, zs...
@@ -18,7 +18,7 @@ function changeordering(::Type{A}, lattice::AbstractGrassmannLattice, x::Grassma
         return lattice2, permute(x, perm, trunc=trunc), permute(y, perm, trunc=trunc), map(z->permute(z, perm, trunc=trunc), zs)...
     end
 end
-function changeordering(::Type{A}, lattice::AbstractGrassmannLattice, x::GrassmannMPS; trunc::TruncationScheme=DefaultKTruncation) where {A <: GrassmannOrdering} 
+function changeordering(::Type{A}, lattice::AbstractGrassmannLattice, x::AbstractGMPS; trunc::TruncationScheme=DefaultKTruncation) where {A <: GrassmannOrdering} 
     if OrderingStyle(lattice) isa A
         return lattice, x
     else

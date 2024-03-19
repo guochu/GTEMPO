@@ -254,7 +254,7 @@ end
 			mpsKs = boundarycondition_branching(mpsKs, lattice, band=band)
 		end
 		
-		for ordering in [A1A1a1a1B1B1b1b1(), A1a1B1b1b1B1a1A1(), A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1(), A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2()]
+		for ordering in [A1A1B1B1a1a1b1b1(), A1A1a1a1B1B1b1b1(), A1a1B1b1b1B1a1A1(), A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1(), A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2()]
 
 			lattice_r = GrassmannLattice(δt=0.1, N=5, bands=bands, contour=:real)
 			exact_model = SISB(bath, U=U, μ=ϵ_d)
@@ -378,7 +378,7 @@ end
 			@test norm(currents - currents2) / norm(currents) < rtol
 		end
 		# TEMPO 1 order 2
-		for ordering in (A1A1a1a1B1B1b1b1(), A1a1B1b1b1B1a1A1())
+		for ordering in (A1A1B1B1a1a1b1b1(), A1A1a1a1B1B1b1b1(), A1a1B1b1b1B1a1A1())
 			lattice_o = GrassmannLattice(N=N, δt=δt, contour=:real, order=1, bands=1)
 			corr = correlationfunction(exact_model.bath, lattice_o)
 			lattice = similar(lattice_o, N=0)
@@ -399,7 +399,7 @@ end
 			@test norm(currents - currents2) / norm(currents) < rtol
 		end
 		# TEMPO 2 order
-		for ordering in (A1A1a1a1B1B1b1b1(), A1a1B1b1b1B1a1A1())
+		for ordering in (A1A1B1B1a1a1b1b1(), A1A1a1a1B1B1b1b1(), A1a1B1b1b1B1a1A1())
 			lattice_o = GrassmannLattice(N=N, δt=δt, contour=:real, order=2, bands=1)
 			corr = correlationfunction(exact_model.bath, lattice_o)
 			lattice = similar(lattice_o, N=0)
