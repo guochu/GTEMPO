@@ -39,8 +39,11 @@ function partialinfluencefunctional(lattice::RealGrassmannLattice, rows_f::Abstr
 	return mpo * vacuumstate(lattice)
 end
 
-# full influence operator, only works for ordering A1A1a1a1B1B1b1b1
-function influenceoperator(lattice::RealGrassmannLattice{<:A1A1a1a1B1B1b1b1}, corr::RealCorrelationFunction; band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
+const _AllowedRealGrassmannOrdering = Union{A1A1a1a1B1B1b1b1, A1A1B1B1a1a1b1b1}
+
+# full influence operator, only works for ordering A1A1a1a1B1B1b1b1 and A1A1B1B1a1a1b1b1
+function influenceoperator(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction; 
+							band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr, band)
 	mpoj1, mpoj2, mpoj3, mpoj4 = ti_mpotensor(η⁺⁺, algexpan), ti_mpotensor(η⁺⁻, algexpan), ti_mpotensor(η⁻⁺, algexpan), ti_mpotensor(η⁻⁻, algexpan)
 	# η⁺⁻ = CorrelationMatrix(η⁺⁻.ηₖⱼ, η⁺⁻.ηⱼₖ)
@@ -55,7 +58,7 @@ function influenceoperator(lattice::RealGrassmannLattice{<:A1A1a1a1B1B1b1b1}, co
 	return mpo1, mpo2, mpo3, mpo4
 end
 
-function influenceoperatorexponential(lattice::RealGrassmannLattice{<:A1A1a1a1B1B1b1b1}, corr::RealCorrelationFunction, dt::Real, alg::FirstOrderStepper; 
+function influenceoperatorexponential(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction, dt::Real, alg::FirstOrderStepper; 
 										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr, band)
 	mpoj1, mpoj2, mpoj3, mpoj4 = ti_mpotensor(η⁺⁺, algexpan), ti_mpotensor(η⁺⁻, algexpan), ti_mpotensor(η⁻⁺, algexpan), ti_mpotensor(η⁻⁻, algexpan)
@@ -69,7 +72,7 @@ function influenceoperatorexponential(lattice::RealGrassmannLattice{<:A1A1a1a1B1
 	mpo4 = _fit_to_lattice(lattice, h4, _JW, band, :-, :-) 
 	return mpo1, mpo2, mpo3, mpo4
 end
-function influenceoperatorexponential(lattice::RealGrassmannLattice{<:A1A1a1a1B1B1b1b1}, corr::RealCorrelationFunction, dt::Real, alg::ComplexStepper; 
+function influenceoperatorexponential(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction, dt::Real, alg::ComplexStepper; 
 										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr, band)
 	mpoj1, mpoj2, mpoj3, mpoj4 = ti_mpotensor(η⁺⁺, algexpan), ti_mpotensor(η⁺⁻, algexpan), ti_mpotensor(η⁻⁺, algexpan), ti_mpotensor(η⁻⁻, algexpan)
@@ -91,8 +94,8 @@ function influenceoperatorexponential(lattice::RealGrassmannLattice{<:A1A1a1a1B1
 end
 function differentialinfluencefunctional(lattice::RealGrassmannLattice{O}, corr::RealCorrelationFunction, dt::Real, alg::TimeEvoMPOAlgorithm, algmult::DMRGAlgorithm;
 										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion()) where O
-	if !(OrderingStyle(lattice) isa A1A1a1a1B1B1b1b1)
-		lattice2 = similar(lattice, ordering = A1A1a1a1B1B1b1b1())
+	if !(OrderingStyle(lattice) isa _AllowedRealGrassmannOrdering)
+		lattice2 = similar(lattice, ordering = A1A1B1B1a1a1b1b1())
 		mps = _differentialinfluencefunctional(lattice2, corr, dt, alg, algmult; band=band, algexpan=algexpan)
 		_, mps2 = changeordering(O, lattice2, mps, trunc=algmult.trunc)
 		return mps2
@@ -101,8 +104,8 @@ function differentialinfluencefunctional(lattice::RealGrassmannLattice{O}, corr:
 	end
 end
 
-function _differentialinfluencefunctional(lattice::RealGrassmannLattice{<:A1A1a1a1B1B1b1b1}, corr::RealCorrelationFunction, dt::Real, alg::FirstOrderStepper, algmult::DMRGAlgorithm; 
-										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
+function _differentialinfluencefunctional(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction, dt::Real, alg::FirstOrderStepper, 
+											algmult::DMRGAlgorithm; band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	h1, h2, h3, h4 = influenceoperatorexponential(lattice, corr, dt, alg, band=band, algexpan=algexpan)
 	mps = h1 * vacuumstate(lattice)
 	tmp = h2 * vacuumstate(lattice)
@@ -113,8 +116,8 @@ function _differentialinfluencefunctional(lattice::RealGrassmannLattice{<:A1A1a1
 	mps = mult(mps, tmp, algmult)
 	return mps
 end
-function _differentialinfluencefunctional(lattice::RealGrassmannLattice{<:A1A1a1a1B1B1b1b1}, corr::RealCorrelationFunction, dt::Real, alg::ComplexStepper, algmult::DMRGAlgorithm; 
-										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
+function _differentialinfluencefunctional(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction, dt::Real, alg::ComplexStepper, 
+											algmult::DMRGAlgorithm; band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	(h1a, h1b), (h2a, h2b), (h3a, h3b), (h4a, h4b) = influenceoperatorexponential(lattice, corr, dt, alg, band=band, algexpan=algexpan)
 	mps1 = h1a * vacuumstate(lattice)
 	tmp = h1b * vacuumstate(lattice)
