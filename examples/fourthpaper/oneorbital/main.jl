@@ -16,17 +16,17 @@ spectrum_func(D) = SpectrumFunction(ω -> J(D, ω), lb = -D, ub = D)
 
 const Vs = [0., 0.17857143, 0.35714286, 0.53571429, 0.71428571, 0.89285715, 1.07142857, 1.25, 1.42857143, 1.60714287, 1.78571429, 1.96428573, 2.14285714, 2.32142859, 2.5, 2.67857145, 2.85714286]
 
-function main_tempo_1order_b_all(V_over_Gamma, t=6., dt =0.007, order=7, k=5, prony=5)
+function main_tempo_1order_b_all(V_over_Gamma; t=6., dt =0.007, order=7, k=5, prony=5, chi=160)
 	for U in [0., 2., 4., 6., 8.]
-		main_tempo_1order_b(V_over_Gamma, U, t, dt, order, k, prony)
+		main_tempo_1order_b(V_over_Gamma, U, t, dt, order, k, prony, chi)
 	end
 end
 
-function main_tempo_1order_b(V_over_Gamma, U_over_Gamma, tall, dt, order, k, prony)
-	println("run for V= ", V_over_Gamma, ", U= ", U_over_Gamma, " t= ", tall, " dt= ", dt, " order= ", order, " k= ", k, " prony=", prony)
+function main_tempo_1order_b(V_over_Gamma, U_over_Gamma, tall, dt, order, k, prony, chi)
+	println("run for V= ", V_over_Gamma, ", U= ", U_over_Gamma, " t= ", tall, " dt= ", dt, " order= ", order, " k= ", k, " prony=", prony, " chi=", chi)
 	β = Inf
 	D = 2
-	chi = 160
+	# chi = 160
 	pronytol=10.0^(-prony)
 
 	Γ = 0.1
