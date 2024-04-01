@@ -78,7 +78,8 @@ function main(t::Real, t₀::Real=t/2; U=1., ϵ_d=U/2, δt=0.05, β=40, order=6,
 		println("computing MPS-IF...")
 		corr = correlationfunction(exact_model.bath, lattice)
 		@time mpsI1 = hybriddynamics(lattice, corr, trunc=trunc, band=1)
-		@time mpsI2 = hybriddynamics(lattice, corr, trunc=trunc, band=2)
+		# @time mpsI2 = hybriddynamics(lattice, corr, trunc=trunc, band=2)
+		@time mpsI2 = swapband(mpsI1, lattice, 1, 2, trunc=trunc)
 		# println("Z is ", integrate(mpsI, lattice))
 		println("save MPS-IF to path ", mpspath)
 		Serialization.serialize(mpspath, (mpsI1, mpsI2))
@@ -127,7 +128,7 @@ function main(t::Real, t₀::Real=t/2; U=1., ϵ_d=U/2, δt=0.05, β=40, order=6,
 end
 
 function main_all_U(t₀::Real, t::Real = t₀ + 20.; δt=0.05, β=40, order=6, chi=1024)
-	for U in [0.1, 0.5, 1.]
+	for U in 0.1:0.1:1.
 		main(t, t₀, U=U, δt=δt, β=β, order=order, chi=chi)
 	end
 	# for U in [0.2, 0.3,0.4, 0.6,0.7,0.8,0.9]

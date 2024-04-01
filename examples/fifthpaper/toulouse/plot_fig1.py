@@ -106,7 +106,7 @@ ax[0,0].plot(ts_ed, gt_ed.real, ls='--', color='k', linewidth=linewidth, label=r
 ax[0,1].plot(ts_ed, gt_ed.imag, ls='--', color='k', linewidth=linewidth, label=r'ED')
 
 
-chi = 120
+chi = 80
 taus, gtau, ts_tempo, gt_tempo, lt_tempo, gf_tempo, bds = read_mixed_tempo(beta, t, mu, dt, chi=chi)
 # print(bds)
 ax[0,0].plot(ts_tempo, gt_tempo.real, ls='-', color='r', markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'mixed, $\chi=%s$'%(chi))

@@ -25,9 +25,10 @@ def read_mixed_tempo(beta, t, U, dt=0.05, order=10, chi=60):
 		data = json.loads(data)
 	gt = parse_complex_array(data['gt'])
 	lt = parse_complex_array(data['lt'])
+	gtau = parse_complex_array(data['gtau'])
 	gf = 1j * gt + 1j * lt
 	ts = asarray(data['ts'])
-	return ts-ts[0], gf, gt, lt
+	return ts-ts[0], gf, gt, lt, data['taus'], -gtau.real
 
 
 def read_real_tempo(beta, t0, U, dt, order=10, chi=60):
@@ -46,6 +47,18 @@ def read_real_tempo(beta, t0, U, dt, order=10, chi=60):
 	gf_ts = dt * asarray([i for i in range(len(data['gf_ts']))])
 
 	return data['ts'], asarray(data['ns']), gf_ts, gf, gt, lt
+
+
+def read_imag_tempo(beta, U, dt=0.1, order=10, chi=500):
+	mpath = '../../thirdpaper/oneorbital/'
+	N = round(beta/dt)
+	mu = U/2
+	filename = mpath + 'result/anderson_tempo1_beta%s_U%s_mu%s_N%s_dt%s_imag_order%s_chi%s.json'%(beta, U, mu, N, dt, order, chi)
+	with open(filename, 'r') as f:
+		data = f.read()
+		data = json.loads(data)
+	return data['ts'], -asarray(data['gf'])
+
 
 
 def mse_error(a, b):
@@ -78,14 +91,14 @@ t_final = 80.
 
 t0 = 20.
 
-chi_r = 60
+chi_r = 500
 
 
-chi_ms = [40, 60, 80, 100, 160, 180]
+chi_ms = [40, 60, 100, 120, 140, 160, 180]
 
-times_final, ns_final, gf_ts_final, gf_final, gt_final, lt_final = read_real_tempo(beta, t_final, U, dt, chi=chi_r)
+taus, gtau = read_imag_tempo(beta, U)
 
-ax[0].plot(gf_ts_final, gf_final.imag, ls='-', color='k', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_r))
+ax[0].plot(taus, gtau, ls='-', color='k', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_r))
 
 
 errs = []
@@ -93,17 +106,17 @@ errs = []
 for i, chi_m in enumerate(chi_ms):
 	
 
-	mixed_ts, mixed_gf, mixed_gt, mixed_lt = read_mixed_tempo(beta, t0, U, dt, chi=chi_m)
+	mixed_ts, mixed_gf, mixed_gt, mixed_lt, mixed_taus, mixed_gtau = read_mixed_tempo(beta, t0, U, dt, chi=chi_m)
 
-	ax[0].plot(mixed_ts, mixed_gf.imag, ls='--', color=colors[i], linewidth=linewidth, label=r'imag, $\chi=%s$'%(chi_m))
+	ax[0].plot(mixed_taus, mixed_gtau, ls='--', color=colors[i], linewidth=linewidth, label=r'imag, $\chi=%s$'%(chi_m))
 
-	errs.append(mse_error(gf_final.imag, mixed_gf.imag))
+	errs.append(mse_error(gtau, mixed_gtau))
 
-	print(mse_error(gf_final.imag, mixed_gf.imag))
+	print(errs[-1])
 
 
-ax[0].set_xlabel(r'$\Gamma t$', fontsize=fontsize)
-ax[0].set_ylabel(r'$-{\rm Im}[G^R(t)]$', fontsize=fontsize)
+ax[0].set_xlabel(r'$\tau$', fontsize=fontsize)
+ax[0].set_ylabel(r'$G(\tau)$', fontsize=fontsize)
 ax[0].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[0].tick_params(axis='y', which='both')
 ax[0].locator_params(axis='both', nbins=6)
