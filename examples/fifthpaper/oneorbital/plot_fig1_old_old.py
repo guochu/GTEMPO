@@ -72,7 +72,7 @@ fig, ax = plt.subplots(1, 2, figsize=(8, 4))
 beta = 40.
 dt = 0.05
 
-U = 1.
+U = 0.5
 
 t_final = 80.
 
@@ -80,24 +80,18 @@ t0 = 20.
 
 chi_r = 60
 
+Us = [0.1,0.2, 0.3, 0.4, 0.5, 1.]
 
-chi_ms = [40, 60, 80, 100]
+chi_m = 40
 
-times_final, ns_final, gf_ts_final, gf_final, gt_final, lt_final = read_real_tempo(beta, t_final, U, dt, chi=chi_r)
+for i, U in enumerate(Us):
+	times_final, ns_final, gf_ts_final, gf_final, gt_final, lt_final = read_real_tempo(beta, t_final, U, dt, chi=chi_r)
 
-ax[0].plot(gf_ts_final, gf_final.imag, ls='-', color='k', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_r))
-
-
-errs = []
-
-for i, chi_m in enumerate(chi_ms):
-	
+	ax[0].plot(gf_ts_final, gf_final.imag, ls='-', color=colors[i], linewidth=linewidth, label=r'$U/\Gamma=%s$'%(round(U/0.1)))
 
 	mixed_ts, mixed_gf, mixed_gt, mixed_lt = read_mixed_tempo(beta, t0, U, dt, chi=chi_m)
 
-	ax[0].plot(mixed_ts, mixed_gf.imag, ls='--', color=colors[i], linewidth=linewidth, label=r'imag, $\chi=%s$'%(chi_m))
-
-	errs.append(mse_error(gf_final.imag, mixed_gf.imag))
+	ax[0].plot(mixed_ts, mixed_gf.imag, ls='--', color=colors[i], linewidth=linewidth)
 
 	print(mse_error(gf_final.imag, mixed_gf.imag))
 
@@ -111,9 +105,21 @@ ax[0].locator_params(axis='both', nbins=6)
 
 ax[0].legend(fontsize=12)
 
+chi_ms = [40, 60, 80, 100, 120]
+U = 0.1
+
+times_final, ns_final, gf_ts_final, gf_final, gt_final, lt_final = read_real_tempo(beta, t_final, U, dt, chi=chi_r)
+
+errs = []
+
+for i, chi_m in enumerate(chi_ms):
+	
+	mixed_ts, mixed_gf, mixed_gt, mixed_lt = read_mixed_tempo(beta, t0, U, dt, chi=chi_m)
+
+	errs.append(mse_error(gf_final.imag, mixed_gf.imag))
 
 
-ax[1].plot(chi_ms, errs, ls='--', color='k', marker='o', markersize=markersize, markerfacecolor='none', linewidth=linewidth)
+ax[1].plot(chi_ms, errs, ls='--', color='k', marker='o', markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'$U/\Gamma=%s$'%(round(U/0.1)))
 
 ax[1].set_xlabel(r'$\chi$', fontsize=fontsize)
 ax[1].set_ylabel(r'$\mathcal{E}$', fontsize=fontsize)

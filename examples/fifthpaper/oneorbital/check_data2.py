@@ -59,7 +59,18 @@ def read_imag_tempo(beta, U, dt=0.1, order=10, chi=500):
 		data = json.loads(data)
 	return data['ts'], -asarray(data['gf'])
 
-
+def read_itempo(beta, t, U, dt, order=6, chi=60, prony=5, k=5):
+	N = round(t / dt)
+	mu = U/2
+	mpath = '/Users/guochu/Documents/Missile/iGTEMPO/examples/secondpaper/oneorbital/'
+	filename =  mpath +'result/SIAM_onebath_beta%s_U%s_mu%s_dt%s_k%s_trunc%s_prony%s_N%s_chi%s_it.json'%(beta, U, mu, dt, k, order, prony, N, chi)
+	with open(filename, 'r') as f:
+		data = f.read()
+		data = json.loads(data)
+	gt = parse_complex_array(data['gt'])
+	lt = parse_complex_array(data['lt'])
+	gf = 1j * (gt + lt)
+	return 0.1 * asarray(data['ts']), gf, gt, lt
 
 def mse_error(a, b):
 	assert len(a) == len(b)
@@ -79,7 +90,7 @@ markers = ['o', '^', '+']
 color0 = 'g'
 color1 = 'r'
 
-fig, ax = plt.subplots(1, 2, figsize=(8, 4))
+fig, ax = plt.subplots(2, 2, figsize=(8, 7), sharex=True)
 
 
 beta = 40.
@@ -95,11 +106,27 @@ chi_r = 60
 
 times_final, ns_final, gf_ts_final, gf_final, gt_final, lt_final = read_real_tempo(beta, t_final, U, dt, chi=chi_r)
 
+ax[0,0].plot(gf_ts_final, gt_final.real, ls='-', color='k', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_r))
+ax[0,1].plot(gf_ts_final, gt_final.imag, ls='-', color='k', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_r))
 
-chi_ms = [40, 60, 100, 120, 160, 180]
+ax[1,0].plot(gf_ts_final, lt_final.real, ls='-', color='k', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_r))
+ax[1,1].plot(gf_ts_final, lt_final.imag, ls='-', color='k', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_r))
 
 
-ax[0].plot(gf_ts_final, lt_final.real, ls='-', color='k', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_r))
+
+times_itempo, gf_itempo, gt_itempo, lt_itempo = read_itempo(beta, t0, U, dt, chi=chi_r, order=10)
+
+ax[0,0].plot(gf_ts_final, gt_final.real, ls='-.', color='r', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_r))
+ax[0,1].plot(gf_ts_final, gt_final.imag, ls='-.', color='r', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_r))
+
+ax[1,0].plot(gf_ts_final, lt_final.real, ls='-.', color='r', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_r))
+ax[1,1].plot(gf_ts_final, lt_final.imag, ls='-.', color='r', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_r))
+
+
+
+chi_ms = [40, 80, 120,180]
+
+
 
 
 errs = []
@@ -109,32 +136,43 @@ for i, chi_m in enumerate(chi_ms):
 
 	mixed_ts, mixed_gf, mixed_gt, mixed_lt, mixed_taus, mixed_gtau = read_mixed_tempo(beta, t0, U, dt, chi=chi_m)
 
-	ax[0].plot(mixed_ts, mixed_lt.real, ls='--', color=colors[i], linewidth=linewidth, label=r'imag, $\chi=%s$'%(chi_m))
+	ax[0,0].plot(mixed_ts, mixed_gt.real, ls='--', color=colors[i], linewidth=linewidth, label=r'imag, $\chi=%s$'%(chi_m))
+	ax[0,1].plot(mixed_ts, mixed_gt.imag, ls='--', color=colors[i], linewidth=linewidth, label=r'imag, $\chi=%s$'%(chi_m))
 
-	errs.append(mse_error(gt_final, mixed_gt))
-
-	print(errs[-1])
-
-
-ax[0].set_xlabel(r'$\tau$', fontsize=fontsize)
-ax[0].set_ylabel(r'$G(\tau)$', fontsize=fontsize)
-ax[0].tick_params(axis='both', which='major', labelsize=labelsize)
-ax[0].tick_params(axis='y', which='both')
-ax[0].locator_params(axis='both', nbins=6)
+	ax[1,0].plot(mixed_ts, mixed_lt.real, ls='--', color=colors[i], linewidth=linewidth, label=r'imag, $\chi=%s$'%(chi_m))
+	ax[1,1].plot(mixed_ts, mixed_lt.imag, ls='--', color=colors[i], linewidth=linewidth, label=r'imag, $\chi=%s$'%(chi_m))
 
 
-ax[0].legend(fontsize=12)
+ax[0,0].set_xlabel(r'$t$', fontsize=fontsize)
+ax[0,0].set_ylabel(r'${\rm Re}[G^>(t)]$', fontsize=fontsize)
+ax[0,0].tick_params(axis='both', which='major', labelsize=labelsize)
+ax[0,0].tick_params(axis='y', which='both')
+ax[0,0].locator_params(axis='both', nbins=6)
 
 
+ax[0,0].legend(fontsize=12)
 
-ax[1].plot(chi_ms, errs, ls='--', color='k', marker='o', markersize=markersize, markerfacecolor='none', linewidth=linewidth)
 
-ax[1].set_xlabel(r'$\chi$', fontsize=fontsize)
-ax[1].set_ylabel(r'$\mathcal{E}$', fontsize=fontsize)
-ax[1].tick_params(axis='both', which='major', labelsize=labelsize)
-ax[1].tick_params(axis='y', which='both')
-ax[1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[1].locator_params(axis='both', nbins=6)
+ax[0,1].set_xlabel(r'$t$', fontsize=fontsize)
+ax[0,1].set_ylabel(r'${\rm Im}[G^>(t)]$', fontsize=fontsize)
+ax[0,1].tick_params(axis='both', which='major', labelsize=labelsize)
+ax[0,1].tick_params(axis='y', which='both')
+ax[0,1].locator_params(axis='both', nbins=6)
+
+
+ax[1,0].set_xlabel(r'$t$', fontsize=fontsize)
+ax[1,0].set_ylabel(r'${\rm Re}[G^<(t)]$', fontsize=fontsize)
+ax[1,0].tick_params(axis='both', which='major', labelsize=labelsize)
+ax[1,0].tick_params(axis='y', which='both')
+ax[1,0].locator_params(axis='both', nbins=6)
+
+
+ax[1,1].set_xlabel(r'$t$', fontsize=fontsize)
+ax[1,1].set_ylabel(r'${\rm Im}[G^<(t)]$', fontsize=fontsize)
+ax[1,1].tick_params(axis='both', which='major', labelsize=labelsize)
+ax[1,1].tick_params(axis='y', which='both')
+ax[1,1].locator_params(axis='both', nbins=6)
+
 
 plt.tight_layout(pad=0.5)
 
