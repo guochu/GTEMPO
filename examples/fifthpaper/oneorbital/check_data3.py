@@ -98,16 +98,18 @@ dt = 0.05
 
 U = 0.5
 
-t_final = 20.
+t_final = 80.
 
 t0 = 20.
 
-chi_r = 80
+chi_r = 60
 chi_i = 60
 
 times_final, ns_final, gf_ts_final, gf_final, gt_final, lt_final = read_real_tempo(beta, t_final, U, dt, chi=chi_r)
 
 ax[0,0].plot(gf_ts_final, gt_final.real, ls='-', color='k', linewidth=1, label=r'real, $\chi=%s$'%(chi_r))
+# ax[0,0].plot(gf_ts_final, lt_final.real, ls='-', color='k', linewidth=1, label=r'real, $\chi=%s$'%(chi_r))
+
 ax[0,1].plot(gf_ts_final, gt_final.imag, ls='-', color='k', linewidth=1, label=r'real, $\chi=%s$'%(chi_r))
 
 ax[1,0].plot(gf_ts_final, lt_final.real, ls='-', color='k', linewidth=1, label=r'real, $\chi=%s$'%(chi_r))
@@ -115,17 +117,8 @@ ax[1,1].plot(gf_ts_final, lt_final.imag, ls='-', color='k', linewidth=1, label=r
 
 
 
-times_itempo, gf_itempo, gt_itempo, lt_itempo = read_itempo(beta, t0, U, dt, chi=chi_i, order=10)
 
-ax[0,0].plot(gf_ts_final, gt_final.real, ls='-.', color='r', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_i))
-ax[0,1].plot(gf_ts_final, gt_final.imag, ls='-.', color='r', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_i))
-
-ax[1,0].plot(gf_ts_final, lt_final.real, ls='-.', color='r', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_i))
-ax[1,1].plot(gf_ts_final, lt_final.imag, ls='-.', color='r', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_i))
-
-
-
-chi_ms = [200]
+chi_ms = [100]
 dtau = 0.1
 
 
@@ -141,6 +134,26 @@ for i, chi_m in enumerate(chi_ms):
 
 	ax[1,0].plot(mixed_ts, mixed_lt.real, ls='--', color=colors[i], linewidth=linewidth, label=r'imag, $\chi=%s$'%(chi_m))
 	ax[1,1].plot(mixed_ts, mixed_lt.imag, ls='--', color=colors[i], linewidth=linewidth, label=r'imag, $\chi=%s$'%(chi_m))
+
+
+chi_ms = [40]
+dtau = 0.05
+
+
+errs = []
+
+for i, chi_m in enumerate(chi_ms):
+	
+
+	mixed_ts, mixed_gf, mixed_gt, mixed_lt, mixed_taus, mixed_gtau = read_mixed_tempo(beta, t0, U, dt, dtau=dtau, chi=chi_m)
+
+	ax[0,0].plot(mixed_ts, mixed_gt.real, ls='-', alpha=0.5, color=colors[i], linewidth=linewidth, label=r'imag, $\chi=%s$'%(chi_m))
+	ax[0,1].plot(mixed_ts, mixed_gt.imag, ls='-', alpha=0.5, color=colors[i], linewidth=linewidth, label=r'imag, $\chi=%s$'%(chi_m))
+
+	ax[1,0].plot(mixed_ts, mixed_lt.real, ls='-', alpha=0.5, color=colors[i], linewidth=linewidth, label=r'imag, $\chi=%s$'%(chi_m))
+	ax[1,1].plot(mixed_ts, mixed_lt.imag, ls='-', alpha=0.5, color=colors[i], linewidth=linewidth, label=r'imag, $\chi=%s$'%(chi_m))
+
+
 
 
 ax[0,0].set_xlabel(r'$t$', fontsize=fontsize)

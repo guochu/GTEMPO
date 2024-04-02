@@ -15,11 +15,11 @@ def parse_complex_array(data):
 	im = [item['im'] for item in data]
 	return asarray(re) + 1j * asarray(im)
 
-def read_mixed_tempo(beta, t, U, dt=0.05, order=10, chi=60):
+def read_mixed_tempo(beta, t, U, dt=0.05, dtau=0.1, order=10, chi=60):
 	# mpath = '/Users/guochu/Documents/Missile/GTEMPO/examples/thirdpaper/oneorbital'
 	mu = U/2
 	# t2 = t/2
-	filename = 'result/mixed_beta%s_dtau0.1_t%s_dt%s_U%s_mu%s_order%s_chi%s.json'%(beta, t, dt, U, mu, order, chi)
+	filename = 'result/mixed_beta%s_dtau%s_t%s_dt%s_U%s_mu%s_order%s_chi%s.json'%(beta, dtau, t, dt, U, mu, order, chi)
 	with open(filename, 'r') as f:
 		data = f.read()
 		data = json.loads(data)
@@ -92,8 +92,9 @@ t0 = 20.
 
 chi_r = 60
 
+dtau = 0.1
 
-chi_ms = [40, 60, 80, 100, 120]
+chi_ms = [40,60,80,100,120]
 
 times_final, ns_final, gf_ts_final, gf_final, gt_final, lt_final = read_real_tempo(beta, t_final, U, dt, chi=chi_r)
 
@@ -126,7 +127,7 @@ errs = []
 for i, chi_m in enumerate(chi_ms):
 	
 
-	mixed_ts, mixed_gf, mixed_gt, mixed_lt, mixed_taus, mixed_gtau = read_mixed_tempo(beta, t0, U, dt, chi=chi_m)
+	mixed_ts, mixed_gf, mixed_gt, mixed_lt, mixed_taus, mixed_gtau = read_mixed_tempo(beta, t0, U, dt, dtau=dtau, chi=chi_m)
 
 	ax[0,0].plot(mixed_ts, mixed_gt.real, ls='--', color=colors[i], linewidth=linewidth, label=r'mixed, $\chi=%s$'%(chi_m))
 
@@ -169,7 +170,8 @@ ax[1,1].annotate(r'(b2)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=font
 
 
 chi = 120
-mixed_ts, mixed_gf, mixed_gt, mixed_lt, mixed_taus, mixed_gtau = read_mixed_tempo(beta, t0, U, dt, chi=chi)
+dtau = 0.1
+mixed_ts, mixed_gf, mixed_gt, mixed_lt, mixed_taus, mixed_gtau = read_mixed_tempo(beta, t0, U, dt, dtau=dtau, chi=chi)
 
 
 ax[0,2].plot(gf_ts_final, gf_final.imag, ls='-', color='k', linewidth=linewidth, label=r'Analytic')
