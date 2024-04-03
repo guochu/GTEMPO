@@ -36,7 +36,7 @@ function main(t::Real; U=1., ϵ_d=U/2, δt=0.05, β=40, δτ=0.1, order=10, chi=
 	lattice = GrassmannLattice(Nt=Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed, order=1, bands=2)
 	println("number of sites, ", length(lattice))
 
-	mpspath = "data/mixed_beta$(β)_dtau$(δτ)_t$(t)_dt$(δt)_order$(order)_chi$(chi)_b.mps"
+	mpspath = "data/mixed_beta$(β)_dtau$(δτ)_t$(t)_dt$(δt)_order$(order)_chi$(chi).mps"
 	if ispath(mpspath)
 		println("load MPS-IF from path ", mpspath)
 		mpsI1, mpsI2 = Serialization.deserialize(mpspath)
@@ -70,7 +70,7 @@ function main(t::Real; U=1., ϵ_d=U/2, δt=0.05, β=40, δτ=0.1, order=10, chi=
 
 
 
-	data_path = "result/mixed_beta$(β)_dtau$(δτ)_t$(t)_dt$(δt)_U$(U)_mu$(ϵ_d)_order$(order)_chi$(chi)_b.json"
+	data_path = "result/mixed_beta$(β)_dtau$(δτ)_t$(t)_dt$(δt)_U$(U)_mu$(ϵ_d)_order$(order)_chi$(chi).json"
 
 	results = Dict("ts"=>ts, "taus"=>τs, "bd"=>bond_dimensions(mpsI1), "gt"=>g₁, "lt"=>g₂, "gtau"=>g₃)
 

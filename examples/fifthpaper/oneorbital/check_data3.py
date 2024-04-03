@@ -30,6 +30,21 @@ def read_mixed_tempo(beta, t, U, dt=0.05, dtau=0.1, order=10, chi=60):
 	ts = asarray(data['ts'])
 	return ts-ts[0], gf, gt, lt, data['taus'], -gtau.real
 
+def read_mixed_tempo_b(beta, t, U, dt=0.05, dtau=0.1, order=10, chi=60):
+	# mpath = '/Users/guochu/Documents/Missile/GTEMPO/examples/thirdpaper/oneorbital'
+	mu = U/2
+	# t2 = t/2
+	filename = 'result/mixed_beta%s_dtau%s_t%s_dt%s_U%s_mu%s_order%s_chi%s_b.json'%(beta, dtau, t, dt, U, mu, order, chi)
+	with open(filename, 'r') as f:
+		data = f.read()
+		data = json.loads(data)
+	gt = parse_complex_array(data['gt'])
+	lt = parse_complex_array(data['lt'])
+	gtau = parse_complex_array(data['gtau'])
+	gf = 1j * gt + 1j * lt
+	ts = asarray(data['ts'])
+	return ts-ts[0], gf, gt, lt, data['taus'], -gtau.real
+
 
 def read_real_tempo(beta, t0, U, dt, order=10, chi=60):
 	mpath = '../../thirdpaper/oneorbital/'
@@ -96,7 +111,7 @@ fig, ax = plt.subplots(2, 2, figsize=(8, 7), sharex=True)
 beta = 40.
 dt = 0.05
 
-U = 0.5
+U = 1.
 
 t_final = 80.
 
@@ -129,29 +144,29 @@ for i, chi_m in enumerate(chi_ms):
 
 	mixed_ts, mixed_gf, mixed_gt, mixed_lt, mixed_taus, mixed_gtau = read_mixed_tempo(beta, t0, U, dt, dtau=dtau, chi=chi_m)
 
-	ax[0,0].plot(mixed_ts, mixed_gt.real, ls='--', color=colors[i], linewidth=linewidth, label=r'imag, $\chi=%s$'%(chi_m))
-	ax[0,1].plot(mixed_ts, mixed_gt.imag, ls='--', color=colors[i], linewidth=linewidth, label=r'imag, $\chi=%s$'%(chi_m))
+	ax[0,0].plot(mixed_ts, mixed_gt.real, ls='--', color=colors[i], linewidth=linewidth, label=r'mixed, $\chi=%s$'%(chi_m))
+	ax[0,1].plot(mixed_ts, mixed_gt.imag, ls='--', color=colors[i], linewidth=linewidth, label=r'mixed, $\chi=%s$'%(chi_m))
 
-	ax[1,0].plot(mixed_ts, mixed_lt.real, ls='--', color=colors[i], linewidth=linewidth, label=r'imag, $\chi=%s$'%(chi_m))
-	ax[1,1].plot(mixed_ts, mixed_lt.imag, ls='--', color=colors[i], linewidth=linewidth, label=r'imag, $\chi=%s$'%(chi_m))
-
-
-chi_ms = [40]
-dtau = 0.05
+	ax[1,0].plot(mixed_ts, mixed_lt.real, ls='--', color=colors[i], linewidth=linewidth, label=r'mixed, $\chi=%s$'%(chi_m))
+	ax[1,1].plot(mixed_ts, mixed_lt.imag, ls='--', color=colors[i], linewidth=linewidth, label=r'mixed, $\chi=%s$'%(chi_m))
 
 
-errs = []
+# chi_ms = [40]
+# dtau = 0.1
 
-for i, chi_m in enumerate(chi_ms):
+
+# errs = []
+
+# for i, chi_m in enumerate(chi_ms):
 	
 
-	mixed_ts, mixed_gf, mixed_gt, mixed_lt, mixed_taus, mixed_gtau = read_mixed_tempo(beta, t0, U, dt, dtau=dtau, chi=chi_m)
+# 	mixed_ts, mixed_gf, mixed_gt, mixed_lt, mixed_taus, mixed_gtau = read_mixed_tempo_b(beta, t0, U, dt, dtau=dtau, chi=chi_m)
 
-	ax[0,0].plot(mixed_ts, mixed_gt.real, ls='-', alpha=0.5, color=colors[i], linewidth=linewidth, label=r'imag, $\chi=%s$'%(chi_m))
-	ax[0,1].plot(mixed_ts, mixed_gt.imag, ls='-', alpha=0.5, color=colors[i], linewidth=linewidth, label=r'imag, $\chi=%s$'%(chi_m))
+# 	ax[0,0].plot(mixed_ts, mixed_gt.real, ls='-', alpha=0.5, color=colors[i], linewidth=linewidth, label=r'mixed, $\chi=%s$'%(chi_m))
+# 	ax[0,1].plot(mixed_ts, mixed_gt.imag, ls='-', alpha=0.5, color=colors[i], linewidth=linewidth, label=r'mixed, $\chi=%s$'%(chi_m))
 
-	ax[1,0].plot(mixed_ts, mixed_lt.real, ls='-', alpha=0.5, color=colors[i], linewidth=linewidth, label=r'imag, $\chi=%s$'%(chi_m))
-	ax[1,1].plot(mixed_ts, mixed_lt.imag, ls='-', alpha=0.5, color=colors[i], linewidth=linewidth, label=r'imag, $\chi=%s$'%(chi_m))
+# 	ax[1,0].plot(mixed_ts, mixed_lt.real, ls='-', alpha=0.5, color=colors[i], linewidth=linewidth, label=r'mixed, $\chi=%s$'%(chi_m))
+# 	ax[1,1].plot(mixed_ts, mixed_lt.imag, ls='-', alpha=0.5, color=colors[i], linewidth=linewidth, label=r'mixed, $\chi=%s$'%(chi_m))
 
 
 
