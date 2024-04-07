@@ -65,7 +65,8 @@ function main_tempo_1order_b(V_over_Gamma=0.1, U_over_Gamma=0., tall=4.2, dt=0.0
 		println("computing MPS-IF...")
 		corr = leftcorr + rightcorr
 		@time mpsI1 = hybriddynamics(lattice, corr, trunc=trunc, band=1)
-		@time mpsI2 = hybriddynamics(lattice, corr, trunc=trunc, band=2)
+		# @time mpsI2 = hybriddynamics(lattice, corr, trunc=trunc, band=2)
+		@time mpsI2 = swapband(mpsI1, lattice, 1, 2, trunc=trunc)
 		# println("Z is ", integrate(mpsI, lattice))
 		println("save MPS-IF to path ", mpspath)
 		Serialization.serialize(mpspath, (mpsI1, mpsI2))
