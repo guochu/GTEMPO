@@ -111,7 +111,7 @@ fig, ax = plt.subplots(2, 2, figsize=(8, 7), sharex=True)
 beta = 40.
 dt = 0.05
 
-U = 1.
+U = 0.5
 
 t_final = 80.
 
@@ -133,7 +133,7 @@ ax[1,1].plot(gf_ts_final, lt_final.imag, ls='-', color='k', linewidth=1, label=r
 
 
 
-chi_ms = [100]
+chi_ms = [40, 60, 80]
 dtau = 0.1
 
 
@@ -142,7 +142,7 @@ errs = []
 for i, chi_m in enumerate(chi_ms):
 	
 
-	mixed_ts, mixed_gf, mixed_gt, mixed_lt, mixed_taus, mixed_gtau = read_mixed_tempo(beta, t0, U, dt, dtau=dtau, chi=chi_m)
+	mixed_ts, mixed_gf, mixed_gt, mixed_lt, mixed_taus, mixed_gtau = read_mixed_tempo_b(beta, t0, U, dt, dtau=dtau, chi=chi_m)
 
 	ax[0,0].plot(mixed_ts, mixed_gt.real, ls='--', color=colors[i], linewidth=linewidth, label=r'mixed, $\chi=%s$'%(chi_m))
 	ax[0,1].plot(mixed_ts, mixed_gt.imag, ls='--', color=colors[i], linewidth=linewidth, label=r'mixed, $\chi=%s$'%(chi_m))

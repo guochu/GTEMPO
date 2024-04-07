@@ -19,13 +19,13 @@ spectrum_func(D) = SpectrumFunction(ω -> J(D, ω), lb = -D, ub = D)
 
 const Vs = [0., 0.17857143, 0.35714286, 0.53571429, 0.71428571, 0.89285715, 1.07142857, 1.25, 1.42857143, 1.60714287, 1.78571429, 1.96428573, 2.14285714, 2.32142859, 2.5, 2.67857145, 2.85714286]
 
-function main_tempo_1order_b_all(V_over_Gamma, dt =0.007, order=7)
+function main_tempo_1order_b_all(V_over_Gamma, tall=4.2, dt =0.007, order=7, chi=60)
 	for U in [0., 2., 4., 6., 8.]
-		main_tempo_1order_b(V_over_Gamma, U, dt, order)
+		main_tempo_1order_b(V_over_Gamma, U, tall, dt, order, chi)
 	end
 end
 
-function main_tempo_1order_b(V_over_Gamma=0.1, U_over_Gamma=0., dt=0.007, order=6)
+function main_tempo_1order_b(V_over_Gamma=0.1, U_over_Gamma=0., tall=4.2, dt=0.007, order=6, chi=60)
 	println("run for V = ", V_over_Gamma, ", U = ", U_over_Gamma)
 	β = Inf
 	D = 2
@@ -40,7 +40,7 @@ function main_tempo_1order_b(V_over_Gamma=0.1, U_over_Gamma=0., dt=0.007, order=
 
 	δt = dt / Γ
 	# t = 4.2 / Γ
-	t = 0.07 / Γ
+	t = tall / Γ
 	N = round(Int, t / δt)
 	println("total number of steps ", N)
 	ts = [i*δt for i in 1:N]
@@ -56,8 +56,8 @@ function main_tempo_1order_b(V_over_Gamma=0.1, U_over_Gamma=0., dt=0.007, order=
 	rightcorr = correlationfunction(exact_model.rightbath, lattice)
 
 
-	trunc = truncdimcutoff(D=512, ϵ=10.0^(-order), add_back=0)
-	mpspath = "data/tempo1_beta$(β)_N$(N)_V$(V_over_Gamma)_dt$(dt)_order$(order)_b.mps"
+	trunc = truncdimcutoff(D=chi, ϵ=10.0^(-order), add_back=0)
+	mpspath = "data/tempo1_beta$(β)_N$(N)_V$(V_over_Gamma)_dt$(dt)_order$(order)_chi$(chi).mps"
 	if ispath(mpspath)
 		println("load MPS-IF from path ", mpspath)
 		mpsI1, mpsI2 = Serialization.deserialize(mpspath)
@@ -75,7 +75,7 @@ function main_tempo_1order_b(V_over_Gamma=0.1, U_over_Gamma=0., dt=0.007, order=
 	println("mpsI bond dimension is ", bond_dimension(mpsI1), " ", bond_dimension(mpsI2))
 	# println("IF Z is ", integrate(mpsI1, lattice), " ", integrate(mpsI2, lattice))
 
-	truncK = truncdimcutoff(D=512, ϵ=1.0e-10, add_back=0)
+	truncK = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
 	@time mpsK = sysdynamics!(vacuumstate(lattice), lattice, exact_model, trunc=truncK)
 	println("mpsK bond dimension is ", bond_dimension(mpsK))
 	mpsK = boundarycondition(mpsK, lattice, band=1)
@@ -85,11 +85,12 @@ function main_tempo_1order_b(V_over_Gamma=0.1, U_over_Gamma=0., dt=0.007, order=
 	cache = environments(lattice, mpsK, mpsI1, mpsI2)
 	@time ns2 = cached_occupation(lattice, mpsK, mpsI1, mpsI2, cache=cache)
 
-	@time currents_left2 = [cached_electriccurrent_fast(lattice, leftcorr, k+1, mpsK, mpsI1, mpsI2, cache=cache) for k in N:N]
-	@time currents_right2 = [cached_electriccurrent_fast(lattice, rightcorr, k+1, mpsK, mpsI1, mpsI2, cache=cache) for k in N:N]
-	currents_ts = ts[1:10:N]
+	N_s = round(Int, 4.2 / dt)
+	@time currents_left2 = [cached_electriccurrent_fast(lattice, leftcorr, k+1, mpsK, mpsI1, mpsI2, cache=cache) for k in N_s:10:N]
+	@time currents_right2 = [cached_electriccurrent_fast(lattice, rightcorr, k+1, mpsK, mpsI1, mpsI2, cache=cache) for k in N_s:10:N]
+	currents_ts = collect(N_s:10:N) * dt
 
-	data_path = "result/anderson_tempo1_V$(V_over_Gamma)_U$(U_over_Gamma)_N$(N)_dt$(dt)_order$(order).json"
+	data_path = "result/anderson_tempo1_V$(V_over_Gamma)_U$(U_over_Gamma)_N$(N)_dt$(dt)_order$(order)_chi$(chi).json"
 
 	results = Dict("ts"=>ts, "ns"=>ns2, "Ileft" => real(currents_left2), "ts_I"=>currents_ts, "Iright"=>real(currents_right2), "bd"=>bds)
 
