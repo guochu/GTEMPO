@@ -96,14 +96,14 @@ fig, ax = plt.subplots(2, 2, figsize=(8, 7), sharex=True)
 beta = 40.
 dt = 0.05
 
-U = 0.2
+U = 0.5
 
-t_final = 80.
+t_final = 20.
 
 t0 = 20.
 
-chi_r = 60
-chi_i = 80
+chi_r = 80
+
 
 times_final, ns_final, gf_ts_final, gf_final, gt_final, lt_final = read_real_tempo(beta, t_final, U, dt, chi=chi_r)
 
@@ -113,19 +113,19 @@ ax[0,1].plot(gf_ts_final, gt_final.imag, ls='-', color='k', linewidth=1, label=r
 ax[1,0].plot(gf_ts_final, lt_final.real, ls='-', color='k', linewidth=1, label=r'real, $\chi=%s$'%(chi_r))
 ax[1,1].plot(gf_ts_final, lt_final.imag, ls='-', color='k', linewidth=1, label=r'real, $\chi=%s$'%(chi_r))
 
-
+chi_i = 80
 k = 8
 times_itempo, gf_itempo, gt_itempo, lt_itempo = read_itempo(beta, t0, U, dt, chi=chi_i, order=10, k=k)
 
-ax[0,0].plot(gf_ts_final, gt_final.real, ls='-.', color='r', linewidth=linewidth, label=r'ireal, $\chi=%s$'%(chi_i))
-ax[0,1].plot(gf_ts_final, gt_final.imag, ls='-.', color='r', linewidth=linewidth, label=r'ireal, $\chi=%s$'%(chi_i))
+ax[0,0].plot(gf_ts_final, gt_itempo.real, ls='-.', color='r', linewidth=linewidth, label=r'ireal, $\chi=%s$'%(chi_i))
+ax[0,1].plot(gf_ts_final, gt_itempo.imag, ls='-.', color='r', linewidth=linewidth, label=r'ireal, $\chi=%s$'%(chi_i))
 
-ax[1,0].plot(gf_ts_final, lt_final.real, ls='-.', color='r', linewidth=linewidth, label=r'ireal, $\chi=%s$'%(chi_i))
-ax[1,1].plot(gf_ts_final, lt_final.imag, ls='-.', color='r', linewidth=linewidth, label=r'ireal, $\chi=%s$'%(chi_i))
+ax[1,0].plot(gf_ts_final, lt_itempo.real, ls='-.', color='r', linewidth=linewidth, label=r'ireal, $\chi=%s$'%(chi_i))
+ax[1,1].plot(gf_ts_final, lt_itempo.imag, ls='-.', color='r', linewidth=linewidth, label=r'ireal, $\chi=%s$'%(chi_i))
 
 
 
-chi_ms = [100]
+chi_ms = [200]
 dtau = 0.1
 
 

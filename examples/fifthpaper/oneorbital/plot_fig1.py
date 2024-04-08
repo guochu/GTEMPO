@@ -48,6 +48,19 @@ def read_real_tempo(beta, t0, U, dt, order=10, chi=60):
 
 	return data['ts'], asarray(data['ns']), gf_ts, gf, gt, lt
 
+def read_itempo(beta, t, U, dt, order=6, chi=60, prony=5, k=5):
+	N = round(t / dt)
+	mu = U/2
+	mpath = '/Users/guochu/Documents/Missile/iGTEMPO/examples/secondpaper/oneorbital/'
+	filename =  mpath +'result/SIAM_onebath_beta%s_U%s_mu%s_dt%s_k%s_trunc%s_prony%s_N%s_chi%s_it.json'%(beta, U, mu, dt, k, order, prony, N, chi)
+	with open(filename, 'r') as f:
+		data = f.read()
+		data = json.loads(data)
+	gt = parse_complex_array(data['gt'])
+	lt = parse_complex_array(data['lt'])
+	gf = 1j * (gt + lt)
+	return 0.1 * asarray(data['ts']), gf, gt, lt
+
 def read_imag_tempo(beta, U, dt=0.1, order=10, chi=500):
 	mpath = '../../thirdpaper/oneorbital/'
 	N = round(beta/dt)
@@ -84,22 +97,27 @@ fig, ax = plt.subplots(2, 4, figsize=(12,5.5))
 beta = 40.
 dt = 0.05
 
-U = 1.
+U = 0.5
 
 t_final = 80.
 
 t0 = 20.
 
-chi_r = 60
+chi_r = 80
 
 dtau = 0.1
 
-chi_ms = [40,60,80,100, 120,140]
+chi_ms = [40,80, 120,160,200]
 
-times_final, ns_final, gf_ts_final, gf_final, gt_final, lt_final = read_real_tempo(beta, t_final, U, dt, chi=chi_r)
+# times_final, ns_final, gf_ts_final, gf_final, gt_final, lt_final = read_real_tempo(beta, t_final, U, dt, chi=chi_r)
+# ax[0,0].plot(gf_ts_final, gt_final.real, ls='-', color='k', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_r))
+# ax[0,1].plot(gf_ts_final, gt_final.imag, ls='-', color='k', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_r))
 
-ax[0,0].plot(gf_ts_final, gt_final.real, ls='-', color='k', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_r))
-ax[0,1].plot(gf_ts_final, gt_final.imag, ls='-', color='k', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_r))
+k = 8
+order = 10
+times_final, gf_final, gt_final, lt_final = read_itempo(beta, t0, U, dt, chi=chi_r, k=k, order=order)
+# ax[0,0].plot(gf_ts_final, gt_final.real, ls='-', color='k', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_r))
+# ax[0,1].plot(gf_ts_final, gt_final.imag, ls='-', color='k', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_r))
 
 
 ax[0,0].set_xlabel(r'$t$', fontsize=fontsize)
@@ -171,12 +189,12 @@ ax[1,1].annotate(r'(b2)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=font
 
 chi = 100
 dtau = 0.1
-mixed_ts, mixed_gf, mixed_gt, mixed_lt, mixed_taus, mixed_gtau = read_mixed_tempo(beta, t0, U, dt, dtau=dtau, chi=chi)
 
+for i, chi_m in enumerate(chi_ms):
+	mixed_ts, mixed_gf, mixed_gt, mixed_lt, mixed_taus, mixed_gtau = read_mixed_tempo(beta, t0, U, dt, dtau=dtau, chi=chi_m)
+	ax[0,2].plot(mixed_ts, gf_final.imag, ls='-', color='k', linewidth=linewidth)
+	ax[0,2].plot(mixed_ts, mixed_gf.imag, ls='--', color=colors[i], linewidth=linewidth, label=r'mixed, $\chi=%s$'%(chi_m))
 
-ax[0,2].plot(gf_ts_final, gf_final.imag, ls='-', color='k', linewidth=linewidth, label=r'Analytic')
-
-ax[0,2].plot(mixed_ts, mixed_gf.imag, ls='--', color=colors[0], linewidth=linewidth, label=r'mixed, $\chi=%s$'%(chi))
 
 ax[0,2].set_ylabel(r'$-{\rm Im}[G^R(t)]$', fontsize=fontsize)
 ax[0,2].set_xlabel(r'$t$', fontsize=fontsize)
