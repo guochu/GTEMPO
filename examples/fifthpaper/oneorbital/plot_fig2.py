@@ -27,7 +27,7 @@ def read_mixed_tempo(beta, t, U, dt=0.05, order=10, chi=60):
 	lt = parse_complex_array(data['lt'])
 	gf = 1j * gt + 1j * lt
 	ts = asarray(data['ts'])
-	return ts-ts[0], gf, gt, lt
+	return 0.1*(ts-ts[0]), gf, gt, lt
 
 
 def read_real_tempo(beta, t0, U, dt, order=10, chi=60):
@@ -84,31 +84,28 @@ fig, ax = plt.subplots(1, 2, figsize=(8, 4))
 beta = 40.
 dt = 0.05
 
-# Us = [0., 0.2, 0.4, 0.6, 0.8, 1.]
-U = 1.
-
-t_final = 80.
+Us = [ 0.1, 0.3, 0.5, 0.7, 0.9]
 
 t0 = 20.
 
-chi_r = 60
+chi_r = 80
+k = 8
+order = 10
 
-
-chi_ms = [40, 60, 80, 100]
-
-times_final, ns_final, gf_ts_final, gf_final, gt_final, lt_final = read_real_tempo(beta, t_final, U, dt, chi=chi_r)
-
-ax[0].plot(gf_ts_final, gf_final.imag, ls='-', color='k', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_r))
-
+chi_m = 100
 
 errs = []
 
-for i, chi_m in enumerate(chi_ms):
-	
+for i, U in enumerate(Us):
+
+	times_final, gf_final, gt_final, lt_final = read_itempo(beta, t0, U, dt, chi=chi_r, k=k, order=order)
+
+	ax[0].plot(times_final, gf_final.imag, ls='-', color=colors[i], linewidth=linewidth)
+
 
 	mixed_ts, mixed_gf, mixed_gt, mixed_lt = read_mixed_tempo(beta, t0, U, dt, chi=chi_m)
 
-	ax[0].plot(mixed_ts, mixed_gf.imag, ls='--', color=colors[i], linewidth=linewidth, label=r'imag, $\chi=%s$'%(chi_m))
+	ax[0].plot(mixed_ts, mixed_gf.imag, ls='--', color=colors[i], linewidth=linewidth, label=r'$U/\Gamma=%s$'%(round(U/0.1)))
 
 	errs.append(mse_error(gf_final.imag, mixed_gf.imag))
 
@@ -121,12 +118,18 @@ ax[0].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[0].tick_params(axis='y', which='both')
 ax[0].locator_params(axis='both', nbins=6)
 
-
 ax[0].legend(fontsize=12)
 
+for i, U in enumerate(Us):
+
+	times_final, gf_final, gt_final, lt_final = read_itempo(beta, t0, U, dt, chi=chi_r, k=k, order=order)
 
 
-ax[1].plot(chi_ms, errs, ls='--', color='k', marker='o', markersize=markersize, markerfacecolor='none', linewidth=linewidth)
+	mixed_ts, mixed_gf, mixed_gt, mixed_lt = read_mixed_tempo(beta, t0, U, dt, chi=chi_m)
+
+	ax[1].plot(mixed_ts, mixed_gf.imag - gf_final.imag, ls='--', color=colors[i], linewidth=linewidth, label=r'$U/\Gamma=%s$'%(round(U/0.1)))
+
+
 
 ax[1].set_xlabel(r'$\chi$', fontsize=fontsize)
 ax[1].set_ylabel(r'$\mathcal{E}$', fontsize=fontsize)
