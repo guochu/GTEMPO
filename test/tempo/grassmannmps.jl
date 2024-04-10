@@ -35,25 +35,63 @@ println("------------------------------------")
 		@test norm(psi) ≈ norm(psi1) atol = 1.0e-7
 		@test distance(psi, psi1) < 1.0e-7
 
-		psi1 = randomgmps(T, L, D=2)
+		# psi1 = randomgmps(T, L, D=2)
+		# psi2 = randomgmps(T, L, D=4)
+
+		# psi3 = psi1 * psi2
+		# _n = norm(psi3)
+
+		# canonicalize!(psi1)
+		# canonicalize!(psi2)
+		# psi5 = psi1 * psi2
+		# @test distance(psi3, psi5) / _n < 1.0e-7
+
+		# psi = randomgmps(T, L, D=D)
+		# psi2 = increase_bond!(psi, 10)
+
+		# @test distance(psi, psi2) / norm(psi) < 1.0e-7
+	end
+
+	
+
+
+	
+end
+
+@testset "GrassmannMPS: multiplications" begin
+	L = 6
+	chi = 20
+	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10)
+	alg1 = SVDCompression(trunc)
+	alg2 = DMRGMult1(trunc, initguess=:svd)
+	alg3 = DMRGMult1(trunc, initguess=:rand, maxiter=10)
+	alg4 = DMRGMult1(trunc, initguess=:pre, maxiter=10)
+	alg5 = DMRGMult2(trunc, initguess=:svd)
+	alg6 = DMRGMult2(trunc, initguess=:rand, maxiter=10)
+	alg7 = DMRGMult2(trunc, initguess=:pre, maxiter=10)
+	algs = [alg1, alg2, alg3, alg4, alg5, alg6, alg7]
+	tol = 1.0e-7
+	for T in (Float64, ComplexF64)
+		psi1 = randomgmps(T, L, D=4)
 		psi2 = randomgmps(T, L, D=4)
 
 		psi3 = psi1 * psi2
 		_n = norm(psi3)
-		psi4 = mult(psi1, psi2, trunc=truncdimcutoff(D=10, ϵ=1.0e-10))
-		@test distance(psi3, psi4) / _n < 1.0e-7
+		for alg in algs
+			psi4 = mult(psi1, psi2, alg)
+			@test distance(psi3, psi4) / _n < tol
+		end
+
 		canonicalize!(psi1)
 		canonicalize!(psi2)
 		psi5 = psi1 * psi2
-		@test distance(psi3, psi5) / _n < 1.0e-7
-		psi6 = mult(psi1, psi2, trunc=truncdimcutoff(D=10, ϵ=1.0e-10))
-		@test distance(psi3, psi6) / _n < 1.0e-7
-		psi7 = mult(psi1, psi2, DMRG1(D=bond_dimension(psi6)))
-		@test distance(psi3, psi7) / _n < 1.0e-7
-		psi8 = mult(psi1, psi2, DMRG2(trunc=truncdimcutoff(D=10, ϵ=1.0e-10)))
-		@test distance(psi3, psi8) / _n < 1.0e-7
+		@test distance(psi3, psi5) / _n < tol
+
+		for alg in algs
+			psi4 = mult(psi1, psi2, alg)
+			@test distance(psi3, psi4) / _n < tol
+		end
 	end
-	
 end
 
 

@@ -55,6 +55,11 @@ function Base.setindex!(x::GrassmannMPS, v::MPSTensor, i::Int)
 end
 
 DMRG.svectors_uninitialized(psi::GrassmannMPS) = any(ismissing, psi.svectors)
+function DMRG.unset_svectors!(psi::GrassmannMPS)
+	psi.svectors[2:end-1] .= missing
+	return psi
+end
+
 Base.copy(psi::GrassmannMPS) = GrassmannMPS(copy(psi.data), copy(psi.svectors), Ref(scaling(psi)))
 function Base.complex(psi::GrassmannMPS)
 	if scalartype(psi) <: Real
@@ -129,6 +134,23 @@ function randomgmps(::Type{T}, L::Int; D::Int) where {T <: Number}
 	# return canonicalize!(out, alg=Orthogonalize(QR()))
 end
 randomgmps(L::Int; kwargs...) = randomgmps(Float64, L; kwargs...)
+
+
+function increase_bond!(x::GrassmannMPS, D::Int)
+	Dh = div(D, 2)
+	virtualspace = Rep[ℤ₂](0=>Dh, 1=>Dh)
+	L = length(x)
+	ms = [isometry(Matrix{scalartype(x)}, virtualspace, space_l(x[site+1])) for site in 1:L-1]
+	x[1] = @tensor tmp[1,2;4] := x[1][1,2,3] * conj(ms[1][4,3])
+	x[L] = @tensor tmp[1,3;4] := ms[L-1][1,2] * x[L][2,3,4]
+	for site in 2:L-1
+		vspace = space_l(x[site+1])
+		(vspace ≾ virtualspace) || @warn "old virtualspace $(vspace) is not monomorphic to the new virtualspace $(virtualspace)"
+		x[site] = @tensor tmp[1,3;5] := ms[site-1][1,2] * x[site][2,3,4] * conj(ms[site][5,4])
+	end
+	unset_svectors!(x)
+	return x
+end
 
 # # swap the i-th bond
 # function swap!(x::GrassmannMPS, bond::Int; trunc::TruncationScheme=DMRG.DefaultTruncation)

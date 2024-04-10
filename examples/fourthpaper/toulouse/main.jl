@@ -129,7 +129,7 @@ function main_ti(t; ϵ_d=0, β = 20., order=7, prony=5, k=5, δt = 0.05)
 	println("computing MPS-IF...")
 	algevo = WII()
 	algexpan = PronyExpansion(n=20, tol=10.0^(-prony), verbosity=4)
-	algmult = DMRG1(trunc)
+	algmult = DMRGMult1(trunc)
 	alg = TranslationInvariantIF(algevo=algevo, algexpan=algexpan, algmult=algmult, k=k)
 	_t = @elapsed mpsI = hybriddynamics(lattice, corr, alg, band=1)
 

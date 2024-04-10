@@ -1,3 +1,54 @@
+# abstract type IterativeMultInitialGuess end
+# struct SVDGuess <: IterativeMultInitialGuess end
+
+abstract type DMRGMultAlgorithm <: DMRGAlgorithm end
+
+const AllowedInitGuesses = (:svd, :pre, :rand)
+
+struct DMRGMult1 <: DMRGMultAlgorithm
+    trunc::TruncationDimCutoff 
+    maxiter::Int
+    tol::Float64 
+    initguess::Symbol
+    verbosity::Int 
+end
+function DMRGMult1(trunc::TruncationDimCutoff; maxiter::Int=5, tol::Float64=1.0e-12, initguess::Symbol=:svd, verbosity::Int=0)
+    (initguess in AllowedInitGuesses) || throw(ArgumentError("initguess must be one of $(AllowedInitGuesses)"))
+    return DMRGMult1(trunc, maxiter, tol, initguess, verbosity)
+end 
+DMRGMult1(; trunc::TruncationDimCutoff=DefaultITruncation, kwargs...) = DMRGMult1(trunc; kwargs...)
+Base.similar(x::DMRGMult1; trunc::TruncationDimCutoff=x.trunc, maxiter::Int=x.maxiter, tol::Float64=x.tol, initguess::Symbol=x.initguess, verbosity::Int=x.verbosity) = DMRGMult1(
+            trunc=trunc, maxiter=maxiter, tol=tol, initguess=initguess, verbosity=verbosity)
+
+
+struct DMRGMult2 <: DMRGMultAlgorithm
+    trunc::TruncationDimCutoff 
+    maxiter::Int
+    tol::Float64 
+    initguess::Symbol
+    verbosity::Int 
+end
+
+function DMRGMult2(trunc::TruncationDimCutoff; maxiter::Int=5, tol::Float64=1.0e-12, initguess::Symbol=:svd, verbosity::Int=0)
+    (initguess in AllowedInitGuesses) || throw(ArgumentError("initguess must be one of $(AllowedInitGuesses)"))
+    return DMRGMult2(trunc, maxiter, tol, initguess, verbosity)
+end 
+DMRGMult2(; trunc::TruncationDimCutoff=DefaultITruncation, kwargs...) = DMRGMult2(trunc; kwargs...)
+Base.similar(x::DMRGMult2; trunc::TruncationDimCutoff=x.trunc, maxiter::Int=x.maxiter, tol::Float64=x.tol, initguess::Symbol=x.initguess, verbosity::Int=x.verbosity) = DMRGMult2(
+            trunc=trunc, maxiter=maxiter, tol=tol, initguess=initguess, verbosity=verbosity)
+
+
+function Base.getproperty(x::DMRGMultAlgorithm, s::Symbol)
+    if s == :D
+        return x.trunc.D
+    elseif s == :ϵ
+        return x.trunc.ϵ
+    else
+        getfield(x, s)
+    end
+end
+
+
 # z is the output GMPS
 struct GMPSIterativeMultCache{_O, _A, _B, _H} 
     z::_O
@@ -26,9 +77,16 @@ function mult_cache(z::GrassmannMPS, x::GrassmannMPS, y::GrassmannMPS)
     return GMPSIterativeMultCache(z, x, y, hstorage)
 end
 
-function iterativemult(x::GrassmannMPS, y::GrassmannMPS, alg::DMRGAlgorithm)
-    z = _svd_guess!(copy(x), y, alg.D)
-    # z = randomgmps(promote_type(scalartype(x), scalartype(y)), length(x), D=alg.D)
+function iterativemult(x::GrassmannMPS, y::GrassmannMPS, alg::DMRGMultAlgorithm)
+    if alg.initguess == :svd
+        z = _svd_guess(x, y, alg.D)
+    elseif alg.initguess == :rand
+        z = randomgmps(promote_type(scalartype(x), scalartype(y)), length(x), D=alg.D)
+    elseif alg.initguess == :pre
+        z = increase_bond!(copy(x), alg.D)
+    else
+        error("unsupported initguess $(alg.initguess)")
+    end
     cache = mult_cache(z, x, y)
     deltas = compute!(cache, alg)
     z = cache.z
@@ -37,7 +95,7 @@ function iterativemult(x::GrassmannMPS, y::GrassmannMPS, alg::DMRGAlgorithm)
     return z
 end
 
-DMRG.compute!(env::GMPSIterativeMultCache, alg::DMRGAlgorithm) = iterative_compute!(env, alg)
+DMRG.compute!(env::GMPSIterativeMultCache, alg::DMRGMultAlgorithm) = iterative_compute!(env, alg)
 
 
 function iterative_compute!(m, alg)
@@ -62,14 +120,14 @@ function iterative_compute!(m, alg)
 end
 iterative_error_2(m::AbstractVector) = std(m) / abs(mean(m))
 
-DMRG.sweep!(m::GMPSIterativeMultCache, alg::DMRGAlgorithm) = vcat(leftsweep!(m, alg), rightsweep!(m, alg))
+DMRG.sweep!(m::GMPSIterativeMultCache, alg::DMRGMultAlgorithm) = vcat(leftsweep!(m, alg), rightsweep!(m, alg))
 
-function finalize!(m::GMPSIterativeMultCache, alg::DMRGAlgorithm) end
-function finalize!(m::GMPSIterativeMultCache, alg::DMRG1)
+function finalize!(m::GMPSIterativeMultCache, alg::DMRGMultAlgorithm) end
+function finalize!(m::GMPSIterativeMultCache, alg::DMRGMult1)
     leftsweep!(m, alg)
     rightsweep_final!(m, alg)
 end
-function DMRG.leftsweep!(m::GMPSIterativeMultCache, alg::DMRG1)
+function DMRG.leftsweep!(m::GMPSIterativeMultCache, alg::DMRGMult1)
     z, x, y = m.z, m.x, m.y
     hstorage = m.hstorage
     L = length(z)
@@ -85,7 +143,7 @@ function DMRG.leftsweep!(m::GMPSIterativeMultCache, alg::DMRG1)
     return kvals    
 end
 
-function DMRG.rightsweep!(m::GMPSIterativeMultCache, alg::DMRG1)
+function DMRG.rightsweep!(m::GMPSIterativeMultCache, alg::DMRGMult1)
     z, x, y = m.z, m.x, m.y
     hstorage = m.hstorage
     L = length(z)
@@ -106,7 +164,7 @@ function DMRG.rightsweep!(m::GMPSIterativeMultCache, alg::DMRG1)
     return kvals    
 end
 
-function rightsweep_final!(m::GMPSIterativeMultCache, alg::DMRG1)
+function rightsweep_final!(m::GMPSIterativeMultCache, alg::DMRGMult1)
     z, x, y = m.z, m.x, m.y
     hstorage = m.hstorage
     L = length(z)
@@ -131,7 +189,7 @@ function rightsweep_final!(m::GMPSIterativeMultCache, alg::DMRG1)
     return kvals    
 end
 
-function DMRG.leftsweep!(m::GMPSIterativeMultCache, alg::DMRG2)
+function DMRG.leftsweep!(m::GMPSIterativeMultCache, alg::DMRGMult2)
     z, x, y = m.z, m.x, m.y
     hstorage = m.hstorage
     L = length(z)
@@ -149,7 +207,7 @@ function DMRG.leftsweep!(m::GMPSIterativeMultCache, alg::DMRG2)
     return kvals    
 end
 
-function DMRG.rightsweep!(m::GMPSIterativeMultCache, alg::DMRG2)
+function DMRG.rightsweep!(m::GMPSIterativeMultCache, alg::DMRGMult2)
     z, x, y = m.z, m.x, m.y
     hstorage = m.hstorage
     L = length(z)
@@ -173,6 +231,7 @@ function DMRG.rightsweep!(m::GMPSIterativeMultCache, alg::DMRG2)
 end
 
 # provide the initial guess
+_svd_guess(x::GrassmannMPS, y::GrassmannMPS, D::Int) = _svd_guess!(copy(x), y, D)
 function _svd_guess!(x::GrassmannMPS, y::GrassmannMPS, D::Int)
     (length(x) == length(y)) || throw(DimensionMismatch())
     left = isomorphism( fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) )

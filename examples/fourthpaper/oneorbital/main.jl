@@ -65,7 +65,7 @@ function main_tempo_1order_b(V_over_Gamma, U_over_Gamma, tall, dt, order, k, pro
 		corr = leftcorr + rightcorr
 		algevo = WII()
 		algexpan = PronyExpansion(n=20, tol=pronytol, verbosity=4)
-		algmult = DMRG1(trunc)
+		algmult = DMRGMult1(trunc)
 		alg = TranslationInvariantIF(algevo=algevo, algexpan=algexpan, algmult=algmult, k=k)
 
 		@time mpsI1 = hybriddynamics(lattice, corr, alg, band=1)

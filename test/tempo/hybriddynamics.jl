@@ -47,10 +47,13 @@ end
 
 	base_alg = PartialIF(trunc=trunc)
 	alg2 = TranslationInvariantIF(k=5, algevo=WII(), algmult=SVDCompression(trunc))
-	alg3 = TranslationInvariantIF(k=5, algmult=DMRG1(D=trunc.D, tol=trunc.ϵ, tolgauge=trunc.ϵ))
-	alg4 = TranslationInvariantIF(k=5, algevo=ComplexStepper(WII()), algmult=DMRG2(trunc=trunc))
-	alg5 = TranslationInvariantIF(k=5, algmult=DMRG1(D=trunc.D, tol=trunc.ϵ, tolgauge=trunc.ϵ), fast=false)
-	algs = [alg2, alg3, alg4, alg5]
+	alg3 = TranslationInvariantIF(k=5, algmult=DMRGMult1(trunc=trunc, initguess=:svd))
+	alg4 = TranslationInvariantIF(k=5, algmult=DMRGMult1(trunc=trunc, initguess=:pre))
+	alg5 = TranslationInvariantIF(k=5, algmult=DMRGMult1(trunc=trunc, initguess=:rand, maxiter=10))
+	alg6 = TranslationInvariantIF(k=5, algmult=DMRGMult1(trunc=trunc), fast=false)
+	alg7 = TranslationInvariantIF(k=5, algevo=ComplexStepper(WII()), algmult=DMRGMult2(trunc=trunc, initguess=:svd))
+
+	algs = [alg2, alg3, alg4, alg5, alg6, alg7]
 
 		
 

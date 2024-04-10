@@ -47,7 +47,7 @@ println("------------------------------------")
 
 					@test distance(mps1, mps0) / norm(mps0) < dt
 
-					for algmult in (SVDCompression(D=50), DMRG1(D=50), DMRG2(trunc=truncdimcutoff(D=50,ϵ=1.0e-6)))
+					for algmult in (SVDCompression(D=50), DMRGMult1(trunc=truncdimcutoff(D=50,ϵ=1.0e-6)), DMRGMult2(trunc=truncdimcutoff(D=50,ϵ=1.0e-6)))
 						mps1 = differentialinfluencefunctional(lattice, corr, dt, WII(), algmult, band=band, algexpan=algexpan)
 						_n = norm(mps1)
 						mps2 = differentialinfluencefunctional(lattice, corr, dt, WI(), algmult, band=band, algexpan=algexpan)
@@ -195,7 +195,7 @@ end
 				mps0 = mult!(mps0, mps2_mp, trunc=trunc)
 				mps0 = mult!(mps0, mps2_mm, trunc=trunc)
 
-				for algmult in (SVDCompression(D=50), DMRG1(D=50), DMRG2(trunc=truncdimcutoff(D=50,ϵ=1.0e-6)))
+				for algmult in (SVDCompression(D=50), DMRGMult1(trunc=truncdimcutoff(D=50,ϵ=1.0e-6)), DMRGMult2(trunc=truncdimcutoff(D=50,ϵ=1.0e-6)))
 					mps1 = differentialinfluencefunctional(lattice, corr, dt, WII(), algmult, band=band, algexpan=algexpan)
 					_n = norm(mps1)
 					mps2 = differentialinfluencefunctional(lattice, corr, dt, WI(), algmult, band=band, algexpan=algexpan)
