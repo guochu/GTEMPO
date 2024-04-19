@@ -302,6 +302,10 @@ function g_ac_prime(xj::MPSTensor, yj::MPSTensor, left::MPSTensor, right::MPSTen
     return tmp2
 end
 
+function g_c_prime(left::MPSTensor, right::MPSTensor)
+    @tensor tmp[1; 4] := left[1,2,3] * right[3,2,4]
+end
+
 function g_ac_prime2(xj1::MPSTensor, xj2::MPSTensor, yj1::MPSTensor, yj2::MPSTensor, left::MPSTensor, right::MPSTensor)
     @tensor tmp1[1,5,4;2] := left[1,2,3] * yj1[3,4,5]
     for (f1, f2) in fusiontrees(tmp1)
