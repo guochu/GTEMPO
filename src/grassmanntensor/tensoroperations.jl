@@ -57,7 +57,7 @@ function TO.tensoradd!(C::GrassmannTensorMap, pC::Index2Tuple,
         pC′ = _canonicalize(pC, C)
     elseif conjA == :C
         A′ = adjoint(A)
-        pC′ = adjointtensorindices(A, _canonicalize(pA, C))
+        pC′ = TK.adjointtensorindices(A, _canonicalize(pA, C))
     else
         throw(ArgumentError("unknown conjugation flag $conjA"))
     end
@@ -79,7 +79,7 @@ function TO.tensoradd_structure(pC::Index2Tuple{N₁,N₂},
         dom = ProductSpace{S,N₂}(dual.(space.(Ref(A), pC[2])))
         return dom → cod
     else
-        return TO.tensoradd_structure(adjointtensorindices(A, pC), adjoint(A), :N)
+        return TO.tensoradd_structure(TK.adjointtensorindices(A, pC), adjoint(A), :N)
     end
 end
 
@@ -93,8 +93,8 @@ function TO.tensortrace!(C::GrassmannTensorMap, p::Index2Tuple,
         q′ = q
     elseif conjA == :C
         A′ = adjoint(A)
-        p′ = adjointtensorindices(A.data, _canonicalize(p, C))
-        q′ = adjointtensorindices(A.data, q)
+        p′ = TK.adjointtensorindices(A.data, _canonicalize(p, C))
+        q′ = TK.adjointtensorindices(A.data, q)
     else
         throw(ArgumentError("unknown conjugation flag $conjA"))
     end
@@ -115,7 +115,7 @@ function TO.tensorcontract!(C::GrassmannTensorMap, pAB::Index2Tuple,
         pA′ = pA
     elseif conjA == :C
         A′ = A'
-        pA′ = adjointtensorindices(A.data, pA)
+        pA′ = TK.adjointtensorindices(A.data, pA)
     else
         throw(ArgumentError("unknown conjugation flag $conjA"))
     end
@@ -124,7 +124,7 @@ function TO.tensorcontract!(C::GrassmannTensorMap, pAB::Index2Tuple,
         pB′ = pB
     elseif conjB == :C
         B′ = B'
-        pB′ = adjointtensorindices(B.data, pB)
+        pB′ = TK.adjointtensorindices(B.data, pB)
     else
         throw(ArgumentError("unknown conjugation flag $conjB"))
     end
