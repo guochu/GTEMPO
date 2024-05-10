@@ -1,13 +1,19 @@
-using Base: @boundscheck
+using Base: @boundscheck, @propagate_inbounds
 using Logging: @warn
 using QuadGK, Permutations, Reexport, TupleTools, Strided, Statistics
-using SphericalTensors: SphericalTensors, QR, SVD, LQ
+using SphericalTensors: SphericalTensors, QR, SVD, LQ, AdjointTensorMap
 const TK = SphericalTensors
+using TensorOperations: TensorOperations, IndexTuple, Index2Tuple, linearize, Backend
+const TO = TensorOperations
 @reexport using DMRG, ImpurityModelBase
 using DMRG: TimeEvoMPOAlgorithm
 
 
 # # TEMPO algorithm
+
+# GrassmannTensor
+include("grassmanntensor/grassmanntensor.jl")
+include("grassmanntensor/tensoroperations.jl")
 
 # default constants
 include("defaults.jl")

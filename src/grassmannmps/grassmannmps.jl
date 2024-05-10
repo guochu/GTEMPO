@@ -153,23 +153,6 @@ function increase_bond!(x::GrassmannMPS, D::Int)
 end
 
 # # swap the i-th bond
-# function swap!(x::GrassmannMPS, bond::Int; trunc::TruncationScheme=DMRG.DefaultTruncation)
-# 	# @assert space(x.data.s[bond], 2)' == space_l(x[bond]) 
-# 	@assert (1 <= bond < length(x))
-# 	@tensor twositemps[1,4;2,5] := x[bond][1,2,3] * x[bond+1][3,4,5]
-# 	for (f1, f2) in fusiontrees(twositemps)
-# 		if isodd(f1.uncoupled[2].n) && isodd(f2.uncoupled[1].n)
-# 			twositemps[f1, f2] .*= -1
-# 		end
-# 	end
-# 	@tensor twositemps1[1,3;4,5] := x.data.s[bond][1,2] * twositemps[2,3,4,5]
-# 	u, s, v, err = stable_tsvd!(twositemps1; trunc=trunc)
-# 	x.data.s[bond+1] = s
-# 	x[bond] = twositemps * v' 
-# 	x[bond+1] = permute(v, (1,2), (3,))
-# 	return x
-# end
-
 function easy_swap!(x::AbstractGMPS, bond::Int; trunc::TruncationScheme=DMRG.DefaultTruncation)
 	x[bond], x.s[bond+1], x[bond+1] = _swap_gate(x.s[bond], x[bond], x.s[bond+1], x[bond+1], trunc=trunc)
 	# x[bond], x[bond+1] = _swap_gate(x[bond], x[bond+1], trunc=trunc)
@@ -181,41 +164,6 @@ function naive_swap!(x::AbstractGMPS, bond::Int; trunc::TruncationScheme=DMRG.De
 	# x[bond], x[bond+1] = _swap_gate(x[bond], x[bond+1], trunc=trunc)
 	return x
 end
-
-# function _mult_site(xj, yj)
-# 	S = spacetype(xj)
-# 	zj = permute(xj, (1,2,3), ()) ⊗ permute(yj, (1,2,3), ())
-# 	p1 = (1,4,2,5)
-# 	p2 = (3,6)
-#     cod = ProductSpace{S}(map(n->space(zj, n), p1))
-#     dom = ProductSpace{S}(map(n->dual(space(zj, n)), p2))
-# 	return TK._add!(true, zj, false, similar(zj, cod←dom), p1, p2, (f1, f2)->f_permute(f1, f2, p1, p2))
-# end
-# # f2 is empty
-# function f_permute(f1, f2, p1, p2)
-# 	ft, coeff = first(permute(f1, f2, p1, p2))
-# 	t4 = (isodd(f1.uncoupled[5].n) && isodd(f1.uncoupled[3].n)) ? -1 : 1
-# 	return TK.SingletonDict(ft=>coeff*t4)
-# end
-
-# function _fuse_physical(m::AbstractTensorMap{S, 4, 2}) where S
-# 	cod = ProductSpace{S}((space(m, 1), space(m, 2), space(m, 3)))
-# 	dom = ProductSpace{S}((space(m, 5)', space(m, 6)'))
-# 	r = TensorMap(ds->zeros(scalartype(m), ds), cod ← dom)
-# 	for (f1, f2) in fusiontrees(m)
-# 		if f1.uncoupled[3] == f1.uncoupled[4]
-# 			if iseven(f1.uncoupled[3].n)
-# 				f1′ = FusionTree((f1.uncoupled[1],f1.uncoupled[2],f1.uncoupled[3]), f1.coupled, (f1.isdual[1],f1.isdual[2],f1.isdual[3]))
-# 				r[f1′, f2] .+= m[f1, f2][:, :, :, 1, :, :]
-# 			end
-# 		else
-# 			isdual3 = isodd(f1.uncoupled[3].n) ? f1.isdual[3] : f1.isdual[4]
-# 			f1′ = FusionTree((f1.uncoupled[1],f1.uncoupled[2],Z2Irrep(1)), f1.coupled, (f1.isdual[1],f1.isdual[2], isdual3))
-# 			r[f1′, f2] .+= m[f1, f2][:, :, :, 1, :, :]
-# 		end
-# 	end
-# 	return r
-# end
 
 function _swap_gate(m1, m2; trunc)
 	@tensor twositemps[1,4;2,5] := m1[1,2,3] * m2[3,4,5]
