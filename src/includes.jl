@@ -13,6 +13,7 @@ using DMRG: TimeEvoMPOAlgorithm
 
 # GrassmannTensor
 include("grassmanntensor/grassmanntensor.jl")
+include("grassmanntensor/linalg.jl")
 include("grassmanntensor/tensoroperations.jl")
 
 # default constants

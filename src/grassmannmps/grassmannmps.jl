@@ -166,28 +166,18 @@ function naive_swap!(x::AbstractGMPS, bond::Int; trunc::TruncationScheme=DMRG.De
 end
 
 function _swap_gate(m1, m2; trunc)
-	@tensor twositemps[1,4;2,5] := m1[1,2,3] * m2[3,4,5]
-	for (f1, f2) in fusiontrees(twositemps)
-		if isodd(f1.uncoupled[2].n) && isodd(f2.uncoupled[1].n)
-			twositemps[f1, f2] .*= -1
-		end
-	end
+	@tensor twositemps[1,4;2,5] := GrassmannTensorMap(m1)[1,2,3] * GrassmannTensorMap(m2)[3,4,5]
 	u, s, v, err = stable_tsvd!(twositemps; trunc=trunc)
 	# return u, permute(s * v, (1,2), (3,))
-	return u * s, permute(v, (1,2), (3,))
+	return get_data(u * s), get_data(permute(v, (1,2), (3,)))
 end
 
 function _swap_gate(svectorj1, m1, svectorj2, m2; trunc::TruncationScheme)
-	@tensor twositemps[1,4;2,5] := m1[1,2,3] * m2[3,4,5]
-	for (f1, f2) in fusiontrees(twositemps)
-		if isodd(f1.uncoupled[2].n) && isodd(f2.uncoupled[1].n)
-			twositemps[f1, f2] .*= -1
-		end
-	end
+	@tensor twositemps[1,4;2,5] := GrassmannTensorMap(m1)[1,2,3] * GrassmannTensorMap(m2)[3,4,5]
 	# println(space(svectorj1, 2), " ", space(m1, 1))
-	@tensor twositemps1[-1 -2; -3 -4] := svectorj1[-1, 1] * twositemps[1, -2, -3, -4]
+	@tensor twositemps1[-1 -2; -3 -4] := GrassmannTensorMap(svectorj1)[-1, 1] * twositemps[1, -2, -3, -4]
 	u, s, v, err = stable_tsvd!(twositemps1, trunc=trunc)
 	@tensor u[-1 -2; -3] = twositemps[-1,-2,1,2] * conj(v[-3,1,2])
-	return u, s, permute(v, (1,2), (3,))
+	return get_data(u), get_data(s), get_data(permute(v, (1,2), (3,)))
 end
 
