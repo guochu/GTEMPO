@@ -28,10 +28,6 @@ end
 
 TO.tensorscalar(t::GrassmannTensorMap) = scalar(t.data)
 
-function _canonicalize(p::Index2Tuple{N₁,N₂},
-                       ::GrassmannTensorMap) where {N₁,N₂}
-    return p
-end
 function _canonicalize(p::Index2Tuple, t::GrassmannTensorMap)
     p′ = linearize(p)
     p₁ = TupleTools.getindices(p′, codomainind(t.data))
@@ -308,5 +304,5 @@ end
 
 # Scalar implementation
 #-----------------------
-scalar(t::GrassmannTensorMap) = scalar(t.data)
+TK.scalar(t::GrassmannTensorMap) = scalar(t.data)
 

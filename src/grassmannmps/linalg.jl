@@ -56,8 +56,8 @@ end
 function Base.:*(x::GrassmannMPS, y::GrassmannMPS)
     (length(x) == length(y)) || throw(DimensionMismatch())
     out = [g_fuse(_mult_site(x[i], y[i]), 3) for i in 1:length(x)]
-    fusers = PeriodicArray([isomorphism(space(item, 4)' ⊗ space(item, 5)', fuse(space(item, 4), space(item, 5)) ) for item in out])
-    return GrassmannMPS([@tensor tmp[3,4;7] := conj(fusers[i-1][1,2,3]) * out[i][1,2,4,5,6] * fusers[i][5,6,7] for i in 1:length(x)], scaling=scaling(x) * scaling(y))
+    fusers = PeriodicArray([GrassmannTensorMap(isomorphism(space(item, 4)' ⊗ space(item, 5)', fuse(space(item, 4), space(item, 5)) )) for item in get_data.(out)])
+    return GrassmannMPS(get_data.([@tensor tmp[3,4;7] := conj(fusers[i-1][1,2,3]) * out[i][1,2,4,5,6] * fusers[i][5,6,7] for i in 1:length(x)]), scaling=scaling(x) * scaling(y))
 end
 
 function Base.:+(x::GrassmannMPS, y::GrassmannMPS) 
@@ -127,12 +127,7 @@ end
 naive_permute(x::AbstractGMPS, perm::Vector{Int}; kwargs...) = naive_permute!(copy(x), perm; kwargs...)
 
 function _mult_site(xj, yj)
-    @tensor r[1,4,2,5;3,6] := xj[1,2,3] * yj[4,5,6]
-    for (f1, f2) in fusiontrees(r)
-        if isodd(f1.uncoupled[4].n) && isodd(f2.uncoupled[1].n)
-            r[f1, f2] .*= -1
-        end
-    end
+    @tensor r[1,4,2,5;3,6] := GrassmannTensorMap(xj)[1,2,3] * GrassmannTensorMap(yj)[4,5,6]
     return r
 end
 

@@ -52,16 +52,16 @@ end
 # z is the output GMPS
 struct GMPSIterativeMultCache{_O, _A, _B, _H} 
     z::_O
-	x::_A
-	y::_B
-	hstorage::_H
+    x::_A
+    y::_B
+    hstorage::_H
 end
 
 function mult_cache(z::GrassmannMPS, x::GrassmannMPS, y::GrassmannMPS)
     @assert length(z) == length(x) == length(y)
-	# initialize Hstorage
+    # initialize Hstorage
     L = length(z)
-	right = TensorMap(ones, scalartype(z), space_r(y)' ⊗ space_r(x)', space_r(z)')
+    right = TensorMap(ones, scalartype(z), space_r(y)' ⊗ space_r(x)', space_r(z)')
     hstorage = Vector{typeof(right)}(undef, L+1)
     hstorage[L+1] = right
     hstorage[1] = TensorMap(ones, scalartype(z), space_l(z) ⊗ space_l(x)', space_l(y) )
@@ -234,41 +234,22 @@ end
 _svd_guess(x::GrassmannMPS, y::GrassmannMPS, D::Int) = _svd_guess!(copy(x), y, D)
 function _svd_guess!(x::GrassmannMPS, y::GrassmannMPS, D::Int)
     (length(x) == length(y)) || throw(DimensionMismatch())
-    left = isomorphism( fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) )
+    left = GrassmannTensorMap(isomorphism( fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) ))
     tmp5 = g_fuse(_mult_site(x[1], y[1]), 3)
     @tensor tmp4[1,4;5,6] := left[1,2,3] * tmp5[2,3,4,5,6]
     trunc = truncdim(D)
     for i in 1:length(x)-1
         u, s, v = stable_tsvd!(tmp4, trunc=trunc)
-        x[i] = u
-        _renormalize!(x, s, false)
+        x[i] = get_data(u)
+        _renormalize!(x, get_data(s), false)
         r = s * v
-        @tensor tmp1[1,5,4;2] := r[1,2,3] * y[i+1][3,4,5]
-        for (f1, f2) in fusiontrees(tmp1)
-            coef1 = (isodd(f1.uncoupled[2].n) && isodd(f2.uncoupled[1].n)) ? -1 : 1
-            coef2 = (isodd(f1.uncoupled[3].n) && isodd(f2.uncoupled[1].n)) ? -1 : 1
-            coef3 = (isodd(f1.uncoupled[3].n) && isodd(f1.uncoupled[2].n)) ? -1 : 1
-            # println(coef1, " ", coef2, " ", coef3, " ", coef4, " ", coef5)
-            coef = coef1 * coef2 * coef3
-            if coef != 1
-                lmul!(coef, tmp1[f1, f2])
-            end
-        end
-        @tensor tmp2[1,3,5;6,2] := tmp1[1,2,3,4] * x[i+1][4,5,6]
-        for (f1, f2) in fusiontrees(tmp2)
-            coef1 = (isodd(f2.uncoupled[2].n) && isodd(f1.uncoupled[2].n)) ? -1 : 1
-            coef2 = (isodd(f2.uncoupled[2].n) && isodd(f1.uncoupled[3].n)) ? -1 : 1
-            coef3 = (isodd(f2.uncoupled[2].n) && isodd(f2.uncoupled[1].n)) ? -1 : 1
-            # println(coef1, " ", coef2, " ", coef3, " ", coef4, " ", coef5)
-            coef = coef1 * coef2 * coef3
-            if coef != 1
-                lmul!(coef, tmp2[f1, f2])
-            end
-        end
+        @tensor tmp1[1,5,4;2] := r[1,2,3] * GrassmannTensorMap(y[i+1])[3,4,5]
+        @tensor tmp2[1,3,5;6,2] := tmp1[1,2,3,4] * GrassmannTensorMap(x[i+1])[4,5,6]
         tmp4 = g_fuse(tmp2, 2)
 
     end
-    x[end] = @tensor tmp[1,2;5] := tmp4[1,2,3,4] * conj(left[5,3,4])
+    @tensor tmp[1,2;5] := tmp4[1,2,3,4] * conj(left[5,3,4])
+    x[end] = get_data(tmp)
     _rightorth!(x, SVD(), trunc, false)
     setscaling!(x, 1)
     return x

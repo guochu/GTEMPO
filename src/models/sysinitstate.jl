@@ -32,7 +32,8 @@ function systhermalstate_iterative!(gmps::GrassmannMPS, lattice::RealGrassmannLa
 	_x, posb = band_boundary(lattice_i, 1)
 	# println("posa=", posa, " posb=", posb)
 	data = [gmps_i[i] for i in posa:posb]
-	data[1] = @tensor tmp[1,3;4] := left[1,2] * data[1][2,3,4]
+	@tensor tmp[1,3;4] := left[1,2] * GrassmannTensorMap(data[1])[2,3,4]
+	data[1] = get_data(tmp)
 	# for item in data
 	# 	println(space_l(item), " ", space_r(item))
 	# end

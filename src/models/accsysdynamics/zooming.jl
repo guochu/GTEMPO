@@ -41,7 +41,8 @@ function zoomout(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, scaling:
 			# println(space_r(gmps_n[posa_n-1])', " ", space_l(gmps_n[posa_n]))
 			# @assert space_l(gmps_n[posa_n]) == space_r(gmps_n[posa_n-1])'
 			# the rightmost one in the band should absord tmp2
-			gmps_n[posa_n] = @tensor tmp3[1,3;4] := tmp2[1,2] * gmps_n[posa_n][2,3,4] 
+			@tensor tmp3[1,3;4] := tmp2[1,2] * GrassmannTensorMap(gmps_n[posa_n])[2,3,4] 
+			gmps_n[posa_n] = get_data(tmp3)
 		end
 	elseif LayoutStyle(lattice) isa BranchLocalLayout
 		# the 0th band
@@ -67,7 +68,8 @@ function zoomout(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, scaling:
 			for (idx, idx_n) in zip(posa:posb, posa_n:posb_n)
 				gmps_n[idx_n] = gmps[idx] * _scaling(gmps)
 			end
-			gmps_n[posa_n] = @tensor tmp3[1,3;4] := tmp2[1,2] * gmps_n[posa_n][2,3,4] 
+			@tensor tmp3[1,3;4] := tmp2[1,2] * GrassmannTensorMap(gmps_n[posa_n])[2,3,4] 
+			gmps_n[posa_n] = get_data(tmp3)
 		end	
 		for j in 1:lattice_n.N
 			posa, posb = band_boundary(lattice, (j-1)*scaling+1, branch=:-)
@@ -79,7 +81,8 @@ function zoomout(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, scaling:
 			for kk in (j-1)*scaling+3:j*scaling
 				tmp2 = tmp2 * _contract_band(gmps, lattice, kk, branch=:-)
 			end
-			gmps_n[posb_n] = @tensor tmp3[1,2;4] := gmps_n[posb_n][1,2,3] * tmp2[3,4]
+			@tensor tmp3[1,2;4] := GrassmannTensorMap(gmps_n[posb_n])[1,2,3] * tmp2[3,4]
+			gmps_n[posb_n] = get_data(tmp3)
 		end					
 	else
 		throw(ArgumentError("zoomout not implemented for LayoutStyle $(LayoutStyle(lattice))"))

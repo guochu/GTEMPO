@@ -3,7 +3,6 @@ println("|              Models              |")
 println("------------------------------------")
 
 
-# using QuadGK
 
 @testset "Grassmann Ordering" begin
 	N = 5

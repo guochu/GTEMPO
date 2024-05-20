@@ -58,7 +58,7 @@ function update_left_util(left::GrassmannMPS, pos::Int, x::Vector{<:GrassmannMPS
 	left2 = similar(left.data, length(left))
 	for i in length(left)-1:-1:1
 		a, b = swap_left(tmp[i], tmp[i+1], trunc)
-		left2[i+1] = b
+		left2[i+1] = get_data(b)
 		tmp[i] = a
 	end
 	return tmp, left2
@@ -91,7 +91,7 @@ function update_right_util(right::GrassmannMPS, pos::Int, x::Vector{<:GrassmannM
 	right2 = similar(right.data, L)
 	for i in length(right)-1:-1:1
 		a, b = swap_left(tmp[i], tmp[i+1], trunc)
-		right2[i+1] = b
+		right2[i+1] = get_data(b)
 		tmp[i] = a
 	end
 	return tmp, right2
@@ -117,22 +117,24 @@ end
 
 function contract_center(left::GrassmannMPS, right::GrassmannMPS)
 	L = length(left)
-	mj = isomorphism(Matrix{scalartype(left)}, space_r(left)', space_l(right))
+	mj = GrassmannTensorMap(isomorphism(Matrix{scalartype(left)}, space_r(left)', space_l(right)))
 	f = scaling(left) * scaling(right)
 	for i in L:-1:1
-		mj = @tensor tmp[1,5] := f * left[i][1,2,3] * mj[3,4] * right[L-i+1][4,2,5]
+		mj = @tensor tmp[1,5] := f * GrassmannTensorMap(left[i])[1,2,3] * mj[3,4] * GrassmannTensorMap(right[L-i+1])[4,2,5]
 	end
 	return TK.scalar(mj)
 end
 
-function _fuse_boundary(tmp1::AbstractTensorMap{S, 3, 1}) where S
+function _fuse_boundary(tmp::GrassmannTensorMap{<:AbstractTensorMap{S, 3, 1}}) where S
+	tmp1 = tmp.data
 	m = isomorphism(Matrix{scalartype(tmp1)}, fuse(space(tmp1, 1), space(tmp1, 2)), space(tmp1, 1) ⊗ space(tmp1, 2))
 	@tensor l[1,4;5] := m[1,2,3] * tmp1[2,3,4,5]
 	return l	
 end
 
-function _trace_boundary(tmp1::AbstractTensorMap{S, 3, 1}; nt::Bool=true) where S
+function _trace_boundary(tmp1::GrassmannTensorMap{<:AbstractTensorMap{S, 3, 1}}; nt::Bool=true) where S
 	# trace physices
+	tmp1 = get_data(tmp1)
 	m1 = TensorMap(ds->zeros(scalartype(tmp1), ds), space(tmp1, 3) ← space(tmp1, 4)' )
 	for (f1, f2) in fusiontrees(tmp1)
 		if f1.uncoupled[1] == f1.uncoupled[2]
@@ -147,56 +149,19 @@ function _trace_boundary(tmp1::AbstractTensorMap{S, 3, 1}; nt::Bool=true) where 
 	return l
 end
 
-function _apply_physical_left(al::MPSTensor, b::MPSTensor)
-	a1 = copy(al)
-	for (f1, f2) in fusiontrees(a1)
-		coef = (isodd(f1.uncoupled[2].n) && isodd(f2.uncoupled[1].n)) ? -1 : 1
-		if coef != 1
-			a1[f1, f2] .*= coef
-		end
-	end
+function _apply_physical_left(a::MPSTensor, b::MPSTensor)
 	# println(space(a1, 2), " ", space(b, 1))
-	@tensor c[1,4,5;3] := a1[1,2,3] * b[2,4,5]
-	for (f1, f2) in fusiontrees(c)
-		coef1 = (isodd(f1.uncoupled[3].n) && isodd(f2.uncoupled[1].n)) ? -1 : 1
-		coef2 = (isodd(f1.uncoupled[2].n) && isodd(f2.uncoupled[1].n)) ? -1 : 1
-		coef = coef1 * coef2
-		if coef != 1
-			c[f1, f2] .*= coef
-		end		
-	end
+	@tensor c[1,4,5;3] := GrassmannTensorMap(a)[1,2,3] * GrassmannTensorMap(b)[2,4,5]
 	return c
 end
 
-function _apply_physical_right(ar::MPSTensor, b::MPSTensor)
-	a2 = copy(ar)
-	for (f1, f2) in fusiontrees(a2)
-		coef = (isodd(f1.uncoupled[1].n) && isodd(f1.uncoupled[2].n)) ? -1 : 1
-		if coef != 1
-			a2[f1, f2] .*= coef
-		end		
-	end
-	@tensor c[4,2,1;5] := b[1,2,3] * a2[4,3,5]
-	for (f1, f2) in fusiontrees(c)
-		coef1 = (isodd(f1.uncoupled[3].n) && isodd(f1.uncoupled[1].n)) ? -1 : 1
-		coef2 = (isodd(f1.uncoupled[3].n) && isodd(f1.uncoupled[2].n)) ? -1 : 1
-		coef3 = (isodd(f1.uncoupled[2].n) && isodd(f1.uncoupled[1].n)) ? -1 : 1
-		coef = coef1 * coef2 * coef3
-		if coef != 1
-			c[f1, f2] .*= coef
-		end		
-	end
+function _apply_physical_right(a::MPSTensor, b::MPSTensor)
+	@tensor c[4,2,1;5] := GrassmannTensorMap(b)[1,2,3] * GrassmannTensorMap(a)[4,3,5]
 	return c
 end
 
-function swap_left(a::AbstractTensorMap{S, 3, 1}, b::AbstractTensorMap{S, 3, 1}, trunc) where S
+function swap_left(a::GrassmannTensorMap{<:AbstractTensorMap{S, 3, 1}}, b::GrassmannTensorMap{<:AbstractTensorMap{S, 3, 1}}, trunc) where S
 	@tensor tmp2[1,2,5,3;6,7] := a[1,2,3,4] * b[4,5,6,7]
-	for (f1, f2) in fusiontrees(tmp2)
-		coef = (isodd(f1.uncoupled[3].n) && isodd(f1.uncoupled[4].n)) ? -1 : 1
-		if coef != 1
-			tmp2[f1, f2] .*= coef
-		end		
-	end
 	# fuse indices
 	# cod = space(tmp2, 1) ⊗ space(tmp2, 2) ⊗ space(tmp2, 4) 
 	# dom = space(tmp2, 5)' ⊗ space(tmp2, 6)'

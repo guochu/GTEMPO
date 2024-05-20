@@ -1,4 +1,5 @@
 
+g_fuse(t::GrassmannTensorMap, i::Int) = GrassmannTensorMap(g_fuse(t.data, i))
 
 # fuse i and i+1 into a single index
 function g_fuse(m::AbstractTensorMap{S, M, N}, i::Int) where {S, M, N}
@@ -57,7 +58,9 @@ function g_fuse(m::AbstractTensorMap{S, M, N}, i::Int) where {S, M, N}
 	return tmp
 end
 
-function g_trace(m::AbstractTensorMap{S, M, N}, i::Int) where {S, M, N}
+g_trace(t::GrassmannTensorMap, i::Int) = GrassmannTensorMap(_g_trace(t.data, i))
+
+function _g_trace(m::AbstractTensorMap{S, M, N}, i::Int) where {S, M, N}
 	@assert (i != M) && (i < M+N)
 	@assert space(m, i) == space(m, i+1)
 	local tmp
@@ -94,7 +97,8 @@ function g_trace(m::AbstractTensorMap{S, M, N}, i::Int) where {S, M, N}
 				f0 = FusionTree(uncoupled, f2.coupled, isdual)
 
 				# tmp[f1, f0] += StridedView(dropdims(m[f1, f2], dims=(i, i+1)))
-				axpy!(true, StridedView(dropdims(m[f1, f2], dims=(i, i+1))), tmp[f1, f0])
+				coeff = isodd(f2.uncoupled[i2].n) ? -1 : 1
+				axpy!(coeff, StridedView(dropdims(m[f1, f2], dims=(i, i+1))), tmp[f1, f0])
 
 			end
 		end	

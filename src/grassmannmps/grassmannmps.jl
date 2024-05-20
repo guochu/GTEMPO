@@ -140,13 +140,16 @@ function increase_bond!(x::GrassmannMPS, D::Int)
 	Dh = div(D, 2)
 	virtualspace = Rep[ℤ₂](0=>Dh, 1=>Dh)
 	L = length(x)
-	ms = [isometry(Matrix{scalartype(x)}, virtualspace, space_l(x[site+1])) for site in 1:L-1]
-	x[1] = @tensor tmp[1,2;4] := x[1][1,2,3] * conj(ms[1][4,3])
-	x[L] = @tensor tmp[1,3;4] := ms[L-1][1,2] * x[L][2,3,4]
+	ms = [GrassmannTensorMap(isometry(Matrix{scalartype(x)}, virtualspace, space_l(x[site+1]))) for site in 1:L-1]
+	@tensor tmp[1,2;4] := GrassmannTensorMap(x[1])[1,2,3] * conj(ms[1][4,3])
+	x[1] = get_data(tmp)
+	@tensor tmp[1,3;4] := ms[L-1][1,2] * GrassmannTensorMap(x[L])[2,3,4]
+	x[L] = get_data(tmp)
 	for site in 2:L-1
 		vspace = space_l(x[site+1])
 		(vspace ≾ virtualspace) || @warn "old virtualspace $(vspace) is not monomorphic to the new virtualspace $(virtualspace)"
-		x[site] = @tensor tmp[1,3;5] := ms[site-1][1,2] * x[site][2,3,4] * conj(ms[site][5,4])
+		@tensor tmp[1,3;5] := ms[site-1][1,2] * GrassmannTensorMap(x[site])[2,3,4] * conj(ms[site][5,4])
+		x[site] = get_data(tmp)
 	end
 	unset_svectors!(x)
 	return x
@@ -218,28 +221,18 @@ end
 # end
 
 function _swap_gate(m1, m2; trunc)
-	@tensor twositemps[1,4;2,5] := m1[1,2,3] * m2[3,4,5]
-	for (f1, f2) in fusiontrees(twositemps)
-		if isodd(f1.uncoupled[2].n) && isodd(f2.uncoupled[1].n)
-			twositemps[f1, f2] .*= -1
-		end
-	end
+	@tensor twositemps[1,4;2,5] := GrassmannTensorMap(m1)[1,2,3] * GrassmannTensorMap(m2)[3,4,5]
 	u, s, v, err = stable_tsvd!(twositemps; trunc=trunc)
 	# return u, permute(s * v, (1,2), (3,))
-	return u * s, permute(v, (1,2), (3,))
+	return get_data(u * s), get_data(permute(v, (1,2), (3,)))
 end
 
 function _swap_gate(svectorj1, m1, svectorj2, m2; trunc::TruncationScheme)
-	@tensor twositemps[1,4;2,5] := m1[1,2,3] * m2[3,4,5]
-	for (f1, f2) in fusiontrees(twositemps)
-		if isodd(f1.uncoupled[2].n) && isodd(f2.uncoupled[1].n)
-			twositemps[f1, f2] .*= -1
-		end
-	end
+	@tensor twositemps[1,4;2,5] := GrassmannTensorMap(m1)[1,2,3] * GrassmannTensorMap(m2)[3,4,5]
 	# println(space(svectorj1, 2), " ", space(m1, 1))
-	@tensor twositemps1[-1 -2; -3 -4] := svectorj1[-1, 1] * twositemps[1, -2, -3, -4]
+	@tensor twositemps1[-1 -2; -3 -4] := GrassmannTensorMap(svectorj1)[-1, 1] * twositemps[1, -2, -3, -4]
 	u, s, v, err = stable_tsvd!(twositemps1, trunc=trunc)
 	@tensor u[-1 -2; -3] = twositemps[-1,-2,1,2] * conj(v[-3,1,2])
-	return u, s, permute(v, (1,2), (3,))
+	return get_data(u), get_data(s), get_data(permute(v, (1,2), (3,)))
 end
 

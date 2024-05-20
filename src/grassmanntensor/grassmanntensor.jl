@@ -8,6 +8,7 @@ end
 TK.permute(t::GrassmannTensorMap, p1::IndexTuple, p2::IndexTuple; copy::Bool=false) = permute(t, (p1, p2), copy=copy)
 TK.permute(t::GrassmannTensorMap, p::Index2Tuple; copy::Bool=false) = GrassmannTensorMap(f_permute(t.data, p, copy=copy))
 Base.adjoint(t::GrassmannTensorMap) = GrassmannTensorMap(adjoint(t.data))
+get_data(t::GrassmannTensorMap) = t.data
 
 function f_permute(t::AbstractParityTensorMap, (p₁, p₂)::Index2Tuple{N₁,N₂};
                    copy::Bool=false) where {N₁,N₂}
@@ -65,12 +66,16 @@ function f_permute(f1::FusionTree{ZNIrrep{2}}, f2::FusionTree{ZNIrrep{2}},
     	p = TK.linearizepermutation(p1, p2, length(f1), length(f2))
     	swaps = TK.permutation2swaps(p)
     	coeff = 1
+        uncoupled = (f1.uncoupled..., dual.(reverse(f2.uncoupled))...)
     	for s in swaps
     		v = uncoupled[s]
     		coeff = (isodd(uncoupled[s].n) && isodd(uncoupled[s+1].n)) ? -coeff : coeff
     		uncoupled = TupleTools.setindex(uncoupled, uncoupled[s+1], s)
     		uncoupled = TupleTools.setindex(uncoupled, v, s+1)
     	end
+        tmp = (uncoupled1′..., reverse(uncoupled2′)...)
+        # println(uncoupled, " ", tmp)
+        (uncoupled == tmp) || error("something wrong")
     else
    		coeff = 0
     end
