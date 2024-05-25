@@ -1,5 +1,5 @@
-Δτ(bath::AbstractFermionicBath; N::Int, δτ::Real=bath.β/N) = Δτ(bath.spectrum, β=bath.β, N=N, μ=bath.μ, δτ=δτ)
-Δτ(f::SpectrumFunction; β::Real, N::Int, μ::Real=0, δτ::Real=β/N) = Δτ(f, β, N, μ, δτ)
+Cτ(bath::AbstractFermionicBath; N::Int, δτ::Real=bath.β/N) = Cτ(bath.spectrum, β=bath.β, N=N, μ=bath.μ, δτ=δτ)
+Cτ(f::SpectrumFunction; β::Real, N::Int, μ::Real=0, δτ::Real=β/N) = Cτ(f, β, N, μ, δτ)
 
 
 struct ImagCorrelationFunction{M<:AbstractMatrix{Float64}} <: AbstractCorrelationFunction
@@ -17,11 +17,11 @@ index(x::ImagCorrelationFunction, i::Int, j::Int) = x.data[i, j]
 
 
 """
-    Δτ(f, β::Real, N::Int)
+    Cτ(f, β::Real, N::Int)
 
 f is the spectrum function
 """
-function Δτ(f0::SpectrumFunction, β::Real, N::Int, μ::Real, δτ::Real=β / N)
+function Cτ(f0::SpectrumFunction, β::Real, N::Int, μ::Real, δτ::Real=β / N)
     f′, lb, ub = f0.f, lowerbound(f0), upperbound(f0)
     β = convert(Float64, β)
     μ = convert(Float64, μ)
@@ -86,11 +86,10 @@ function _fₖₖ_i(f, ε::Float64, δτ)
     end
 end
 
-function Δiw_to_Δτ(Δiw::AbstractVector{<:Number}; β::Real, N::Int)
+function Δiw_to_Cτ(Δiw::AbstractVector{<:Number}; β::Real, N::Int)
+    iseven(length(Δiw)) || throw(ArgumentError("even number of frequencies expected"))
     δτ = β/N
-    nmax = div(length(Δiw), 2) 
-    @assert 2*nmax == length(Δiw)
-    nmax += 1
+    nmax = div(length(Δiw), 2) - 1
 
     ηⱼₖ = zeros(ComplexF64, N)
     ηₖⱼ = zeros(ComplexF64, N)

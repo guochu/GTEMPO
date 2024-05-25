@@ -26,8 +26,8 @@ Base.:+(A::MixedCorrelationFunction, B::MixedCorrelationFunction) = MixedCorrela
 isize(x::MixedCorrelationFunction) = length(x.ξⱼₖ)
 rsize(x::MixedCorrelationFunction) = length(x.ηⱼₖ)
 
-Δm(bath::AbstractFermionicBath; Nτ::Int, t::Real, Nt::Int, δτ::Real=bath.β/Nτ) = Δm(bath.spectrum, β=bath.β, μ=bath.μ, Nτ=Nτ, t=t, Nt=Nt, δτ=δτ)
-function Δm(f0::SpectrumFunction; β::Real, Nτ::Int, t::Real, Nt::Int, μ::Real=0, δτ::Real=β/Nτ)
+Cm(bath::AbstractFermionicBath; Nτ::Int, t::Real, Nt::Int, δτ::Real=bath.β/Nτ) = Cm(bath.spectrum, β=bath.β, μ=bath.μ, Nτ=Nτ, t=t, Nt=Nt, δτ=δτ)
+function Cm(f0::SpectrumFunction; β::Real, Nτ::Int, t::Real, Nt::Int, μ::Real=0, δτ::Real=β/Nτ)
 	f, lb, ub = f0.f, lowerbound(f0), upperbound(f0)
     δt = t / Nt
     g₁(ε) = _g₁(β, μ, ε); g₂(ε) = _g₂(β, μ, ε)

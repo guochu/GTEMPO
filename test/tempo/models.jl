@@ -97,7 +97,7 @@ end
 	gt = [toulouse_Gt(spectrum_func(), tj, ϵ_d = ϵ_d, μ = 0.) for tj in ts]
 
 	exact_model = SISB(bath, μ=ϵ_d, U=0)
-	corr = Δt(bath, N=N, t=t)
+	corr = Ct(bath, N=N, t=t)
 	for ordering in real_ac_grassmann_orderings
 		lattice = GrassmannLattice(N=N, δt=δt, contour=:real, ordering=ordering)
 		mpsI = hybriddynamics(lattice, corr, trunc=trunc) 

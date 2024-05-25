@@ -28,7 +28,7 @@ export ImagGrassmannLattice1Order, RealGrassmannLattice1Order, RealGrassmannLatt
 export IntegrationAlgorithm, ExactIntegrate, BMPSIntegrate, Zvalue
 
 # correlation functions
-export Δτ, Δt, Δm, branch, CorrelationMatrix, correlationfunction
+export Cτ, Ct, Cm, branch, CorrelationMatrix, correlationfunction
 
 # influence functional
 export InfluenceFunctionalAlgorithm, PartialIF, TranslationInvariantIF
