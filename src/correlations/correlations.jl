@@ -23,6 +23,15 @@ function Base.getindex(A::CorrelationMatrix, i::Int, j::Int)
         A.ηⱼₖ[1] + A.ηₖⱼ[1]
     end
 end
+function Base.getindex(A::CorrelationMatrix, i::Int)
+    if i == 0
+        return A.ηⱼₖ[1] + A.ηₖⱼ[1]
+    elseif i > 0
+        return A.ηⱼₖ[i+1]
+    else
+        return A.ηₖⱼ[i-1]
+    end
+end
 
 function Base.:+(x::CorrelationMatrix, y::CorrelationMatrix)
     (size(x) == size(y)) || throw(DimensionMismatch("correlation matrix size mismatch"))
