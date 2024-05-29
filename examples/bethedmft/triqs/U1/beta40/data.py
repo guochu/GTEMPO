@@ -19,6 +19,6 @@ for i in range(0,10):
     G = A['G_tau-%i'%i]
     for t in range(0,10001):
         up = G['up'].data[t,0,0]
-        print(t, up.real, up.imag, file=f)
+        print(t/250, up.real, up.imag, file=f)
     f.close()
         

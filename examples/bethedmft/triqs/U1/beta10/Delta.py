@@ -24,23 +24,24 @@ p["move_double"] = True
 S = Solver(beta = beta, gf_struct = [('up',1), ('down',1)] )
 
 # This is a first guess for G
-#gw = GfImFreq(indices = [1], mesh = MeshImFreq(beta, 'Fermion'))
-#gw << t*SemiCircular(2*t)
-#gt = GfImTime(indices = [1], beta = beta, n_points = 10001)
-#gt << Fourier(gw)
-S.G_iw << t*SemiCircular(2*t)
+gw = GfImFreq(indices = [1], mesh = MeshImFreq(beta, 'Fermion', n_iw = 1025))
+gw << t*SemiCircular(2*t)
+gt = GfImTime(indices = [1], beta = beta, n_points = 10001)
+gt << Fourier(gw)
+#S.G_iw << t*SemiCircular(2*t)
 
 f = open("Giw-0.dat", 'w')
 for iw in range(0,2050):
-    up = S.G_iw['up'].data[iw,0,0]
+    #up = S.G_iw['up'].data[iw,0,0]
+    up = gw.data[iw,0,0]
     print(2*(iw-1024)-1, up.real, up.imag, file=f)
 f.close()
 
-# f = open("Gtau-0.dat", 'w')
-# for t in range(0,10001):
-#     up = G_tau['up'].data[t,0,0]
-#     print(t/10000*beta, up.real, up.imag, file=f)
-# f.close()
+f = open("Gtau-0.dat", 'w')
+for t in range(0,10001):
+    up = gt.data[t,0,0]
+    print(t/10000*beta, up.real, up.imag, file=f)
+f.close()
 
 
 
