@@ -8,7 +8,7 @@ from triqs_cthyb import Solver
 U = 1.0
 t = 0.5
 mu = U/2.0
-beta = 1.0
+beta = 10.0
 n_loops = 10
 
 p = {}

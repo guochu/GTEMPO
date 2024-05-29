@@ -22,11 +22,13 @@
 
   <\enumerate>
     <item>At the initial time, set <math|J<around*|(|\<varepsilon\>|)>=<frac|1|2\<pi\>t><sqrt|1-<around*|(|\<varepsilon\>/2t|)><rsup|2>>>
-    and we have
+    and\ 
 
     <\equation>
-      \<Delta\><around*|(|i\<omega\><rsub|n>|)>=<big|int><rsub|-2t><rsup|2t><frac|J<around*|(|\<varepsilon\>|)>|i\<omega\><rsub|n>-\<varepsilon\>>\<mathd\>\<varepsilon\>.
+      G<around*|(|i\<omega\><rsub|n>|)>=<big|int><rsub|-2t><rsup|2t><frac|J<around*|(|\<varepsilon\>|)>|i\<omega\><rsub|n>-\<varepsilon\>>\<mathd\>\<varepsilon\>.
     </equation>
+
+    Accordingly, <math|\<Delta\>*<around*|(|i\<omega\><rsub|s>|)>=t<rsup|2>G<around*|(|i\<omega\><rsub|s>|)>>.
 
     <item>Compute <math|G<around*|(|i\<omega\><rsub|n>|)>>, and set new
     <math|\<Delta\><around*|(|i\<omega\><rsub|n>|)>=t<rsup|2>G<around*|(|i\<omega\><rsub|n>|)>>
