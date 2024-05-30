@@ -96,7 +96,7 @@ function Δiw_to_Cτ(Δiw::AbstractVector{<:Number}; β::Real, N::Int)
 
     for (i, n) in enumerate(-nmax:nmax+1)
         ωₙ = (2n-1)*π/β
-        a = (2/(β*ωₙ^2)) * Δiw[i] * (1 - cos(ωₙ * δτ))
+        a = -(2/(β*ωₙ^2)) * Δiw[i] * (1 - cos(ωₙ * δτ))
         ηⱼₖ[1] += a / 2
         ηₖⱼ[1] += a / 2
         for k in 1:N-1
