@@ -10,7 +10,7 @@ using DelimitedFiles, JSON, Serialization, Interpolations
 ρ₀(ϵ, D=1.) = sqrt(1-(ϵ/D)^2) * (D/π)
 
 
-spectrum_func(D=1.) = SpectrumFunction(ω -> ρ₀(ω, D), lb = -D, ub = D)
+spectrum_func(D=1.) = SpectrumFunction(ω -> 0.1 * ρ₀(ω, D), lb = -D, ub = D)
 
 
 function main(; β=10., δτ=0.1, t=2., δt=0.05, U=1., ϵ_d=U/2, chi=100)
@@ -33,24 +33,21 @@ function main(; β=10., δτ=0.1, t=2., δt=0.05, U=1., ϵ_d=U/2, chi=100)
 	bath = fermionicbath(spectrum_func(D), β=β, μ=0)
 	exact_model = SISB(bath, U=U, μ=-ϵ_d)
 
+	corr1 = correlationfunction(bath, lattice)
+
 	# initial guess for Δiw
 	lb = -3.
 	ub = 3.
-	dw = 1.0e-3
+	dw = 1.0e-4
 	freqs = collect(frequencies(lb=lb, ub=ub, dw=dw))
-	Aw =  [toulouse_Aw(spectrum_func(D), ω) for ω in freqs]
+	Jw =  [toulouse_Jw(spectrum_func(D), ω) for ω in freqs]
 
-	# println("sum=", sum(Aw) * dw)
-
-	# corr1 = correlationfunction(bath, lattice)
-
-	# Jw = SpectrumFunction(freqs, Aw)
-	# bath = fermionicbath(Jw, β=β, μ=0)
-	# corr2 = correlationfunction(bath, lattice)
+	spec = SpectrumFunction(freqs, Jw)
+	bath = fermionicbath(spec, β=β, μ=0)
+	corr2 = correlationfunction(bath, lattice)
 
 
-	# return corr1, corr2
+	return corr1, corr2
 
-	return Aw
 end
 

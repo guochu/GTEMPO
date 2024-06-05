@@ -103,19 +103,22 @@ t_final = 80.
 
 t0 = 20.
 
-chi_r = 80
+chi_r = 100
 
 dtau = 0.1
 
 chi_ms = [40,80, 120,160,200]
 
-# times_final, ns_final, gf_ts_final, gf_final, gt_final, lt_final = read_real_tempo(beta, t_final, U, dt, chi=chi_r)
+order = 10
+
+# times_all, ns_final, times_final, gf_final, gt_final, lt_final = read_real_tempo(beta, t_final, U, dt, chi=chi_r)
+
 # ax[0,0].plot(gf_ts_final, gt_final.real, ls='-', color='k', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_r))
 # ax[0,1].plot(gf_ts_final, gt_final.imag, ls='-', color='k', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_r))
 
 k = 8
-order = 10
 times_final, gf_final, gt_final, lt_final = read_itempo(beta, t0, U, dt, chi=chi_r, k=k, order=order)
+
 # ax[0,0].plot(gf_ts_final, gt_final.real, ls='-', color='k', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_r))
 # ax[0,1].plot(gf_ts_final, gt_final.imag, ls='-', color='k', linewidth=linewidth, label=r'real, $\chi=%s$'%(chi_r))
 
@@ -259,7 +262,7 @@ ax[1,3].annotate(r'(d2)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=font
 
 plt.tight_layout(pad=0.5)
 
-plt.savefig('oneorbital1.pdf', bbox_inches='tight')
+# plt.savefig('oneorbital1.pdf', bbox_inches='tight')
 
 plt.show()
 

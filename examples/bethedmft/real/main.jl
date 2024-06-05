@@ -25,7 +25,7 @@ function main(; β=10., δτ=0.1, t=2., δt=0.05, U=1., ϵ_d=U/2, chi=100)
 
 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
 
-	mpath = "beta$(round(Int, β))/"
+	mpath = "beta$(round(Int, β))t$(round(Int, t))/"
 
 	lattice = GrassmannLattice(Nτ=Nτ, δτ=δτ, δt=δt, Nt=Nt, bands=2, contour=:mixed)
 
@@ -38,7 +38,7 @@ function main(; β=10., δτ=0.1, t=2., δt=0.05, U=1., ϵ_d=U/2, chi=100)
 	ub = 3.
 	dw = 1.0e-4
 	freqs = collect(frequencies(lb=lb, ub=ub, dw=dw))
-	Aw =  [toulouse_Aw(spectrum_func(D), ω) for ω in freqs]
+	Jw =  [toulouse_Jw(spectrum_func(D), ω) for ω in freqs]
 
 
 	mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
@@ -49,8 +49,8 @@ function main(; β=10., δτ=0.1, t=2., δt=0.05, U=1., ϵ_d=U/2, chi=100)
 	for i in 1:10
 		println("the $i-th DMFT iteration...")
 
-		Jw = SpectrumFunction(freqs, Aw)
-		bath = fermionicbath(Jw, β=β, μ=0)
+		spec = SpectrumFunction(freqs, Jw)
+		bath = fermionicbath(spec, β=β, μ=0)
 		corr = correlationfunction(bath, lattice)
 
 
@@ -66,7 +66,7 @@ function main(; β=10., δτ=0.1, t=2., δt=0.05, U=1., ϵ_d=U/2, chi=100)
 		retarded = -im * gt - im * lt
 		# println(retarded)
 		# linear prediction
-		retarded′ = linear_predict(retarded, δt)
+		retarded′ = linear_predict(retarded, δt, tol=1.0e-9)
 		println(retarded′[end-5:end])
 		t_all = δt * (length(retarded′)-1)
 		println("tall is ", t_all)
@@ -85,23 +85,27 @@ function main(; β=10., δτ=0.1, t=2., δt=0.05, U=1., ϵ_d=U/2, chi=100)
 
 		###########bethe lattice#############
 		Δw_new = [Dh^2 * Gj for (w, Gj) in zip(freqs, Gw)]
-		# Aw_new = [(x < zero(x)) ? -x/π : zero(x) for x in Δw_new]
-		Aw_new = Gw_to_Aw(Δw_new)
+		Jw_new = Gw_to_Aw(Δw_new, verbosity=0)
 
-		err = norm(Aw_new - Aw) / norm(Aw)
-		println("error is ", err, " sum=", sum(Aw_new) * dw)
+		err = norm(Jw_new - Jw) / norm(Jw)
+		println("error is ", err)
 
 		writedlm(mpath*"Gt-$i.dat", hcat(0:δt′:t_all, real(gf′), imag(gf′)))
 		writedlm(mpath*"Giw-$i.dat", hcat(freqs, real(Gw), imag(Gw)))
-		writedlm(mpath*"Aw-$i.dat", hcat(freqs, Aw_new))
 		
-		Aw = Aw_new
+		Jw = Jw_new
+
+		Aw = Gw_to_Aw(Gw, verbosity=0)
+		nrm = sum(Aw) * dw
+		println("sum(Aw)=", nrm)
+		Aw ./= nrm
 
 		Gtau = Aw_to_Gτ(Aw, β=β, lb=lb, ub=ub, dw=dw, δτ=δτ)
+		writedlm(mpath*"Aw-$i.dat", hcat(freqs, Aw))
 		writedlm(mpath*"Gtau-$i.dat", hcat(0:δτ:β, Gtau))
 	end
 
-	return Aw
+	return Jw
 
 end
 

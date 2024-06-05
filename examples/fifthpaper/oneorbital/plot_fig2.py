@@ -84,11 +84,13 @@ fig, ax = plt.subplots(1, 2, figsize=(8, 4))
 beta = 40.
 dt = 0.05
 
-Us = [ 0.1, 0.3, 0.5, 0.7, 0.9]
+# Us = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
+Us = [0.1, 0.3, 0.5, 0.7, 0.9]
 
+t_final = 80.
 t0 = 20.
 
-chi_r = 80
+chi_r = 100
 k = 8
 order = 10
 
@@ -99,6 +101,7 @@ errs = []
 for i, U in enumerate(Us):
 
 	times_final, gf_final, gt_final, lt_final = read_itempo(beta, t0, U, dt, chi=chi_r, k=k, order=order)
+	# times_all, ns_final, times_final, gf_final, gt_final, lt_final = read_real_tempo(beta, t_final, U, dt, chi=chi_r)
 
 	ax[0].plot(times_final, gf_final.imag, ls='-', color=colors[i], linewidth=linewidth)
 
@@ -120,14 +123,21 @@ ax[0].locator_params(axis='both', nbins=6)
 
 ax[0].legend(fontsize=12)
 
-for i, U in enumerate(Us):
+chi_ms = [40,60,80,100]
+Us = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
 
-	times_final, gf_final, gt_final, lt_final = read_itempo(beta, t0, U, dt, chi=chi_r, k=k, order=order)
+for (i, chi_m) in enumerate(chi_ms):
+	errs = []
+	for U in Us:
+		times_final, gf_final, gt_final, lt_final = read_itempo(beta, t0, U, dt, chi=chi_r, k=k, order=order)
 
+		mixed_ts, mixed_gf, mixed_gt, mixed_lt = read_mixed_tempo(beta, t0, U, dt, chi=chi_m)
 
-	mixed_ts, mixed_gf, mixed_gt, mixed_lt = read_mixed_tempo(beta, t0, U, dt, chi=chi_m)
+		err = mse_error(mixed_gf, gf_final)
 
-	ax[1].plot(mixed_ts, mixed_gf.imag - gf_final.imag, ls='--', color=colors[i], linewidth=linewidth, label=r'$U/\Gamma=%s$'%(round(U/0.1)))
+		errs.append(err)
+
+	ax[1].plot(Us, errs, ls='--', color=colors[i], linewidth=linewidth, label=r'$\chi=%s$'%(chi_m))
 
 
 
@@ -137,6 +147,8 @@ ax[1].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[1].tick_params(axis='y', which='both')
 ax[1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 ax[1].locator_params(axis='both', nbins=6)
+
+ax[1].legend(fontsize=12)
 
 plt.tight_layout(pad=0.5)
 

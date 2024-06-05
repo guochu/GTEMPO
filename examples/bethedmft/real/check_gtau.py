@@ -10,17 +10,17 @@ import math
 rc('text', usetex=True)
 
 
-def read_tempo(beta, i):
-	filename = 'beta%s/Gtau-%s.dat'%(beta, i)
+def read_rtempo(beta, t, i):
+	filename = 'beta%st%s/Gtau-%s.dat'%(beta, t, i)
 	data = loadtxt(filename)
 	return data[:, 1]
 
 
-def read_mc(beta, i):
-	mpath = '../triqs/U1/beta%s/'%(beta)
+def read_itempo(beta, i):
+	mpath = '../imag/beta%s/'%(beta)
 	filename = mpath + 'Gtau-%s.dat'%(i)
 	data = loadtxt(filename)
-	return data[:, 1]
+	return data
 
 fontsize = 20
 labelsize = 16
@@ -34,21 +34,24 @@ color1 = 'r'
 
 
 beta = 1
-step = 1
+t = 3
+step = 4
 
-data1 = read_tempo(beta, step)
+data1 = read_rtempo(beta, t, step)
 betas1 = linspace(0, beta, num=len(data1))
-data2 = read_mc(beta, step)
+data2 = read_itempo(beta, step)
 betas2 = linspace(0, beta, num=len(data2))
 
 fig, ax = plt.subplots(1,1, figsize=(8, 7))
 
 
-ax.plot(betas1, data1, ls='--', color='r', linewidth=2, label=r'GTEMPO')
+ax.plot(betas1, data1, ls='--', color='r', linewidth=linewidth, label=r'rGTEMPO')
 
-ax.scatter(betas2, data2, linewidth=0.5, marker='+', color='g', ls='--', label=r'CTMQC')
+ax.plot(betas2, data2, ls='--', color='k', linewidth=linewidth, label=r'iGTEMPO')
 
 ax.set_title(r'$G({\tau})$,step=%s'%(step), fontsize=fontsize)
+
+ax.legend(fontsize=fontsize)
 
 plt.tight_layout(pad=0.5)
 

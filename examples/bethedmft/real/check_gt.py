@@ -10,17 +10,11 @@ import math
 rc('text', usetex=True)
 
 
-def read_tempo(beta, i):
-	filename = 'beta%s/Gt-%s.dat'%(beta, i)
+def read_tempo(beta, t, i):
+	filename = 'beta%st%s/Gt-%s.dat'%(beta, t, i)
 	data = loadtxt(filename)
 	return data
 
-
-def read_mc(beta, i):
-	mpath = '../triqs/U1/beta%s/'%(beta)
-	filename = mpath + 'Gtau-%s.dat'%(i)
-	data = loadtxt(filename)
-	return data[:, 1]
 
 fontsize = 20
 labelsize = 16
@@ -34,16 +28,23 @@ color1 = 'r'
 
 
 beta = 1
+
 step = 1
 
-data1 = read_tempo(beta, step)
+
 
 
 fig, ax = plt.subplots(1,1, figsize=(8, 7))
 
-
+t = 3
+data1 = read_tempo(beta, t, step)
 ax.plot(data1[:,0], data1[:, 2], ls='--', color='r', linewidth=2, label=r'GTEMPO')
 
+t = 5
+data1 = read_tempo(beta, t, step)
+ax.plot(data1[:,0], data1[:, 2], ls='--', color='k', linewidth=2, label=r'GTEMPO')
+
+ax.set_xlim(0, 10)
 
 ax.set_title(r'$G({\tau})$,step=%s'%(step), fontsize=fontsize)
 
