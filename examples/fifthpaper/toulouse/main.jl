@@ -61,11 +61,13 @@ function main(t::Real; ϵ_d=1., δt=0.05, δτ=0.1, order=8, β=40, chi=1024)
 	@time g₂ = [cached_Gm(lattice, 1, k, mpsK, mpsI, c1=true, c2=false, b1=:-, b2=:+, band=band, cache=cache) for k in 1:Nt+1]
 	@time g₃ = [cached_Gm(lattice, k, 1, mpsK, mpsI, c1=false, c2=true, b1=:τ, b2=:τ, band=band, cache=cache) for k in 1:Nτ+1]
 
+	@time ns = cached_occupation(lattice, mpsK, mpsI1, mpsI2, cache=cache)
+
 	# ts = [i*δt for i in 1:N]
 
 	data_path = "result/thouless_tempo_mixed_beta$(β)_dtau$(δτ)_t$(t)_mu$(ϵ_d)_dt$(δt)_order$(order)_chi$(chi).json"
 
-	results = Dict("ts"=>ts, "taus"=>τs, "bd"=>bond_dimensions(mpsI), "gt"=>g₁, "lt"=>g₂, "gtau"=>g₃,)
+	results = Dict("ts"=>ts, "taus"=>τs, "bd"=>bond_dimensions(mpsI), "gt"=>g₁, "lt"=>g₂, "gtau"=>g₃, "ns" => ns)
 
 	println("save results to ", data_path)
 
