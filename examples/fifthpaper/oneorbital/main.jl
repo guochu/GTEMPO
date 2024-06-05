@@ -13,6 +13,39 @@ end
 spectrum_func(D) = SpectrumFunction(ω -> J(D, ω), lb = -D, ub = D)
 
 
+function cached_vacuum(lattice::MixedGrassmannLattice, i::Int, A::GrassmannMPS, B::GrassmannMPS...; 
+            cache=environments(lattice, A, B...))
+    pos1, pos2 = index(lattice, i, conj=false, branch=:+, band=1), index(lattice, i, conj=true, branch=:+, band=1)
+    pos1′, pos2′ = index(lattice, i, conj=false, branch=:+, band=2), index(lattice, i, conj=true, branch=:+, band=2)
+    t = GTerm(pos1, pos2, pos1′, pos2′, coeff=1)
+    return expectationvalue(t, cache)
+end
+
+function cached_nup(lattice::MixedGrassmannLattice, i::Int, A::GrassmannMPS, B::GrassmannMPS...; 
+            cache=environments(lattice, A, B...))
+    pos1, pos2 = index(lattice, i, conj=false, branch=:+, band=1), index(lattice, i, conj=true, branch=:-, band=1)
+    pos1′, pos2′ = index(lattice, i, conj=false, branch=:+, band=2), index(lattice, i, conj=true, branch=:+, band=2)
+    t = GTerm(pos1, pos2, pos1′, pos2′, coeff=1)
+    return expectationvalue(t, cache)
+end
+
+function cached_ndown(lattice::MixedGrassmannLattice, i::Int, A::GrassmannMPS, B::GrassmannMPS...; 
+            cache=environments(lattice, A, B...))
+    pos1, pos2 = index(lattice, i, conj=false, branch=:+, band=1), index(lattice, i, conj=true, branch=:+, band=1)
+    pos1′, pos2′ = index(lattice, i, conj=false, branch=:+, band=2), index(lattice, i, conj=true, branch=:-, band=2)
+    t = GTerm(pos1, pos2, pos1′, pos2′, coeff=1)
+    return expectationvalue(t, cache)
+end
+
+function cached_nn(lattice::MixedGrassmannLattice, i::Int, A::GrassmannMPS, B::GrassmannMPS...; 
+            cache=environments(lattice, A, B...))
+    pos1, pos2 = index(lattice, i, conj=false, branch=:+, band=1), index(lattice, i, conj=true, branch=:-, band=1)
+    pos1′, pos2′ = index(lattice, i, conj=false, branch=:+, band=2), index(lattice, i, conj=true, branch=:-, band=2)
+    t = GTerm(pos1, pos2, pos1′, pos2′, coeff=1)
+    return expectationvalue(t, cache)
+end
+
+
 function main(t::Real; U=1., ϵ_d=U/2, δt=0.05, β=40, δτ=0.1, order=10, chi=100)
 	D = 2.
 	β = convert(Float64, β)
@@ -69,10 +102,16 @@ function main(t::Real; U=1., ϵ_d=U/2, δt=0.05, β=40, δτ=0.1, order=10, chi=
 	@time g₃ = [cached_Gm(lattice, k, 1, mpsK, mpsI1, mpsI2, c1=false, c2=true, b1=:τ, b2=:τ, band=band, cache=cache) for k in 1:Nτ+1]
 
 
+	@time nup_ = [cached_nup(lattice, i, mpsK, mpsI1, mpsI2, cache=cache) for i in 1:lattice.Nt]
+	@time ndown_ = [cached_ndown(lattice, i, mpsK, mpsI1, mpsI2, cache=cache) for i in 1:lattice.Nt]
+	@time nn_ = [cached_nn(lattice, i, mpsK, mpsI1, mpsI2, cache=cache) for i in 1:lattice.Nt]
+	@time vacuum_ = [cached_vacuum(lattice, i, mpsK, mpsI1, mpsI2, cache=cache) for i in 1:lattice.Nt]
+
 
 	data_path = "result/mixed_beta$(β)_dtau$(δτ)_t$(t)_dt$(δt)_U$(U)_mu$(ϵ_d)_order$(order)_chi$(chi).json"
 
-	results = Dict("ts"=>ts, "taus"=>τs, "bd"=>bond_dimensions(mpsI1), "gt"=>g₁, "lt"=>g₂, "gtau"=>g₃)
+	results = Dict("ts"=>ts, "taus"=>τs, "bd"=>bond_dimensions(mpsI1), "gt"=>g₁, "lt"=>g₂, "gtau"=>g₃,
+					"nup"=>real(nup_), "ndown"=>real(ndown_), "nn"=>real(nn_), "vacuum"=>real(vacuum_))
 
 	println("save results to ", data_path)
 
