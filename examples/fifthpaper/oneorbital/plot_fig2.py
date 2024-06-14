@@ -82,7 +82,7 @@ ax.set_ylabel(r'$\bar{n}-1$', fontsize=fontsize)
 ax.tick_params(axis='both', which='major', labelsize=labelsize)
 ax.locator_params(axis='both', nbins=6)
 ax.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-
+ax.legend(fontsize=12)
 
 
 
