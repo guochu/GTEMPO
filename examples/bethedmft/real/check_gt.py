@@ -36,17 +36,19 @@ step = 1
 
 fig, ax = plt.subplots(1,1, figsize=(8, 7))
 
-t = 3
-data1 = read_tempo(beta, t, step)
-ax.plot(data1[:,0], data1[:, 2], ls='--', color='r', linewidth=2, label=r'GTEMPO')
-
 t = 5
 data1 = read_tempo(beta, t, step)
-ax.plot(data1[:,0], data1[:, 2], ls='--', color='k', linewidth=2, label=r'GTEMPO')
+ax.plot(data1[:,0], data1[:, 2], ls='--', color='r', linewidth=2, label=r'$t=%s$'%(t))
 
-ax.set_xlim(0, 10)
+t = 10
+data1 = read_tempo(beta, t, step)
+ax.plot(data1[:,0], data1[:, 2], ls='--', color='k', linewidth=2, label=r'$t=%s$'%(t))
+
+ax.set_xlim(0, 20)
 
 ax.set_title(r'$G({\tau})$,step=%s'%(step), fontsize=fontsize)
+
+ax.legend(fontsize=12)
 
 plt.tight_layout(pad=0.5)
 
