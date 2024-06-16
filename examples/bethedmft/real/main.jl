@@ -34,8 +34,8 @@ function main(; β=10., δτ=0.1, t=2., δt=0.05, U=1., ϵ_d=U/2, chi=100)
 	exact_model = SISB(bath, U=U, μ=-ϵ_d)
 
 	# initial guess for Δiw
-	lb = -20.
-	ub = 20.
+	lb = -5.
+	ub = 5.
 	dw = 1.0e-4
 	freqs = collect(frequencies(lb=lb, ub=ub, dw=dw))
 	Jw =  [toulouse_Jw(spectrum_func(D), ω) for ω in freqs]

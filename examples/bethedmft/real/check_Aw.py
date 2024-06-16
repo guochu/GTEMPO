@@ -28,8 +28,8 @@ color1 = 'r'
 
 
 beta = 1
-t = 3
-step = 4
+t = 10
+step = 2
 
 data1 = read_tempo(beta, t, step)
 
@@ -39,6 +39,7 @@ fig, ax = plt.subplots(1,1, figsize=(8, 7))
 
 ax.plot(data1[:,0], data1[:, 1], ls='--', color='r', linewidth=2, label=r'GTEMPO')
 
+ax.set_xlim(-3, 3)
 
 plt.tight_layout(pad=0.5)
 

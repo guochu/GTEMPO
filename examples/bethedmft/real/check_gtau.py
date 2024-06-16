@@ -34,8 +34,8 @@ color1 = 'r'
 
 
 beta = 1
-t = 3
-step = 4
+t = 10
+step = 2
 
 data1 = read_rtempo(beta, t, step)
 betas1 = linspace(0, beta, num=len(data1))

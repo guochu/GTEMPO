@@ -29,7 +29,7 @@ color1 = 'r'
 
 beta = 1
 
-step = 1
+step = 2
 
 
 
@@ -44,7 +44,7 @@ t = 10
 data1 = read_tempo(beta, t, step)
 ax.plot(data1[:,0], data1[:, 2], ls='--', color='k', linewidth=2, label=r'$t=%s$'%(t))
 
-ax.set_xlim(0, 20)
+ax.set_xlim(0, 50)
 
 ax.set_title(r'$G({\tau})$,step=%s'%(step), fontsize=fontsize)
 
