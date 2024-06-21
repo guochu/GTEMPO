@@ -29,7 +29,7 @@ color1 = 'r'
 
 beta = 1
 t = 10
-step = 2
+step = 10
 
 data1 = read_tempo(beta, t, step)
 
