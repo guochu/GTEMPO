@@ -1,12 +1,52 @@
 ###--------------imaginary time----------------
-function Gτ(lattice::ImagGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...;
+function gf(lattice::AbstractGrassmannLattice, a::ContourIndex, b::ContourIndex, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
+                alg::IntegrationAlgorithm=ExactIntegrate(), Z::Number = integrate(lattice, A, B..., alg=alg))
+    pos1, pos2 = lattice[a], lattice[b]
+    t = GTerm(pos1, pos2, coeff=1)
+    A2 = _mult_A(t, A)
+    return integrate(lattice, A2, B..., alg=alg)/Z    
+end
+
+function contour_ordered_gf(lattice::AbstractGrassmannLattice, a::ContourIndex, b::ContourIndex, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
+                            alg::IntegrationAlgorithm=ExactIntegrate(), Z::Real = integrate(lattice, A, B..., alg=alg)) 
+    ((!a.conj) && (b.conj)) || throw(ArgumentError("conj(a)=false and conj(b)=true should be satisfied"))
+    return (a < b) ? -gf(lattice, b, a, A, B...; alg=alg, Z=Z) : gf(lattice, a, b, A, B...; alg=alg, Z=Z) 
+end
+
+function Gτ(lattice::ImagGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
             band::Int=1, c1::Bool=false, c2::Bool=true, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Real = integrate(lattice, A, B..., alg=alg))
-	pos1, pos2 = index(lattice, i, conj=c1, band=band), index(lattice, j, conj=c2, band=band)
-	t = GTerm(pos1, pos2, coeff=1)
-	A2 = _mult_A(t, A)
-	return integrate(lattice, A2, B..., alg=alg)/Z
+    a, b = ContourIndex(i, conj=c1, branch=:τ, band=band), ContourIndex(j, conj=c2, branch=:τ, band=band)
+    return gf(lattice, a, b, A, B...; alg=alg, Z=Z)
 end
 Gτ(lattice::ImagGrassmannLattice, i::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...) = Gτ(lattice, i, 1, A, B...; kwargs...)
+
+###--------------real time 1 order----------------
+function Gt(lattice::RealGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
+            b1::Symbol, b2::Symbol, c1::Bool=true, c2::Bool=false, band::Int=1, 
+            alg::IntegrationAlgorithm=ExactIntegrate(), 
+            Z::Number = integrate(lattice, A, B..., alg=alg))
+    a, b = ContourIndex(i, conj=c1, branch=b1, band=band), ContourIndex(j, conj=c2, branch=b2, band=band)
+    return gf(lattice, a, b, A, B...; alg=alg, Z=Z)
+end
+
+###--------------mixed time 1 order----------------
+
+"""
+    Gm(lattice::MixedGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...)
+
+Mixed time Green's functions
+"""
+function Gm(lattice::MixedGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
+            b1::Symbol, b2::Symbol, c1::Bool=true, c2::Bool=false, band::Int=1, 
+            alg::IntegrationAlgorithm=ExactIntegrate(), 
+            Z::Number = integrate(lattice, A, B..., alg=alg))
+    
+    a, b = ContourIndex(i, conj=c1, branch=b1, band=band), ContourIndex(j, conj=c2, branch=b2, band=band)
+    return gf(lattice, a, b, A, B...; alg=alg, Z=Z)
+end
+
+########************************#######
+
 
 function parallel_Gτ(lattice::ImagGrassmannLattice, i::Int, j::Int, A::Vector{<:GrassmannMPS}, B::GrassmannMPS...; 
             band::Int=1, c1::Bool=false, c2::Bool=true, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Real = parallel_integrate(lattice, A, B..., alg=alg) )
@@ -37,36 +77,6 @@ function parallel_Gτ(lattice::ImagGrassmannLattice1Order, A::Union{GrassmannMPS
     end
     parallel_run(lattice.k-1, Threads.nthreads(), _f, g, lattice, A, B...; Z=Z, band=band, alg=alg)
     g[end] = 1 - g[1]
-    return g
-end
-
-###--------------real time 1 order----------------
-function Gt(lattice::RealGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
-            b1::Symbol, b2::Symbol, c1::Bool=true, c2::Bool=false, band::Int=1, 
-            alg::IntegrationAlgorithm=ExactIntegrate(), 
-            Z::Number = integrate(lattice, A, B..., alg=alg))
-    pos1, pos2 = index(lattice, i, conj=c1, branch=b1, band=band), index(lattice, j, conj=c2, branch=b2, band=band)
-    t = GTerm(pos1, pos2, coeff=1)
-    A2 = _mult_A(t, A)
-    g = integrate(lattice, A2, B..., alg=alg)/Z
-    return g
-end
-
-###--------------mixed time 1 order----------------
-
-"""
-    Gm(lattice::MixedGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...)
-
-Mixed time Green's functions
-"""
-function Gm(lattice::MixedGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
-            b1::Symbol, b2::Symbol, c1::Bool=true, c2::Bool=false, band::Int=1, 
-            alg::IntegrationAlgorithm=ExactIntegrate(), 
-            Z::Number = integrate(lattice, A, B..., alg=alg))
-    pos1, pos2 = index(lattice, i, conj=c1, branch=b1, band=band), index(lattice, j, conj=c2, branch=b2, band=band)
-    t = GTerm(pos1, pos2, coeff=1)
-    A2 = _mult_A(t, A)
-    g = integrate(lattice, A2, B..., alg=alg)/Z
     return g
 end
 
