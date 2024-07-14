@@ -11,7 +11,7 @@ export GrassmannTransferMatrix
 
 # Ordering of grasmann numbers
 export GrassmannOrdering, ImagGrassmannOrdering, RealGrassmannOrdering, MixedGrassmannOrdering
-export AbstractGrassmannLattice, ImagGrassmannLattice, RealGrassmannLattice, MixedGrassmannLattice
+export AbstractGrassmannLattice, ImagGrassmannLattice, RealGrassmannLattice, MixedGrassmannLattice, ContourIndex
 export branches, matchindices, indexmappings, swapbandperm, swapband!, swapband
 export OrderingStyle, ConjugationStyle, AdjacentConjugation, GeneralConjugation
 export LayoutStyle, TimeLocalLayout, BandLocalLayout, BranchLocalLayout
@@ -39,7 +39,7 @@ export hybriddynamics, hybriddynamics!, hybriddynamicsstepper, hybriddynamicsste
 # GF and other observables
 export Gτ, parallel_Gτ, Gt, parallel_Gt, Gm, greater, lesser
 export occupation, electriccurrent, electriccurrent_fast
-export cached_Gτ, cached_Gt, cached_Gm, cached_greater, cached_lesser
+export cached_Gτ, cached_Gt, cached_Gm, cached_greater, cached_lesser, cached_contour_ordered_gf
 export cached_occupation, cached_electriccurrent, cached_electriccurrent_fast
 
 # utilities for TEMPO

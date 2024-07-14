@@ -2,6 +2,20 @@ println("------------------------------------")
 println("|          GrassmannLattice        |")
 println("------------------------------------")
 
+
+@testset "Contour Index" begin
+	a = ContourIndex(1, conj=true, branch=:+)
+	for branch in (:-, :τ)
+		b = ContourIndex(1, conj=true, branch=branch)
+		@test a < b
+	end
+	@test ContourIndex(1, conj=true, branch=:-) > ContourIndex(1, conj=true, branch=:+)
+	@test ContourIndex(1, conj=true, branch=:-) < ContourIndex(1, conj=true, branch=:τ)	
+	@test ContourIndex(1, conj=true, branch=:+) < ContourIndex(2, conj=true, branch=:+)
+	@test ContourIndex(1, conj=true, branch=:τ) < ContourIndex(2, conj=true, branch=:τ)
+	@test ContourIndex(1, conj=true, branch=:-) > ContourIndex(2, conj=true, branch=:-)
+end
+
 @testset "GrassmannLattice: imaginary time A1B1B1A1" begin
 	# a\bar{a} a_2\bar{a}_2 a_1\bar{a}_1
 	lattice = GrassmannLattice(N=1, δτ=0.1, contour=:imag, ordering=ABBA())

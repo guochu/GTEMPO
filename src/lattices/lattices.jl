@@ -4,6 +4,7 @@ include("branch.jl")
 abstract type AbstractGrassmannLattice{O <: GrassmannOrdering} end
 
 index(x::AbstractGrassmannLattice, args...; kwargs...) = error("index not implemented for grassmann lattice type $(typeof(x))")
+Base.getindex(x::AbstractGrassmannLattice, a::ContourIndex) = index(x, a.j, conj=a.conj, branch=branch(a), band=a.band)
 OrderingStyle(::Type{<:AbstractGrassmannLattice{O}}) where O = O()
 ConjugationStyle(::Type{<:AbstractGrassmannLattice{O}}) where O = ConjugationStyle(O)
 LayoutStyle(::Type{<:AbstractGrassmannLattice{O}}) where O = LayoutStyle(O)
