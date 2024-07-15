@@ -8,8 +8,7 @@ end
 function cached_contour_ordered_gf(lattice::AbstractGrassmannLattice, a::ContourIndex, b::ContourIndex, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
                                     cache::AbstractExpectationCache=environments(lattice, A, B...), kwargs...) 
     ((!a.conj) && (b.conj)) || throw(ArgumentError("conj(a)=false and conj(b)=true should be satisfied"))
-    r = (a < b) ? -cached_gf(lattice, b, a, A, B...; cache=cache, kwargs...) : cached_gf(lattice, a, b, A, B...; cache=cache, kwargs...) 
-    return -im * r
+    return (a < b) ? -cached_gf(lattice, b, a, A, B...; cache=cache, kwargs...) : cached_gf(lattice, a, b, A, B...; cache=cache, kwargs...) 
 end
 
 # imaginary time

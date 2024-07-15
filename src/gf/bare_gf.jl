@@ -10,8 +10,7 @@ end
 function contour_ordered_gf(lattice::AbstractGrassmannLattice, a::ContourIndex, b::ContourIndex, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
                             alg::IntegrationAlgorithm=ExactIntegrate(), Z::Real = integrate(lattice, A, B..., alg=alg)) 
     ((!a.conj) && (b.conj)) || throw(ArgumentError("conj(a)=false and conj(b)=true should be satisfied"))
-    r = (a < b) ? -gf(lattice, b, a, A, B...; alg=alg, Z=Z) : gf(lattice, a, b, A, B...; alg=alg, Z=Z) 
-    return -im * r
+    return (a < b) ? -gf(lattice, b, a, A, B...; alg=alg, Z=Z) : gf(lattice, a, b, A, B...; alg=alg, Z=Z) 
 end
 
 function Gτ(lattice::ImagGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
