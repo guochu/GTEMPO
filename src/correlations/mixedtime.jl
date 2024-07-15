@@ -1,10 +1,11 @@
+abstract type AbstractMixedCorrelationFunction <: AbstractCorrelationFunction end
 """
 	struct MixedCorrelationFunction
 
 Correlations on the L-shaped contour,
 there are 9 of them due to the double integral
 """
-struct MixedCorrelationFunction <: AbstractCorrelationFunction
+struct MixedCorrelationFunction <: AbstractMixedCorrelationFunction
     # real time
     ηⱼₖ::Vector{ComplexF64}
     ηₖⱼ::Vector{ComplexF64}
@@ -16,7 +17,7 @@ struct MixedCorrelationFunction <: AbstractCorrelationFunction
     ζₖⱼ::Matrix{ComplexF64}
 end
 
-function Base.show(io::IO, ::MIME"text/plain", A::MixedCorrelationFunction)
+function Base.show(io::IO, ::MIME"text/plain", A::AbstractMixedCorrelationFunction)
     print(io, "Mixed Correlation Function [$(isize(A))+$(rsize(A))]")
 end
 
@@ -151,6 +152,49 @@ function index(A::MixedCorrelationFunction, i::Int, j::Int; b1::Symbol, b2::Symb
     end
 end
 
+function branch(x::MixedCorrelationFunction; b1::Symbol, b2::Symbol)
+    @boundscheck begin
+        (b1 in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
+        (b2 in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
+    end
+    if b1 == :+ 
+        if b2 == :+
+            return CorrelationMatrix(x.ηⱼₖ, x.ηₖⱼ)
+        elseif b2 == :-
+            ηₖⱼ = -(x.ηₖⱼ)
+            ηⱼₖ = conj(ηₖⱼ)
+            ηⱼₖ[1] = ηₖⱼ[1]
+            return CorrelationMatrix(ηⱼₖ, ηₖⱼ)
+        else
+            return -im*x.ζₖⱼ
+        end
+    elseif b1 == :-
+        if b2 == :+
+            ηⱼₖ = -x.ηⱼₖ
+            ηₖⱼ = -conj(x.ηₖⱼ)
+            ηₖⱼ[1] = ηⱼₖ[1]
+            return CorrelationMatrix(ηⱼₖ, ηₖⱼ)
+        elseif b2 == :-
+            ηⱼₖ = conj(x.ηⱼₖ)
+            ηⱼₖ[1] = x.ηⱼₖ[1]
+            ηₖⱼ = conj(x.ηₖⱼ)
+            ηₖⱼ[1] = x.ηₖⱼ[1]
+            return CorrelationMatrix(ηⱼₖ, ηₖⱼ)
+        else
+            return im*x.ζₖⱼ
+        end
+    else
+        if b2 == :+
+            return -im*x.ζⱼₖ
+        elseif b2 == :-
+            return im*x.ζⱼₖ
+        else
+            ηⱼₖ = -x.ξⱼₖ
+            ηₖⱼ = -x.ξₖⱼ
+            return CorrelationMatrix(ηⱼₖ, ηₖⱼ)
+        end
+    end
+end
 
 # mixed part lⱼₖ for G31 and lₖⱼ for G13
 function _lⱼₖ(f, j::Int, k::Int, ε::Float64, δt, δτ)

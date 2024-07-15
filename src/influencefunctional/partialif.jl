@@ -26,7 +26,7 @@ end
 
 real-time MPS-IF for a single band 
 """
-function hybriddynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::MixedCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
+function hybriddynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::AbstractMixedCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
 	kt, Nτ = lattice.kt, lattice.Nτ
 	for b1 in (:+, :-)
 		for i in 1:kt
