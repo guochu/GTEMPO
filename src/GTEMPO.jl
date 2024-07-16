@@ -46,6 +46,7 @@ export cached_occupation, cached_electriccurrent, cached_electriccurrent_fast
 # exact models
 export AbstractImpurityModel, SISB, SIDB, IRLM, SKIM, boundarycondition!, boundarycondition, boundarycondition_branching
 export systhermalstate, systhermalstate!, sysdynamics, sysdynamics!, sysdynamicsstepper!, accsysdynamics, accsysdynamics_fast
+export sysdynamics_forward!, sysdynamics_backward!, sysdynamics_imaginary!
 export zoomin, zoomout
 export ImpurityHamiltonian, tunneling, interaction, TunnelingTerm, InteractionTerm
 
