@@ -90,7 +90,7 @@ function main_partial(t; ϵ_d=0, β=20., order=7, δt = 0.05, chi=50)
 	mpsK = boundarycondition(mpsK, lattice, band=1)
 
 	S = _entropies(mpsI)
-	println(S)
+
 	cache = environments(lattice, mpsK, mpsI)
 
 	greater = [cached_Gt(lattice, k, 1, mpsK, mpsI, cache=cache, c1=false, c2=true, b1=:+, b2=:+, band=1) for k in 2:lattice.k]
