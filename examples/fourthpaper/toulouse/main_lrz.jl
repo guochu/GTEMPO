@@ -44,9 +44,9 @@ end
 
 # Γ = 0.1
 
-function main_partial(t; ϵ_d=0, β=20., order=7, δt = 0.05)
+function main_partial(t; ϵ_d=0, β=20., order=7, δt = 0.05, chi=50)
 	D = 2.
-	χ = 50
+	χ = chi
 
 	N = round(Int, t / δt)
 
@@ -84,7 +84,7 @@ function main_partial(t; ϵ_d=0, β=20., order=7, δt = 0.05)
 
 	ts = [i*δt for i in 1:N]
 
-	data_path = "result/lrz_partial_if_mu$(ϵ_d)_beta$(β)_dt$(δt)_N$(N)_order$(order).json"
+	data_path = "result/lrz_partial_if_mu$(ϵ_d)_beta$(β)_dt$(δt)_N$(N)_order$(order)_chi$(chi).json"
 	results = Dict("ts"=>ts, "gt"=>greater, "lt"=>lesser, "bd"=>bds, "ns"=>ns, "time"=>_t)
 	println("save results to path ", data_path)
 	open(data_path, "w") do f
@@ -108,9 +108,9 @@ function main_partial_vs_order()
 	end
 end
 
-function main_ti(t; ϵ_d=0, β = 20., order=7, prony=5, k=5, δt = 0.05)
+function main_ti(t; ϵ_d=0, β = 20., order=7, prony=5, k=5, δt = 0.05, chi=50)
 	D = 2.
-	χ = 50
+	χ = chi
 
 	N = round(Int, t / δt)
 
@@ -152,7 +152,7 @@ function main_ti(t; ϵ_d=0, β = 20., order=7, prony=5, k=5, δt = 0.05)
 
 	ts = [i*δt for i in 1:N]
 
-	data_path = "result/lrz_ti_if_mu$(ϵ_d)_beta$(β)_dt$(δt)_N$(N)_order$(order)_prony$(prony)_k$(k).json"
+	data_path = "result/lrz_ti_if_mu$(ϵ_d)_beta$(β)_dt$(δt)_N$(N)_order$(order)_prony$(prony)_k$(k)_chi$(chi).json"
 	println("save results to path ", data_path)
 	results = Dict("ts"=>ts, "gt"=>greater, "lt"=>lesser, "bd"=>bds, "ns"=>ns, "time"=>_t)
 	open(data_path, "w") do f

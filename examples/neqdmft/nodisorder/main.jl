@@ -99,117 +99,117 @@ function main(; β=10., δτ=0.1, t=2., δt=0.05, U=1., ϵ_d=U/2, chi=100)
 
 end
 
-function test(; β=10., δτ=0.1, t=2., δt=0.05, U=1., ϵ_d=U/2, chi=100)
-	Nτ = round(Int, β / δτ)
-	Nt = round(Int, t / δt)
-	total_t = 2.
-	δt = 0.05
+# function test(; β=10., δτ=0.1, t=2., δt=0.05, U=1., ϵ_d=U/2, chi=100)
+# 	Nτ = round(Int, β / δτ)
+# 	Nt = round(Int, t / δt)
+# 	total_t = 2.
+# 	δt = 0.05
 	
-	Dh = 0.5
-	D = 2 * Dh
-	μ = 0.
+# 	Dh = 0.5
+# 	D = 2 * Dh
+# 	μ = 0.
 
-	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
+# 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
 
-	mpath = "beta$(round(Int, β))t$(round(Int, t))/"
+# 	mpath = "beta$(round(Int, β))t$(round(Int, t))/"
 
-	lattice = GrassmannLattice(Nτ=Nτ, δτ=δτ, δt=δt, Nt=Nt, bands=1, contour=:mixed)
+# 	lattice = GrassmannLattice(Nτ=Nτ, δτ=δτ, δt=δt, Nt=Nt, bands=1, contour=:mixed)
 
-	# initial guess for Δiw
-	bath = fermionicbath(spectrum_func(D), β=β, μ=0)
-	exact_model = SISB(bath, U=U, μ=-ϵ_d)
+# 	# initial guess for Δiw
+# 	bath = fermionicbath(spectrum_func(D), β=β, μ=0)
+# 	exact_model = SISB(bath, U=U, μ=-ϵ_d)
 
-	# initial guess for Δiw
-	lb = -5.
-	ub = 5.
-	dw = 1.0e-4
-	freqs = collect(frequencies(lb=lb, ub=ub, dw=dw))
-	Jw =  [toulouse_Jw(spectrum_func(D), ω) for ω in freqs]
-
-
-	mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
-	for band in 1:lattice.bands
-		mpsK = boundarycondition(mpsK, lattice, band=band)
-	end
+# 	# initial guess for Δiw
+# 	lb = -5.
+# 	ub = 5.
+# 	dw = 1.0e-4
+# 	freqs = collect(frequencies(lb=lb, ub=ub, dw=dw))
+# 	Jw =  [toulouse_Jw(spectrum_func(D), ω) for ω in freqs]
 
 
-
-	spec = SpectrumFunction(freqs, Jw)
-	bath = fermionicbath(spec, β=β, μ=0)
-	corr = correlationfunction(bath, lattice)
-
-
-	mpsI = hybriddynamics(lattice, corr, trunc=trunc, band=1)
-
-	# compute observable
-	cache = environments(lattice, mpsK, mpsI)
-
-	@time gfs = cached_Gm(lattice, mpsK, mpsI, cache=cache) 
-
-	return gfs
-end
+# 	mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
+# 	for band in 1:lattice.bands
+# 		mpsK = boundarycondition(mpsK, lattice, band=band)
+# 	end
 
 
-function test2(; β=10., δτ=0.1, t=2., δt=0.05, U=1., ϵ_d=U/2, chi=100)
-	Nτ = round(Int, β / δτ)
-	Nt = round(Int, t / δt)
-	total_t = 2.
-	δt = 0.05
+
+# 	spec = SpectrumFunction(freqs, Jw)
+# 	bath = fermionicbath(spec, β=β, μ=0)
+# 	corr = correlationfunction(bath, lattice)
+
+
+# 	mpsI = hybriddynamics(lattice, corr, trunc=trunc, band=1)
+
+# 	# compute observable
+# 	cache = environments(lattice, mpsK, mpsI)
+
+# 	@time gfs = cached_Gm(lattice, mpsK, mpsI, cache=cache) 
+
+# 	return gfs
+# end
+
+
+# function test2(; β=10., δτ=0.1, t=2., δt=0.05, U=1., ϵ_d=U/2, chi=100)
+# 	Nτ = round(Int, β / δτ)
+# 	Nt = round(Int, t / δt)
+# 	total_t = 2.
+# 	δt = 0.05
 	
-	Dh = 0.5
-	D = 2 * Dh
-	μ = 0.
+# 	Dh = 0.5
+# 	D = 2 * Dh
+# 	μ = 0.
 
-	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
+# 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
 
-	mpath = "beta$(round(Int, β))t$(round(Int, t))/"
+# 	mpath = "beta$(round(Int, β))t$(round(Int, t))/"
 
-	lattice = GrassmannLattice(Nτ=Nτ, δτ=δτ, δt=δt, Nt=Nt, bands=2, contour=:mixed)
+# 	lattice = GrassmannLattice(Nτ=Nτ, δτ=δτ, δt=δt, Nt=Nt, bands=2, contour=:mixed)
 
-	# initial guess for Δiw
-	bath = fermionicbath(spectrum_func(D), β=β, μ=0)
-	exact_model = SISB(bath, U=U, μ=-ϵ_d)
+# 	# initial guess for Δiw
+# 	bath = fermionicbath(spectrum_func(D), β=β, μ=0)
+# 	exact_model = SISB(bath, U=U, μ=-ϵ_d)
 
-	# initial guess for Δiw
-	lb = -5.
-	ub = 5.
-	dw = 1.0e-4
-	freqs = collect(frequencies(lb=lb, ub=ub, dw=dw))
-	Jw =  [toulouse_Jw(spectrum_func(D), ω) for ω in freqs]
-
-
-	mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
-	for band in 1:lattice.bands
-		mpsK = boundarycondition(mpsK, lattice, band=band)
-	end
+# 	# initial guess for Δiw
+# 	lb = -5.
+# 	ub = 5.
+# 	dw = 1.0e-4
+# 	freqs = collect(frequencies(lb=lb, ub=ub, dw=dw))
+# 	Jw =  [toulouse_Jw(spectrum_func(D), ω) for ω in freqs]
 
 
-	spec = SpectrumFunction(freqs, Jw)
-	bath = fermionicbath(spec, β=β, μ=0)
-	corr = correlationfunction(bath, lattice)
+# 	mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
+# 	for band in 1:lattice.bands
+# 		mpsK = boundarycondition(mpsK, lattice, band=band)
+# 	end
 
 
-	mpsI1 = hybriddynamics(lattice, corr, trunc=trunc, band=1)
-	mpsI2 = swapband(mpsI1, lattice, 1, 2, trunc=trunc)
+# 	spec = SpectrumFunction(freqs, Jw)
+# 	bath = fermionicbath(spec, β=β, μ=0)
+# 	corr = correlationfunction(bath, lattice)
 
-	# compute observable
-	cache = environments(lattice, mpsK, mpsI1, mpsI2)
 
-	@time gfs = cached_Gm(lattice, mpsK, mpsI1, mpsI2, cache=cache) 
+# 	mpsI1 = hybriddynamics(lattice, corr, trunc=trunc, band=1)
+# 	mpsI2 = swapband(mpsI1, lattice, 1, 2, trunc=trunc)
 
-	###########general case##############
-	# compute Σiw from Giw and G₀iw
-	# compute lattice Giw
-	# compute lattice G₀iw
+# 	# compute observable
+# 	cache = environments(lattice, mpsK, mpsI1, mpsI2)
 
-	###########bethe lattice#############
-	Δw_new = [Dh^2 * Gj for Gj in gfs]
+# 	@time gfs = cached_Gm(lattice, mpsK, mpsI1, mpsI2, cache=cache) 
 
-	bhs = (:+, :-, :τ)
-	for (i, b1) in enumerate(bhs)
-		for (j, b2) in enumerate(bhs)
-			corrj = branch(corr, b1=b1, b2=b2)
-			println("error for btanch $i, $j is ", norm(Δw_new[i, j] - corrj) / norm(corrj) )
-		end
-	end
-end
+# 	###########general case##############
+# 	# compute Σiw from Giw and G₀iw
+# 	# compute lattice Giw
+# 	# compute lattice G₀iw
+
+# 	###########bethe lattice#############
+# 	Δw_new = [Dh^2 * Gj for Gj in gfs]
+
+# 	bhs = (:+, :-, :τ)
+# 	for (i, b1) in enumerate(bhs)
+# 		for (j, b2) in enumerate(bhs)
+# 			corrj = branch(corr, b1=b1, b2=b2)
+# 			println("error for btanch $i, $j is ", norm(Δw_new[i, j] - corrj) / norm(corrj) )
+# 		end
+# 	end
+# end

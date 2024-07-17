@@ -4,6 +4,7 @@
 include("../../../src/includes.jl")
 
 using JSON, QuadGK
+using DMRG: entanglement_spectrum
 
 
 function J(D::Real, ω::Real)
@@ -42,11 +43,23 @@ function main_analytic(t::Float64; ϵ_d=0, δt=0.05)
 	return g
 end
 
+function _entropies(psi::GrassmannMPS; kwargs...)
+	S = zeros(length(psi)-1)
+	for bond in 1:length(psi)-1
+		r = entanglement_spectrum(psi.s[bond+1])
+	    for i in 1:length(r)
+	        r[i] = r[i]^2
+	    end
+	    S[bond] = renyi_entropy(r; kwargs...)
+	end
+	return S
+end
+
 # Γ = 0.1
 
-function main_partial(t; ϵ_d=0, β=20., order=7, δt = 0.05)
+function main_partial(t; ϵ_d=0, β=20., order=7, δt = 0.05, chi=50)
 	D = 2.
-	χ = 50
+	χ = chi
 
 	N = round(Int, t / δt)
 
@@ -76,16 +89,18 @@ function main_partial(t; ϵ_d=0, β=20., order=7, δt = 0.05)
 	println("mpsK bond dimension is ", bond_dimension(mpsK))
 	mpsK = boundarycondition(mpsK, lattice, band=1)
 
+	S = _entropies(mpsI)
+	println(S)
 	cache = environments(lattice, mpsK, mpsI)
 
-	greater = [cached_Gt(lattice, k, 1, mpsK, mpsI, cache=cache, c1=false, c2=true, f1=true, f2=true, band=1) for k in 2:lattice.k]
-	lesser = [cached_Gt(lattice, 1, k, mpsK, mpsI, cache=cache, c1=true, c2=false, f1=false, f2=true, band=1) for k in 2:lattice.k]
+	greater = [cached_Gt(lattice, k, 1, mpsK, mpsI, cache=cache, c1=false, c2=true, b1=:+, b2=:+, band=1) for k in 2:lattice.k]
+	lesser = [cached_Gt(lattice, 1, k, mpsK, mpsI, cache=cache, c1=true, c2=false, b1=:-, b2=:+, band=1) for k in 2:lattice.k]
 	ns = cached_occupation(lattice, mpsK, mpsI, cache=cache)
 
 	ts = [i*δt for i in 1:N]
 
-	data_path = "result/partial_if_mu$(ϵ_d)_beta$(β)_dt$(δt)_N$(N)_order$(order).json"
-	results = Dict("ts"=>ts, "gt"=>greater, "lt"=>lesser, "bd"=>bds, "ns"=>ns, "time"=>_t)
+	data_path = "result/partial_if_mu$(ϵ_d)_beta$(β)_dt$(δt)_N$(N)_order$(order)_chi$(chi).json"
+	results = Dict("ts"=>ts, "gt"=>greater, "lt"=>lesser, "bd"=>bds, "ns"=>ns, "time"=>_t, "S"=>S)
 	println("save results to path ", data_path)
 	open(data_path, "w") do f
 		write(f, JSON.json(results))
@@ -108,9 +123,9 @@ function main_partial_vs_order()
 	end
 end
 
-function main_ti(t; ϵ_d=0, β = 20., order=7, prony=5, k=5, δt = 0.05)
+function main_ti(t; ϵ_d=0, β = 20., order=7, prony=5, k=5, δt = 0.05, chi=50)
 	D = 2.
-	χ = 50
+	χ = chi
 
 	N = round(Int, t / δt)
 
@@ -138,6 +153,7 @@ function main_ti(t; ϵ_d=0, β = 20., order=7, prony=5, k=5, δt = 0.05)
 	bds = bond_dimensions(mpsI)
 
 	println("mpsI bond dimension is ", bond_dimension(mpsI))
+	S = _entropies(mpsI)
 
 
 	@time mpsK = accsysdynamics_fast(lattice, exact_model, trunc=truncK)
@@ -146,15 +162,15 @@ function main_ti(t; ϵ_d=0, β = 20., order=7, prony=5, k=5, δt = 0.05)
 
 	cache = environments(lattice, mpsK, mpsI)
 
-	greater = [cached_Gt(lattice, k, 1, mpsK, mpsI, cache=cache, c1=false, c2=true, f1=true, f2=true, band=1) for k in 2:lattice.k]
-	lesser = [cached_Gt(lattice, 1, k, mpsK, mpsI, cache=cache, c1=true, c2=false, f1=false, f2=true, band=1) for k in 2:lattice.k]
+	greater = [cached_Gt(lattice, k, 1, mpsK, mpsI, cache=cache, c1=false, c2=true, b1=:+, b2=:+, band=1) for k in 2:lattice.k]
+	lesser = [cached_Gt(lattice, 1, k, mpsK, mpsI, cache=cache, c1=true, c2=false, b1=:-, b2=:+, band=1) for k in 2:lattice.k]
 	ns = cached_occupation(lattice, mpsK, mpsI, cache=cache)
 
 	ts = [i*δt for i in 1:N]
 
-	data_path = "result/ti_if_mu$(ϵ_d)_beta$(β)_dt$(δt)_N$(N)_order$(order)_prony$(prony)_k$(k).json"
+	data_path = "result/ti_if_mu$(ϵ_d)_beta$(β)_dt$(δt)_N$(N)_order$(order)_prony$(prony)_k$(k)_chi$(chi).json"
 	println("save results to path ", data_path)
-	results = Dict("ts"=>ts, "gt"=>greater, "lt"=>lesser, "bd"=>bds, "ns"=>ns, "time"=>_t)
+	results = Dict("ts"=>ts, "gt"=>greater, "lt"=>lesser, "bd"=>bds, "ns"=>ns, "time"=>_t, "S"=>S)
 	open(data_path, "w") do f
 		write(f, JSON.json(results))
 	end
