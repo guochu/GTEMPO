@@ -108,10 +108,10 @@ function main_partial(t; ϵ_d=0, β=20., order=7, δt = 0.05, chi=50)
 
 end
 
-function main_partial_vs_t(;chi=50)
+function main_partial_vs_t(;kwargs...)
 	main_partial(0.5)
 	for t in [10., 20., 30., 40., 50., 60.]
-		main_partial(t, chi=chi)
+		main_partial(t; kwargs...)
 	end
 end
 
@@ -178,10 +178,10 @@ function main_ti(t; ϵ_d=0, β = 20., order=7, prony=5, k=5, δt = 0.05, chi=50)
 end
 
 
-function main_ti_vs_t(;chi=50)
+function main_ti_vs_t(;kwargs...)
 	main_ti(0.5)
 	for t in [10., 20., 30., 40., 50., 60.]
-		main_ti(t, chi=chi)
+		main_ti(t; kwargs...)
 	end
 end
 
