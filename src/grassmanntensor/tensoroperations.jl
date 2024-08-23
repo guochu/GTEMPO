@@ -256,29 +256,93 @@ function contract!(C::GrassmannTensorMap,
     memcost2 += dA * (!hsp(A, (oindA, cindA′′))) +
                 dB * (!hsp(B, (cindB′′, oindB)))
 
-    # reverse order A en B, check possibilities for cind
-    memcost3 = memcost4 = dC * (!hsp(C, (oindBinC, oindAinC)))
-    memcost3 += dB * (!hsp(B, (oindB, cindB′))) +
-                dA * (!hsp(A, (cindA′, oindA)))
-    memcost4 += dB * (!hsp(B, (oindB, cindB′′))) +
-                dA * (!hsp(A, (cindA′′, oindA)))
 
-    if min(memcost1, memcost2) <= min(memcost3, memcost4)
-        if memcost1 <= memcost2
-            return _contract!(α, A, B, β, C, oindA, cindA′, oindB, cindB′, p₁, p₂)
-        else
-            return _contract!(α, A, B, β, C, oindA, cindA′′, oindB, cindB′′, p₁, p₂)
-        end
+    if memcost1 <= memcost2
+        return _contract!(α, A, B, β, C, oindA, cindA′, oindB, cindB′, p₁, p₂)
     else
-        p1′ = map(n -> ifelse(n > N₁, n - N₁, n + N₂), p₁)
-        p2′ = map(n -> ifelse(n > N₁, n - N₁, n + N₂), p₂)
-        if memcost3 <= memcost4
-            return _contract!(α, B, A, β, C, oindB, cindB′, oindA, cindA′, p1′, p2′)
-        else
-            return _contract!(α, B, A, β, C, oindB, cindB′′, oindA, cindA′′, p1′, p2′)
-        end
+        return _contract!(α, A, B, β, C, oindA, cindA′′, oindB, cindB′′, p₁, p₂)
     end
+
+    # # reverse order A en B, check possibilities for cind
+    # memcost3 = memcost4 = dC * (!hsp(C, (oindBinC, oindAinC)))
+    # memcost3 += dB * (!hsp(B, (oindB, cindB′))) +
+    #             dA * (!hsp(A, (cindA′, oindA)))
+    # memcost4 += dB * (!hsp(B, (oindB, cindB′′))) +
+    #             dA * (!hsp(A, (cindA′′, oindA)))
+
+    # if min(memcost1, memcost2) <= min(memcost3, memcost4)
+    #     if memcost1 <= memcost2
+    #         return _contract!(α, A, B, β, C, oindA, cindA′, oindB, cindB′, p₁, p₂)
+    #     else
+    #         return _contract!(α, A, B, β, C, oindA, cindA′′, oindB, cindB′′, p₁, p₂)
+    #     end
+    # else
+    #     p1′ = map(n -> ifelse(n > N₁, n - N₁, n + N₂), p₁)
+    #     p2′ = map(n -> ifelse(n > N₁, n - N₁, n + N₂), p₂)
+    #     if memcost3 <= memcost4
+    #         return _contract!(α, B, A, β, C, oindB, cindB′, oindA, cindA′, p1′, p2′)
+    #     else
+    #         return _contract!(α, B, A, β, C, oindB, cindB′′, oindA, cindA′′, p1′, p2′)
+    #     end
+    # end
 end
+
+# function contract!(C::GrassmannTensorMap,
+#                    A::GrassmannTensorMap,
+#                    (oindA, cindA)::Index2Tuple{N₁,N₃},
+#                    B::GrassmannTensorMap,
+#                    (cindB, oindB)::Index2Tuple{N₃,N₂},
+#                    (p₁, p₂)::Index2Tuple,
+#                    α::Number,
+#                    β::Number,
+#                    backend::Backend...) where {N₁,N₂,N₃}
+    
+#     # find optimal contraction scheme
+#     hsp = TK.has_shared_permute
+#     ipC = TupleTools.invperm((p₁..., p₂...))
+#     oindAinC = TupleTools.getindices(ipC, ntuple(n -> n, N₁))
+#     oindBinC = TupleTools.getindices(ipC, ntuple(n -> n + N₁, N₂))
+
+#     qA = TupleTools.sortperm(cindA)
+#     cindA′ = TupleTools.getindices(cindA, qA)
+#     cindB′ = TupleTools.getindices(cindB, qA)
+
+#     qB = TupleTools.sortperm(cindB)
+#     cindA′′ = TupleTools.getindices(cindA, qB)
+#     cindB′′ = TupleTools.getindices(cindB, qB)
+
+#     dA, dB, dC = dim(A.data), dim(B.data), dim(C.data)
+
+#     # keep order A en B, check possibilities for cind
+#     memcost1 = memcost2 = dC * (!hsp(C, (oindAinC, oindBinC)))
+#     memcost1 += dA * (!hsp(A, (oindA, cindA′))) +
+#                 dB * (!hsp(B, (cindB′, oindB)))
+#     memcost2 += dA * (!hsp(A, (oindA, cindA′′))) +
+#                 dB * (!hsp(B, (cindB′′, oindB)))
+
+#     # reverse order A en B, check possibilities for cind
+#     memcost3 = memcost4 = dC * (!hsp(C, (oindBinC, oindAinC)))
+#     memcost3 += dB * (!hsp(B, (oindB, cindB′))) +
+#                 dA * (!hsp(A, (cindA′, oindA)))
+#     memcost4 += dB * (!hsp(B, (oindB, cindB′′))) +
+#                 dA * (!hsp(A, (cindA′′, oindA)))
+
+#     if min(memcost1, memcost2) <= min(memcost3, memcost4)
+#         if memcost1 <= memcost2
+#             return _contract!(α, A, B, β, C, oindA, cindA′, oindB, cindB′, p₁, p₂)
+#         else
+#             return _contract!(α, A, B, β, C, oindA, cindA′′, oindB, cindB′′, p₁, p₂)
+#         end
+#     else
+#         p1′ = map(n -> ifelse(n > N₁, n - N₁, n + N₂), p₁)
+#         p2′ = map(n -> ifelse(n > N₁, n - N₁, n + N₂), p₂)
+#         if memcost3 <= memcost4
+#             return _contract!(α, B, A, β, C, oindB, cindB′, oindA, cindA′, p1′, p2′)
+#         else
+#             return _contract!(α, B, A, β, C, oindB, cindB′′, oindA, cindA′′, p1′, p2′)
+#         end
+#     end
+# end
 
 # TODO: also transform _contract! into new interface, and add backend support
 function _contract!(α, A::GrassmannTensorMap, B::GrassmannTensorMap,
