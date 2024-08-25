@@ -86,15 +86,15 @@ def mse_error(a, b):
 	return sqrt(v * v / L)
 	# return abs(diff).max()
 
-fontsize = 14
-labelsize = 12
+fontsize = 16
+labelsize = 14
 linewidth = 1.5
 markersize = 10
 
 colors = ['b', 'g', 'c', 'y', 'r']
 markers = ['o', '^', '+']
 
-fig, ax = plt.subplots(2, 2, figsize=(8,6))
+fig, ax = plt.subplots(2, 2, figsize=(8,7))
 
 t = 5.
 beta = 10.
@@ -106,7 +106,8 @@ chi = 120
 
 
 dt = 0.05
-all_dtau = [0.02, 0.1, 0.5]
+all_dtau = [0.004, 0.02, 0.1, 0.5]
+# all_dtau = [0.1, 0.5]
 
 errs_real = []
 errs_imag = []
@@ -121,19 +122,19 @@ for (i, dtau) in enumerate(all_dtau):
 	err_real = gf_real_analytic - gf_tempo
 	errs_real.append(mse_error(gf_real_analytic, gf_tempo))
 
-	ax[0,0].plot(ts_tempo, err_real, ls='--', color=colors[i], linewidth=linewidth, label=r'mixed, $\delta \tau=%s$'%(dtau))
+	ax[0,0].plot(ts_tempo, err_real, ls='--', color=colors[i], linewidth=linewidth, label=r'$\delta \tau=%s$'%(dtau))
 
 	err_imag = gf_imag_analytic - gtau
 	errs_imag.append(mse_error(gf_imag_analytic, gtau))
 
-	ax[1,0].plot(taus, err_imag, ls='--', color=colors[i], linewidth=linewidth, label=r'mixed, $\delta \tau=%s$'%(dtau))
+	ax[1,0].plot(taus, err_imag, ls='--', color=colors[i], linewidth=linewidth, label=r'$\delta \tau=%s$'%(dtau))
 
 
 ax[0,0].set_ylabel(r'$-{\rm Im}[G_{Ana}(t) - G(t)]$', fontsize=fontsize)
 ax[0,0].set_xlabel(r'$t$', fontsize=fontsize)
 ax[0,0].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[0,0].locator_params(axis='both', nbins=6)
-ax[0,0].annotate(r'(c)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
+ax[0,0].annotate(r'(a)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
 ax[0,0].legend(fontsize=12)
 
 
@@ -141,8 +142,8 @@ ax[1,0].set_ylabel(r'$G_{Ana}(\tau)-G(\tau)$', fontsize=fontsize)
 ax[1,0].set_xlabel(r'$\tau$', fontsize=fontsize)
 ax[1,0].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[1,0].locator_params(axis='both', nbins=6)
-ax[1,0].annotate(r'(d)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
-ax[1,0].legend(fontsize=12)
+ax[1,0].annotate(r'(c)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
+# ax[1,0].legend(fontsize=12)
 
 
 ax[0,0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
@@ -152,18 +153,18 @@ ax[1,0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 ax[0,1].loglog(all_dtau, errs_real, ls='--', color='k', linewidth=linewidth, markersize=markersize, marker='o', markerfacecolor='none')
 
-ax[0,1].set_ylabel(r'$\mathcal{E}$', fontsize=fontsize)
+ax[0,1].set_ylabel(r'$MSE error$', fontsize=fontsize)
 ax[0,1].set_xlabel(r'$\delta \tau$', fontsize=fontsize)
 ax[0,1].tick_params(axis='both', which='major', labelsize=labelsize)
 # ax[0,1].locator_params(axis='both', nbins=6)
-ax[0,1].annotate(r'(c)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
+ax[0,1].annotate(r'(b)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
 
 
 
 
 ax[1,1].loglog(all_dtau, errs_imag, ls='--', color='k', linewidth=linewidth, markersize=markersize, marker='o', markerfacecolor='none')
 
-ax[1,1].set_ylabel(r'$\mathcal{E}$', fontsize=fontsize)
+ax[1,1].set_ylabel(r'$MSE error$', fontsize=fontsize)
 ax[1,1].set_xlabel(r'$\delta \tau$', fontsize=fontsize)
 ax[1,1].tick_params(axis='both', which='major', labelsize=labelsize)
 # ax[0,1].locator_params(axis='both', nbins=6)
@@ -172,6 +173,6 @@ ax[1,1].annotate(r'(d)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fonts
 
 plt.tight_layout(pad=0.5)
 
-# plt.savefig('toulouse2.pdf', bbox_inches='tight')
+plt.savefig('toulouse2b.pdf', bbox_inches='tight')
 
 plt.show()
