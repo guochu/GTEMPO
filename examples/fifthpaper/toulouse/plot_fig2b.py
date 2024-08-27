@@ -83,8 +83,8 @@ def mse_error(a, b):
 	L = len(a)
 	diff = asarray(a) - asarray(b)
 	v = norm(diff)
-	return sqrt(v * v / L)
-	# return abs(diff).max()
+	# return sqrt(v * v / L)
+	return abs(diff).max()
 
 fontsize = 16
 labelsize = 14
@@ -105,7 +105,7 @@ order = 12
 chi = 120
 
 
-dt = 0.05
+dt = 0.02
 all_dtau = [0.004, 0.02, 0.1, 0.5]
 # all_dtau = [0.1, 0.5]
 
@@ -153,7 +153,7 @@ ax[1,0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 ax[0,1].loglog(all_dtau, errs_real, ls='--', color='k', linewidth=linewidth, markersize=markersize, marker='o', markerfacecolor='none')
 
-ax[0,1].set_ylabel(r'$MSE error$', fontsize=fontsize)
+ax[0,1].set_ylabel(r'MSE error', fontsize=fontsize)
 ax[0,1].set_xlabel(r'$\delta \tau$', fontsize=fontsize)
 ax[0,1].tick_params(axis='both', which='major', labelsize=labelsize)
 # ax[0,1].locator_params(axis='both', nbins=6)
@@ -164,7 +164,7 @@ ax[0,1].annotate(r'(b)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fonts
 
 ax[1,1].loglog(all_dtau, errs_imag, ls='--', color='k', linewidth=linewidth, markersize=markersize, marker='o', markerfacecolor='none')
 
-ax[1,1].set_ylabel(r'$MSE error$', fontsize=fontsize)
+ax[1,1].set_ylabel(r'MSE error', fontsize=fontsize)
 ax[1,1].set_xlabel(r'$\delta \tau$', fontsize=fontsize)
 ax[1,1].tick_params(axis='both', which='major', labelsize=labelsize)
 # ax[0,1].locator_params(axis='both', nbins=6)
@@ -173,6 +173,6 @@ ax[1,1].annotate(r'(d)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fonts
 
 plt.tight_layout(pad=0.5)
 
-plt.savefig('toulouse2b.pdf', bbox_inches='tight')
+# plt.savefig('toulouse2b.pdf', bbox_inches='tight')
 
 plt.show()

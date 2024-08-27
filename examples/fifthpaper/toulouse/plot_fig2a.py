@@ -83,8 +83,8 @@ def mse_error(a, b):
 	L = len(a)
 	diff = asarray(a) - asarray(b)
 	v = norm(diff)
-	return sqrt(v * v / L)
-	# return abs(diff).max()
+	# return sqrt(v * v / L)
+	return abs(diff).max()
 
 fontsize = 16
 labelsize = 14
@@ -175,6 +175,6 @@ ax[1,1].annotate(r'(d)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fonts
 
 plt.tight_layout(pad=0.5)
 
-plt.savefig('toulouse2a.pdf', bbox_inches='tight')
+# plt.savefig('toulouse2a.pdf', bbox_inches='tight')
 
 plt.show()
