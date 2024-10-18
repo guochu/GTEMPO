@@ -1,73 +1,3 @@
-hybriddynamics(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::PartialIF; band::Int=1) = hybriddynamics(
-				gmps, lattice, corr; band=band, trunc=alg.trunc)
-hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::PartialIF; band::Int=1) = hybriddynamics!(
-				vacuumstate(lattice), lattice, corr; band=band, trunc=alg.trunc)
-
-hybriddynamics(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = hybriddynamics!(copy(gmps), lattice, corr; kwargs...)
-hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = hybriddynamics!(GrassmannMPS(scalartype(lattice), length(lattice)), lattice, corr; kwargs...)
-
-"""
-	hybriddynamics(gmps::GrassmannMPS, lattice::ImagGrassmannLattice, corr::ImagCorrelationFunction; band, trunc)
-
-imaginary-time MPS-IF for a single band 
-"""
-function hybriddynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr1::ImagCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
-	corr = corr1.data
-	k = lattice.k-1
-	for i in 1:k
-		tmp = partialinfluencefunctional(lattice, i+1, [0; view(corr, i, 1:k)], band=band)
-		gmps = mult!(gmps, tmp, trunc=trunc)
-	end
-	return gmps
-end
-
-"""
-	hybriddynamics(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::MixedCorrelationFunction; band::Int, trunc)
-
-real-time MPS-IF for a single band 
-"""
-function hybriddynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::AbstractMixedCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
-	kt, Nτ = lattice.kt, lattice.Nτ
-	for b1 in (:+, :-)
-		for i in 1:kt
-			cols_f = [index(corr, i, j, b1=b1, b2=:+) for j in 1:kt]
-			cols_b = [index(corr, i, j, b1=b1, b2=:-) for j in 1:kt]
-			cols_i = [index(corr, i, j, b1=b1, b2=:τ) for j in 1:Nτ]
-			tmp = partialinfluencefunctional(lattice, i, cols_f, cols_b, cols_i, b1=b1, band=band)
-			gmps = mult!(gmps, tmp, trunc=trunc)
-		end
-	end
-	b1 = :τ
-	for i in 1:Nτ
-		cols_f = [index(corr, i, j, b1=b1, b2=:+) for j in 1:kt]
-		cols_b = [index(corr, i, j, b1=b1, b2=:-) for j in 1:kt]
-		cols_i = [index(corr, i, j, b1=b1, b2=:τ) for j in 1:Nτ]
-		tmp = partialinfluencefunctional(lattice, i, cols_f, cols_b, cols_i, b1=b1, band=band)
-		gmps = mult!(gmps, tmp, trunc=trunc)
-	end
-	return gmps		
-end
-
-
-"""
-	hybriddynamics(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction; band::Int, trunc)
-
-real-time MPS-IF for a single band 
-"""
-function hybriddynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
-	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
-	@assert size(η⁺⁺) == size(η⁺⁻) == size(η⁻⁺) == size(η⁻⁻)
-	k = lattice.k
-	for i in 1:k
-		tmp1 = partialinfluencefunctional(lattice, i, view(η⁺⁺, i, 1:k), view(η⁺⁻, i, 1:k), b1=:+, band=band)
-		tmp3 = partialinfluencefunctional(lattice, i, view(η⁻⁺, i, 1:k), view(η⁻⁻, i, 1:k), b1=:-, band=band)
-
-		gmps = mult!(gmps, tmp1, trunc=trunc)
-		gmps = mult!(gmps, tmp3, trunc=trunc)
-	end
-	return gmps		
-end
-
 function hybriddynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
 	@assert size(η⁺⁺) == size(η⁺⁻) == size(η⁻⁺) == size(η⁻⁻)
@@ -123,32 +53,8 @@ function hybriddynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattic
 
 	return gmps
 end
-hybriddynamicsstepper(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = hybriddynamicsstepper!(copy(gmps), lattice, corr; kwargs...)
 
-### for single impurity models
 
-"""
-	qim_hybriddynamics(gmps::GrassmannMPS, lattice::RealGrassmannLattice, corr::NTuple{4, <:AbstractMatrix}; trunc)
-
-Real time hybrid dynamics for single impurity model, all the bands 
-share the same bath 
-"""
-function qim_hybriddynamics!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...)
-	for band in 1:lattice.bands
-		gmps = hybriddynamics!(gmps, lattice, corr; band=band, kwargs...)
-	end
-	return gmps
-end
-qim_hybriddynamics(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = qim_hybriddynamics!(copy(gmps), lattice, corr; kwargs...)
-qim_hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = qim_hybriddynamics!(vacuumstate(lattice), lattice, corr; kwargs...)
-
-function qim_hybriddynamicsstepper!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...)
-	for band in 1:lattice.bands
-		gmps = hybriddynamicsstepper!(gmps, lattice, corr; band=band, kwargs...)
-	end
-	return gmps
-end
-qim_hybriddynamicsstepper(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = qim_hybriddynamicsstepper!(copy(gmps), lattice, corr; kwargs...)
 
 """
 	finalinfluencefunctional(lattice::RealGrassmannLattice2Order, η::AbstractMatrix; kwargs...)

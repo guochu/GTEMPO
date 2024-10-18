@@ -42,12 +42,8 @@ changetrunc(x::DMRGMult1; trunc=x.trunc) = similar(x, trunc=trunc)
 changetrunc(x::DMRGMult2; trunc=x.trunc) = similar(x, trunc=trunc)
 changetrunc(x::SVDCompression; trunc=x.trunc) = similar(x, D=trunc.D, tol=trunc.ϵ)
 
-include("util.jl")
-include("imaginarytime.jl")
-include("realtime.jl")
-include("mixedtime.jl")
 
 # two algorithms to build the IF
-include("partialif.jl")
-include("fullif.jl")
+include("partialif/partialif.jl")
+include("ttiif/ttiif.jl")
 
