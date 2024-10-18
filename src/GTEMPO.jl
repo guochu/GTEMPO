@@ -57,7 +57,8 @@ using SphericalTensors: SphericalTensors, QR, SVD, LQ, AdjointTensorMap
 const TK = SphericalTensors
 using TensorOperations: TensorOperations, IndexTuple, Index2Tuple, linearize, Backend
 const TO = TensorOperations
-@reexport using DMRG, ImpurityModelBase
+@reexport using DMRG, ImpurityModelBase, QuAPI
+import QuAPI: branch, index
 using DMRG: TimeEvoMPOAlgorithm
 
 
@@ -85,8 +86,8 @@ include("grassmannmps/mult/mult.jl")
 # Grassmann lattice and integration
 include("lattices/lattices.jl")
 
-# correlation functions
-include("correlations/correlations.jl")
+# # correlation functions
+include("correlationfunction.jl")
 
 # Feynman-Vernon influence functional as a multiplications of partial MPOs
 include("influencefunctional/influencefunctional.jl")

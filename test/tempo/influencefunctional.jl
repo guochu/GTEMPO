@@ -40,7 +40,7 @@ end
 		for N in (1, 2, 3)
 			for ordering in real_grassmann_orderings
 				lattice = GrassmannLattice(N=N, δt=0.05, bands=bands, contour=:real, order=1, ordering=ordering)
-				corr = Ct(f, β=β, N=lattice.N, t=lattice.t)
+				corr = fermionic_Ct(f, β=β, N=lattice.N, t=lattice.t)
 				for fi in (:+, :-)
 					for fj in (:+, :-)
 						η = branch(corr, fi, fj)
@@ -70,7 +70,7 @@ end
 		for N in (1, 2, 3)
 			for ordering in real_grassmann_orderings
 				lattice = GrassmannLattice(N=N, δt=0.05, bands=bands, contour=:real, order=1, ordering=ordering)
-				corr = Ct(f, β=β, N=lattice.N, t=lattice.t)
+				corr = fermionic_Ct(f, β=β, N=lattice.N, t=lattice.t)
 				for fi in (:+, :-)
 					η₁, η₂ = branch(corr, fi, :+), branch(corr, fi, :-)
 					for i in 1:lattice.k
@@ -181,7 +181,7 @@ end
 		for N in (1, 2, 3)
 			for ordering in mixed_grassmann_orderings
 				lattice = GrassmannLattice(Nt=N, δt=0.05, δτ=δτ, Nτ=Nτ, bands=bands, contour=:mixed, order=1, ordering=ordering)
-				corr = Cm(f, β=β, Nt=lattice.Nt, t=lattice.t, Nτ=lattice.Nτ)
+				corr = fermionic_Cm(f, β=β, Nt=lattice.Nt, t=lattice.t, Nτ=lattice.Nτ)
 				for fi in (:+, :-)
 					for i in 1:lattice.kt
 						cols_f = [index(corr, i, j, b1=fi, b2=:+) for j in 1:lattice.kt]
