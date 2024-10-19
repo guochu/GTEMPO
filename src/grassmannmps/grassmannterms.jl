@@ -11,10 +11,12 @@ function spin_site_ops_z2()
     σz = TensorMap(ones, ph ← ph)
     blocks(σz)[Irrep[ℤ₂](0)] = -ones(1, 1)
     JW = -σz
-    return σ₊, σ₋,σz, JW, one(JW)
+    n = TensorMap(zeros, ph ← ph)
+    blocks(n)[Irrep[ℤ₂](1)] = ones(1, 1)
+    return σ₊, σ₋,σz, JW, one(JW), n
 end
 
-const σ₊, σ₋, σz, JW, I2 = spin_site_ops_z2()
+const σ₊, σ₋, σz, JW, I2, n̂ = spin_site_ops_z2()
 
 struct GTerm{N, T <: Number} <: AbstractGTerm
 	positions::NTuple{N, Int}

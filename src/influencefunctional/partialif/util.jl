@@ -60,7 +60,7 @@ function partialmpo(row::Int, cols::Vector{Int}, coefs::Vector{<:Number})
 	p = sortperm(cols)
 	cols = cols[p]
 	coefs = coefs[p]
-	I2 = one(JW)
+	# I2 = one(JW)
 
     virtual = isomorphism(Matrix{eltype(coefs)}, Rep[ℤ₂](1=>1), Rep[ℤ₂](1=>1))
     pspace = grassmannpspace()
@@ -148,3 +148,78 @@ function partialmpo(row::Int, cols::Vector{Int}, coefs::Vector{<:Number})
 	mpo = MPO(MPOHamiltonian(data))
 	return PartialMPO(mpo.data, positions)
 end
+
+
+function partialmpo_retardedinteract(row::Tuple{Int, Int}, cols::Vector{Tuple{Int, Int}}, coefs::Vector{<:Number})
+	# println("row=", row, " cols ", cols)
+	@boundscheck begin
+		(length(cols) == length(coefs) >= 1) || throw(ArgumentError("coefs and cols size mismatch"))
+		issorted(cols) || throw(ArgumentError("cols should be sorted"))
+	end
+	row_pos = findfirst(x -> row == x, cols)
+	isnothing(row_pos) && throw(ArgumentError("$(cols) does not contain $(row)"))
+	# I2 = one(JW)
+
+	ph = grassmannpspace()
+	f = isomorphism(fuse(ph, ph), ph ⊗ ph)
+	@tensor abar_a[1,7;9,8] := _σ₊[1,2,3,4] * σ₋'[3,5,9,6] * f[7,2,5] * conj(f[8,4,6])
+    virtual = isomorphism(Matrix{eltype(coefs)}, Rep[ℤ₂](0=>1), Rep[ℤ₂](0=>1))
+    T = scalartype(virtual)
+    @tensor m22I[1,3;2,4] := virtual[1,2] * I2[3,4] 
+
+    function leftmat(c) 
+    	mat = Matrix{Any}(undef, 2, 2)
+    	mat[1,1] = I2
+    	mat[1,2] = c * abar_a
+   		mat[2,1] = 0
+   		mat[2,2] = I2
+   		return mat
+    end
+    function rightmat(c)
+    	mat = Matrix{Any}(undef, 2, 2)
+    	mat[1,1] = I2
+    	mat[1,2] = 0
+    	mat[2,1] = c * abar_a
+    	mat[2,2] = I2
+    	return mat
+    end
+    function middlemat(c)
+    	mat = Matrix{Any}(undef, 2, 2)
+    	mat[1,1] = I2 + c * n̂
+    	mat[1,2] = abar_a
+    	mat[2,1] = abar_a
+    	mat[2,2] = 0
+    	return mat
+    end
+
+    if row_pos == 1
+    	data = vcat(middlemat(coefs[1]), [rightmat(coefs[i]) for i in 2:length(coefs)])
+    elseif row_pos == length(cols)
+    	data = vcat([leftmat(coefs[i]) for i in 1:length(coefs)-1], middlemat(coefs[end]))
+    else
+    	data = vcat([leftmat(coefs[i]) for i in 1:row_pos-1], middlemat(row_pos), [rightmat(coefs[i]) for i in row_pos+1:length(coefs)])
+    end
+    positions2 = Int[]
+    for item in cols
+    	push!(positions2, item[1])
+    	push!(positions2, item[2])
+    end
+	mpo = MPO(MPOHamiltonian(data))
+	data2 = similar(mpo.data, 2*length(mpo))
+	for i in 1:length(mpo)
+		data2[2*i-1], data2[2*i] = split_mpotensor(mpo[i])
+	end
+	return PartialMPO(data2, positions2)
+end
+
+
+function split_mpotensor(mpoj::MPOTensor, trunc)
+	ph = grassmannpspace()
+	f = isomorphism(fuse(ph, ph), ph ⊗ ph)
+	@tensor mpoj6[1,5,7;6,3,8] := mpoj[1,2,3,4] * conj(f[2,5,6]) * f[4,7,8]
+	u, s, v = tsvd!(mpoj6, trunc=trunc)
+	ss = sqrt(s)
+	return permute(u * ss, (1,2), (4,3)), permute(ss * v, (1,2), (3,4))
+end
+
+

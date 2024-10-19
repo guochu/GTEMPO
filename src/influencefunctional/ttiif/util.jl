@@ -22,11 +22,3 @@ end
 
 
 
-function split_mpotensor(mpoj::MPOTensor, trunc)
-	ph = grassmannpspace()
-	f = isomorphism(fuse(ph, ph), ph ⊗ ph)
-	@tensor mpoj6[1,5,7;6,3,8] := mpoj[1,2,3,4] * conj(f[2,5,6]) * f[4,7,8]
-	u, s, v = tsvd!(mpoj6, trunc=trunc)
-	ss = sqrt(s)
-	return permute(u * ss, (1,2), (4,3)), permute(ss * v, (1,2), (3,4))
-end
