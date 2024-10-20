@@ -1,5 +1,5 @@
 println("------------------------------------")
-println("|       InfluenceFunctional        |")
+println("|         PartialIF-Hybrid         |")
 println("------------------------------------")
 
 
@@ -20,7 +20,7 @@ println("------------------------------------")
 							canonicalize!(mps1, alg=Orthogonalize(TK.SVD(), trunc))
 						end	
 
-						mps3 = partialinfluencefunctional(lattice, i, η[i, :], band=band)	
+						mps3 = partialif_hybrid(lattice, i, η[i, :], band=band)	
 						@test bond_dimension(mps3) == 2
 						@test distance(mps1, mps3) / norm(mps1) <= 1.0e-5
 					end
@@ -55,7 +55,7 @@ end
 									canonicalize!(mps1, alg=Orthogonalize(TK.SVD(), trunc))
 								end
 
-								mps3 = partialinfluencefunctional(lattice, i, view(η, i, 1:lattice.k), band=band, b1=fi, b2=fj)
+								mps3 = partialif_hybrid(lattice, i, view(η, i, 1:lattice.k), band=band, b1=fi, b2=fj)
 								@test bond_dimension(mps3) == 2
 								@test distance(mps1, mps3) / norm(mps1) <= 1.0e-5
 							end
@@ -87,7 +87,7 @@ end
 								canonicalize!(mps1, alg=Orthogonalize(trunc = trunc))															
 							end
 
-							mps3 = partialinfluencefunctional(lattice, i, view(η₁, i, 1:lattice.k), view(η₂, i, 1:lattice.k), band=band, b1=fi)
+							mps3 = partialif_hybrid(lattice, i, view(η₁, i, 1:lattice.k), view(η₂, i, 1:lattice.k), band=band, b1=fi)
 							@test bond_dimension(mps3) == 2
 							@test distance(mps1, mps3) / norm(mps1) <= 1.0e-5
 						end
@@ -114,7 +114,7 @@ end
 								canonicalize!(mps1, alg=Orthogonalize(TK.SVD(), trunc))		
 							end
 
-							mps3 = partialinfluencefunctional(lattice, η[1:lattice.k, j], j, band=band, b1=fi, b2=fj)
+							mps3 = partialif_hybrid(lattice, η[1:lattice.k, j], j, band=band, b1=fi, b2=fj)
 							@test bond_dimension(mps3) == 2
 							@test distance(mps1, mps3) / norm(mps1) <= 1.0e-5
 						end
@@ -135,7 +135,7 @@ end
 								mps1 = t * mps1
 								canonicalize!(mps1, alg=Orthogonalize(trunc = trunc))
 							end
-							mps2 = partialinfluencefunctional(lattice, i, η[i, 1:lattice.k], η₂[i, 1:lattice.k], band=band, b1=fi)
+							mps2 = partialif_hybrid(lattice, i, η[i, 1:lattice.k], η₂[i, 1:lattice.k], band=band, b1=fi)
 							@test distance(mps1, mps2) / norm(mps1) <= 1.0e-5
 						end
 					end
@@ -154,7 +154,7 @@ end
 								mps1 = t * mps1
 								canonicalize!(mps1, alg=Orthogonalize(trunc = trunc))		
 							end
-							mps3 = partialinfluencefunctional(lattice, η[1:lattice.k, j], η₂[1:lattice.k, j], j, band=band, b2=fj)
+							mps3 = partialif_hybrid(lattice, η[1:lattice.k, j], η₂[1:lattice.k, j], j, band=band, b2=fj)
 							@test bond_dimension(mps3) == 2
 							@test distance(mps1, mps3) / norm(mps1) <= 1.0e-5
 						end
@@ -207,7 +207,7 @@ end
 								canonicalize!(mps1, alg=Orthogonalize(trunc = trunc))			
 							end
 
-							mps3 = partialinfluencefunctional(lattice, i, cols_f, cols_b, cols_i, band=band, b1=fi)
+							mps3 = partialif_hybrid(lattice, i, cols_f, cols_b, cols_i, band=band, b1=fi)
 							@test bond_dimension(mps3) == 2
 							@test distance(mps1, mps3) / norm(mps1) <= 1.0e-5
 						end
@@ -238,7 +238,7 @@ end
 							canonicalize!(mps1, alg=Orthogonalize(trunc = trunc))			
 						end
 
-						mps3 = partialinfluencefunctional(lattice, i, cols_f, cols_b, cols_i, band=band, b1=fi)
+						mps3 = partialif_hybrid(lattice, i, cols_f, cols_b, cols_i, band=band, b1=fi)
 						@test bond_dimension(mps3) == 2
 						@test distance(mps1, mps3) / norm(mps1) <= 1.0e-5
 					end

@@ -64,15 +64,15 @@ The top right of the influence functional
 function finalinfluencefunctional(lattice::RealGrassmannLattice2Order, η::AbstractMatrix; 
 				finalize::Bool, trunc::TruncationScheme=DefaultITruncation, kwargs...)
 	rows, cols = finalize ? top_right_if_final(lattice, η) : top_right_if(lattice, η)
-	out1 = partialinfluencefunctional(lattice, lattice.k, cols; kwargs...)
-	out2 = partialinfluencefunctional(lattice, rows, lattice.k; kwargs...)
+	out1 = partialif_hybrid(lattice, lattice.k, cols; kwargs...)
+	out2 = partialif_hybrid(lattice, rows, lattice.k; kwargs...)
 	return mult(out1, out2, trunc=trunc)
 end
 function finalinfluencefunctional(lattice::RealGrassmannLattice1Order, η::AbstractMatrix; trunc::TruncationScheme=DefaultITruncation, kwargs...)
 	@assert lattice.k <= size(η, 1)
 	k = lattice.k
-	out1 = partialinfluencefunctional(lattice, k, [η[k, 1:k-1]; 0.5*η[k,k]]; kwargs...)
-	out2 = partialinfluencefunctional(lattice, [η[1:k-1, k]; 0.5*η[k,k]], k; kwargs...)
+	out1 = partialif_hybrid(lattice, k, [η[k, 1:k-1]; 0.5*η[k,k]]; kwargs...)
+	out2 = partialif_hybrid(lattice, [η[1:k-1, k]; 0.5*η[k,k]], k; kwargs...)
 	return mult(out1, out2, trunc=trunc)
 end
 

@@ -10,7 +10,7 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Orde
 			cols_f = [index(corr, i, j, b1=b1, b2=:+) for j in 1:kt]
 			cols_b = [index(corr, i, j, b1=b1, b2=:-) for j in 1:kt]
 			cols_i = [index(corr, i, j, b1=b1, b2=:τ) for j in 1:Nτ]
-			tmp = partialinfluencefunctional(lattice, i, cols_f, cols_b, cols_i, b1=b1, band=band)
+			tmp = partialif_hybrid(lattice, i, cols_f, cols_b, cols_i, b1=b1, band=band)
 			gmps = mult!(gmps, tmp, trunc=trunc)
 		end
 	end
@@ -19,13 +19,13 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Orde
 		cols_f = [index(corr, i, j, b1=b1, b2=:+) for j in 1:kt]
 		cols_b = [index(corr, i, j, b1=b1, b2=:-) for j in 1:kt]
 		cols_i = [index(corr, i, j, b1=b1, b2=:τ) for j in 1:Nτ]
-		tmp = partialinfluencefunctional(lattice, i, cols_f, cols_b, cols_i, b1=b1, band=band)
+		tmp = partialif_hybrid(lattice, i, cols_f, cols_b, cols_i, b1=b1, band=band)
 		gmps = mult!(gmps, tmp, trunc=trunc)
 	end
 	return gmps		
 end
 
-function partialinfluencefunctional(lattice::MixedGrassmannLattice, i::Int, cols_f::AbstractVector, cols_b::AbstractVector, cols_i::AbstractVector; b1::Symbol, band::Int=1)
+function partialif_hybrid(lattice::MixedGrassmannLattice, i::Int, cols_f::AbstractVector, cols_b::AbstractVector, cols_i::AbstractVector; b1::Symbol, band::Int=1)
 	@assert length(cols_f) == length(cols_b)
 	@assert length(cols_i) == lattice.Nτ
 	if b1 == :τ
@@ -53,7 +53,7 @@ function partialinfluencefunctional(lattice::MixedGrassmannLattice, i::Int, cols
 	return mpo * vacuumstate(lattice)
 end
 
-# function partialinfluencefunctional(lattice::MixedGrassmannLattice, i::Int, cols_f::AbstractVector, cols_b::AbstractVector, cols_i::AbstractVector; b1::Symbol, band::Int=1)
+# function partialif_hybrid(lattice::MixedGrassmannLattice, i::Int, cols_f::AbstractVector, cols_b::AbstractVector, cols_i::AbstractVector; b1::Symbol, band::Int=1)
 # 	@assert length(cols_f) == length(cols_b)
 # 	@assert length(cols_i) == lattice.Nτ
 # 	# if b1 == :τ
