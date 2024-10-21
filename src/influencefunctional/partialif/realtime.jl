@@ -58,7 +58,19 @@ function partialif_hybrid(lattice::RealGrassmannLattice, rows_f::AbstractVector,
 	return mpo * vacuumstate(lattice)
 end
 
-function partialif_retardedinteract(lattice::RealGrassmannLattice{A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1}, i::Int, cols_f::AbstractVector, cols_b::AbstractVector; 
+function partialif_retardedinteract(lattice::RealGrassmannLattice, i::Int, cols_f::AbstractVector, cols_b::AbstractVector; 
+									b1::Symbol, band::Int=1, trunc::TruncationScheme=DefaultITruncation)
+	if LayoutStyle(lattice) isa A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1
+		return _partialif_retardedinteract(lattice, i, cols_f, cols_b; b1=b1, band=band, trunc=trunc)
+	else
+		lattice2 = similar(lattice, ordering=A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1())
+		gmps = _partialif_retardedinteract(lattice2, i, cols_f, cols_b; b1=b1, band=band, trunc=trunc)
+		perm = matchindices2(lattice, lattice2)
+		return permute(gmps, perm, trunc=trunc)
+	end
+end
+
+function _partialif_retardedinteract(lattice::RealGrassmannLattice{A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1}, i::Int, cols_f::AbstractVector, cols_b::AbstractVector; 
 									b1::Symbol, band::Int=1, trunc::TruncationScheme=DefaultITruncation)
 	# (LayoutStyle(lattice) isa BandLocalLayout) || throw(ArgumentError("currently only TimelocalLayout support for this function"))
 	row = (index(lattice, i+1, band=band, conj=true, branch=b1), index(lattice, i, band=band, conj=false, branch=b1))
