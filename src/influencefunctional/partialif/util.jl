@@ -153,11 +153,16 @@ end
 function partialmpo_retardedinteract(row::Tuple{Int, Int}, cols::Vector{Tuple{Int, Int}}, coefs::Vector{<:Number}; trunc::TruncationScheme=DefaultMPOTruncation)
 	# println("row=", row, " cols ", cols)
 	@boundscheck begin
-		(length(cols) == length(coefs) > 1) || throw(ArgumentError("coefs and cols size mismatch"))
+		(length(cols) == length(coefs) >= 1) || throw(ArgumentError("coefs and cols size mismatch"))
 		issorted(cols) || throw(ArgumentError("cols should be sorted"))
+		for item in cols
+			x, y = item
+			(x < y) || throw(ArgumentError("each item of cols should be sorted"))
+		end
+		for i in 1:length(cols)-1
+			(cols[i][2] < cols[i+1][1]) || throw(ArgumentError("cols should be sorted"))
+		end
 	end
-	row_pos = findfirst(x -> row == x, cols)
-	isnothing(row_pos) && throw(ArgumentError("$(cols) does not contain $(row)"))
 	# I2 = one(JW)
 
 	ph = grassmannpspace()
@@ -196,22 +201,65 @@ function partialmpo_retardedinteract(row::Tuple{Int, Int}, cols::Vector{Tuple{In
     	return SparseMPOTensor(mat, T, ph2)
     end
 
-    if row_pos == 1
-    	data = vcat(middlemat(coefs[1]), [rightmat(coefs[i]) for i in 2:length(coefs)])
-    elseif row_pos == length(cols)
-    	data = vcat([leftmat(coefs[i]) for i in 1:length(coefs)-1], middlemat(coefs[end]))
-    else
-    	data = vcat([leftmat(coefs[i]) for i in 1:row_pos-1], middlemat(coefs[row_pos]), [rightmat(coefs[i]) for i in row_pos+1:length(coefs)])
-    end
+	row_pos = findfirst(x -> row == x, cols)
+	# isnothing(row_pos) && throw(ArgumentError("$(coefs) should contain $(row)"))
 
-    positions2 = Int[]
-    for item in cols
-    	push!(positions2, item[1])
-    	push!(positions2, item[2])
-    end
+	positions2 = Int[]
+	m = middlemat(0)
+	if isnothing(row_pos)
+		if row < cols[1]
+			data = vcat(middlemat(0), [rightmat(coefs[i]) for i in 1:length(coefs)])
+			push!(positions2, row[1])
+			push!(positions2, row[2])
+			for i in 1:length(coefs)
+				push!(positions2, cols[i][1])
+				push!(positions2, cols[i][2])
+			end
+		elseif row > cols[end]
+			data = vcat([leftmat(coefs[i]) for i in 1:length(coefs)], middlemat(0))
+			for i in 1:length(coefs)
+				push!(positions2, cols[i][1])
+				push!(positions2, cols[i][2])
+			end	
+			push!(positions2, row[1])
+			push!(positions2, row[2])		
+		else
+			row_pos = findfirst(x -> row < x, cols)
+			data = vcat([leftmat(coefs[i]) for i in 1:row_pos-1], middlemat(0), [rightmat(coefs[i]) for i in row_pos:length(coefs)])
+
+			for i in 1:row_pos-1
+				push!(positions2, cols[i][1])
+				push!(positions2, cols[i][2])
+			end
+			push!(positions2, row[1])
+			push!(positions2, row[2])
+			for i in row_pos:length(coefs)
+				push!(positions2, cols[i][1])
+				push!(positions2, cols[i][2])
+			end		
+		end
+	else
+		if length(coefs) == 1
+			data = [middlemat(coefs[1])]
+		else
+		    if row_pos == 1
+		    	data = vcat(middlemat(coefs[1]), [rightmat(coefs[i]) for i in 2:length(coefs)])
+		    elseif row_pos == length(cols)
+		    	data = vcat([leftmat(coefs[i]) for i in 1:length(coefs)-1], middlemat(coefs[end]))
+		    else
+		    	data = vcat([leftmat(coefs[i]) for i in 1:row_pos-1], middlemat(coefs[row_pos]), [rightmat(coefs[i]) for i in row_pos+1:length(coefs)])
+		    end
+		end
+	  
+	    for item in cols
+	    	push!(positions2, item[1])
+	    	push!(positions2, item[2])
+	    end
+
+	end
 
 	mpo = MPO(MPOHamiltonian(data))
-	data2 = similar(mpo.data, 2*length(mpo))
+	data2 = similar(mpo.data, 2*length(data))
 	for i in 1:length(mpo)
 		data2[2*i-1], data2[2*i] = split_mpotensor(mpo[i], trunc)
 	end
