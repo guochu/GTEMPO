@@ -4,7 +4,10 @@ hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunct
 				vacuumstate(lattice), lattice, corr; band=band, trunc=alg.trunc)
 
 hybriddynamics(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = hybriddynamics!(copy(gmps), lattice, corr; kwargs...)
-hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = hybriddynamics!(GrassmannMPS(scalartype(lattice), length(lattice)), lattice, corr; kwargs...)
+hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = hybriddynamics!(vacuumstate(lattice), lattice, corr; kwargs...)
+
+
+retardedinteractdynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = retardedinteractdynamics!(vacuumstate(lattice), lattice, corr; kwargs...)
 
 
 ### for single impurity models
