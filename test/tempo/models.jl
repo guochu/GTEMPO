@@ -126,9 +126,9 @@ end
 
 	trunc = truncdimcutoff(D=100, ϵ=1.0e-10, add_back=0)
 	bath = fermionicbath(spectrum_func(), β=β, μ=0)
-	gt1 = [free_greater(tj, β=β, μ=ϵ_d) for tj in ts]
-	gt2 = [free_lesser(tj, β=β, μ=ϵ_d) for tj in ts]
-	gτ = [free_Gτ(τ, β=β, μ=ϵ_d) for τ in τs]
+	gt1 = [freefermion_greater(tj, β=β, μ=ϵ_d) for tj in ts]
+	gt2 = [freefermion_lesser(tj, β=β, μ=ϵ_d) for tj in ts]
+	gτ = [freefermion_Gτ(τ, β=β, μ=ϵ_d) for τ in τs]
 
 	exact_model = SISB(bath, μ=-ϵ_d, U=0)
 	for ordering in mixed_ac_grassmann_orderings
