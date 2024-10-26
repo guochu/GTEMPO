@@ -25,7 +25,7 @@ end
 
 Base.length(x::ImagGrassmannLattice) = 2*x.bands * (x.k+1)
 function Base.getproperty(x::ImagGrassmannLattice1Order, s::Symbol)
-	if s == :k
+	if (s == :k) || ( s == :kτ)
 		return x.N+1
 	elseif s == :τs
 		return 0:x.δτ:x.N*x.δτ
@@ -33,6 +33,8 @@ function Base.getproperty(x::ImagGrassmannLattice1Order, s::Symbol)
 		return x.N * x.δτ
 	elseif s == :T
 		return 1 / x.β
+	elseif s == :Nτ
+		return x.N
 	else
 		getfield(x, s)
 	end

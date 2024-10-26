@@ -44,12 +44,14 @@ RealGrassmannLattice2Order(; δt::Real, N::Int=0, bands::Int=1, ordering::RealGr
 Base.similar(x::RealGrassmannLattice2Order; δt::Real=x.δt, bands::Int=x.bands, N::Int=x.N, ordering::RealGrassmannOrdering=x.ordering) = RealGrassmannLattice2Order(δt, bands, N, ordering)
 
 function Base.getproperty(x::RealGrassmannLattice, s::Symbol)
-	if s == :k
+	if (s == :k) || (s == :kt)
 		return x.N+1
 	elseif s == :t
 		return x.N * x.δt
 	elseif s == :ts
 		return 0:x.δt:x.N*x.δt
+	elseif s == :Nt
+		return x.N
 	else
 		getfield(x, s)
 	end
