@@ -53,7 +53,7 @@ export ImpurityHamiltonian, tunneling, interaction, TunnelingTerm, InteractionTe
 
 using Base: @boundscheck, @propagate_inbounds
 using Logging: @warn
-using QuadGK, Permutations, Reexport, TupleTools, Strided, Statistics
+using Permutations, Reexport, TupleTools, Strided, Statistics
 using SphericalTensors: SphericalTensors, QR, SVD, LQ, AdjointTensorMap
 const TK = SphericalTensors
 using TensorOperations: TensorOperations, IndexTuple, Index2Tuple, linearize, Backend
