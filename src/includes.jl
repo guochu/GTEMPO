@@ -1,6 +1,6 @@
 using Base: @boundscheck, @propagate_inbounds
 using Logging: @warn
-using QuadGK, Permutations, Reexport, TupleTools, Strided, Statistics
+using Permutations, Reexport, TupleTools, Strided, Statistics
 using SphericalTensors: SphericalTensors, QR, SVD, LQ, AdjointTensorMap
 const TK = SphericalTensors
 using TensorOperations: TensorOperations, IndexTuple, Index2Tuple, linearize, Backend
@@ -35,7 +35,6 @@ include("grassmannmps/mult/mult.jl")
 include("lattices/lattices.jl")
 
 # # correlation functions
-# include("correlations/correlations.jl")
 include("correlationfunction.jl")
 
 # Feynman-Vernon influence functional as a multiplications of partial MPOs
