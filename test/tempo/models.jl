@@ -58,14 +58,15 @@ end
 	rtol = 1.0e-2
 
 	trunc = truncdimcutoff(D=300, ϵ=1.0e-6, add_back=0)
-		
+
 	for μ in (-5, 0, 5)
 		# println("μ = ", μ)
-		bath = fermionicbath(spectrum_func(), β=β, μ=μ)
+		spec = spectrum_func()
+		bath = fermionicbath(spec, β=β, μ=μ)
 		config = star(bath, dw=dw)
 		model = FreeSISBD(config, μ=ϵ_d)
 		g₁ = gf_greater_τ(model, τs)
-		g₂ = [toulouse_Gτ(spectrum_func(), τ, β = β, ϵ_d = ϵ_d, μ = μ) for τ in τs]
+		g₂ = [toulouse_Gτ(spec, τ, β = β, ϵ_d = ϵ_d, μ = μ) for τ in τs]
 		@test norm(g₁ - g₂) / norm(g₁) < rtol
 
 		exact_model = SISB(bath, μ=ϵ_d, U=0)
@@ -76,6 +77,21 @@ end
 			mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
 			g₃ = Gτ(lattice, mpsK, mpsI)
 			@test norm(g₁ - g₃) / norm(g₁) < rtol
+		end
+
+		# delta spectrum 
+		spec = DiracDelta(ω₀=1, α=0.5)
+		bath = fermionicbath(spec, β=β, μ=μ)
+		g₂ = [toulouse_Gτ(spec, τ, β = β, ϵ_d = ϵ_d, μ = μ) for τ in τs]
+
+		exact_model = SISB(bath, μ=ϵ_d, U=0)
+		for ordering in imag_grassmann_orderings
+			lattice = GrassmannLattice(N=N, δτ=β/N, contour=:imag, ordering=ordering)
+			mpsI = hybriddynamics(lattice, exact_model, trunc=trunc) 
+			mpsI = boundarycondition(mpsI, lattice)
+			mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
+			g₃ = Gτ(lattice, mpsK, mpsI)
+			@test norm(g₂ - g₃) / norm(g₂) < rtol
 		end
 	end
 end
@@ -93,21 +109,24 @@ end
 		
 
 	# println("μ = ", μ)
-	bath = fermionicbath(spectrum_func(), β=β, μ=0.)
-	gt = [toulouse_Gt(spectrum_func(), tj, ϵ_d = ϵ_d, μ = 0.) for tj in ts]
+	for spec in (spectrum_func(), DiracDelta())
+		bath = fermionicbath(spec, β=β, μ=0.)
+		gt = [toulouse_Gt(spectrum_func(), tj, ϵ_d = ϵ_d, μ = 0.) for tj in ts]
 
-	exact_model = SISB(bath, μ=ϵ_d, U=0)
-	corr = Ct(bath, N=N, t=t)
-	for ordering in real_ac_grassmann_orderings
-		lattice = GrassmannLattice(N=N, δt=δt, contour=:real, ordering=ordering)
-		mpsI = hybriddynamics(lattice, corr, trunc=trunc) 
-		mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
-		mpsK = boundarycondition(mpsK, lattice)
-		cache = environments(lattice, mpsK, mpsI)
-		g1 = [cached_Gt(lattice, k, 1, mpsK, mpsI, c1=false, c2=true, b1=:+, b2=:+, cache=cache) for k in 1:lattice.k]
-		g2 = [cached_Gt(lattice, 1, k, mpsK, mpsI, c1=true, c2=false, b1=:-, b2=:+, cache=cache) for k in 1:lattice.k]
-		@test norm(gt - g1) / norm(gt) < rtol
-		@test norm(g2) / length(g2) < rtol
+		exact_model = SISB(bath, μ=ϵ_d, U=0)
+		corr = Ct(bath, N=N, t=t)
+		for ordering in real_ac_grassmann_orderings
+			lattice = GrassmannLattice(N=N, δt=δt, contour=:real, ordering=ordering)
+			mpsI = hybriddynamics(lattice, corr, trunc=trunc) 
+			mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
+			mpsK = boundarycondition(mpsK, lattice)
+			cache = environments(lattice, mpsK, mpsI)
+			g1 = [cached_Gt(lattice, k, 1, mpsK, mpsI, c1=false, c2=true, b1=:+, b2=:+, cache=cache) for k in 1:lattice.k]
+			g2 = [cached_Gt(lattice, 1, k, mpsK, mpsI, c1=true, c2=false, b1=:-, b2=:+, cache=cache) for k in 1:lattice.k]
+			@test norm(gt - g1) / norm(gt) < rtol
+			@test norm(g2) / length(g2) < rtol
+		end
+
 	end
 end
 

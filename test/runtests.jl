@@ -29,7 +29,6 @@ const mixed_grassmann_orderings = [A1A1B1B1_A1A1a1a1B1B1b1b1A2A2a2a2B2B2b2b2(), 
 const mixed_ac_grassmann_orderings = [A1A1B1B1_A1A1a1a1B1B1b1b1A2A2a2a2B2B2b2b2(), A1A1B1B1_a1a1A1A1b1b1B1B1a2a2A2A2b2b2B2B2()]
 
 include("grassmanntensor.jl")
-
 include("tempo/grassmannlattice.jl")
 include("tempo/grassmannmps.jl")
 include("tempo/bmps_integrate.jl")
