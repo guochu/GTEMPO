@@ -7,9 +7,6 @@ hybriddynamics(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::Abst
 hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = hybriddynamics!(vacuumstate(lattice), lattice, corr; kwargs...)
 
 
-retardedinteractdynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = retardedinteractdynamics!(vacuumstate(lattice), lattice, corr; kwargs...)
-
-
 ### for single impurity models
 
 """

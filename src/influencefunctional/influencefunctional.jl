@@ -43,7 +43,5 @@ changetrunc(x::DMRGMult2; trunc=x.trunc) = similar(x, trunc=trunc)
 changetrunc(x::SVDCompression; trunc=x.trunc) = similar(x, D=trunc.D, tol=trunc.ϵ)
 
 
-# two algorithms to build the IF
-include("partialif/partialif.jl")
-include("ttiif/ttiif.jl")
-
+include("hybridization/hybridization.jl")
+include("retardedinteract/retardedinteract.jl")
