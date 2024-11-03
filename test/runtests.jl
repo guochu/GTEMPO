@@ -34,7 +34,7 @@ include("tempo/grassmannmps.jl")
 include("tempo/bmps_integrate.jl")
 
 include("tempo/partialif_hybrid.jl")
-include("tempo/partialif_retardedinteract.jl")
+include("tempo/retardedinteract.jl")
 include("tempo/influenceoperator.jl")
 include("tempo/hybriddynamics.jl")
 

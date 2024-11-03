@@ -31,8 +31,7 @@ export IntegrationAlgorithm, ExactIntegrate, BMPSIntegrate, Zvalue
 export Cτ, Ct, Cm, branch, CorrelationMatrix, correlationfunction
 
 # influence functional
-export InfluenceFunctionalAlgorithm, PartialIF, TranslationInvariantIF
-export partialif_hybrid, partialif_retardedinteract
+export InfluenceFunctionalAlgorithm, PartialIF, TranslationInvariantIF, partialif_hybrid
 export influenceoperator, influenceoperatorexponential, differentialinfluencefunctional
 export hybriddynamics, hybriddynamics!, hybriddynamicsstepper, hybriddynamicsstepper!
 export retardedinteractdynamics, retardedinteractdynamics!
