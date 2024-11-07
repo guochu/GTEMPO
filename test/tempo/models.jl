@@ -155,8 +155,8 @@ end
 		mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
 		mpsK = boundarycondition(mpsK, lattice)
 		cache = environments(lattice, mpsK)
-		g1 = [cached_Gm(lattice, k, 1, mpsK, c1=false, c2=true, b1=:+, b2=:+, cache=cache) for k in 1:lattice.kt]
-		g2 = [cached_Gm(lattice, 1, k, mpsK, c1=true, c2=false, b1=:-, b2=:+, cache=cache) for k in 1:lattice.kt]
+		g1 = [-im*cached_Gm(lattice, k, 1, mpsK, c1=false, c2=true, b1=:+, b2=:+, cache=cache) for k in 1:lattice.kt]
+		g2 = [im*cached_Gm(lattice, 1, k, mpsK, c1=true, c2=false, b1=:-, b2=:+, cache=cache) for k in 1:lattice.kt]
 		g3 = [cached_Gm(lattice, k, 1, mpsK, c1=false, c2=true, b1=:τ, b2=:τ, cache=cache) for k in 1:lattice.kτ]
 		@test norm(gt1 - g1) / norm(gt1) < rtol
 		@test norm(gt2 - g2) / norm(gt2) < rtol
