@@ -21,48 +21,55 @@ function retardedinteractdynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLa
 	end
 end
 
+function retardedinteractdynamics_1band!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::AbstractMixedCorrelationFunction; kwargs...)
+	@assert lattice.bands == 1
+	return _retardedinteractdynamics_1band!(gmps, lattice, corr, 1; kwargs...)
+end 
 
-function retardedinteractdynamics_1band!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::AbstractMixedCorrelationFunction; 
+
+function _retardedinteractdynamics_1band!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::AbstractMixedCorrelationFunction, band::Int; 
 											trunc::TruncationScheme=DefaultITruncation)	
 	# (LayoutStyle(lattice) isa BandLocalLayout) || throw(ArgumentError("currently only TimelocalLayout support for this function"))
-	@assert lattice.bands == 1
-	band = 1
 	for i in 1:lattice.kt-1, b1 in (:+, :-)
-		pos1a, pos1b = index(lattice, i+1, band=band, conj=true, branch=b1), index(lattice, i, band=band, conj=false, branch=b1)
+		pos1a, pos1b, c1 = get_pair_pos(lattice, i, band, b1)
 		for j in 1:lattice.kt-1, b2 in (:+, :-)
-			pos2a, pos2b = index(lattice, j+1, band=band, conj=true, branch=b2), index(lattice, j, band=band, conj=false, branch=b2)
+			pos2a, pos2b, c2 = get_pair_pos(lattice, j, band, b2)
+			c = index(corr, i, j, b1=b1, b2=b2) * c1 * c2
 			if (i == j) && (b1 == b2)
-				t = exp(GTerm(pos1a, pos1b, coeff=index(corr, i, j, b1=b1, b2=b2)))
+				t = exp(GTerm(pos1a, pos1b, coeff=c))
 			else
-				t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=index(corr, i, j, b1=b1, b2=b2)))
+				t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=c))
 			end
 			apply!(t, gmps)
 			canonicalize!(gmps, alg=Orthogonalize(TK.SVD(), trunc))
 		end
 		for j in 1:lattice.kτ-1
 			b2 = :τ
-			pos2a, pos2b = index(lattice, j+1, band=band, conj=true, branch=b2), index(lattice, j, band=band, conj=false, branch=b2)
-			t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=index(corr, i, j, b1=b1, b2=b2)))
+			pos2a, pos2b, c2 = get_pair_pos(lattice, j, band, b2)
+			c = index(corr, i, j, b1=b1, b2=b2) * c1 * c2
+			t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=c))
 			apply!(t, gmps)
 			canonicalize!(gmps, alg=Orthogonalize(TK.SVD(), trunc))
 		end
 	end
 	for i in 1:lattice.kτ-1
 		b1 = :τ
-		pos1a, pos1b = index(lattice, i+1, band=band, conj=true, branch=b1), index(lattice, i, band=band, conj=false, branch=b1)
+		pos1a, pos1b, c1 = get_pair_pos(lattice, i, band, b1)
 		for j in 1:lattice.kt-1, b2 in (:+, :-)
-			pos2a, pos2b = index(lattice, j+1, band=band, conj=true, branch=b2), index(lattice, j, band=band, conj=false, branch=b2)
-			t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=index(corr, i, j, b1=b1, b2=b2)))
+			pos2a, pos2b, c2 = get_pair_pos(lattice, j, band, b2)
+			c = index(corr, i, j, b1=b1, b2=b2) * c1 *c2
+			t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=c))
 			apply!(t, gmps)
 			canonicalize!(gmps, alg=Orthogonalize(TK.SVD(), trunc))
 		end
 		for j in 1:lattice.kτ-1
 			b2 = :τ
-			pos2a, pos2b = index(lattice, j+1, band=band, conj=true, branch=b2), index(lattice, j, band=band, conj=false, branch=b2)
+			pos2a, pos2b, c2 = get_pair_pos(lattice, j, band, b2)
+			c = index(corr, i, j, b1=b1, b2=b2) * c1 * c2
 			if (i == j)
-				t = exp(GTerm(pos1a, pos1b, coeff=index(corr, i, j, b1=b1, b2=b2)))
+				t = exp(GTerm(pos1a, pos1b, coeff=c))
 			else
-				t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=index(corr, i, j, b1=b1, b2=b2)))
+				t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=c))
 			end
 			apply!(t, gmps)
 			canonicalize!(gmps, alg=Orthogonalize(TK.SVD(), trunc))
@@ -71,10 +78,50 @@ function retardedinteractdynamics_1band!(gmps::GrassmannMPS, lattice::MixedGrass
 	return gmps
 end
 
-
 function retardedinteractdynamics_2band!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::AbstractMixedCorrelationFunction; 
 											trunc::TruncationScheme=DefaultMPOTruncation)
 	@assert lattice.bands == 2
-	error("not implemented")
+	for band in 1:lattice.bands
+		_retardedinteractdynamics_1band!(gmps, lattice, corr, band, trunc=trunc)
+	end
+
+	for i in 1:lattice.kt-1, b1 in (:+, :-)
+		pos1a, pos1b, c1 = get_pair_pos(lattice, i, 1, b1)
+		for j in 1:lattice.kt-1, b2 in (:+, :-)
+			pos2a, pos2b, c2 = get_pair_pos(lattice, j, 2, b2)
+			c = (index(corr, i, j, b1=b1, b2=b2) + index(corr, j, i, b1=b1, b2=b2)) * c1 * c2
+			t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=c))
+			apply!(t, gmps)
+			canonicalize!(gmps, alg=Orthogonalize(TK.SVD(), trunc))
+		end
+		for j in 1:lattice.kτ-1
+			b2 = :τ
+			pos2a, pos2b, c2 = get_pair_pos(lattice, j, 2, b2)
+			c = (index(corr, i, j, b1=b1, b2=b2) + index(corr, j, i, b1=b1, b2=b2)) * c1 * c2
+			t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=c))
+			apply!(t, gmps)
+			canonicalize!(gmps, alg=Orthogonalize(TK.SVD(), trunc))
+		end
+	end
+	for i in 1:lattice.kτ-1
+		b1 = :τ
+		pos1a, pos1b, c1 = get_pair_pos(lattice, i, 1, b1)
+		for j in 1:lattice.kt-1, b2 in (:+, :-)
+			pos2a, pos2b, c2 = get_pair_pos(lattice, j, 2, b2)
+			c = (index(corr, i, j, b1=b1, b2=b2) + index(corr, j, i, b1=b1, b2=b2)) * c1 *c2
+			t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=c))
+			apply!(t, gmps)
+			canonicalize!(gmps, alg=Orthogonalize(TK.SVD(), trunc))
+		end
+		for j in 1:lattice.kτ-1
+			b2 = :τ
+			pos2a, pos2b, c2 = get_pair_pos(lattice, j, 2, b2)
+			c = (index(corr, i, j, b1=b1, b2=b2) + index(corr, j, i, b1=b1, b2=b2)) * c1 * c2
+			t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=c))
+			apply!(t, gmps)
+			canonicalize!(gmps, alg=Orthogonalize(TK.SVD(), trunc))
+		end
+	end
+	return gmps
 end
 
