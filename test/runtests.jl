@@ -44,6 +44,7 @@ include("tempo/bmps_gf.jl")
 
 include("tempo/swapband.jl")
 include("tempo/models.jl")
+include("tempo/independentbosons.jl")
 include("tempo/generalimpurity.jl")
 include("tempo/observables.jl")
 

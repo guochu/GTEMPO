@@ -47,7 +47,7 @@ function retardedinteractdynamics_2band!(gmps::GrassmannMPS, lattice::RealGrassm
 		pos1a, pos1b, c1 = get_pair_pos(lattice, i, 1, b1)
 		for j in 1:lattice.kt-1, b2 in (:+, :-)
 			pos2a, pos2b, c2 = get_pair_pos(lattice, j, 2, b2)
-			c = (index(corr, i, j, b1=b1, b2=b2) + index(corr, j, i, b1=b1, b2=b2)) * c1 * c2
+			c = 2 * index(corr, i, j, b1=b1, b2=b2)  * c1 * c2
 			t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=c))
 			apply!(t, gmps)
 			canonicalize!(gmps, alg=Orthogonalize(TK.SVD(), trunc))
