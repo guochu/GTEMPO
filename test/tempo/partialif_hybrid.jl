@@ -23,6 +23,9 @@ println("------------------------------------")
 						mps3 = partialif_hybrid(lattice, i, η[i, :], band=band)	
 						@test bond_dimension(mps3) == 2
 						@test distance(mps1, mps3) / norm(mps1) <= 1.0e-5
+
+						mps4 = partialif_hybrid_naive(lattice, i, η[i, :], band=band, trunc=trunc)	
+						@test distance(mps4, mps3) / norm(mps3) <= 1.0e-5
 					end
 				end
 			end
@@ -90,6 +93,9 @@ end
 							mps3 = partialif_hybrid(lattice, i, view(η₁, i, 1:lattice.k), view(η₂, i, 1:lattice.k), band=band, b1=fi)
 							@test bond_dimension(mps3) == 2
 							@test distance(mps1, mps3) / norm(mps1) <= 1.0e-5
+
+							mps4 = partialif_hybrid_naive(lattice, i, view(η₁, i, 1:lattice.k), view(η₂, i, 1:lattice.k), band=band, b1=fi, trunc=trunc)
+							@test distance(mps4, mps3) / norm(mps3) <= 1.0e-5
 						end
 					end						
 				end
@@ -137,6 +143,9 @@ end
 							end
 							mps2 = partialif_hybrid(lattice, i, η[i, 1:lattice.k], η₂[i, 1:lattice.k], band=band, b1=fi)
 							@test distance(mps1, mps2) / norm(mps1) <= 1.0e-5
+
+							mps3 = partialif_hybrid_naive(lattice, i, η[i, 1:lattice.k], η₂[i, 1:lattice.k], band=band, b1=fi, trunc=trunc)
+							@test distance(mps3, mps2) / norm(mps2) <= 1.0e-5
 						end
 					end
 				end
@@ -210,6 +219,9 @@ end
 							mps3 = partialif_hybrid(lattice, i, cols_f, cols_b, cols_i, band=band, b1=fi)
 							@test bond_dimension(mps3) == 2
 							@test distance(mps1, mps3) / norm(mps1) <= 1.0e-5
+
+							mps4 = partialif_hybrid_naive(lattice, i, cols_f, cols_b, cols_i, band=band, b1=fi, trunc=trunc)
+							@test distance(mps4, mps3) / norm(mps3) <= 1.0e-5
 						end
 					end						
 				end
@@ -241,6 +253,9 @@ end
 						mps3 = partialif_hybrid(lattice, i, cols_f, cols_b, cols_i, band=band, b1=fi)
 						@test bond_dimension(mps3) == 2
 						@test distance(mps1, mps3) / norm(mps1) <= 1.0e-5
+
+						mps4 = partialif_hybrid_naive(lattice, i, cols_f, cols_b, cols_i, band=band, b1=fi, trunc=trunc)
+						@test distance(mps4, mps3) / norm(mps3) <= 1.0e-5
 					end
 				end						
 			end

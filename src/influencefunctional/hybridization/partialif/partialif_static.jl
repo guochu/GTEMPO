@@ -6,6 +6,9 @@ hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunct
 hybriddynamics(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = hybriddynamics!(copy(gmps), lattice, corr; kwargs...)
 hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = hybriddynamics!(vacuumstate(lattice), lattice, corr; kwargs...)
 
+hybriddynamics_naive(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = hybriddynamics_naive!(copy(gmps), lattice, corr; kwargs...)
+hybriddynamics_naive(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = hybriddynamics_naive!(vacuumstate(lattice), lattice, corr; kwargs...)
+
 
 ### for single impurity models
 

@@ -27,6 +27,10 @@ println("------------------------------------")
 				corr = correlationfunction(bath, lattice)
 				mpsI1 = hybriddynamics(lattice, corr, base_alg) 
 
+				mpsI0 = hybriddynamics_naive(lattice, corr, trunc=trunc) 
+				@test distance(mpsI1, mpsI0) / norm(mpsI1) < rtol
+
+
 				for alg in algs
 					mpsI2 = hybriddynamics(lattice, corr, alg)
 					@test distance(mpsI1, mpsI2) / norm(mpsI1) < rtol
@@ -67,6 +71,10 @@ end
 
 			corr = correlationfunction(bath, lattice)
 			mpsI1 = hybriddynamics(lattice, corr, base_alg) 
+
+			mpsI0 = hybriddynamics_naive(lattice, corr, trunc=trunc) 
+			@test distance(mpsI1, mpsI0) / norm(mpsI1) < rtol
+
 			for alg in algs
 				mpsI2 = hybriddynamics(lattice, corr, alg)
 				@test distance(mpsI1, mpsI2) / norm(mpsI1) < rtol
