@@ -34,7 +34,7 @@ export Cτ, Ct, Cm, branch, CorrelationMatrix, correlationfunction
 export InfluenceFunctionalAlgorithm, PartialIF, TranslationInvariantIF, partialif_hybrid, partialif_hybrid_naive
 export influenceoperator, influenceoperatorexponential, differentialinfluencefunctional
 export hybriddynamics, hybriddynamics!, hybriddynamics_naive, hybriddynamics_naive!, hybriddynamicsstepper, hybriddynamicsstepper!
-export retardedinteractdynamics, retardedinteractdynamics!
+export retardedinteractdynamics, retardedinteractdynamics!, retardedinteractdynamics_naive, retardedinteractdynamics_naive!
 
 # GF and other observables
 export gf, Gτ, parallel_Gτ, Gt, parallel_Gt, Gm, greater, lesser, contour_ordered_gf
