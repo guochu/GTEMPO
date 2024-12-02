@@ -1,105 +1,120 @@
-# push!(LOAD_PATH, "../../../src")
-# using GTEMPO
+push!(LOAD_PATH, "../../../src")
+using GTEMPO
 
 
-include("../../../src/includes.jl")
+# include("../../../src/includes.jl")
 using DelimitedFiles, JSON, Serialization
 
 
-spectrum_func(α) = Leggett(d=3, ωc=10, α=α)
+spectrum_func(;d=3) = Leggett(d=d, ωc=1)
 
-function main_analytic(U, ϵ_d=U/2)
+# spectrum_func() = DiracDelta(ω=1, α=0.5)
+
+function main_imag_analytic(U, ϵ_d=U/2; β=1, N=20, d=3)
 	# ϵ_d = 0.5
-	δτ=0.05
-	N = 20
-	β = N * δτ
+	g = independentbosons_Gτ(spectrum_func(d=d), β=β, ϵ_d=-ϵ_d, U=U, N=N, bands=2)
 
-	return independentbosons_Gτ(spectrum_func(1), β=β, ϵ_d=-ϵ_d, U=U, N=N, nbands=2)
-end
+	data_path = "result/interacting_analytic_imag_beta$(β)_U$(U)_mu$(ϵ_d)_N$(N)_d$(d).json"
 
-function partialif_retardedinteract2(lattice::ImagGrassmannLattice1Order, i::Int, cols::AbstractVector, g; band::Int=1, trunc::TruncationScheme=DefaultMPOTruncation)
-	@assert lattice.k - 1 == length(cols)
+	δτ = β / N
+	τs = [i*δτ for i in 0:N]
 
-	mps1 = vacuumstate(lattice)
-	for j in 1:lattice.k-1, band2 in 1:lattice.bands
-		if (i == j) && (band == band2)
-			pos1, pos2 = index(lattice, i+1, conj=true, band=band), index(lattice, i, conj=false, band=band)
-			coef = cols[j]
-			# coef = g^2 * (exp(cols[j])-1)
-			t = exp(GTerm(pos1, pos2, coeff=coef))
-		else
-			pos1a, pos1b = index(lattice, i+1, conj=true, band=band), index(lattice, i, conj=false, band=band)
-			pos2a, pos2b = index(lattice, j+1, conj=true, band=band2), index(lattice, j, conj=false, band=band2)
-			coef = g^2 * (exp(cols[j])-1)
-			t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=coef))
-		end
-		apply!(t, mps1)
-		canonicalize!(mps1, alg=Orthogonalize(TK.SVD(), trunc))
-	end	
+	results = Dict("ts"=>τs, "gf" => g)
 
-	return mps1
-end
-
-function retardedinteractdynamics2!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr1::ImagCorrelationFunction, g; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
-	corr = corr1.data
-	k = lattice.k-1
-	for i in 1:k, band2 in 1:lattice.bands
-		tmp = partialif_retardedinteract2(lattice, i, view(corr, i, 1:k), g, band=band)
-		gmps = mult!(gmps, tmp, trunc=trunc)
+	open(data_path, "w") do f
+		write(f, JSON.json(results))
 	end
-	return gmps	
-end
-retardedinteractdynamics2(lattice::ImagGrassmannLattice1Order, corr::ImagCorrelationFunction, g; kwargs...) = retardedinteractdynamics2!(vacuumstate(lattice), lattice, corr, g; kwargs...)
 
-function main(U, ϵ_d=U/2)
+	return g
+end
+
+function main_real_analytic(U, ϵ_d=U/2; β=1, t=1, N=100, d=3)
 	# ϵ_d = 0.5
-	δτ=0.05
-	N = 20
-	β = N * δτ
-	chi = 120
+	δt=t/N
+	ts = collect(0:δt:t)
+	g1 = [independentbosons_greater(spectrum_func(d=d), tj, β=β, ϵ_d=-ϵ_d, U=U, bands=2) for tj in ts]
+	g2 = [independentbosons_lesser(spectrum_func(d=d), tj, β=β, ϵ_d=-ϵ_d, U=U, bands=2) for tj in ts]
+
+	data_path = "result/interacting_analytic_real_beta$(β)_U$(U)_mu$(ϵ_d)_t$(t)_N$(N)_d$(d).json"
+
+	results = Dict("ts"=>ts, "gt" => g1, "lt"=>g2)
+
+	open(data_path, "w") do f
+		write(f, JSON.json(results))
+	end
+
+	return g1, g2
+end
+
+function main_mixed(U, ϵ_d=U/2; β=1, Nτ=20, t=1, Nt=100, d=3, chi = 100)
+	# ϵ_d = 0.5
+	δτ = β / Nτ
+	δt = t / Nt
 
 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
 	truncK = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
 
-
+	ts = [i*δt for i in 1:Nt+1]
+	τs = [i*δτ for i in 1:Nτ+1]
 	
-	lattice = GrassmannLattice(N=N, δτ=δτ, contour=:imag, order=1, bands=2)
+	lattice = GrassmannLattice(Nt=Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed, bands=2, order=1)
+	println("number of sites, ", length(lattice))
 
-	bath = bosonicbath(spectrum_func(1), β=β)
+	mpspath = "data/interacting_mixedgtempo_beta$(β)_dtau$(δτ)_t$(t)_dt$(δt)_d$(d)_chi$(chi).mps"
+	if ispath(mpspath)
+		println("load MPS-IF from path ", mpspath)
+		mpsI = Serialization.deserialize(mpspath)
+	else
+		println("computing MPS-IF...")
+		bath = bosonicbath(spectrum_func(d=d), β=β)
+		corr = correlationfunction(bath, lattice)
+		@time mpsI = retardedinteractdynamics(lattice, corr, trunc=trunc)
 
-	corr = correlationfunction(bath, lattice)
-	g₀ = exp(-δτ*ϵ_d)
-	# η1, η2 = corr.data.ηⱼₖ, corr.data.ηₖⱼ
-	# η1[1] = η1[1] + η2[1]
-	# η2[1] = 0
-	# η1 = g₀^2 .* (exp.(η1) .- 1)
-	# η2 = g₀^2 .* (exp.(η2) .- 1)
-	# corr = ImagCorrelationFunction(CorrelationMatrix(η1, η2))
+		println("save MPS-IF to path ", mpspath)
+		Serialization.serialize(mpspath, mpsI)
+	end
 
-
-	println("computing MPS-IF...")
-	# @time mpsI1 = retardedinteractdynamics(lattice, corr, trunc=trunc, band=1)
-	@time mpsI1 = retardedinteractdynamics2(lattice, corr, g₀, trunc=trunc, band=1)
-	@time mpsI2 = swapband(mpsI1, lattice, 1, 2, trunc=trunc)
-
-	println("bond dimension of mpsI is ", bond_dimension(mpsI1), " ", bond_dimension(mpsI2))
+	# bath = bosonicbath(spectrum_func(), β=β)
+	# corr = correlationfunction(bath, lattice)
+	# println("computing MPS-IF...")
+	# @time mpsI = retardedinteractdynamics(lattice, corr, trunc=trunc)
+	println("bond dimension of mpsI is ", bond_dimension(mpsI))
 
 	fbath = fermionicbath(semicircular(), β=β, μ=0)
 	exact_model = SISB(fbath, U=U, μ=-ϵ_d)
 	@time mpsK = sysdynamics(lattice, exact_model, trunc=truncK)
 	println("bond dimension of mpsK is ", bond_dimension(mpsK))
 	println("mpsK scale is ", scaling(mpsK))
-	mpsKs = [mpsK]
 	for band in 1:lattice.bands
-		mpsKs = boundarycondition_branching(mpsKs, lattice, band=band)
+		mpsK = boundarycondition!(mpsK, lattice, band=band)
 	end
-	println("bond dimension of mpsK is ", bond_dimension(mpsKs[1]), ", number of Ks ", length(mpsKs))
+	# mpsK = systhermalstate!(mpsK, lattice, exact_model, trunc=trunc, δτ=0.001)
+	println("bond dimension of mpsK is ", bond_dimension(mpsK))
 
+	# println(length(lattice), " ", length(mpsK), " ", length(mpsI))
 
+	cache = environments(lattice, mpsK, mpsI)
+	# @time gt = [cached_greater(lattice, j, mpsK, mpsI, cache=cache) for j in 1:lattice.kt]
+	# @time lt = [cached_lesser(lattice, j, mpsK, mpsI, cache=cache) for j in 1:lattice.kt]
+	# return gt, lt
 
+	@time g₁ = [cached_Gm(lattice, k, 1, mpsK, mpsI, c1=false, c2=true, b1=:+, b2=:+, band=1, cache=cache) for k in 1:Nt+1]
+	@time g₂ = [cached_Gm(lattice, 1, k, mpsK, mpsI, c1=true, c2=false, b1=:-, b2=:+, band=1, cache=cache) for k in 1:Nt+1]
+	@time g₃ = [cached_Gm(lattice, k, 1, mpsK, mpsI, c1=false, c2=true, b1=:τ, b2=:τ, band=1, cache=cache) for k in 1:Nτ+1]
+	@time ns = cached_occupation(lattice, mpsK, mpsI, cache=cache)
 
-	cache = environments(lattice, mpsKs, mpsI1, mpsI2)
-	@time g = cached_Gτ(lattice, mpsKs, mpsI1, mpsI2, cache=cache)
+	g₁, g₂ = -im*g₁, im*g₂
 
-	return g
+	data_path = "result/interacting_mixedgtempo_beta$(β)_dtau$(δτ)_t$(t)_dt$(δt)_U$(U)_mu$(ϵ_d)_d$(d)_chi$(chi).json"
+
+	results = Dict("ts"=>ts, "taus"=>τs, "bd"=>bond_dimensions(mpsI), "gt"=>g₁, "lt"=>g₂, "gtau"=>g₃, "ns" => ns)
+
+	println("save results to ", data_path)
+
+	open(data_path, "w") do f
+		write(f, JSON.json(results))
+	end
+
+	return g₁, g₂, real(g₃), ns
 end
+

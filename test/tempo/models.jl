@@ -80,7 +80,7 @@ end
 		end
 
 		# delta spectrum 
-		spec = DiracDelta(ω₀=1, α=0.5)
+		spec = DiracDelta(ω=1, α=0.5)
 		bath = fermionicbath(spec, β=β, μ=μ)
 		g₂ = [toulouse_Gτ(spec, τ, β = β, ϵ_d = ϵ_d, μ = μ) for τ in τs]
 

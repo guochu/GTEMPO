@@ -139,7 +139,7 @@ end
 	lattice = GrassmannLattice(N=N, δτ=δτ, contour=:imag, order=1)
 
 	for ϵ_d in (-0.5, 0, 0.5)
-		for spec in (Leggett(d=3, ωc=1), DiracDelta(ω₀=1, α=0.5))
+		for spec in (Leggett(d=3, ωc=1), DiracDelta(ω=1, α=0.5))
 
 			bath = bosonicbath(spec, β=β)
 			corr = correlationfunction(bath, lattice)
@@ -167,7 +167,7 @@ end
 	ϵ_d = 0.7
 	lattice = GrassmannLattice(N=N, δτ=δτ, contour=:imag, order=1, bands=2)
 	for U in (0, 1)
-		for spec in (Leggett(d=3, ωc=1), DiracDelta(ω₀=1, α=0.5))
+		for spec in (Leggett(d=3, ωc=1), DiracDelta(ω=1, α=0.5))
 
 			bath = bosonicbath(spec, β=β)
 			corr = correlationfunction(bath, lattice)
@@ -207,7 +207,7 @@ end
 	lattice = GrassmannLattice(N=Nt, δt=δt, contour=:real, order=1)
 	for ϵ_d in (-0.5, 0, 0.5)
 
-		bath = bosonicbath(DiracDelta(ω₀=1, α=0.5), β=β)
+		bath = bosonicbath(DiracDelta(ω=1, α=0.5), β=β)
 		corr = correlationfunction(bath, lattice)
 		mpsI = retardedinteractdynamics(lattice, corr, trunc=trunc)
 		mpsI′ = retardedinteractdynamics_naive(lattice, corr, trunc=trunc)
@@ -234,7 +234,7 @@ end
 	ϵ_d = 0.3
 	for U in (0, 1)
 
-		bath = bosonicbath(DiracDelta(ω₀=1, α=0.5), β=β)
+		bath = bosonicbath(DiracDelta(ω=1, α=0.5), β=β)
 		corr = correlationfunction(bath, lattice)
 		mpsI = retardedinteractdynamics(lattice, corr, trunc=trunc)
 		mpsI′ = retardedinteractdynamics_naive(lattice, corr, trunc=trunc)
