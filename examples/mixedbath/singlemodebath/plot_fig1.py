@@ -84,9 +84,9 @@ chi = 80
 mu = 0.5
 
 t = 1
-Nt = 20
+Nt = 50
 beta = 1
-Ntau = 20
+# Ntau = 20
 
 # real time data
 ts, gt, lt = read_neq_ed(beta, t, Nt, mu, omega0, alpha0, omega1, alpha1)

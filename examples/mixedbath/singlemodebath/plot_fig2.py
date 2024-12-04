@@ -84,9 +84,9 @@ chi = 80
 mu = 0.5
 
 t = 1
-Nt = 20
+Nt = 50
 beta = 1
-Ntau = 20
+Ntau = 50
 
 # mixed time data
 ts, gt, lt = read_eq_ed(beta, t, Nt, mu, omega0, alpha0, omega1, alpha1)
@@ -125,7 +125,7 @@ ax[0,1].annotate(r'(b)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fonts
 
 # 
 ax[1,0].set_xlabel(r'$t$', fontsize=fontsize)
-ax[1,0].set_ylabel(r'${\rm Re}[G^{>}(t)]$', fontsize=fontsize)
+ax[1,0].set_ylabel(r'${\rm Re}[G^{<}(t)]$', fontsize=fontsize)
 ax[1,0].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[1,0].locator_params(axis='both', nbins=6)
 ax[1,0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
@@ -134,7 +134,7 @@ ax[1,0].annotate(r'(c)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fonts
 
 
 ax[1,1].set_xlabel(r'$t$', fontsize=fontsize)
-ax[1,1].set_ylabel(r'${\rm Im}[G^{>}(t)]$', fontsize=fontsize)
+ax[1,1].set_ylabel(r'${\rm Im}[G^{<}(t)]$', fontsize=fontsize)
 ax[1,1].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[1,1].locator_params(axis='both', nbins=6)
 ax[1,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
