@@ -102,9 +102,9 @@ chi = 80
 mu = 0.5
 
 t = 0.1
-Nt = 10
+Nt = 20
 beta = 0.1
-Ntau = 10
+Ntau = 20
 d = 1
 alpha = 1
 
