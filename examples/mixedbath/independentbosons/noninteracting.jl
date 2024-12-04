@@ -50,7 +50,7 @@ function main_mixed(ϵ_d; β=1, Nτ=20, t=1, Nt=100, d=3, chi = 100)
 	δτ = β / Nτ
 	δt = t / Nt
 
-	println("Nt=", Nt, " δt=", δt, "Nτ=", Nτ, " δτ=", δτ, " ϵ_d=", ϵ_d, " β=", β, " chi=", chi)
+	println("Nt=", Nt, " δt=", δt, " Nτ=", Nτ, " δτ=", δτ, " ϵ_d=", ϵ_d, " β=", β, " chi=", chi)
 
 	ts = [i*δt for i in 1:Nt+1]
 	τs = [i*δτ for i in 1:Nτ+1]
