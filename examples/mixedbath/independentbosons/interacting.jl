@@ -11,7 +11,7 @@ spectrum_func(;α=1, d=3) = Leggett(d=d, ωc=1, α=α)
 
 function main_imag_analytic(U, ϵ_d=U/2; β=1, N=20, d=3, α=1)
 	# ϵ_d = 0.5
-	g = independentbosons_Gτ(spectrum_func(d=d, α=α)), β=β, ϵ_d=-ϵ_d, U=U, N=N, bands=2)
+	g = independentbosons_Gτ(spectrum_func(d=d, α=α), β=β, ϵ_d=-ϵ_d, U=U, N=N, bands=2)
 
 	data_path = "result/interacting_analytic_imag_beta$(β)_U$(U)_mu$(ϵ_d)_N$(N)_d$(d)_alpha$(α).json"
 
