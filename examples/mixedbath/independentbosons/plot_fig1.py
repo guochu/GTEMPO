@@ -101,10 +101,10 @@ chi = 80
 
 mu = 0.5
 
-t = 0.1
-Nt = 20
-beta = 0.1
-Ntau = 20
+t = 1
+Nt = 100
+beta = 1
+Ntau = 100
 d = 1
 alpha = 1
 
@@ -127,24 +127,24 @@ print('errors: ', mse_error(gtau, gtau2), ' ', mse_error(gf, gf2))
 ax[0,0].legend(fontsize=12)
 
 
-# # interacting case
-# U = 1
+# interacting case
+U = 1
 
-# taus, gtau = read_interacting_imag_analytic(beta, Ntau, U, mu, d)
-# ts, gt, lt = read_interacting_real_analytic(beta, t, Nt, U, mu, d)
-# gf = gt - lt
+taus, gtau = read_interacting_imag_analytic(beta, Ntau, U, mu, d, alpha)
+ts, gt, lt = read_interacting_real_analytic(beta, t, Nt, U, mu, d, alpha)
+gf = gt - lt
 
-# ax[1,0].plot(taus, gtau, ls='--', color='k', linewidth=linewidth, label=r'Analytic')
-# ax[1,1].plot(ts, gf.imag, ls='--', color='k', linewidth=linewidth, label=r'Analytic')
+ax[1,0].plot(taus, gtau, ls='--', color='k', linewidth=linewidth, label=r'Analytic')
+ax[1,1].plot(ts, gf.imag, ls='--', color='k', linewidth=linewidth, label=r'Analytic')
 
 
-# ts2, taus2, gt2, lt2, gtau2 = read_interacting_mixed_tempo(beta, Ntau, t, Nt, U, mu, d, chi)
-# gf2 = gt2 - lt2
+ts2, taus2, gt2, lt2, gtau2 = read_interacting_mixed_tempo(beta, Ntau, t, Nt, U, mu, d, alpha, chi)
+gf2 = gt2 - lt2
 
-# ax[1,0].plot(taus2, gtau2.real, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
-# ax[1,1].plot(ts, gf2.imag, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
+ax[1,0].plot(taus2, gtau2.real, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
+ax[1,1].plot(ts, gf2.imag, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
 
-# print('errors: ', mse_error(gtau, gtau2), ' ', mse_error(gf, gf2))
+print('errors: ', mse_error(gtau, gtau2), ' ', mse_error(gf, gf2))
 
 # ax[1,0].legend(fontsize=12)
 

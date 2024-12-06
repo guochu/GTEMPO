@@ -10,7 +10,7 @@ using DelimitedFiles, JSON, Serialization
 
 # spectrum_func() = DiracDelta(ω=1, α=0.5)
 
-function main_real(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, chi = 100)
+function main_real(ϵ_d; β=Inf, t=1, N=100, ω₀=1, α₀=0.5, chi = 100)
 	# ϵ_d = 0.5
 	δt=t / N
 	println("N=", N, " t=", t, " ϵ_d=", ϵ_d, " β=", β, " ω₀=", ω₀, " α₀=", α₀, " chi=", chi)
