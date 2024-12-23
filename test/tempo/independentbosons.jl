@@ -157,7 +157,7 @@ end
 			end
 			cache = environments(lattice, mpsKs, mpsI)
 			g1 = cached_Gτ(lattice, mpsKs, mpsI, cache=cache)
-			g2 = independentbosons_Gτ(spec, β=β, ϵ_d=-ϵ_d, N=N)
+			g2 = independentbosons_Gτ(spec, β=β, ϵ_d=-ϵ_d, Nτ=N)
 
 			@test norm(g1 - g2) / norm(g1) < rtol	
 		end	
@@ -185,7 +185,7 @@ end
 			end
 			cache = environments(lattice, mpsKs, mpsI)
 			g1 = cached_Gτ(lattice, mpsKs, mpsI, cache=cache)
-			g2 = independentbosons_Gτ(spec, β=β, ϵ_d=-ϵ_d, N=N, U=U, bands=2)
+			g2 = independentbosons_Gτ(spec, β=β, ϵ_d=-ϵ_d, Nτ=N, U=U, bands=2)
 
 			@test norm(g1 - g2) / norm(g1) < rtol	
 		end	
@@ -301,7 +301,7 @@ end
 
 	g1′ = [independentbosons_greater(spec, tj, β=β, ϵ_d=-ϵ_d) for tj in 0:δt:t]
 	g2′ = [independentbosons_lesser(spec, tj, β=β, ϵ_d=-ϵ_d) for tj in 0:δt:t]
-	g3′ = independentbosons_Gτ(spec, β=β, ϵ_d=-ϵ_d, N=Nτ)
+	g3′ = independentbosons_Gτ(spec, β=β, ϵ_d=-ϵ_d, Nτ=Nτ)
 
 	@test norm(g1 - g1′) / norm(g1) < rtol	
 	@test norm(g2 - g2′) / norm(g2) < rtol	
@@ -329,7 +329,7 @@ end
 
 	g1′ = [independentbosons_greater(spec, tj, β=β, ϵ_d=-ϵ_d, U=U, bands=2) for tj in 0:δt:t]
 	g2′ = [independentbosons_lesser(spec, tj, β=β, ϵ_d=-ϵ_d, U=U, bands=2) for tj in 0:δt:t]
-	g3′ = independentbosons_Gτ(spec, β=β, ϵ_d=-ϵ_d, N=Nτ, U=U, bands=2)
+	g3′ = independentbosons_Gτ(spec, β=β, ϵ_d=-ϵ_d, Nτ=Nτ, U=U, bands=2)
 
 	@test norm(g1 - g1′) / norm(g1) < rtol	
 	@test norm(g2 - g2′) / norm(g2) < rtol	
