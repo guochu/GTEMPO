@@ -104,7 +104,7 @@ mu = 0.5
 t = 2
 Nt = 200
 beta = 0.5
-Ntau = 50
+Ntau = 100
 d = 1
 alpha = 1
 
