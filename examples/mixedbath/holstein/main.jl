@@ -6,10 +6,6 @@ using GTEMPO
 using DelimitedFiles, JSON, Serialization
 
 
-# spectrum_func() = Leggett(d=3, ωc=1)
-
-# spectrum_func() = DiracDelta(ω=1, α=0.5)
-
 function main_real(ϵ_d; β=Inf, t=1, N=100, ω₀=1, α₀=0.5, chi = 100)
 	# ϵ_d = 0.5
 	δt=t / N

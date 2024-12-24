@@ -79,12 +79,12 @@ omega0 = 1
 alpha0 = 0.5
 omega1 = 1
 alpha1 = 1
-chi = 80
+chi = 100
 
 mu = 0.5
 
-t = 1
-Nt = 100
+t = 5
+Nt = 500
 beta = 1
 Ntau = 100
 
