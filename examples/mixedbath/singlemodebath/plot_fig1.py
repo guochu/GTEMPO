@@ -79,13 +79,13 @@ omega0 = 1
 alpha0 = 0.5
 omega1 = 1
 alpha1 = 1
-chi = 100
+chi = 160
 
-mu = 0.5
+mu = 0.
 
-t = 5
-Nt = 250
-beta = 1
+t = 2
+Nt = 200
+beta = 0.5
 # Ntau = 20
 
 # real time data

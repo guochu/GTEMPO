@@ -79,14 +79,14 @@ omega0 = 1
 alpha0 = 0.5
 omega1 = 1
 alpha1 = 1
-chi = 100
+chi = 160
 
-mu = 0.5
+mu = 0.
 
-t = 5
-Nt = 500
-beta = 1
-Ntau = 100
+t = 2
+Nt = 200
+beta = 0.5
+Ntau = 50
 
 # mixed time data
 ts, gt, lt = read_eq_ed(beta, t, Nt, mu, omega0, alpha0, omega1, alpha1)

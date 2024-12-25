@@ -11,7 +11,7 @@ spectrum_func(;α=1, ω=1) = DiracDelta(ω=ω, α=α)
 # spectrum_func() = DiracDelta(ω=1, α=0.5)
 
 function main_imag_analytic(ϵ_d; β=1, N=20, ω=1, α=1)
-	g = independentbosons_Gτ(spectrum_func(ω=ω, α=α), β=β, ϵ_d=-ϵ_d, N=N)
+	g = independentbosons_Gτ(spectrum_func(ω=ω, α=α), β=β, ϵ_d=-ϵ_d, Nτ=N)
 
 	data_path = "result/noninteracting_sm_analytic_imag_beta$(β)_mu$(ϵ_d)_N$(N)_omega$(ω)_alpha$(α).json"
 
