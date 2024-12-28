@@ -15,6 +15,15 @@ def parse_complex_array(data):
 	im = [item['im'] for item in data]
 	return asarray(re) + 1j * asarray(im)
 
+def read_noninteracting_imag_tempo(beta, Ntau, mu, d, alpha, chi=80):
+	dtau = beta / Ntau
+	filename = 'result/noninteracting_imaggtempo_beta%s_dtau%s_mu%s_d%s_alpha%s_chi%s.json'%(beta, dtau, mu, d, alpha, chi)
+	with open(filename, 'r') as f:
+		data = f.read()
+		data = json.loads(data)
+	gtau = asarray(data['gtau'])
+	taus = asarray(data['taus'])
+	return taus-taus[0], gtau
 
 def read_noninteracting_mixed_tempo(beta, Ntau, t, N, mu, d, alpha, chi=80):
 	dt = t / N
@@ -97,7 +106,7 @@ markers = ['o', '^', '+']
 fig, ax = plt.subplots(2,2, figsize=(8,6))
 
 
-chi = 140
+chi = 100
 
 mu = 0.
 
@@ -120,10 +129,16 @@ ax[0,1].plot(ts, lt.imag, ls='--', color='k', linewidth=linewidth, label=r'Analy
 ts2, taus2, gt2, lt2, gtau2 = read_noninteracting_mixed_tempo(beta, Ntau, t, Nt, mu, d, alpha, chi)
 # gf2 = gt2 - lt2
 
-ax[0,0].plot(taus2, gtau2.real, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
+taus3, gtau3 = read_noninteracting_imag_tempo(beta, Ntau, mu, d, alpha, chi)
+
+ax[0,0].plot(taus3, gtau3, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
 ax[0,1].plot(ts, lt2.imag, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
 
 print('errors: ', mse_error(gtau, gtau2), ' ', mse_error(gt, gt2))
+
+print(gtau[:10])
+print(gtau2[:10])
+# print(asarray(gtau) - gtau2 / (gtau2[0] + gtau2[-1]))
 
 ax[0,0].legend(fontsize=12)
 

@@ -45,6 +45,72 @@ function main_real_analytic(ϵ_d; β=1, t=1, N=100, d=3, α=1)
 	return g1, g2
 end
 
+function main_imag(ϵ_d; β=1, Nτ=20, d=3, chi = 100, α=1)
+	# ϵ_d = 0.5
+	δτ = β / Nτ
+
+	println(" Nτ=", Nτ, " δτ=", δτ, " ϵ_d=", ϵ_d, " β=", β, " chi=", chi, " d=", d, " α=", α)
+
+	τs = [i*δτ for i in 1:Nτ+1]
+
+	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
+	truncK = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
+
+	
+	lattice = GrassmannLattice(N=Nτ, δτ=δτ, contour=:imag, order=1)
+	println("number of sites, ", length(lattice))
+
+	mpspath = "data/noninteracting_imaggtempo_beta$(β)_dtau$(δτ)_d$(d)_alpha$(α)_chi$(chi).mps"
+	if ispath(mpspath)
+		println("load MPS-IF from path ", mpspath)
+		mpsI = Serialization.deserialize(mpspath)
+	else
+		println("computing MPS-IF...")
+		bath = bosonicbath(spectrum_func(d=d, α=α), β=β)
+		corr = correlationfunction(bath, lattice)
+		@time mpsI = retardedinteractdynamics(lattice, corr, trunc=trunc)
+
+		println("save MPS-IF to path ", mpspath)
+		Serialization.serialize(mpspath, mpsI)
+	end
+
+	# println("computing MPS-IF...")
+	# @time mpsI = retardedinteractdynamics(lattice, corr, trunc=trunc)
+
+	println("bond dimension of mpsI is ", bond_dimension(mpsI))
+
+	fbath = fermionicbath(semicircular(), β=β, μ=0)
+	exact_model = SISB(fbath, U=0., μ=-ϵ_d)
+	@time mpsK = sysdynamics(lattice, exact_model, trunc=truncK)
+	println("bond dimension of mpsK is ", bond_dimension(mpsK))
+	println("mpsK scale is ", scaling(mpsK))
+	for band in 1:lattice.bands
+		mpsK = boundarycondition!(mpsK, lattice, band=band)
+	end
+	# mpsK = systhermalstate!(mpsK, lattice, exact_model, trunc=trunc, δτ=0.001)
+	println("bond dimension of mpsK is ", bond_dimension(mpsK))
+
+
+	cache = environments(lattice, mpsK, mpsI)
+	# @time gt = [cached_greater(lattice, j, mpsK, mpsI, cache=cache) for j in 1:lattice.kt]
+	# @time lt = [cached_lesser(lattice, j, mpsK, mpsI, cache=cache) for j in 1:lattice.kt]
+	# return gt, lt
+
+	@time gtau = [cached_Gτ(lattice, k, 1, mpsK, mpsI, c1=false, c2=true, band=1, cache=cache) for k in 1:Nτ+1]
+
+	data_path = "result/noninteracting_imaggtempo_beta$(β)_dtau$(δτ)_mu$(ϵ_d)_d$(d)_alpha$(α)_chi$(chi).json"
+
+	results = Dict("taus"=>τs, "bd"=>bond_dimensions(mpsI), "gtau"=>gtau)
+
+	println("save results to ", data_path)
+
+	open(data_path, "w") do f
+		write(f, JSON.json(results))
+	end
+
+	return τs, gtau
+end
+
 function main_mixed(ϵ_d; β=1, Nτ=20, t=1, Nt=100, d=3, chi = 100, α=1)
 	# ϵ_d = 0.5
 	δτ = β / Nτ
