@@ -79,7 +79,7 @@ omega0 = 1
 alpha0 = 0.5
 omega1 = 1
 alpha1 = 1
-chi = 160
+chi = 120
 
 mu = 0.
 

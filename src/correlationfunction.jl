@@ -8,11 +8,11 @@ Compute the discrete correlation functions (QUAPI)
 function correlationfunction(bath::AbstractBath, lattice::ImagGrassmannLattice1Order)
     # @assert lattice.β == bath.β
     (lattice.β == bath.β) || @warn "lattice.β=$(lattice.β), but bath.β=$(bath.β)"
-    Cτ(bath, N=lattice.N, δτ=lattice.δτ)
+    Δτ(bath, N=lattice.N, δτ=lattice.δτ)
 end 
-correlationfunction(bath::AbstractBath, lattice::RealGrassmannLattice1Order) = Ct(bath, N=lattice.N, t=lattice.t) 
-correlationfunction(bath::AbstractBath, lattice::RealGrassmannLattice2Order) = Ct(bath, N=2*lattice.N, t=lattice.t)
+correlationfunction(bath::AbstractBath, lattice::RealGrassmannLattice1Order) = Δt(bath, N=lattice.N, t=lattice.t) 
+correlationfunction(bath::AbstractBath, lattice::RealGrassmannLattice2Order) = Δt(bath, N=2*lattice.N, t=lattice.t)
 function correlationfunction(bath::AbstractBath, lattice::MixedGrassmannLattice1Order)
     (lattice.β == bath.β) || @warn "lattice.β=$(lattice.β), but bath.β=$(bath.β)"
-    Cm(bath, Nτ=lattice.Nτ, t=lattice.t, Nt=lattice.Nt)
+    Δm(bath, Nτ=lattice.Nτ, t=lattice.t, Nt=lattice.Nt)
 end  

@@ -6,6 +6,25 @@ using GTEMPO
 using DelimitedFiles, JSON, Serialization
 
 
+function main_real_analytic(ϵ_d; t=1, N=100, ω₀=1, α₀=0.5, order=10)
+	δt=t / N
+	println("N=", N, " t=", t, " ϵ_d=", ϵ_d, " ω₀=", ω₀, " α₀=", α₀, " order=", order)
+	ts = [i*δt for i in 1:N+1]
+
+	g1 = [holstein_Gt(semicircular(t=t), tj, ϵ_d=-ϵ_d, ω=ω₀, g=α₀, order=order) for tj in ts]
+
+	results = Dict("ts"=>ts, "gf" => g1)
+
+	data_path = "result/holstein_analytic_betaInf_t$(t)_dt$(δt)_omega0$(ω₀)_alpha0$(α₀)_mu$(ϵ_d)_order$(order).json"
+
+	open(data_path, "w") do f
+		write(f, JSON.json(results))
+	end
+
+	return ts, g1
+end
+
+
 function main_real(ϵ_d; β=Inf, t=1, N=100, ω₀=1, α₀=0.5, chi = 100)
 	# ϵ_d = 0.5
 	δt=t / N
@@ -26,7 +45,7 @@ function main_real(ϵ_d; β=Inf, t=1, N=100, ω₀=1, α₀=0.5, chi = 100)
 	# println("computing MPS-IF...")
 	# @time mpsI = retardedinteractdynamics(lattice, corr, trunc=trunc)
 
-	fbath = fermionicbath(semicircular(t=1), β=β, μ=0)
+	fbath = fermionicbath(semicircular(t=t), β=β, μ=0)
 
 	mpspath = "data/holstein_realgtempo_beta$(β)_t$(t)_dt$(δt)_omega0$(ω₀)_alpha0$(α₀)_chi$(chi).mps"
 	if ispath(mpspath)

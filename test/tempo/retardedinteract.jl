@@ -99,7 +99,7 @@ end
 		for ordering in real_grassmann_orderings
 			# println("bands=", bands, ", N=", N)
 			lattice = GrassmannLattice(N=N, δt=0.05, bands=1, contour=:real, order=1, ordering=ordering)
-			corr = fermionic_Ct(f, β=β, N=lattice.N, t=lattice.t)
+			corr = fermionic_Δt(f, β=β, N=lattice.N, t=lattice.t)
 			mpsa = retardedinteractdynamics_naive(lattice, corr, trunc=trunc)
 			mpsb = retardedinteractdynamics(lattice, corr, trunc=trunc)
 			@test distance(mpsa, mpsb) / norm(mpsa) <= rtol
@@ -111,7 +111,7 @@ end
 	for N in (2, 3)
 		for ordering in real_grassmann_orderings
 			lattice = GrassmannLattice(N=N, δt=0.05, bands=2, contour=:real, order=1, ordering=ordering)
-			corr = fermionic_Ct(f, β=β, N=lattice.N, t=lattice.t)
+			corr = fermionic_Δt(f, β=β, N=lattice.N, t=lattice.t)
 
 			mpsa = retardedinteractdynamics_naive(lattice, corr, trunc=trunc)	
 			mpsb = retardedinteractdynamics(lattice, corr, trunc=trunc)
@@ -135,7 +135,7 @@ end
 		for N in (1, 2, 3)
 			for ordering in mixed_grassmann_orderings
 				lattice = GrassmannLattice(Nt=N, δt=0.05, δτ=δτ, Nτ=Nτ, bands=bands, contour=:mixed, order=1, ordering=ordering)
-				corr = fermionic_Cm(f, β=β, Nt=lattice.Nt, t=lattice.t, Nτ=lattice.Nτ)
+				corr = fermionic_Δm(f, β=β, Nt=lattice.Nt, t=lattice.t, Nτ=lattice.Nτ)
 
 				mpsa = retardedinteractdynamics_naive(lattice, corr, trunc=trunc)
 				mpsb = retardedinteractdynamics(lattice, corr, trunc=trunc)

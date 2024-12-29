@@ -111,10 +111,10 @@ end
 	# println("μ = ", μ)
 	for spec in (spectrum_func(), DiracDelta())
 		bath = fermionicbath(spec, β=β, μ=0.)
-		gt = [toulouse_Gt(spectrum_func(), tj, ϵ_d = ϵ_d, μ = 0.) for tj in ts]
+		gt = [im*toulouse_Gt(spectrum_func(), tj, ϵ_d = ϵ_d, μ = 0.) for tj in ts]
 
 		exact_model = SISB(bath, μ=ϵ_d, U=0)
-		corr = Ct(bath, N=N, t=t)
+		corr = Δt(bath, N=N, t=t)
 		for ordering in real_ac_grassmann_orderings
 			lattice = GrassmannLattice(N=N, δt=δt, contour=:real, ordering=ordering)
 			mpsI = hybriddynamics(lattice, corr, trunc=trunc) 
