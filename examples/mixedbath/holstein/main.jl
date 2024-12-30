@@ -11,7 +11,11 @@ function main_real_analytic(ϵ_d; t=1, N=100, ω₀=1, α₀=0.5, order=10)
 	println("N=", N, " t=", t, " ϵ_d=", ϵ_d, " ω₀=", ω₀, " α₀=", α₀, " order=", order)
 	ts = [i*δt for i in 1:N+1]
 
-	g1 = [holstein_Gt(semicircular(t=t), tj, ϵ_d=-ϵ_d, ω=ω₀, g=α₀, order=order) for tj in ts]
+	spec = semicircular(t=t)
+
+	println(holstein_Gw(spec, -20, ϵ_d=-ϵ_d, ω=ω₀, g=α₀, maxiter=order), " ", holstein_Gw(spec, 20, ϵ_d=-ϵ_d, ω=ω₀, g=α₀, maxiter=order))
+
+	g1 = [holstein_Gt(spec, tj, ϵ_d=-ϵ_d, ω=ω₀, g=α₀, maxiter=order, wmin=-20., wmax=20.) for tj in ts]
 
 	results = Dict("ts"=>ts, "gf" => g1)
 

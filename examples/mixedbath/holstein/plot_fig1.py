@@ -24,24 +24,18 @@ def read_real_tempo(t, N, mu, omega, alpha, chi=80):
 		data = json.loads(data)
 	gt = parse_complex_array(data['gt'])
 	ts = asarray(data['ts'])
-	return ts-ts[0], gt
+	return ts-ts[0], -gt * 1j
 
-# def read_noninteracting_imag_analytic(beta, N, mu, d, alpha):
-# 	filename = 'result/noninteracting_analytic_imag_beta%s_mu%s_N%s_d%s_alpha%s.json'%(beta, mu, N, d, alpha)
-# 	with open(filename, 'r') as f:
-# 		data = f.read()
-# 		data = json.loads(data)
-# 	gt = data['gf']
-# 	return data['ts'], gt
 
-# def read_noninteracting_real_analytic(beta, t, N, mu, d, alpha):
-# 	filename = 'result/noninteracting_analytic_real_beta%s_mu%s_t%s_N%s_d%s_alpha%s.json'%(beta, mu, t, N, d, alpha)
-# 	with open(filename, 'r') as f:
-# 		data = f.read()
-# 		data = json.loads(data)
-# 	gt = parse_complex_array(data['gt'])
-# 	lt = parse_complex_array(data['lt'])
-# 	return data['ts'], gt, lt
+def read_real_analytic(t, N, mu, omega, alpha, order=10):
+	dt = t / N
+	filename = 'result/holstein_analytic_betaInf_t%s_dt%s_omega0%s_alpha0%s_mu%s_order%s.json'%(t, dt, omega, alpha, mu, order)
+	with open(filename, 'r') as f:
+		data = f.read()
+		data = json.loads(data)
+	gf = parse_complex_array(data['gf'])
+	ts = asarray(data['ts'])
+	return ts-ts[0], gf 
 
 
 
@@ -60,31 +54,52 @@ markersize = 4
 colors = ['b', 'g', 'c', 'y', 'r']
 markers = ['o', '^', '+']
 
-fig, ax = plt.subplots(2,2, figsize=(8,6))
+fig, ax = plt.subplots(1,2, figsize=(8,3.5))
 
 
 chi = 100
 
 mu = 0.
 
-t = 4
-Nt = 400
+t = 1
+Nt = 100
 omega = 1
 alpha = 1
+
+order = 10
 
 # noninteracting case
 ts, gt = read_real_tempo(t, Nt, mu, omega, alpha, chi)
 
-ax[0,0].plot(ts, gt.real, ls='--', color='k', linewidth=linewidth, label=r'GTEMPO')
-
-ax[0,1].plot(ts, gt.imag, ls='--', color='k', linewidth=linewidth, label=r'GTEMPO')
-
-
-ax[0,0].legend(fontsize=12)
+ax[0].plot(ts, gt.real, ls='--', color='k', linewidth=linewidth, label=r'GTEMPO')
+ax[1].plot(ts, gt.imag, ls='--', color='k', linewidth=linewidth, label=r'GTEMPO')
 
 
+Nt = 100
+ts2, gt2 = read_real_analytic(t, Nt, mu, omega, alpha, order=order)
 
-ax[1,0].legend(fontsize=12)
+ax[0].plot(ts2, gt2.real, ls='-', color='r', linewidth=linewidth, label=r'Analytic')
+ax[1].plot(ts2, gt2.imag, ls='-', color='r', linewidth=linewidth, label=r'Analytic')
 
+ax[0].set_xlabel(r'$t$', fontsize=fontsize)
+ax[0].set_ylabel(r'${\rm Re}[G(t)]$', fontsize=fontsize)
+ax[0].tick_params(axis='both', which='major', labelsize=labelsize)
+ax[0].locator_params(axis='both', nbins=6)
+ax[0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+ax[0].annotate(r'(a)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
+ax[0].legend(loc='lower right', fontsize=12)
+
+ax[0].legend(fontsize=12)
+
+
+ax[1].set_xlabel(r'$t$', fontsize=fontsize)
+ax[1].set_ylabel(r'${\rm Im}[G(t)]$', fontsize=fontsize)
+ax[1].tick_params(axis='both', which='major', labelsize=labelsize)
+ax[1].locator_params(axis='both', nbins=6)
+ax[1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+ax[1].annotate(r'(b)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
+
+
+plt.tight_layout(pad=0.5)
 
 plt.show()
