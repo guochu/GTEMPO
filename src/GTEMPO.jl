@@ -12,7 +12,7 @@ export GrassmannTransferMatrix
 # Ordering of grasmann numbers
 export GrassmannOrdering, ImagGrassmannOrdering, RealGrassmannOrdering, MixedGrassmannOrdering
 export AbstractGrassmannLattice, ImagGrassmannLattice, RealGrassmannLattice, MixedGrassmannLattice, ContourIndex
-export branches, matchindices, indexmappings, swapbandperm, swapband!, swapband
+export branches, matchindices, indexmappings, swapbandperm, swapband!, swapband, fillband
 export OrderingStyle, ConjugationStyle, AdjacentConjugation, GeneralConjugation
 export LayoutStyle, TimeLocalLayout, BandLocalLayout, BranchLocalLayout
 export A1A1B1B1, AABB, A1B1B1A1, ABBA, A2A2A1A1B2B2B1B1

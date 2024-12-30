@@ -91,4 +91,41 @@ function swapbandperm(x::AbstractGrassmannLattice, b1::Int, b2::Int)
 	return Dict(r2[k1]=>v1 for (k1, v1) in r1)	
 end
 
+"""
+	fillband(lattice::AbstractGrassmannLattice, gmps::GrassmannMPS; band::Int=1)
+"""
+function fillband(lattice::AbstractGrassmannLattice, gmps::GrassmannMPS; band::Int=1)
+	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
+	lattice2 = similar(lattice, bands=1)
+	(length(lattice2) == length(gmps)) || throw(ArgumentError("GMPS size mismatch with lattice $(lattice2)"))
+	r2 = indexmappings(lattice2)
+	r1 = indexmappings(lattice)
+	mm = Dict(r1[(j, c, b, band)]=>pos for ((j, c, b, bj), pos) in r2)
+
+	data = similar(gmps.data, length(lattice))
+	leftspace = oneunit(grassmannpspace())
+	for i in 1:length(lattice)
+		pos2 = get(mm, i, nothing)
+		if isnothing(pos2)
+			data[i] = trivial_sitetenor(scalartype(gmps), leftspace)
+		else
+			data[i] = gmps[pos2]
+			leftspace = space_r(data[i])'
+		end
+	end
+	return GrassmannMPS(data, scaling=scaling(gmps)^(length(gmps)/length(lattice)))
+end
+
+
+function trivial_sitetenor(::Type{T}, leftspace) where {T <: Number}
+	v = TensorMap(ds->zeros(T, ds), leftspace ⊗ grassmannpspace() ← leftspace )
+	for s in sectors(leftspace)
+		d = dim(leftspace, s)
+		copy!(v[(s, Irrep[ℤ₂](0), s)], reshape(one(zeros(d, d)), d, 1, d))
+	end
+	return v
+end
+
+
+
 
