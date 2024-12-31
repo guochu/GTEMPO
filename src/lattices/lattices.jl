@@ -95,6 +95,11 @@ end
 	fillband(lattice::AbstractGrassmannLattice, gmps::GrassmannMPS; band::Int=1)
 """
 function fillband(lattice::AbstractGrassmannLattice, gmps::GrassmannMPS; band::Int=1)
+	data = _fillband(lattice, gmps, band=band)
+	return GrassmannMPS(data, scaling=scaling(gmps)^(length(gmps)/length(lattice)))
+end
+
+function _fillband(lattice::AbstractGrassmannLattice, gmps; band::Int=1)
 	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	lattice2 = similar(lattice, bands=1)
 	(length(lattice2) == length(gmps)) || throw(ArgumentError("GMPS size mismatch with lattice $(lattice2)"))
@@ -103,7 +108,13 @@ function fillband(lattice::AbstractGrassmannLattice, gmps::GrassmannMPS; band::I
 	mm = Dict(r1[(j, c, b, band)]=>pos for ((j, c, b, bj), pos) in r2)
 
 	data = similar(gmps.data, length(lattice))
-	leftspace = oneunit(grassmannpspace())
+
+	i = 1
+	while isnothing(get(mm, i, nothing))
+		i += 1
+	end
+	leftspace = space_l(gmps[mm[i]])
+
 	for i in 1:length(lattice)
 		pos2 = get(mm, i, nothing)
 		if isnothing(pos2)
@@ -113,7 +124,7 @@ function fillband(lattice::AbstractGrassmannLattice, gmps::GrassmannMPS; band::I
 			leftspace = space_r(data[i])'
 		end
 	end
-	return GrassmannMPS(data, scaling=scaling(gmps)^(length(gmps)/length(lattice)))
+	return data
 end
 
 

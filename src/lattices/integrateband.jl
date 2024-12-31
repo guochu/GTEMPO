@@ -1,7 +1,13 @@
 """
 	integrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS; band::Int=1)
 """
-function integrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS; band::Int=1)
+function integrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS; band::Int=1) 
+	data = _integrateband(lattice, x, band=band)
+	return GrassmannMPS(data, scaling=scaling(x)^(length(x)/length(data)))
+end
+
+
+function _integrateband(lattice::AbstractGrassmannLattice, x; band::Int=1)
 	(ConjugationStyle(lattice) isa AdjacentConjugation) || throw(ArgumentError("integrateband only supports AdjacentConjugation style"))
 	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	(length(x) == length(lattice)) || throw(DimensionMismatch())
@@ -33,7 +39,7 @@ function integrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS; band:
 			tmp = nothing
 		end		
 	end
-	return GrassmannMPS(data, scaling=scaling(x)^(length(x)/length(data)))
+	return data
 end
 
 
