@@ -4,6 +4,7 @@
 real-time MPS-IF for a single band 
 """
 function hybriddynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::AbstractMixedCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
+	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	kt, Nτ = lattice.kt, lattice.Nτ
 	for b1 in (:+, :-)
 		for i in 1:kt
@@ -26,6 +27,7 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Orde
 end
 
 function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::AbstractMixedCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
+	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	kt, Nτ = lattice.kt, lattice.Nτ
 	for b1 in (:+, :-)
 		for i in 1:kt

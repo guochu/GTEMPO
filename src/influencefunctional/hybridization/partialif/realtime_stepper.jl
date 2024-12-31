@@ -2,6 +2,7 @@ function hybriddynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattic
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
 	@assert size(η⁺⁺) == size(η⁺⁻) == size(η⁻⁺) == size(η⁻⁻)
 	@assert length(lattice) == length(gmps) 
+	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	if lattice.k == 2
 		pos1, pos2 = index(lattice, 1, conj=true, branch=:+, band=band), index(lattice, 1, conj=false, branch=:+, band=band)
 		apply!(exp(GTerm(pos1, pos2, coeff=η⁺⁺[1,1])), gmps)
@@ -30,6 +31,7 @@ function hybriddynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattic
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
 	@assert size(η⁺⁺) == size(η⁺⁻) == size(η⁻⁺) == size(η⁻⁻)
 	@assert length(lattice) == length(gmps)
+	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	if lattice.k == 2
 		pos1, pos2 = index(lattice, 1, conj=true, branch=:+, band=band), index(lattice, 1, conj=false, branch=:+, band=band)
 		apply!(exp(GTerm(pos1, pos2, coeff=η⁺⁺[1,1])), gmps)

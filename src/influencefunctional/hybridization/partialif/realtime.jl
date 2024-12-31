@@ -4,6 +4,7 @@
 real-time MPS-IF for a single band 
 """
 function hybriddynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
+	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
 	@assert size(η⁺⁺) == size(η⁺⁻) == size(η⁻⁺) == size(η⁻⁻)
 	k = lattice.k
@@ -18,6 +19,7 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order
 end
 
 function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
+	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
 	@assert size(η⁺⁺) == size(η⁺⁻) == size(η⁻⁺) == size(η⁻⁻)
 	k = lattice.k

@@ -4,6 +4,7 @@
 imaginary-time MPS-IF for a single band 
 """
 function hybriddynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr1::ImagCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
+	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	corr = corr1.data
 	k = lattice.k-1
 	for i in 1:k
@@ -15,6 +16,7 @@ end
 
 
 function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr1::ImagCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
+	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	corr = corr1.data
 	k = lattice.k-1
 	for i in 1:k

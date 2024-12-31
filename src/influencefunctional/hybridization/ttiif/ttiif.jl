@@ -10,6 +10,7 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, 
 end
 
 function hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::TranslationInvariantIF; band::Int=1)
+	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	if alg.fast
 		(alg.verbosity > 1) && println("Tree bipartition scheme using $(alg.k) multiplications")
 		return _hybriddynamics_fast(lattice, corr, alg, band=band)

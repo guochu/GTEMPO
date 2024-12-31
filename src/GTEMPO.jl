@@ -9,7 +9,7 @@ export AbstractGMPS, AbstractFiniteGMPS, GrassmannMPS, scaling, setscaling!, ran
 export mult!, mult, DMRGMult1, DMRGMult2, DMRGMultAlgorithm
 export GrassmannTransferMatrix
 
-# Ordering of grasmann numbers
+# definition of lattice and Ordering of grassmann numbers
 export GrassmannOrdering, ImagGrassmannOrdering, RealGrassmannOrdering, MixedGrassmannOrdering
 export AbstractGrassmannLattice, ImagGrassmannLattice, RealGrassmannLattice, MixedGrassmannLattice, ContourIndex
 export branches, matchindices, indexmappings, swapbandperm, swapband!, swapband, fillband
@@ -24,11 +24,12 @@ export A1A1B1B1_a1a1A1A1b1b1B1B1a2a2A2A2b2b2B2B2, AABB_aaAAbbBB
 export changeordering, toadjacentordering
 
 export vacuumstate, makestep, timesteps
-export ImagGrassmannLattice1Order, RealGrassmannLattice1Order, RealGrassmannLattice2Order, GrassmannLattice, index, integrate
+export ImagGrassmannLattice1Order, RealGrassmannLattice1Order, RealGrassmannLattice2Order, GrassmannLattice, index
+export integrate, integrateband
 export IntegrationAlgorithm, ExactIntegrate, BMPSIntegrate, Zvalue
 
 # correlation functions
-export Cτ, Ct, Cm, branch, CorrelationMatrix, correlationfunction
+export branch, correlationfunction
 
 # influence functional
 export InfluenceFunctionalAlgorithm, PartialIF, TranslationInvariantIF, partialif_hybrid, partialif_hybrid_naive
