@@ -45,11 +45,12 @@ export cached_occupation, cached_electriccurrent, cached_electriccurrent_fast
 
 # utilities for TEMPO
 # exact models
-export AbstractImpurityModel, SISB, SIDB, IRLM, SKIM, boundarycondition!, boundarycondition, boundarycondition_branching
+export AbstractImpurityHamiltonian, AbstractImpurityModel, SISB, SIDB, IRLM, SKIM
+export boundarycondition!, boundarycondition, boundarycondition_branching
 export systhermalstate, systhermalstate!, sysdynamics, sysdynamics!, sysdynamicsstepper!, accsysdynamics, accsysdynamics_fast
 export sysdynamics_forward!, sysdynamics_backward!, sysdynamics_imaginary!
 export zoomin, zoomout
-export ImpurityHamiltonian, tunneling, interaction, TunnelingTerm, InteractionTerm
+export ImpurityHamiltonian, tunneling, interaction, TunnelingTerm, InteractionTerm, AbstractFTerm
 
 using Base: @boundscheck, @propagate_inbounds
 using Logging: @warn

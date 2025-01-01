@@ -61,10 +61,10 @@ chi = 100
 
 mu = 0.
 
-t = 1
-Nt = 100
+t = 2
+Nt = 200
 omega = 1
-alpha = 1
+alpha = 0.5
 
 order = 10
 
@@ -75,7 +75,7 @@ ax[0].plot(ts, gt.real, ls='--', color='k', linewidth=linewidth, label=r'GTEMPO'
 ax[1].plot(ts, gt.imag, ls='--', color='k', linewidth=linewidth, label=r'GTEMPO')
 
 
-Nt = 100
+# Nt = 100
 ts2, gt2 = read_real_analytic(t, Nt, mu, omega, alpha, order=order)
 
 ax[0].plot(ts2, gt2.real, ls='-', color='r', linewidth=linewidth, label=r'Analytic')

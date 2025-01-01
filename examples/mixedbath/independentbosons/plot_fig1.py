@@ -129,9 +129,8 @@ ax[0,1].plot(ts, lt.imag, ls='--', color='k', linewidth=linewidth, label=r'Analy
 ts2, taus2, gt2, lt2, gtau2 = read_noninteracting_mixed_tempo(beta, Ntau, t, Nt, mu, d, alpha, chi)
 # gf2 = gt2 - lt2
 
-taus3, gtau3 = read_noninteracting_imag_tempo(beta, Ntau, mu, d, alpha, chi)
-
-ts4, taus4, gt4, lt4, gtau4 = read_noninteracting_mixed_tempo(beta, Ntau, 0.1, 10, mu, d, alpha, chi)
+# taus3, gtau3 = read_noninteracting_imag_tempo(beta, Ntau, mu, d, alpha, chi)
+# ts4, taus4, gt4, lt4, gtau4 = read_noninteracting_mixed_tempo(beta, Ntau, 0.1, 10, mu, d, alpha, chi)
 
 
 ax[0,0].plot(taus2, gtau2.real, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
