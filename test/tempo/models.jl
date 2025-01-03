@@ -63,9 +63,9 @@ end
 		# println("μ = ", μ)
 		spec = spectrum_func()
 		bath = fermionicbath(spec, β=β, μ=μ)
-		config = star(bath, dw=dw)
-		model = FreeSISBD(config, μ=ϵ_d)
-		g₁ = gf_greater_τ(model, τs)
+		b2 = discretebath(bath, δw=dw)
+		model = Toulouse(b2, ϵ_d=ϵ_d)
+		g₁ = toulouse_Gτ(model, τs)
 		g₂ = [toulouse_Gτ(spec, τ, β = β, ϵ_d = ϵ_d, μ = μ) for τ in τs]
 		@test norm(g₁ - g₂) / norm(g₁) < rtol
 
@@ -191,10 +191,9 @@ end
 	trunc = truncdimcutoff(D=100, ϵ=1.0e-10, add_back=0)
 		
 	bath = fermionicbath(spectrum_func(), β=β, μ=0)
-	config = star(bath, dw=dw)
-	model = FreeSISBD(config, μ=ϵ_d)
-	gτ = gf_greater_τ(model, τs)
-	gt1, gt2 = gf_greater_lesser_t(model, ts)
+	b2 = discretebath(bath, δw=dw)
+	gτ = toulouse_Gτ(b2, τs, ϵ_d=ϵ_d)
+	gt1, gt2 = toulouse_greater_lesser(b2, ts, ϵ_d=ϵ_d)
 	gt1, gt2 = im*gt1, -im*gt2
 
 	exact_model = SISB(bath, μ=ϵ_d, U=0)
@@ -361,21 +360,21 @@ end
 	trunc = truncdimcutoff(D=200, ϵ=1.0e-9, add_back=0)
 
 	for μ in (-2, 0, 2)
+		# println("μ = ", μ)
 		bath = fermionicbath(spectrum_func(D), β=β, μ=μ)
 		# ED
-		config = star(bath, dw=dw)
-		model = FreeSISBD(config, μ=ϵ_d)
-		ρ₀ = separable_state(model, sys_states=[0])
-		sys_site = only(default_sys_sites(model))
-		h = FermionicCommutator(coefficient_matrix(FreeFermionicHamiltonian(model)))
-		observer = coefficient_matrix(FreeFermionicHamiltonian(sysbath_tunneling(model)), length(model))
+		b2 = discretebath(bath, δw=dw)
+		model = Toulouse(b2, ϵ_d=ϵ_d)
+		ρ₀ = separablestate(model, 0)
+		h = cmatrix(model)
+		cache = freefermions_cache(h)
+		observer = particlecurrent_cmatrix(model)
 		currents = ComplexF64[]
 		ns = Float64[]
 		for i in 1:N
-			stepper = ExactStepper(tspan=(-(i-1)*im*δt, -i*im*δt), ishermitian=true)
-			ρ₀ = timeevo!(ρ₀, h, stepper)
-			push!(ns, real(ρ₀[sys_site, sys_site]))
-			push!(currents, sum(observer .* ρ₀))
+			ρ = freefermions_timeevo(ρ₀, h, i*δt, cache)
+			push!(ns, real(ρ[1, 1]))
+			push!(currents, sum(observer .* ρ))
 		end
 		currents = -2*im .* currents
 		# currents = currents[1:end-1]
