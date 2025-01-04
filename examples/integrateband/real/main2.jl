@@ -16,7 +16,7 @@ function main(t; β=1., U=1., ϵ_d=U/2, δt=0.1, chi=60, chi2=500)
 
 
 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
-	lattice = GrassmannLattice(N=N, δt=t/N, β=β, bands=2, contour=:real)
+	lattice = GrassmannLattice(N=N, δt=t/N, bands=2, contour=:real)
 
 	println("number of sites ", length(lattice))
 	lattice1 = similar(lattice, bands=1)
@@ -32,13 +32,13 @@ function main(t; β=1., U=1., ϵ_d=U/2, δt=0.1, chi=60, chi2=500)
 	else
 		println("computing MPS-IF...")
 		
-		@time mpsI - hybriddynamics(lattice1, corr, trunc=trunc)
+		@time mpsI = hybriddynamics(lattice1, corr, trunc=trunc)
 		println("save MPS-IF to path ", mpspath)
 		Serialization.serialize(mpspath, mpsI)
 	end
 
 	# println("Z is ", integrate(mpsI, lattice))
-	println("bond dimension of mpsI is ", bond_dimension(mpsI1), " ", bond_dimension(mpsI2))
+	println("bond dimension of mpsI is ", bond_dimension(mpsI))
 
 	@time mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
 	println("bond dimension of mpsK is ", bond_dimension(mpsK))
@@ -72,6 +72,6 @@ function main(t; β=1., U=1., ϵ_d=U/2, δt=0.1, chi=60, chi2=500)
 		write(f, JSON.json(results))
 	end
 
-	return g
+	return gt, lt
 
 end

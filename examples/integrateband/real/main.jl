@@ -16,7 +16,7 @@ function main(t; β=1., U=1., ϵ_d=U/2, δt=0.1, chi=60)
 
 
 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
-	lattice = GrassmannLattice(N=N, δt=t/N, β=β, bands=2, contour=:real)
+	lattice = GrassmannLattice(N=N, δt=t/N, bands=2, contour=:real)
 
 	println("number of sites ", length(lattice))
 
@@ -31,7 +31,7 @@ function main(t; β=1., U=1., ϵ_d=U/2, δt=0.1, chi=60)
 	else
 		println("computing MPS-IF...")
 		lattice2 = similar(lattice, bands=1)
-		@time mpsI - hybriddynamics(lattice2, corr, trunc=trunc)
+		@time mpsI = hybriddynamics(lattice2, corr, trunc=trunc)
 		Serialization.serialize(mpspath, mpsI)
 		println("save MPS-IF to path ", mpspath)
 	end
@@ -55,7 +55,7 @@ function main(t; β=1., U=1., ϵ_d=U/2, δt=0.1, chi=60)
 	@time gt = [cached_greater(lattice, k, mpsK, mpsI1, mpsI2, cache=cache) for k in 1:lattice.kt]
 	@time lt = [cached_lesser(lattice, k, mpsK, mpsI1, mpsI2, cache=cache) for k in 1:lattice.kt]
 
-	data_path = "result/anderson_tempo_beta$(β)_U$(U)_e$(ϵ_d)_N$(N)_chi$(chi).json"
+	data_path = "result/anderson_tempo_beta$(β)_t$(t)_dt$(δt)_U$(U)_e$(ϵ_d)_chi$(chi).json"
 
 	results = Dict("ts"=>ts, "gt" => gt, "lt"=>lt, "bd"=>bond_dimensions(mpsI1))
 
@@ -65,6 +65,6 @@ function main(t; β=1., U=1., ϵ_d=U/2, δt=0.1, chi=60)
 		write(f, JSON.json(results))
 	end
 
-	return g
+	return gt, lt
 
 end
