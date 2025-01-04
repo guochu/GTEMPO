@@ -62,9 +62,9 @@ chi = 100
 mu = 0.
 
 t = 2
-Nt = 200
+Nt = 400
 omega = 1
-alpha = 0.5
+alpha = 1
 
 order = 10
 
@@ -80,6 +80,9 @@ ts2, gt2 = read_real_analytic(t, Nt, mu, omega, alpha, order=order)
 
 ax[0].plot(ts2, gt2.real, ls='-', color='r', linewidth=linewidth, label=r'Analytic')
 ax[1].plot(ts2, gt2.imag, ls='-', color='r', linewidth=linewidth, label=r'Analytic')
+
+print('errors: ', mse_error(gt, gt2))
+
 
 ax[0].set_xlabel(r'$t$', fontsize=fontsize)
 ax[0].set_ylabel(r'${\rm Re}[G(t)]$', fontsize=fontsize)

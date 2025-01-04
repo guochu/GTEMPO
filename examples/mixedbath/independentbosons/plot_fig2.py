@@ -72,9 +72,9 @@ mu = 0.
 t = 2
 Nt = 200
 beta = 0.5
-Ntau = 100
+Ntau = 50
 omega = 1
-alpha = 1
+alpha = 0.5
 
 # noninteracting case
 taus, gtau = read_noninteracting_imag_analytic(beta, Ntau, mu, omega, alpha)
