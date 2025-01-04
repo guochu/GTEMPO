@@ -1,4 +1,4 @@
-push!(LOAD_PATH, "../../src")
+push!(LOAD_PATH, "../../../src")
 
 using GTEMPO, JSON, Serialization
 
@@ -59,7 +59,7 @@ function main(β; U=1., ϵ_d=U/2, δτ=0.1, chi=60, chi2=500)
 
 	cache = environments(lattice1, mps_adt)
 
-	@time gtau = cached_Gτ(lattice1, mpsK, mps_adt, cache=cache)
+	@time gtau = cached_Gτ(lattice1, mps_adt, cache=cache)
 
 	data_path = "result/anderson_tempo_beta$(β)_U$(U)_e$(ϵ_d)_N$(N)_chi$(chi)_chi2$(chi2).json"
 

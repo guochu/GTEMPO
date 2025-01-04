@@ -70,11 +70,11 @@ chi = 100
 mu = 0.
 
 t = 2
-Nt = 200
+Nt = 400
 beta = 0.5
 Ntau = 50
 omega = 1
-alpha = 0.5
+alpha = 1
 
 # noninteracting case
 taus, gtau = read_noninteracting_imag_analytic(beta, Ntau, mu, omega, alpha)

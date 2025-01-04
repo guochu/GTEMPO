@@ -1,4 +1,4 @@
-push!(LOAD_PATH, "../../src")
+push!(LOAD_PATH, "../../../src")
 
 using GTEMPO, JSON, Serialization
 
@@ -7,16 +7,16 @@ J(D, ε) = sqrt(D^2-ε^2)/pi
 spectrum_func(D=1) = SpectrumFunction(ω -> J(D, ω), lb = -D, ub = D)
 
 
-function main(β; U=1., ϵ_d=U/2, δτ=0.1, chi=60)
+function main(t; β=1., U=1., ϵ_d=U/2, δt=0.1, chi=60)
 	# β = 5.
 	D = 1.
-	N = round(Int, β / δτ)
+	N = round(Int, t / δt)
 
-	τs = [i*δτ for i in 0:N]
+	ts = [i*δt for i in 0:N]
 
 
-	trunc = truncdimcutoff(D=chi, ϵ=1.0e-8, add_back=0)
-	lattice = GrassmannLattice(N=N, δτ=β/N, bands=2, contour=:imag)
+	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
+	lattice = GrassmannLattice(N=N, δt=t/N, β=β, bands=2, contour=:real)
 
 	println("number of sites ", length(lattice))
 
@@ -24,17 +24,20 @@ function main(β; U=1., ϵ_d=U/2, δτ=0.1, chi=60)
 	exact_model = SISB(bath, U=U, μ=-ϵ_d)
 	corr = correlationfunction(bath, lattice)
 
-	mpspath = "data/tempo_beta$(β)_N$(N)_chi$(chi).mps"
+	mpspath = "data/tempo_beta$(β)_t$(t)_dt$(δt)_chi$(chi).mps"
 	if ispath(mpspath)
 		println("load MPS-IF from path ", mpspath)
-		mpsI1, mpsI2 = Serialization.deserialize(mpspath)
+		mpsI = Serialization.deserialize(mpspath)
 	else
 		println("computing MPS-IF...")
-		@time mpsI1 = hybriddynamics(lattice, corr, trunc=trunc, band=1)
-		@time mpsI2 = hybriddynamics(lattice, corr, trunc=trunc, band=2)
+		lattice2 = similar(lattice, bands=1)
+		@time mpsI - hybriddynamics(lattice2, corr, trunc=trunc)
+		Serialization.serialize(mpspath, mpsI)
 		println("save MPS-IF to path ", mpspath)
-		Serialization.serialize(mpspath, (mpsI1, mpsI2))
 	end
+
+	mpsI1 = fillband(lattice, mpsI, band=1)
+	mpsI2 = fillband(lattice, mpsI, band=2)
 
 	# println("Z is ", integrate(mpsI, lattice))
 	println("bond dimension of mpsI is ", bond_dimension(mpsI1), " ", bond_dimension(mpsI2))
@@ -48,13 +51,13 @@ function main(β; U=1., ϵ_d=U/2, δτ=0.1, chi=60)
 	end
 	println("bond dimension of mpsK is ", bond_dimension(mpsK))
 
-
 	cache = environments(lattice, mpsK, mpsI1, mpsI2)
-	@time g = cached_Gτ(lattice, mpsK, mpsI1, mpsI2, cache=cache)
+	@time gt = [cached_greater(lattice, k, mpsK, mpsI1, mpsI2, cache=cache) for k in 1:lattice.kt]
+	@time lt = [cached_lesser(lattice, k, mpsK, mpsI1, mpsI2, cache=cache) for k in 1:lattice.kt]
 
 	data_path = "result/anderson_tempo_beta$(β)_U$(U)_e$(ϵ_d)_N$(N)_chi$(chi).json"
 
-	results = Dict("ts"=>τs, "gf" => g, "bd"=>bond_dimensions(mpsI1))
+	results = Dict("ts"=>ts, "gt" => gt, "lt"=>lt, "bd"=>bond_dimensions(mpsI1))
 
 	println("save results to ", data_path)
 

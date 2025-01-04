@@ -138,8 +138,8 @@ ax[0,1].plot(ts, lt2.imag, ls='--', color='r', linewidth=linewidth, label=r'GTEM
 
 print('errors: ', mse_error(gtau, gtau2), ' ', mse_error(gt, gt2))
 
-print(gtau[:10])
-print(gtau2[:10])
+# print(gtau[:10])
+# print(gtau2[:10])
 # print(asarray(gtau) - gtau2 / (gtau2[0] + gtau2[-1]))
 
 ax[0,0].legend(fontsize=12)

@@ -69,7 +69,7 @@ ts, gtau = read_tempo_1(beta, N, U, mu, chi)
 ax.plot(ts, gtau, ls='-', color='k', linewidth=linewidth, label=r'GTEMPO1')
 
 ts2, gtau2 = read_tempo_2(beta, N, U, mu, chi, chi2)
-ax.plot(ts2, gtau2, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO1')
+ax.plot(ts2, gtau2, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO2')
 
 print(mse_error(gtau, gtau2))
 
