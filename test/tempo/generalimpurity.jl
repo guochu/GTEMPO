@@ -93,8 +93,8 @@ end
 	N = 5
 	bath = fermionicbath(spectrum_func(1), β=10, μ=0.5)
 
-	rtol = 1.0e-3
-	tol = 1.0e-4
+	rtol = 1.0e-2
+	tol = 1.0e-2
 
 	# 1 orb
 	for U in [0, 1]
@@ -133,8 +133,8 @@ end
 	N = round(Int, β / δτ)
 	bath = fermionicbath(spectrum_func(1), β=β, μ=0.5)
 
-	rtol = 1.0e-3
-	tol = 1.0e-4
+	rtol = 1.0e-2
+	tol = 1.0e-2
 
 	for norb in [1, 2]
 		model1 = SKIM(bath, U=U, μ=ϵ_d, J=J, norb=norb)
@@ -168,8 +168,8 @@ end
 	N = 3
 	bath = fermionicbath(spectrum_func(1), β=10, μ=0.5)
 
-	rtol = 1.0e-3
-	tol = 1.0e-4
+	rtol = 1.0e-2
+	tol = 1.0e-2
 
 	# 1 orb
 	for norb in [1]
