@@ -1,4 +1,4 @@
 include("fermionoperator.jl")
-include("bulkcondition.jl")
+include("bulkconnection.jl")
 include("sysdynamics.jl")
 include("termdynamics.jl")

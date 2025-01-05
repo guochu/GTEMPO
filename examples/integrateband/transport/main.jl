@@ -73,7 +73,7 @@ function main(V::Real, t::Real, Lsys::Int; δt=0.1, chi=60, chi2=500)
 	adt_right = mpsI_left
 	for band in 1:Lsys-1
 		mpsK = baresysdynamics(lattice2, h, trunc=trunc)
-		mpsK = bulkcondition!(mpsK, lattice2, band=1)
+		mpsK = bulkconnection!(mpsK, lattice2, band=1)
 		mpsK = boundarycondition!(mpsK, lattice2, band=1)
 		adt_right2 = fillband(lattice2, adt_right, band=1)
 
@@ -82,7 +82,7 @@ function main(V::Real, t::Real, Lsys::Int; δt=0.1, chi=60, chi2=500)
 		canonicalize!(adt_right, alg = Orthogonalize(trunc=trunc2))
 	end
 
-	adt_right = bulkcondition!(adt_right, lattice1, band=1)
+	adt_right = bulkconnection!(adt_right, lattice1, band=1)
 	adt_right = boundarycondition!(adt_right, lattice1, band=1)
 	
 

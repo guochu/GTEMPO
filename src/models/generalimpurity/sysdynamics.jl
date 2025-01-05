@@ -1,9 +1,14 @@
-function sysdynamics!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, h::ImpurityHamiltonian; trunc::TruncationScheme=DefaultKTruncation, kwargs...)
-	gmps = baresysdynamics!(gmps, lattice, h; trunc=trunc, kwargs...)
-	for band in 1:lattice.bands
-		gmps = bulkcondition!(gmps, lattice, band=band, trunc=trunc)
-	end
-	return gmps
+function sysdynamics_imaginary!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, h::ImpurityHamiltonian; trunc::TruncationScheme=DefaultKTruncation)
+	(lattice.bands == h.bands) || throw(ArgumentError("lattice bands and ImpurityHamiltonian bands mismatch"))
+	return sysdynamics_util!(gmps, lattice, h, lattice.N, -lattice.δτ, :τ, trunc)
+end
+function sysdynamics_forward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, h::ImpurityHamiltonian; trunc::TruncationScheme=DefaultKTruncation)
+	(lattice.bands == h.bands) || throw(ArgumentError("lattice bands and ImpurityHamiltonian bands mismatch"))
+	return sysdynamics_util!(gmps, lattice, h, lattice.Nt, -im*lattice.δt, :+, trunc)
+end
+function sysdynamics_backward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, h::ImpurityHamiltonian; trunc::TruncationScheme=DefaultKTruncation)
+	(lattice.bands == h.bands) || throw(ArgumentError("lattice bands and ImpurityHamiltonian bands mismatch"))
+	return sysdynamics_util!(gmps, lattice, h, lattice.Nt, im*lattice.δt, :-, trunc)
 end
 
 baresysdynamics(lattice::AbstractGrassmannLattice, h::ImpurityHamiltonian; kwargs...) = baresysdynamics!(vacuumstate(lattice), lattice, h; kwargs...)
@@ -13,21 +18,21 @@ baresysdynamics(lattice::AbstractGrassmannLattice, h::ImpurityHamiltonian; kwarg
 """
 function baresysdynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, h::ImpurityHamiltonian; trunc::TruncationScheme=DefaultKTruncation)
 	(lattice.bands == h.bands) || throw(ArgumentError("lattice bands and ImpurityHamiltonian bands mismatch"))
-	gmps = sysdynamics_util!(gmps, lattice, h, lattice.N, -lattice.δτ, :τ, trunc)
+	return baresysdynamics_util!(gmps, lattice, h, lattice.N, -lattice.δτ, :τ, trunc)
 end
 
 function baresysdynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, h::ImpurityHamiltonian; 
 						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
 	(lattice.bands == h.bands) || throw(ArgumentError("lattice bands and ImpurityHamiltonian bands mismatch"))
 	if isnothing(branch)
-		sysdynamics_util!(gmps, lattice, h, lattice.N, -im*lattice.δt, :+, trunc)
-		return sysdynamics_util!(gmps, lattice, h, lattice.N, im*lattice.δt, :-, trunc)
+		baresysdynamics_util!(gmps, lattice, h, lattice.N, -im*lattice.δt, :+, trunc)
+		return baresysdynamics_util!(gmps, lattice, h, lattice.N, im*lattice.δt, :-, trunc)
 	else
 		(branch in (:+, :-)) || throw(ArgumentError("branch must be one of :+ or :-"))
 		if branch == :+
-			return sysdynamics_util!(gmps, lattice, h, lattice.N, -im*lattice.δt, :+, trunc)
+			return baresysdynamics_util!(gmps, lattice, h, lattice.N, -im*lattice.δt, :+, trunc)
 		else
-			return sysdynamics_util!(gmps, lattice, h, lattice.N, im*lattice.δt, :-, trunc)
+			return baresysdynamics_util!(gmps, lattice, h, lattice.N, im*lattice.δt, :-, trunc)
 		end
 	end
 end
@@ -36,17 +41,17 @@ function baresysdynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Ord
 						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
 	(lattice.bands == h.bands) || throw(ArgumentError("lattice bands and ImpurityHamiltonian bands mismatch"))
 	if isnothing(branch)
-		sysdynamics_util!(gmps, lattice, h, lattice.Nt, -im*lattice.δt, :+, trunc)
-		sysdynamics_util!(gmps, lattice, h, lattice.Nt, im*lattice.δt, :-, trunc)
-		return sysdynamics_util!(gmps, lattice, h, lattice.Nτ, -lattice.δτ, :τ, trunc)
+		baresysdynamics_util!(gmps, lattice, h, lattice.Nt, -im*lattice.δt, :+, trunc)
+		baresysdynamics_util!(gmps, lattice, h, lattice.Nt, im*lattice.δt, :-, trunc)
+		return baresysdynamics_util!(gmps, lattice, h, lattice.Nτ, -lattice.δτ, :τ, trunc)
 	else
 		(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
 		if branch == :+
-			return sysdynamics_util!(gmps, lattice, h, lattice.Nt, -im*lattice.δt, :+, trunc)
+			return baresysdynamics_util!(gmps, lattice, h, lattice.Nt, -im*lattice.δt, :+, trunc)
 		elseif branch == :-
-			return sysdynamics_util!(gmps, lattice, h, lattice.Nt, im*lattice.δt, :-, trunc)
+			return baresysdynamics_util!(gmps, lattice, h, lattice.Nt, im*lattice.δt, :-, trunc)
 		else
-			return sysdynamics_util!(gmps, lattice, h, lattice.Nτ, -lattice.δτ, :τ, trunc)
+			return baresysdynamics_util!(gmps, lattice, h, lattice.Nτ, -lattice.δτ, :τ, trunc)
 		end
 	end
 end
@@ -54,13 +59,23 @@ end
 
 function sysdynamics_util!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, h::ImpurityHamiltonian, N::Int, dt::Number, branch::Symbol, trunc)
 	for j in 1:N
-		sysdynamics_onestep_util!(gmps, lattice, h, j, dt, branch, trunc)
+		baresysdynamics_onestep_util!(gmps, lattice, h, j, dt, branch, trunc)
+	end
+	for band in 1:lattice.bands
+		bulkconnection_util!(gmps, lattice, N, band, branch, trunc)
+	end
+	return gmps
+end
+
+function baresysdynamics_util!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, h::ImpurityHamiltonian, N::Int, dt::Number, branch::Symbol, trunc)
+	for j in 1:N
+		baresysdynamics_onestep_util!(gmps, lattice, h, j, dt, branch, trunc)
 	end
 	return gmps
 end
 
 
-function sysdynamics_onestep_util!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, h::ImpurityHamiltonian, j::Int, dt::Number, branch::Symbol, trunc)
+function baresysdynamics_onestep_util!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, h::ImpurityHamiltonian, j::Int, dt::Number, branch::Symbol, trunc)
 	alg = Orthogonalize(trunc = trunc)
 	for hj in h.data
 		t = get_Gterm(lattice, hj, j, dt, branch)

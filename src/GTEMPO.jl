@@ -51,7 +51,7 @@ export systhermalstate, systhermalstate!, sysdynamics, sysdynamics!, sysdynamics
 export sysdynamics_forward!, sysdynamics_backward!, sysdynamics_imaginary!
 export zoomin, zoomout
 export ImpurityHamiltonian, tunneling, interaction, TunnelingTerm, InteractionTerm, AbstractFTerm
-export bulkcondition!, baresysdynamics!, baresysdynamics
+export bulkconnection!, baresysdynamics!, baresysdynamics
 
 using Base: @boundscheck, @propagate_inbounds
 using Logging: @warn
