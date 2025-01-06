@@ -17,7 +17,6 @@ function _integrateband(lattice::AbstractGrassmannLattice, x; band::Int=1)
 	r2 = indexmappings(lattice2)
 	r1 = indexmappings(lattice)
 	mm = Dict(r1[(j, c, b, ifelse(bj<band, bj, bj+1))]=>pos for ((j, c, b, bj), pos) in r2)
-
 	data = similar(x.data, length(lattice2))
 	i = 1
 	tmp = nothing
@@ -26,7 +25,7 @@ function _integrateband(lattice::AbstractGrassmannLattice, x; band::Int=1)
 		tmp = _absorb_transfer(tmp, tmp2)
 		i += 2
 	end
-
+	pos2 = 0
 	while i <= length(lattice)
 		pos2 = get(mm, i, nothing)
 		if isnothing(pos2)
@@ -38,6 +37,12 @@ function _integrateband(lattice::AbstractGrassmannLattice, x; band::Int=1)
 			i += 1
 			tmp = nothing
 		end		
+	end
+	if isnothing(tmp)
+		(pos2 == length(lattice2)) || error("something wrong")
+	else
+		@tensor r[1,2;4] := data[end][1,2,3] * tmp[3,4]
+		data[end] = r 
 	end
 	return data
 end
