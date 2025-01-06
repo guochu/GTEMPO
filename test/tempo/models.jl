@@ -376,7 +376,7 @@ end
 			push!(ns, real(ρ[1, 1]))
 			push!(currents, sum(observer .* ρ))
 		end
-		currents = -2*im .* currents
+		# currents = -2*im .* currents
 		# currents = currents[1:end-1]
 
 		# TEMPO 1 order

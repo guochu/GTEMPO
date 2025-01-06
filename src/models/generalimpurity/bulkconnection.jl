@@ -1,4 +1,4 @@
-
+bulkconnection(lattice::AbstractGrassmannLattice; kwargs...) = bulkconnection!(vacuumstate(lattice), lattice; kwargs...)
 # imaginary-time
 function bulkconnection!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice; band::Int=1, trunc::TruncationScheme=DefaultIntegrationTruncation)
 	return bulkconnection_util!(gmps, lattice, lattice.Nτ, band, :τ, trunc)

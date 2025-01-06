@@ -5,8 +5,10 @@
 include("../../../src/includes.jl")
 using JSON, Serialization
 
-J(D, ε) = sqrt(D^2-ε^2)/pi
-spectrum_func(D=1) = SpectrumFunction(ω -> J(D, ω), lb = -D, ub = D)
+function J(D::Real, ω::Real)
+	return (D/(2*pi)) * sqrt(1 - (ω/D)^2 ) * 0.1 / 2
+end
+spectrum_func(D) = SpectrumFunction(ω -> J(D, ω), lb = -D, ub = D)
 
 function transport_model(Lsys::Int, J::Real=1)
 	h = ImpurityHamiltonian(bands = Lsys)
@@ -23,7 +25,7 @@ end
 
 function main(V::Real, t::Real, Lsys::Int; δt=0.1, chi=60, chi2=500)
 	β = Inf
-	D = 1.
+	D = 2.
 	N = round(Int, t / δt)
 
 	ts = [i*δt for i in 0:N]
@@ -94,9 +96,11 @@ function main(V::Real, t::Real, Lsys::Int; δt=0.1, chi=60, chi2=500)
 	@time gt = [-im*cached_greater(lattice1, k, adt_right, mpsI_right, cache=cache) for k in 1:lattice1.kt]
 	@time lt = [im*cached_lesser(lattice1, k, adt_right, mpsI_right, cache=cache) for k in 1:lattice1.kt]
 
+	@time currents = [cached_electriccurrent_fast(lattice1, rightcorr, k+1, adt_right, mpsI_right, cache=cache) for k in 1:N]
+
 	data_path = "result/tempo_V$(V)_t$(t)_dt$(δt)_L$(Lsys)_chi$(chi)_chi2$(chi2).json"
 
-	results = Dict("ts"=>ts, "gt" => gt, "lt"=>lt)
+	results = Dict("ts"=>ts, "gt" => gt, "lt"=>lt, "rightcurrent"=>currents)
 
 	println("save results to ", data_path)
 
@@ -104,6 +108,6 @@ function main(V::Real, t::Real, Lsys::Int; δt=0.1, chi=60, chi2=500)
 		write(f, JSON.json(results))
 	end
 
-	return ts, gt
+	return ts, gt, currents
 
 end

@@ -1,12 +1,14 @@
 using ImpurityModelBase, JSON
 
-J(D, ε) = sqrt(D^2-ε^2)/pi
-spectrum_func(D=1) = SpectrumFunction(ω -> J(D, ω), lb = -D, ub = D)
+function J(D::Real, ω::Real)
+	return (D/(2*pi)) * sqrt(1 - (ω/D)^2 ) * 0.1 / 2
+end
+spectrum_func(D) = SpectrumFunction(ω -> J(D, ω), lb = -D, ub = D)
 
 
 function main(V::Real, t::Real, Lsys::Int; δt=0.1, dw=0.1)
 	β = Inf
-	D = 1.
+	D = 2.
 	N = round(Int, t / δt)
 
 	ts = [i*δt for i in 0:N]
@@ -33,26 +35,26 @@ function main(V::Real, t::Real, Lsys::Int; δt=0.1, dw=0.1)
 	ρ₀ = separablestate(model, ρsys)
 
 
-	# leftcurrentop = leftparticlecurrent_cmatrix(model)
-	# rightcurrentop = rightparticlecurrent_cmatrix(model)
+	leftcurrentop = leftparticlecurrent_cmatrix(model)
+	rightcurrentop = rightparticlecurrent_cmatrix(model)
 
-	# cache = freefermions_cache(h)
-	# n1 = ComplexF64[]
-	# leftcurrent = ComplexF64[]
-	# rightcurrent = ComplexF64[]
+	cache = freefermions_cache(h)
+	n1 = ComplexF64[]
+	leftcurrent = ComplexF64[]
+	rightcurrent = ComplexF64[]
 
-	# push!(n1, ρ₀[1,1])
-	# push!(leftcurrent, sum(leftcurrentop .* ρ₀))
-	# push!(rightcurrent, sum(rightcurrentop .* ρ₀))
+	push!(n1, ρ₀[1,1])
+	push!(leftcurrent, sum(leftcurrentop .* ρ₀))
+	push!(rightcurrent, sum(rightcurrentop .* ρ₀))
 
-	# for i in 2:length(ts)
-	# 	ρ = freefermions_timeevo(ρ₀, h, ts[i], cache)
-	# 	push!(n1, ρ[1,1])
-	# 	push!(leftcurrent, sum(leftcurrentop .* ρ))
-	# 	push!(rightcurrent, sum(rightcurrentop .* ρ))
-	# end
+	for i in 2:length(ts)
+		ρ = freefermions_timeevo(ρ₀, h, ts[i], cache)
+		push!(n1, ρ[1,1])
+		push!(leftcurrent, sum(leftcurrentop .* ρ))
+		push!(rightcurrent, sum(rightcurrentop .* ρ))
+	end
 	# return ts, n1, leftcurrent, rightcurrent
 
 	gt, lt = freefermions_greater_lesser(h, ρ₀, ts, i=Lsys)
-	return ts, gt
+	return ts, gt, rightcurrent
 end
