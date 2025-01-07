@@ -18,7 +18,7 @@ function main(β, J=0.5; chi=60, chi2=500)
 
 	δτ = 0.1
 	N = round(Int, β/δτ)
-	chi = 2048
+	# chi = 2048
 
 	τs = [i*δτ for i in 0:N]
 
