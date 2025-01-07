@@ -55,6 +55,6 @@ function main(V::Real, t::Real, Lsys::Int; δt=0.1, dw=0.1)
 	end
 	# return ts, n1, leftcurrent, rightcurrent
 
-	gt, lt = freefermions_greater_lesser(h, ρ₀, ts, i=Lsys)
-	return ts, gt, rightcurrent
+	# gt, lt = freefermions_greater_lesser(h, ρ₀, ts, i=Lsys)
+	return ts, leftcurrent, rightcurrent
 end
