@@ -149,7 +149,7 @@ ax[0,0].legend(fontsize=12)
 mu = 0.5
 U = 1
 
-# chi = 80
+chi = 180
 
 taus, gtau = read_interacting_imag_analytic(beta, Ntau, U, mu, d, alpha)
 ts, gt, lt = read_interacting_real_analytic(beta, t, Nt, U, mu, d, alpha)

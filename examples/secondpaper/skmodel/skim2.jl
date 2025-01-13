@@ -25,6 +25,8 @@ function main(β, J=0.5; chi=60, chi2=500)
 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
 	trunc2 = truncdimcutoff(D=chi2, ϵ=1.0e-10, add_back=0)
 
+	trunc0 = truncdimcutoff(D=2000, ϵ=1.0e-10, add_back=0)
+
 	lattice = GrassmannLattice(N=N, δτ=β/N, bands=2*norb, contour=:imag, ordering=A1A1B1B1())
 	lattice1 = similar(lattice, bands=1)
 
@@ -58,16 +60,16 @@ function main(β, J=0.5; chi=60, chi2=500)
 	for band in 1:lattice.bands-1
 		mps_adt = boundarycondition!(mps_adt, lattice_tmp, band=1)
 		mpsI1 = fillband(lattice_tmp, mpsI, band=1)
-		tmp = mult(mps_adt, mpsI1, trunc=trunc2)
+		tmp = mult(mps_adt, mpsI1, trunc=trunc0)
 		mps_adt = integrateband(lattice_tmp, tmp, band=1)
 		b1 = bond_dimension(mps_adt)
 		canonicalize!(mps_adt, alg = Orthogonalize(trunc=trunc2))
 		b2 = bond_dimension(mps_adt)
 		lattice_tmp = similar(lattice_tmp, bands=lattice_tmp.bands-1)
-		println("bond dimension of ADT is in $(band)th iteration, before compression: ", b1, ", after: ", b2)
+		println("bond dimension of ADT in $(band)th iteration, before compression: ", b1, ", after: ", b2)
 	end
 	mps_adt = boundarycondition!(mps_adt, lattice1, band=1)
-	mps_adt = mult(mps_adt, mpsI, trunc=trunc2)
+	mps_adt = mult(mps_adt, mpsI, trunc=trunc0)
 
 	println("bond dimension of final ADT is ", bond_dimension(mps_adt))
 

@@ -65,7 +65,7 @@ markers = ['o', '^', '+']
 fig, ax = plt.subplots(2,2, figsize=(8,6))
 
 
-chi = 100
+chi = 180
 
 mu = 0.
 
