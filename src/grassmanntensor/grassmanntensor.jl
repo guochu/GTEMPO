@@ -1,6 +1,8 @@
 const AbstractParityTensorMap{N₁, N₂} = AbstractTensorMap{GradedSpace{ZNIrrep{2}}, N₁, N₂}
 
-
+"""
+    GrassmannTensorMap
+"""
 struct GrassmannTensorMap{P <: AbstractParityTensorMap}
 	data::P
 end

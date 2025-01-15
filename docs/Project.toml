@@ -1,0 +1,8 @@
+[deps]
+DMRG = "1240110f-4488-488b-9691-4f58b4220f75"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+GTEMPO = "44ad46a9-1ad4-442b-94e0-dc86be91c0af"
+ImpurityModelBase = "a5817ebb-6d84-46c1-a17a-d25f868e249e"
+QuAPI = "49288508-9298-4753-b2e7-d320e8956d6c"
+SphericalTensors = "810931ec-fc2f-499d-8094-ffc35d8d9f19"
+TensorOperations = "6aa20fa7-93e2-5fca-9bc0-fbd0db3c71a2"

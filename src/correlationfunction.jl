@@ -3,7 +3,7 @@
 """
     correlationfunction(bath::AbstractBath, lattice::AbstractGrassmannLattice)
 
-Compute the discrete correlation functions (QUAPI)
+Compute the discrete correlation functions (QUAPI). More details see
 """
 function correlationfunction(bath::AbstractBath, lattice::ImagGrassmannLattice1Order)
     # @assert lattice.β == bath.β

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Example 1 · GTEMPO</title><meta name="title" content="Example 1 · GTEMPO"/><meta property="og:title" content="Example 1 · GTEMPO"/><meta property="twitter:title" content="Example 1 · GTEMPO"/><meta name="description" content="Documentation for GTEMPO."/><meta property="og:description" content="Documentation for GTEMPO."/><meta property="twitter:description" content="Documentation for GTEMPO."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">GTEMPO</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">GTEMPO</a></li><li><span class="tocitem">Manuals</span><ul><li><a class="tocitem" href="../../manuals/gtensor/">Grassmann tensors</a></li><li><a class="tocitem" href="../../manuals/gmps/">Grassmann MPS</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li class="is-active"><a class="tocitem" href>Example 1</a></li><li><a class="tocitem" href="../example2/">Example 2</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Example 1</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Example 1</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/guochu/GTEMPO" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/guochu/GTEMPO/blob/master/docs/src/examples/example1.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Example-1"><a class="docs-heading-anchor" href="#Example-1">Example 1</a><a id="Example-1-1"></a><a class="docs-heading-anchor-permalink" href="#Example-1" title="Permalink"></a></h1><pre><code class="language-julia hljs">include(&quot;util.jl&quot;)
+
+using DelimitedFiles
+using Serialization
+
+
+
+function main(β, δt=0.05, order=7)
+	ϵ_d = -1.
+	β = convert(Float64, β)
+	U = 0.
+	D = 2
+
+	# δt = 0.05
+	t = 30.
+	N = round(Int, t / δt)
+	# N = 600
+	# t = N * δt
+
+	bath = fermionicbath(spectrum_func(D), β=β, μ=0)
+	exact_model = SISB(bath, μ = ϵ_d, U=U)
+
+	bands = 1
+	lattice_o = GrassmannLattice(N=N, δt=δt, contour=:real, order=1, bands=bands)
+	println(&quot;number of sites, &quot;, length(lattice_o))
+
+
+	corr = correlationfunction(exact_model.bath, lattice_o)
+	return corr
+
+	trunc = truncdimcutoff(D=512, ϵ=10.0^(-order), add_back=0)
+	truncK = truncdimcutoff(D=512, ϵ=1.0e-10, add_back=0)
+
+	lattice = similar(lattice_o, N=0)
+	ns = zeros(Float64, N)
+	g₁ = zeros(ComplexF64, N)
+	l₁ = zeros(ComplexF64, N)
+	bds = zeros(Int, N)
+
+	mpsI = vacuumstate(lattice)
+	mpsK = vacuumstate(lattice)
+
+	band = 1
+
+	for k in 2:N+1
+		println(&quot;the $k-th evolution step...&quot;)
+		lattice, mpsI, mpsK = makestep(lattice, mpsI, mpsK)
+		@assert k == timesteps(mpsI, lattice) == lattice.k
+
+		@time mpsI = hybriddynamicsstepper(mpsI, lattice, corr, trunc=trunc)
+		@time mpsK = sysdynamicsstepper!(mpsK, lattice, exact_model, trunc=truncK)
+		mpsK′ = boundarycondition(mpsK, lattice)
+		# observables
+		cache = environments(lattice, mpsK′, mpsI)
+		@time ns[k-1] = cached_occupation(lattice, k-1, mpsK′, mpsI, cache=cache, band=band)
+		@time g₁[k-1] = cached_Gt(lattice, k, 1, mpsK′, mpsI, cache=cache, c1=false, c2=true, b1=:+, b2=:+, band=band)
+		@time l₁[k-1] = cached_Gt(lattice, 1, k, mpsK′, mpsI, cache=cache, c1=true, c2=false, b1=:-, b2=:+, band=band)
+		bds[k-1] = bond_dimension(mpsI)
+
+
+	end
+
+	ts = [i*δt for i in 1:N]
+
+	println(ns)
+	writedlm(&quot;result/tempo1_beta$(β)_N$(N)_dt$(δt)_mu$(ϵ_d)_order$(order).dat&quot;, [ts real(g₁) imag(g₁) real(l₁) imag(l₁) ns bds])
+
+end
+
+
+main(0.1)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../manuals/gmps/">« Grassmann MPS</a><a class="docs-footer-nextpage" href="../example2/">Example 2 »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Wednesday 15 January 2025 20:05">Wednesday 15 January 2025</span>. Using Julia version 1.9.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
