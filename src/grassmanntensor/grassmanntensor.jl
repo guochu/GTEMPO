@@ -1,7 +1,7 @@
-const AbstractParityTensorMap{N₁, N₂} = AbstractTensorMap{GradedSpace{ZNIrrep{2}}, N₁, N₂}
+const AbstractParityTensorMap{T, N₁, N₂} = AbstractTensorMap{T, S, N₁, N₂} where {S <: GradedSpace{ZNIrrep{2}}}
 
 
-struct GrassmannTensorMap{P <: AbstractParityTensorMap}
+struct GrassmannTensorMap{P<:AbstractParityTensorMap}
 	data::P
 end
 
@@ -31,19 +31,19 @@ function f_permute(t::AdjointTensorMap, (p₁, p₂)::Index2Tuple; copy::Bool=fa
 end
 
 
-@propagate_inbounds function f_permute!(tdst::AbstractParityTensorMap{N₁, N₂},
+@propagate_inbounds function f_permute!(tdst::AbstractParityTensorMap{<:Number, N₁, N₂},
                                         tsrc::AbstractParityTensorMap,
                                         p::Index2Tuple{N₁,N₂}) where {N₁,N₂}
     return add_f_permute!(tdst, tsrc, p, true, false)
 end
 
 
-@propagate_inbounds function add_f_permute!(tdst::AbstractParityTensorMap{N₁, N₂},
+@propagate_inbounds function add_f_permute!(tdst::AbstractParityTensorMap{<:Number, N₁, N₂},
                                           	tsrc::AbstractParityTensorMap,
                                          	p::Index2Tuple{N₁,N₂},
                                          	α::Number,
                                          	β::Number,
-                                         	backend::Backend...) where {N₁,N₂}
+                                         	backend::AbstractBackend...) where {N₁,N₂}
     treepermuter(f₁, f₂) = f_permute(f₁, f₂, p[1], p[2])
     return TK.add_transform!(tdst, tsrc, p, treepermuter, α, β, backend...)
 end

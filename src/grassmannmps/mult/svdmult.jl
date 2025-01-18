@@ -1,7 +1,7 @@
 # standard multiplication and truncation using SVD
 function mult2!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=DMRG.DefaultTruncation)
     (length(x) == length(y)) || throw(DimensionMismatch())
-    left = GrassmannTensorMap(isomorphism( fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) ))
+    left = GrassmannTensorMap(isomorphism(scalartype(x), fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) ))
     tmp5 = g_fuse(_mult_site(x[1], y[1]), 3)
     @tensor tmp4[1,4;5,6] := left[1,2,3] * tmp5[2,3,4,5,6]
     for i in 1:length(x)-1
@@ -20,7 +20,7 @@ mult2(x::GrassmannMPS, y::GrassmannMPS; kwargs...) = mult2!(copy(x), y; kwargs..
 
 function mult!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=DMRG.DefaultTruncation)
     (length(x) == length(y)) || throw(DimensionMismatch())
-    left = GrassmannTensorMap(isomorphism( fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) ))
+    left = GrassmannTensorMap(isomorphism(scalartype(x), fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) ))
     tmp5 = g_fuse(_mult_site(x[1], y[1]), 3)
     @tensor tmp4[1,4;5,6] := left[1,2,3] * tmp5[2,3,4,5,6]
     for i in 1:length(x)-1

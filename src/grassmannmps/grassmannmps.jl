@@ -11,7 +11,7 @@ function GrassmannMPS(data::Vector{A}; scaling::Real=1) where {A <: MPSTensor}
 	# @assert iseven(length(data))
 	isoneunit(space_r(data[end])) || throw(ArgumentError("input data must be in the even sector"))
 	T = real(scalartype(A))
-	B = bondtensortype(spacetype(A), Diagonal{T, Vector{T}})
+	B = bondtensortype(spacetype(A), T)
 	svectors = Vector{Union{Missing, B}}(missing, length(data)+1)
 	svectors[1] = Diagonal(id(space_l(data[1])))
 	svectors[end] = Diagonal(id(space_r(data[end])'))
@@ -21,8 +21,8 @@ end
 function GrassmannMPS(::Type{T}, L::Int) where {T <: Number}
 	@assert iseven(L)
 	s = oneunit(_ph)
-	v = TensorMap(ds->zeros(T, ds), s ⊗ _ph ← s )
-	blocks(v)[Irrep[ℤ₂](0)] = ones(1,1)
+	v = zeros(T, s ⊗ _ph ← s )
+	copy!(block(v, Irrep[ℤ₂](0)), ones(1,1))
 	data = [copy(v) for i in 1:L]
 	return GrassmannMPS(data, scaling=1)
 end
@@ -140,7 +140,7 @@ function increase_bond!(x::GrassmannMPS, D::Int)
 	Dh = div(D, 2)
 	virtualspace = Rep[ℤ₂](0=>Dh, 1=>Dh)
 	L = length(x)
-	ms = [GrassmannTensorMap(isometry(Matrix{scalartype(x)}, virtualspace, space_l(x[site+1]))) for site in 1:L-1]
+	ms = [GrassmannTensorMap(isometry(scalartype(x), virtualspace, space_l(x[site+1]))) for site in 1:L-1]
 	@tensor tmp[1,2;4] := GrassmannTensorMap(x[1])[1,2,3] * conj(ms[1][4,3])
 	x[1] = get_data(tmp)
 	@tensor tmp[1,3;4] := ms[L-1][1,2] * GrassmannTensorMap(x[L])[2,3,4]

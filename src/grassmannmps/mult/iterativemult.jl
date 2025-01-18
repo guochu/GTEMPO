@@ -61,10 +61,10 @@ function mult_cache(z::GrassmannMPS, x::GrassmannMPS, y::GrassmannMPS)
     @assert length(z) == length(x) == length(y)
     # initialize Hstorage
     L = length(z)
-    right = TensorMap(ones, scalartype(z), space_r(y)' ⊗ space_r(x)', space_r(z)')
+    right = ones(scalartype(z), space_r(y)' ⊗ space_r(x)', space_r(z)')
     hstorage = Vector{typeof(right)}(undef, L+1)
     hstorage[L+1] = right
-    hstorage[1] = TensorMap(ones, scalartype(z), space_l(z) ⊗ space_l(x)', space_l(y) )
+    hstorage[1] = ones( scalartype(z), space_l(z) ⊗ space_l(x)', space_l(y) )
     for i in L:-1:2
         hstorage[i] = updatemultright(hstorage[i+1], z[i], x[i], y[i])
     end
@@ -234,7 +234,7 @@ end
 _svd_guess(x::GrassmannMPS, y::GrassmannMPS, D::Int) = _svd_guess!(copy(x), y, D)
 function _svd_guess!(x::GrassmannMPS, y::GrassmannMPS, D::Int)
     (length(x) == length(y)) || throw(DimensionMismatch())
-    left = GrassmannTensorMap(isomorphism( fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) ))
+    left = GrassmannTensorMap(isomorphism(scalartype(x), fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) ))
     tmp5 = g_fuse(_mult_site(x[1], y[1]), 3)
     @tensor tmp4[1,4;5,6] := left[1,2,3] * tmp5[2,3,4,5,6]
     trunc = truncdim(D)

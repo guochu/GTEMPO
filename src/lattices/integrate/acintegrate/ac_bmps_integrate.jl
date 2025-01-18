@@ -42,13 +42,13 @@ end
 
 function _l_bmps_boundary(xx::Vector{<:GrassmannMPS})
 	s = oneunit(_ph)
-	v = TensorMap(ds->ones(scalartype(xx[1]), ds), s ⊗ s' ← s )
+	v = ones(scalartype(xx[1]), s ⊗ s' ← s )
 	return GrassmannMPS([v for i in 1:length(xx)])
 end
 
 function _r_bmps_boundary(xx::Vector{<:GrassmannMPS})
 	s = oneunit(_ph)
-	v = TensorMap(ds->ones(scalartype(xx[1]), ds), s ⊗ s ← s )
+	v = ones(scalartype(xx[1]), s ⊗ s ← s )
 	return GrassmannMPS([v for i in 1:length(xx)])
 end
 
@@ -117,7 +117,7 @@ end
 
 function contract_center(left::GrassmannMPS, right::GrassmannMPS)
 	L = length(left)
-	mj = GrassmannTensorMap(isomorphism(Matrix{scalartype(left)}, space_r(left)', space_l(right)))
+	mj = GrassmannTensorMap(isomorphism(scalartype(left), space_r(left)', space_l(right)))
 	f = scaling(left) * scaling(right)
 	for i in L:-1:1
 		mj = @tensor tmp[1,5] := f * GrassmannTensorMap(left[i])[1,2,3] * mj[3,4] * GrassmannTensorMap(right[L-i+1])[4,2,5]
@@ -125,17 +125,17 @@ function contract_center(left::GrassmannMPS, right::GrassmannMPS)
 	return TK.scalar(mj)
 end
 
-function _fuse_boundary(tmp::GrassmannTensorMap{<:AbstractTensorMap{S, 3, 1}}) where S
+function _fuse_boundary(tmp::GrassmannTensorMap{<:AbstractTensorMap{<:Number, S, 3, 1}}) where S
 	tmp1 = tmp.data
-	m = isomorphism(Matrix{scalartype(tmp1)}, fuse(space(tmp1, 1), space(tmp1, 2)), space(tmp1, 1) ⊗ space(tmp1, 2))
+	m = isomorphism(scalartype(tmp1), fuse(space(tmp1, 1), space(tmp1, 2)), space(tmp1, 1) ⊗ space(tmp1, 2))
 	@tensor l[1,4;5] := m[1,2,3] * tmp1[2,3,4,5]
 	return l	
 end
 
-function _trace_boundary(tmp1::GrassmannTensorMap{<:AbstractTensorMap{S, 3, 1}}; nt::Bool=true) where S
+function _trace_boundary(tmp1::GrassmannTensorMap{<:AbstractTensorMap{<:Number, S, 3, 1}}; nt::Bool=true) where S
 	# trace physices
 	tmp1 = get_data(tmp1)
-	m1 = TensorMap(ds->zeros(scalartype(tmp1), ds), space(tmp1, 3) ← space(tmp1, 4)' )
+	m1 = zeros(scalartype(tmp1), space(tmp1, 3) ← space(tmp1, 4)' )
 	for (f1, f2) in fusiontrees(tmp1)
 		if f1.uncoupled[1] == f1.uncoupled[2]
 			f0 = FusionTree((f1.uncoupled[3],), f1.coupled, (f1.isdual[3],))
@@ -144,7 +144,7 @@ function _trace_boundary(tmp1::GrassmannTensorMap{<:AbstractTensorMap{S, 3, 1}};
 		end
 	end	
 	vacuum = oneunit(spacetype(tmp1))
-	util = TensorMap(ones, scalartype(tmp1), vacuum)
+	util = ones(scalartype(tmp1), vacuum)
 	@tensor l[1,2;3] := util[1] * m1[2,3]
 	return l
 end
@@ -160,7 +160,7 @@ function _apply_physical_right(a::MPSTensor, b::MPSTensor)
 	return c
 end
 
-function swap_left(a::GrassmannTensorMap{<:AbstractTensorMap{S, 3, 1}}, b::GrassmannTensorMap{<:AbstractTensorMap{S, 3, 1}}, trunc) where S
+function swap_left(a::GrassmannTensorMap{<:AbstractTensorMap{<:Number, S, 3, 1}}, b::GrassmannTensorMap{<:AbstractTensorMap{<:Number, S, 3, 1}}, trunc) where S
 	@tensor tmp2[1,2,5,3;6,7] := a[1,2,3,4] * b[4,5,6,7]
 	# fuse indices
 	# cod = space(tmp2, 1) ⊗ space(tmp2, 2) ⊗ space(tmp2, 4) 

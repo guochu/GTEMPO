@@ -1,9 +1,9 @@
 using Base: @boundscheck, @propagate_inbounds
 using Logging: @warn
-using Permutations, Reexport, TupleTools, Strided, Statistics
-using SphericalTensors: SphericalTensors, QR, SVD, LQ, AdjointTensorMap
-const TK = SphericalTensors
-using TensorOperations: TensorOperations, IndexTuple, Index2Tuple, linearize, Backend
+using Permutations, Reexport, TupleTools, Strided, Statistics, TensorKit
+using TensorKit: TensorKit, QR, SVD, LQ, AdjointTensorMap, NoTruncation
+const TK = TensorKit
+using TensorOperations: TensorOperations, IndexTuple, Index2Tuple, linearize, AbstractBackend
 const TO = TensorOperations
 @reexport using DMRG, ImpurityModelBase, QuAPI
 import QuAPI: branch, index

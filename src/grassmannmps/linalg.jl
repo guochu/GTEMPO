@@ -38,9 +38,10 @@ _dot(psiA::GrassmannMPS, psiB::GrassmannMPS) = dot(MPS(psiA.data), MPS(psiB.data
 function Base.:*(h::MPO, psi::GrassmannMPS)
     @assert !isempty(h)
     (length(h) == length(psi)) || throw(DimensionMismatch())
+    T = scalartype(psi)
     r = [@tensor tmp[-1 -2; -3 -4 -5] := a[-1, -3, -4, 1] * b[-2, 1, -5] for (a, b) in zip(h.data, psi.data)]
-    left = isomorphism(fuse(space_l(h), space_l(psi)), space_l(h) ⊗ space_l(psi))
-    fusion_ts = [isomorphism(space(item, 4)' ⊗ space(item, 5)', fuse(space(item, 4)', space(item, 5)')) for item in r]
+    left = isomorphism(T, fuse(space_l(h), space_l(psi)), space_l(h) ⊗ space_l(psi))
+    fusion_ts = [isomorphism(T, space(item, 4)' ⊗ space(item, 5)', fuse(space(item, 4)', space(item, 5)')) for item in r]
     @tensor tmp[-1 -2; -3] := left[-1, 1, 2] * r[1][1,2,-2,3,4] * fusion_ts[1][3,4,-3]
     mpstensors = Vector{typeof(tmp)}(undef, length(h))
     mpstensors[1] = tmp
@@ -55,8 +56,9 @@ end
 # the reuslt is also a GrassmannMPS
 function Base.:*(x::GrassmannMPS, y::GrassmannMPS)
     (length(x) == length(y)) || throw(DimensionMismatch())
+    T = scalartype(x)
     out = [g_fuse(_mult_site(x[i], y[i]), 3) for i in 1:length(x)]
-    fusers = PeriodicArray([GrassmannTensorMap(isomorphism(space(item, 4)' ⊗ space(item, 5)', fuse(space(item, 4), space(item, 5)) )) for item in get_data.(out)])
+    fusers = PeriodicArray([GrassmannTensorMap(isomorphism(T, space(item, 4)' ⊗ space(item, 5)', fuse(space(item, 4), space(item, 5)) )) for item in get_data.(out)])
     return GrassmannMPS(get_data.([@tensor tmp[3,4;7] := conj(fusers[i-1][1,2,3]) * out[i][1,2,4,5,6] * fusers[i][5,6,7] for i in 1:length(x)]), scaling=scaling(x) * scaling(y))
 end
 
@@ -90,7 +92,7 @@ Base.:-(x::GrassmannMPS, y::GrassmannMPS) = x + (-y)
 
 function right_embedders(::Type{T}, a::S...) where {T <: Number, S <: ElementarySpace}
     V = ⊕(a...) 
-    ts = [TensorMap(zeros, T, aj, V) for aj in a]
+    ts = [zeros(T, aj, V) for aj in a]
     for c in sectors(V)
         n = 0
         for i in 1:length(ts)

@@ -1,5 +1,5 @@
 
-function update_pair_left(left::GrassmannTensorMap{<:AbstractTensorMap{S, 1, 3}}, j::Int, x::Vector, y::Vector, z::Vector) where S
+function update_pair_left(left::GrassmannTensorMap{<:AbstractTensorMap{<:Number, S, 1, 3}}, j::Int, x::Vector, y::Vector, z::Vector) where S
 	posa = 2*j-1
 
 	@tensor tmp1[6,4,5,3;2] := left[6,1,2,3] * x[posa][1,4,5] 
@@ -11,7 +11,7 @@ function update_pair_left(left::GrassmannTensorMap{<:AbstractTensorMap{S, 1, 3}}
 	# fuse indices
 	cod = space(threesitemps1, 1) ⊗ space(threesitemps1, 2) ⊗ space(threesitemps1, 5) ⊗ space(threesitemps1, 6)
 	dom = space(threesitemps1, 7)'
-	left4 = TensorMap(ds->zeros(scalartype(threesitemps1), ds), cod ← dom) 
+	left4 = zeros(scalartype(threesitemps1), cod ← dom) 
 	for (f1, f2) in fusiontrees(threesitemps1)
 		n = f1.uncoupled[2].n + f1.uncoupled[3].n + f1.uncoupled[4].n
 		if n == 0
@@ -34,7 +34,7 @@ function update_pair_left(left::GrassmannTensorMap{<:AbstractTensorMap{S, 1, 3}}
 	threesitemps2 = get_data(threesitemps2)
 	cod = space(threesitemps2, 1) ⊗ space(threesitemps2, 2) ⊗ space(threesitemps2, 3) ⊗ space(threesitemps2, 6) ⊗ space(threesitemps2, 7)
 	dom = space(threesitemps2, 8)'
-	left5 = TensorMap(ds->zeros(scalartype(threesitemps2), ds), cod ← dom) 
+	left5 = zeros(scalartype(threesitemps2), cod ← dom) 
 	for (f1, f2) in fusiontrees(threesitemps2)
 		n = f1.uncoupled[3].n + f1.uncoupled[4].n + f1.uncoupled[5].n
 		if n == 0
@@ -54,7 +54,7 @@ function update_pair_left(left::GrassmannTensorMap{<:AbstractTensorMap{S, 1, 3}}
 	return permute(g_trace(left5, 2), (1,), (2,3,4))
 end
 
-function update_pair_right(right::GrassmannTensorMap{<:AbstractTensorMap{S, 3, 1}}, j::Int, x::Vector, y::Vector, z::Vector) where S
+function update_pair_right(right::GrassmannTensorMap{<:AbstractTensorMap{<:Number, S, 3, 1}}, j::Int, x::Vector, y::Vector, z::Vector) where S
 	posb = 2 * j
 
 	@tensor tmp1[4 ;1 2 5 6] := z[posb][1,2,3] * right[3,4,5,6]
@@ -65,7 +65,7 @@ function update_pair_right(right::GrassmannTensorMap{<:AbstractTensorMap{S, 3, 1
 	threesitemps1 = get_data(threesitemps1)
 	cod = space(threesitemps1, 1) ⊗ space(threesitemps1, 2) 
 	dom = space(threesitemps1, 3)' ⊗ space(threesitemps1, 4)' ⊗ space(threesitemps1, 7)'
-	right4 = TensorMap(ds->zeros(scalartype(threesitemps1), ds), cod ← dom) 
+	right4 = zeros(scalartype(threesitemps1), cod ← dom) 
 	for (f1, f2) in fusiontrees(threesitemps1)
 		n = f2.uncoupled[2].n + f2.uncoupled[3].n + f2.uncoupled[4].n
 		if n == 0
@@ -88,7 +88,7 @@ function update_pair_right(right::GrassmannTensorMap{<:AbstractTensorMap{S, 3, 1
 	threesitemps2 = get_data(threesitemps2)
 	cod = space(threesitemps2, 1) ⊗ space(threesitemps2, 2) 
 	dom = space(threesitemps2, 3)' ⊗ space(threesitemps2, 4)' ⊗ space(threesitemps2, 7)' ⊗ space(threesitemps2, 8)'
-	right5 = TensorMap(ds->zeros(scalartype(threesitemps1), ds), cod ← dom) 
+	right5 = zeros(scalartype(threesitemps1), cod ← dom) 
 	for (f1, f2) in fusiontrees(threesitemps2)
 		n = f2.uncoupled[2].n + f2.uncoupled[3].n + f2.uncoupled[4].n
 		if n == 0

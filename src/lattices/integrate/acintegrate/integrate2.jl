@@ -30,7 +30,7 @@
 
 fermionparity(s::Z2Irrep) = isodd(s.n)
 
-function update_pair_left(left::GrassmannTensorMap{<:AbstractTensorMap{S, 1, 2}}, j::Int, x::Vector, y::Vector) where {S}
+function update_pair_left(left::GrassmannTensorMap{<:AbstractTensorMap{<:Number, S, 1, 2}}, j::Int, x::Vector, y::Vector) where {S}
 	posa = 2*j-1
 	@tensor tmp1[1,4,5;2] := left[1,2,3] * y[posa][3,4,5]
 	@tensor tmp2[1,2,5,3;6] := tmp1[1,2,3,4] * x[posa][4,5,6]
@@ -57,7 +57,7 @@ function update_pair_left(left::GrassmannTensorMap{<:AbstractTensorMap{S, 1, 2}}
 	# return left	
 end
 
-function update_pair_right(right::GrassmannTensorMap{<:AbstractTensorMap{S, 2, 1}}, j::Int, x::Vector, y::Vector) where S
+function update_pair_right(right::GrassmannTensorMap{<:AbstractTensorMap{<:Number, S, 2, 1}}, j::Int, x::Vector, y::Vector) where S
 	posb = 2 * j
 	@tensor tmp1[4,1,2;5] := y[posb][1,2,3] * right[3,4,5]
 	@tensor tmp2[1,4,2,5; 6] := x[posb][1,2,3] * tmp1[3,4,5,6]

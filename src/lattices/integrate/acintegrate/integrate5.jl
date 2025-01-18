@@ -1,7 +1,7 @@
 # 5 GMPSs
 
 
-function update_pair_left(left::GrassmannTensorMap{<:AbstractTensorMap{S, 1, 5}}, j::Int, x::Vector, y::Vector, z::Vector, u::Vector, v::Vector) where S
+function update_pair_left(left::GrassmannTensorMap{<:AbstractTensorMap{<:Number, S, 1, 5}}, j::Int, x::Vector, y::Vector, z::Vector, u::Vector, v::Vector) where S
 	posa = 2*j-1
 
 	@tensor tmp1[1,2,3,4,7,8;5] := left[1,2,3,4,5,6] * v[posa][6,7,8] 
@@ -36,7 +36,7 @@ function update_pair_left(left::GrassmannTensorMap{<:AbstractTensorMap{S, 1, 5}}
 	return permute(left, (1,), (2,3,4,5,6))
 end
 
-function update_pair_right(right::GrassmannTensorMap{<:AbstractTensorMap{S, 5, 1}}, j::Int, x::Vector, y::Vector, z::Vector, u::Vector, v::Vector) where S
+function update_pair_right(right::GrassmannTensorMap{<:AbstractTensorMap{<:Number, S, 5, 1}}, j::Int, x::Vector, y::Vector, z::Vector, u::Vector, v::Vector) where S
 	posb = 2 * j
 
 	@tensor tmp1[4;5 6 7 1 2 8] := v[posb][1,2,3] * right[3,4,5,6,7,8]

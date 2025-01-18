@@ -11,18 +11,20 @@ TK.spacetype(t::GrassmannTensorMap) = spacetype(typeof(t))
 TK.scalartype(::Type{GrassmannTensorMap{P}}) where P = scalartype(P)
 TK.has_shared_permute(t::GrassmannTensorMap, p::Index2Tuple) = TK.has_shared_permute(t.data, p)
 
-function TO.tensoralloc(::Type{TT}, structure, istemp=false,
-                        backend::Backend...) where {TT<:GrassmannTensorMap}
-    function blockallocator(d)
-        return TO.tensoralloc(storagetype(TT), d, istemp, backend...)
-    end
-    return GrassmannTensorMap(TensorMap(blockallocator, structure))
+function TO.tensoralloc(::Type{TT},
+                        structure::TensorMapSpace{S,N₁,N₂},
+                        istemp::Val,
+                        allocator=TO.DefaultAllocator()) where
+         {S,N₁,N₂,TT<:GrassmannTensorMap}
+    A = storagetype(TT)
+    dim = TK.fusionblockstructure(structure).totaldim
+    data = TO.tensoralloc(A, dim, istemp, allocator)
+    # return TT(data, structure)
+    return GrassmannTensorMap(TensorMap{scalartype(TT)}(data, structure))
 end
 
-function TO.tensorfree!(t::GrassmannTensorMap, backend::Backend...)
-    for (c, b) in blocks(t.data)
-        TO.tensorfree!(b, backend...)
-    end
+function TO.tensorfree!(t::GrassmannTensorMap, allocator=TO.DefaultAllocator())
+    TO.tensorfree!(t.data.data, allocator)
     return nothing
 end
 
@@ -40,118 +42,106 @@ end
                                           p::Index2Tuple{N₁,N₂},   
                                           α::Number,
                                           β::Number,
-                                          backend::Backend...) where {N₁,N₂}
+                                          backend...) where {N₁,N₂}
     add_f_permute!(tdst.data, tsrc.data, p, α, β, backend...)
 end
 
 # tensoradd!
-function TO.tensoradd!(C::GrassmannTensorMap, pC::Index2Tuple,
-                       A::GrassmannTensorMap, conjA::Symbol,
-                       α::Number, β::Number, backend::Backend...) 
-    if conjA == :N
-        A′ = A
-        pC′ = _canonicalize(pC, C)
-    elseif conjA == :C
+function TO.tensoradd!(C::GrassmannTensorMap,
+                       A::GrassmannTensorMap, pA::Index2Tuple, conjA::Bool,
+                       α::Number, β::Number,
+                       backend, allocator)
+    if conjA
         A′ = adjoint(A)
-        pC′ = TK.adjointtensorindices(A, _canonicalize(pA, C))
+        pA′ = TK.adjointtensorindices(A.data, _canonicalize(pA, C))
+        add_permute!(C, A′, pA′, α, β, backend)
     else
-        throw(ArgumentError("unknown conjugation flag $conjA"))
+        add_permute!(C, A, _canonicalize(pA, C), α, β, backend)
     end
-    add_permute!(C, A′, pC′, α, β, backend...)
     return C
 end
 
-function TO.tensoradd_type(TC, ::Index2Tuple{N₁,N₂}, A::GrassmannTensorMap,
-                           ::Symbol) where {N₁,N₂}
+function TO.tensoradd_type(TC, A::GrassmannTensorMap, ::Index2Tuple{N₁,N₂},
+                           ::Bool) where {N₁,N₂}
     M = TK.similarstoragetype(A.data, TC)
     return GrassmannTensorMap(tensormaptype(spacetype(A.data), N₁, N₂, M))
 end
 
-function TO.tensoradd_structure(pC::Index2Tuple{N₁,N₂},
-                                A::GrassmannTensorMap, conjA::Symbol) where {N₁,N₂}
-    S = spacetype(A.data)
-    if conjA == :N
-        cod = ProductSpace{S,N₁}(space.(Ref(A), pC[1]))
-        dom = ProductSpace{S,N₂}(dual.(space.(Ref(A), pC[2])))
-        return dom → cod
+function TO.tensoradd_structure(A::GrassmannTensorMap, pA::Index2Tuple{N₁,N₂},
+                                conjA::Bool) where {N₁,N₂}
+    if !conjA
+        # don't use `permute` as this is also used when indices are traced
+        return TK.select(space(A.data), pA)
     else
-        return TO.tensoradd_structure(TK.adjointtensorindices(A, pC), adjoint(A), :N)
+        return TO.tensoradd_structure(adjoint(A), TK.adjointtensorindices(A.data, pA), false)
     end
 end
 
 # tensortrace!
-function TO.tensortrace!(C::GrassmannTensorMap, p::Index2Tuple,
-                         A::GrassmannTensorMap, q::Index2Tuple, conjA::Symbol,
-                         α::Number, β::Number, backend::Backend...) 
-    if conjA == :N
-        A′ = A
-        p′ = _canonicalize(p, C)
-        q′ = q
-    elseif conjA == :C
+function TO.tensortrace!(C::GrassmannTensorMap,
+                         A::GrassmannTensorMap, p::Index2Tuple, q::Index2Tuple,
+                         conjA::Bool,
+                         α::Number, β::Number, backend, allocator) 
+    if conjA
         A′ = adjoint(A)
         p′ = TK.adjointtensorindices(A.data, _canonicalize(p, C))
         q′ = TK.adjointtensorindices(A.data, q)
+        trace_permute!(C, A′, p′, q′, α, β, backend)
     else
-        throw(ArgumentError("unknown conjugation flag $conjA"))
+        trace_permute!(C, A, _canonicalize(p, C), q, α, β, backend)
     end
-    # TODO: novel syntax for tensortrace?
-    # tensortrace!(C, pC′, A′, qA′, α, β, backend...)
-    trace_permute!(C, A′, p′, q′, α, β, backend...)
     return C
 end
 
 # tensorcontract!
-function TO.tensorcontract!(C::GrassmannTensorMap, pAB::Index2Tuple,
-                            A::GrassmannTensorMap, pA::Index2Tuple, conjA::Symbol,
-                            B::GrassmannTensorMap, pB::Index2Tuple, conjB::Symbol,
-                            α::Number, β::Number, backend::Backend...) 
+function TO.tensorcontract!(C::GrassmannTensorMap,
+                            A::GrassmannTensorMap, pA::Index2Tuple, conjA::Bool,
+                            B::GrassmannTensorMap, pB::Index2Tuple, conjB::Bool,
+                            pAB::Index2Tuple, α::Number, β::Number,
+                            backend, allocator)
     pAB′ = _canonicalize(pAB, C)
-    if conjA == :N
-        A′ = A
-        pA′ = pA
-    elseif conjA == :C
+    if conjA && conjB
         A′ = A'
         pA′ = TK.adjointtensorindices(A.data, pA)
-    else
-        throw(ArgumentError("unknown conjugation flag $conjA"))
-    end
-    if conjB == :N
-        B′ = B
-        pB′ = pB
-    elseif conjB == :C
         B′ = B'
         pB′ = TK.adjointtensorindices(B.data, pB)
+        contract!(C, A′, pA′, B′, pB′, pAB′, α, β, backend, allocator)
+    elseif conjA
+        A′ = A'
+        pA′ = TK.adjointtensorindices(A.data, pA)
+        contract!(C, A′, pA′, B, pB, pAB′, α, β, backend, allocator)
+    elseif conjB
+        B′ = B'
+        pB′ = TK.adjointtensorindices(B.data, pB)
+        contract!(C, A, pA, B′, pB′, pAB′, α, β, backend, allocator)
     else
-        throw(ArgumentError("unknown conjugation flag $conjB"))
+        contract!(C, A, pA, B, pB, pAB′, α, β, backend, allocator)
     end
-    contract!(C, A′, pA′, B′, pB′, pAB′, α, β, backend...)
     return C
 end
 
-function TO.tensorcontract_type(TC, ::Index2Tuple{N₁,N₂},
-                                A::GrassmannTensorMap, pA, conjA,
-                                B::GrassmannTensorMap, pB, conjB) where {N₁,N₂}
+function TO.tensorcontract_type(TC,
+                                A::GrassmannTensorMap, ::Index2Tuple, ::Bool,
+                                B::GrassmannTensorMap, ::Index2Tuple, ::Bool,
+                                ::Index2Tuple{N₁,N₂}) where {N₁,N₂}
     M = TK.similarstoragetype(A.data, TC)
-    M == TK.similarstoragetype(B.data, TC) || throw(ArgumentError("incompatible storage types"))
+    M == TK.similarstoragetype(B.data, TC) ||
+        throw(ArgumentError("incompatible storage types:\n$(M) ≠ $(TK.similarstoragetype(B, TC))"))
+    spacetype(A) == spacetype(B) || throw(SpaceMismatch("incompatible space types"))
     return GrassmannTensorMap{tensormaptype(spacetype(A), N₁, N₂, M)}
 end
 
-function TO.tensorcontract_structure(pC::Index2Tuple{N₁,N₂},
-                                     A::GrassmannTensorMap, pA::Index2Tuple, conjA,
-                                     B::GrassmannTensorMap, pB::Index2Tuple,
-                                     conjB) where {N₁,N₂}
-    S = spacetype(A)
-    spaces1 = TO.flag2op(conjA).(space.(Ref(A.data), pA[1]))
-    spaces2 = TO.flag2op(conjB).(space.(Ref(B.data), pB[2]))
-    spaces = (spaces1..., spaces2...)
-    cod = ProductSpace{S,N₁}(getindex.(Ref(spaces), pC[1]))
-    dom = ProductSpace{S,N₂}(dual.(getindex.(Ref(spaces), pC[2])))
-    return dom → cod
+function TO.tensorcontract_structure(A::GrassmannTensorMap, pA::Index2Tuple, conjA::Bool,
+                                     B::GrassmannTensorMap, pB::Index2Tuple, conjB::Bool,
+                                     pAB::Index2Tuple{N₁,N₂}) where {N₁,N₂}
+    sA = TO.tensoradd_structure(A, pA, conjA)
+    sB = TO.tensoradd_structure(B, pB, conjB)
+    return permute(TK.compose(sA, sB), pAB)
 end
 
-function TO.checkcontractible(tA::GrassmannTensorMap, iA::Int, conjA::Symbol,
-                              tB::GrassmannTensorMap, iB::Int, conjB::Symbol,
-                              label) 
+function TO.checkcontractible(tA::GrassmannTensorMap, iA::Int, conjA::Bool,
+                              tB::GrassmannTensorMap, iB::Int, conjB::Bool,
+                              label)
     sA = TO.tensorstructure(tA, iA, conjA)'
     sB = TO.tensorstructure(tB, iB, conjB)
     sA == sB ||
@@ -173,7 +163,7 @@ function trace_permute!(tdst::GrassmannTensorMap,
                         (q₁, q₂)::Index2Tuple{N₃,N₃},
                         α::Number,
                         β::Number,
-                        backend::Backend...) where {N₁,N₂,N₃}
+                        backend=TO.DefaultBackend()) where {N₁,N₂,N₃}
     @boundscheck begin
         all(i -> space(tsrc.data, p₁[i]) == space(tdst.data, i), 1:N₁) ||
             throw(SpaceMismatch("trace: tsrc = $(codomain(tsrc.data))←$(domain(tsrc.data)),
@@ -212,7 +202,7 @@ function trace_permute!(tdst::GrassmannTensorMap,
             C = tdst.data[f₁′′, f₂′′]
             A = tsrc.data[f₁, f₂]
             α′ = α * coeff
-            TO.tensortrace!(C, (p₁, p₂), A, (q₁, q₂), :N, α′, true, backend...)
+            TO.tensortrace!(C, (p₁, p₂), A, (q₁, q₂), :N, α′, true, backend)
         end
     end
     return tdst
@@ -231,7 +221,7 @@ function contract!(C::GrassmannTensorMap,
                    (p₁, p₂)::Index2Tuple,
                    α::Number,
                    β::Number,
-                   backend::Backend...) where {N₁,N₂,N₃}
+                   backend, allocator) where {N₁,N₂,N₃}
     
     # find optimal contraction scheme
     hsp = TK.has_shared_permute

@@ -22,14 +22,14 @@ scaling(x::GrassmannTransferMatrix) = x.scaling
 function update_pair_left end
 function update_pair_right end
 
-function Base.:*(left::GrassmannTensorMap{<:AbstractTensorMap{S, 1, N}}, m::GrassmannTransferMatrix{M, N}) where {S, M, N}
+function Base.:*(left::GrassmannTensorMap{<:AbstractTensorMap{<:Number, S, 1, N}}, m::GrassmannTransferMatrix{M, N}) where {S, M, N}
 	@assert length(m) % 2 == 0
 	for i in 1:div(length(m), 2)
 		left = lmul!(scaling(m), update_pair_left(left, i, m.states...)) 
 	end
 	return left
 end
-function Base.:*(m::GrassmannTransferMatrix{M, N}, right::GrassmannTensorMap{<:AbstractTensorMap{S, N, 1}}) where {S, M, N}
+function Base.:*(m::GrassmannTransferMatrix{M, N}, right::GrassmannTensorMap{<:AbstractTensorMap{<:Number, S, N, 1}}) where {S, M, N}
 	@assert length(m) % 2 == 0
 	for i in div(length(m), 2):-1:1
 		right = lmul!(scaling(m), update_pair_right(right, i, m.states...)) 
@@ -38,11 +38,11 @@ function Base.:*(m::GrassmannTransferMatrix{M, N}, right::GrassmannTensorMap{<:A
 end
 
 function DMRG.l_LL(f, vspace::ElementarySpace, m::GrassmannTransferMatrix)
-	return GrassmannTensorMap(TensorMap(f, scalartype(m), vspace, ⊗(map(y->space_l(y[1].data), m.states)...)))
+	return GrassmannTensorMap(f(scalartype(m), vspace, ⊗(map(y->space_l(y[1].data), m.states)...)))
 end
 
 function DMRG.r_RR(f, vspace::ElementarySpace, m::GrassmannTransferMatrix)
-	return GrassmannTensorMap(TensorMap(f, scalartype(m), ⊗(map(y->space_r(y[end].data)', reverse(m.states))...), vspace))
+	return GrassmannTensorMap(f(scalartype(m), ⊗(map(y->space_r(y[end].data)', reverse(m.states))...), vspace))
 end
 
 

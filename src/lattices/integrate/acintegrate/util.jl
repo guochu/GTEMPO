@@ -3,12 +3,12 @@
 # 	return r
 # end
 
-function contract_center(left::GrassmannTensorMap{<:AbstractTensorMap{S, 1, N}}, right::GrassmannTensorMap{<:AbstractTensorMap{S, N, 1}}) where {S, N}
+function contract_center(left::GrassmannTensorMap{<:AbstractTensorMap{T, S, 1, N}}, right::GrassmannTensorMap{<:AbstractTensorMap{T, S, N, 1}}) where {T, S, N}
 	@assert space(left.data, 1) == space(right.data, N+1)'
-	r = GrassmannTensorMap(TensorMap(zeros, scalartype(left.data), space(left.data, 1), space(right.data, N+1)'))
+	r = GrassmannTensorMap(zeros(scalartype(left.data), space(left.data, 1), space(right.data, N+1)'))
 	cindA = ntuple(x->x+1, N)
 	cindB = ntuple(x->N-x+1, N)
-	contract!(r, left, ((1,), cindA), right, (cindB, (N+1,)), ((1,), (2,)), true, false)
+	contract!(r, left, ((1,), cindA), right, (cindB, (N+1,)), ((1,), (2,)), true, false, 0, 0)
 	return tr(r.data)
 end 
 

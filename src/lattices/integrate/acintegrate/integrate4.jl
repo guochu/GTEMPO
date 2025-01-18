@@ -1,5 +1,5 @@
 
-function update_pair_left(left::GrassmannTensorMap{<:AbstractTensorMap{S, 1, 4}}, j::Int, x::Vector, y::Vector, z::Vector, u::Vector) where S
+function update_pair_left(left::GrassmannTensorMap{<:AbstractTensorMap{<:Number, S, 1, 4}}, j::Int, x::Vector, y::Vector, z::Vector, u::Vector) where S
 	posa = 2*j-1
 
 	@tensor tmp1[7,1,2,5,6; 3] := left[7,1,2,3,4] * u[posa][4,5,6] 
@@ -38,7 +38,7 @@ function update_pair_left(left::GrassmannTensorMap{<:AbstractTensorMap{S, 1, 4}}
 end
 
 
-function update_pair_right(right::GrassmannTensorMap{<:AbstractTensorMap{S, 4, 1}}, j::Int, x::Vector, y::Vector, z::Vector, u::Vector) where S
+function update_pair_right(right::GrassmannTensorMap{<:AbstractTensorMap{<:Number, S, 4, 1}}, j::Int, x::Vector, y::Vector, z::Vector, u::Vector) where S
 	posb = 2 * j
 	@tensor tmp1[4 ;5 6 1 2 7] := u[posb][1,2,3] * right[3,4,5,6,7]
 	@tensor tmp2[4;5 1 6 2 7 8] := z[posb][1,2,3] * tmp1[3,4,5,6,7,8]

@@ -6,7 +6,7 @@ println("------------------------------------")
 @testset "GrassmannTensor permute" begin
 	s = Rep[ℤ₂](0=>5, 1=>4)
 	# test 1
-	m1 = TensorMap(randn, ComplexF64, s ⊗ s ⊗ s, s ⊗ s)
+	m1 = randn(ComplexF64, s ⊗ s ⊗ s, s ⊗ s)
 	m2 = permute(m1, (1,2), (3,4,5))
 	for (f1, f2) in fusiontrees(m2)
 		coef1 = (isodd(f2.uncoupled[1].n) && isodd(f2.uncoupled[2].n)) ? -1 : 1
@@ -20,7 +20,7 @@ println("------------------------------------")
 	@test m2 == m3.data
 
 	# test 2
-	m1 = TensorMap(randn, ComplexF64, s ⊗ s, s ⊗ s ⊗ s)
+	m1 = randn(ComplexF64, s ⊗ s, s ⊗ s ⊗ s)
 	for p in [((1,2,5,4,3), ()), ((1,2,5,4), (3,)), ((1,2,5), (3,4)), ((1,), (3,4,5,2)), ((), (3,4,5,2,1))]
 		m2 = permute(m1, p, copy=true)
 		m3 = permute(GrassmannTensorMap(m1), p, copy=true)
@@ -28,7 +28,7 @@ println("------------------------------------")
 	end
 
 	# test 3
-	m1 = TensorMap(randn, ComplexF64, s ⊗ s ⊗ s, s ⊗ s)
+	m1 = randn(ComplexF64, s ⊗ s ⊗ s, s ⊗ s)
 	m2 = permute(m1, (1,3), (2,4,5))
 	for (f1, f2) in fusiontrees(m2)
 		coef1 = (isodd(f2.uncoupled[1].n) && isodd(f2.uncoupled[2].n)) ? -1 : 1
@@ -44,7 +44,7 @@ println("------------------------------------")
 	@test m2 == m3.data
 
 	# test 4
-	m1 = TensorMap(randn, ComplexF64, s ⊗ s, s ⊗ s)
+	m1 = randn(ComplexF64, s ⊗ s, s ⊗ s)
 	m2 = permute(m1, (1,3), (2,4))
 	for (f1, f2) in fusiontrees(m2)
 		coef1 = (isodd(f2.uncoupled[1].n) && isodd(f2.uncoupled[2].n)) ? -1 : 1
@@ -66,8 +66,8 @@ end
 	s = Rep[ℤ₂](0=>3, 1=>4)
 
 	# test 1
-	m1 = TensorMap(randn, ComplexF64, s ⊗ s, s ⊗ s ⊗ s)
-	m2 = TensorMap(randn, ComplexF64, s ⊗ s ⊗ s, s ⊗ s)
+	m1 = randn(ComplexF64, s ⊗ s, s ⊗ s ⊗ s)
+	m2 = randn(ComplexF64, s ⊗ s ⊗ s, s ⊗ s)
 
 	@tensor m3[1,2;6,7] := m1[1,2,3,4,5] * m2[3,4,5,6,7]
 
@@ -78,8 +78,8 @@ end
 	@test m3 == m3′.data
 
 	# test 2
-	m1 = TensorMap(randn, ComplexF64, s ⊗ s, s ⊗ s ⊗ s)
-	m2 = TensorMap(randn, ComplexF64, s ⊗ s ⊗ s, s' ⊗ s)
+	m1 = randn(ComplexF64, s ⊗ s, s ⊗ s ⊗ s)
+	m2 = randn(ComplexF64, s ⊗ s ⊗ s, s' ⊗ s)
 
 	m1′ = GrassmannTensorMap(m1)
 	m2′ = GrassmannTensorMap(m2)

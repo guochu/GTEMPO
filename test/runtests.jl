@@ -5,8 +5,8 @@ push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/TEBD/src")
 push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/FermionicTCMPS/src")
 
 using Test, Random
-using SphericalTensors, DMRG, FermionicTCMPS
-const TK = SphericalTensors
+using TensorKit, DMRG, FermionicTCMPS
+const TK = TensorKit
 
 include("../src/includes.jl")
 

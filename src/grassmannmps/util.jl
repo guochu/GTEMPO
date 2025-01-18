@@ -2,7 +2,7 @@
 g_fuse(t::GrassmannTensorMap, i::Int) = GrassmannTensorMap(g_fuse(t.data, i))
 
 # fuse i and i+1 into a single index
-function g_fuse(m::AbstractTensorMap{S, M, N}, i::Int) where {S, M, N}
+function g_fuse(m::AbstractTensorMap{<:Number, S, M, N}, i::Int) where {S, M, N}
 	@assert (i != M) && (i < M+N)
 	@assert space(m, i) == space(m, i+1)
 	# @assert (i < M) || (M <= i < N)
@@ -12,7 +12,7 @@ function g_fuse(m::AbstractTensorMap{S, M, N}, i::Int) where {S, M, N}
 		cod = ProductSpace{S,M-1}(map(n -> space(m, n), idx))
 		dom = domain(m)
 
-		tmp = TensorMap(zeros, scalartype(m), cod ← dom) 
+		tmp = zeros(scalartype(m), cod ← dom) 
 		for (f1, f2) in fusiontrees(m)
 			n = f1.uncoupled[i].n + f1.uncoupled[i+1].n
 			uncoupled = map(n->f1.uncoupled[n], idx)
@@ -36,7 +36,7 @@ function g_fuse(m::AbstractTensorMap{S, M, N}, i::Int) where {S, M, N}
 		cod = codomain(m)
 		dom = ProductSpace{S,N-1}(map(n->domain(m)[n], idx))
 
-		tmp = TensorMap(zeros, scalartype(m), cod ← dom) 
+		tmp = zeros(scalartype(m), cod ← dom) 
 		for (f1, f2) in fusiontrees(m)
 			n = f2.uncoupled[i2].n + f2.uncoupled[i2+1].n
 			uncoupled = map(n->f2.uncoupled[n], idx)
@@ -60,7 +60,7 @@ end
 
 g_trace(t::GrassmannTensorMap, i::Int) = GrassmannTensorMap(_g_trace(t.data, i))
 
-function _g_trace(m::AbstractTensorMap{S, M, N}, i::Int) where {S, M, N}
+function _g_trace(m::AbstractTensorMap{<:Number, S, M, N}, i::Int) where {S, M, N}
 	@assert (i != M) && (i < M+N)
 	@assert space(m, i) == space(m, i+1)
 	local tmp
@@ -69,7 +69,7 @@ function _g_trace(m::AbstractTensorMap{S, M, N}, i::Int) where {S, M, N}
 		cod = ProductSpace{S,M-2}(map(n -> space(m, n), idx))
 		dom = domain(m)
 
-		tmp = TensorMap(zeros, scalartype(m), cod ← dom) 
+		tmp = zeros(scalartype(m), cod ← dom) 
 
 		for (f1, f2) in fusiontrees(m)
 			if f1.uncoupled[i] == f1.uncoupled[i+1]
@@ -87,7 +87,7 @@ function _g_trace(m::AbstractTensorMap{S, M, N}, i::Int) where {S, M, N}
 		cod = codomain(m)
 		dom = ProductSpace{S,N-2}(map(n->domain(m)[n], idx))
 
-		tmp = TensorMap(zeros, scalartype(m), cod ← dom) 
+		tmp = zeros(scalartype(m), cod ← dom) 
 
 		for (f1, f2) in fusiontrees(m)
 			if f2.uncoupled[i2] == f2.uncoupled[i2+1]
