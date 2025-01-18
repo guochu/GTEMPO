@@ -10,6 +10,9 @@ TK.permute(t::GrassmannTensorMap, p::Index2Tuple; copy::Bool=false) = GrassmannT
 Base.adjoint(t::GrassmannTensorMap) = GrassmannTensorMap(adjoint(t.data))
 get_data(t::GrassmannTensorMap) = t.data
 
+# Base.convert(::Type{GrassmannTensorMap}, t::AbstractTensorMap) = GrassmannTensorMap(t)
+# Base.convert(::Type{<:AbstractTensorMap}, t::GrassmannTensorMap) = t.data
+
 function f_permute(t::AbstractParityTensorMap, (p₁, p₂)::Index2Tuple{N₁,N₂};
                    copy::Bool=false) where {N₁,N₂}
 	S = spacetype(t)

@@ -58,7 +58,7 @@ using Logging: @warn
 using Permutations, Reexport, TupleTools, Strided, Statistics, TensorKit
 using TensorKit: TensorKit, QR, SVD, LQ, AdjointTensorMap, NoTruncation
 const TK = TensorKit
-using TensorOperations: TensorOperations, IndexTuple, Index2Tuple, linearize, AbstractBackend
+using TensorOperations: TensorOperations, IndexTuple, Index2Tuple, linearize, AbstractBackend # for Grassmann Tensors
 const TO = TensorOperations
 @reexport using DMRG, ImpurityModelBase, QuAPI
 import QuAPI: branch, index

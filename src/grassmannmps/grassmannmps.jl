@@ -140,16 +140,16 @@ function increase_bond!(x::GrassmannMPS, D::Int)
 	Dh = div(D, 2)
 	virtualspace = Rep[ℤ₂](0=>Dh, 1=>Dh)
 	L = length(x)
-	ms = [GrassmannTensorMap(isometry(scalartype(x), virtualspace, space_l(x[site+1]))) for site in 1:L-1]
-	@tensor tmp[1,2;4] := GrassmannTensorMap(x[1])[1,2,3] * conj(ms[1][4,3])
-	x[1] = get_data(tmp)
-	@tensor tmp[1,3;4] := ms[L-1][1,2] * GrassmannTensorMap(x[L])[2,3,4]
-	x[L] = get_data(tmp)
+	ms = [isometry(scalartype(x), virtualspace, space_l(x[site+1])) for site in 1:L-1]
+	@tensor tmp[1,2;4] := x[1][1,2,3] * conj(ms[1][4,3])
+	x[1] = tmp
+	@tensor tmp[1,3;4] := ms[L-1][1,2] * x[L][2,3,4]
+	x[L] = tmp
 	for site in 2:L-1
 		vspace = space_l(x[site+1])
 		(vspace ≾ virtualspace) || @warn "old virtualspace $(vspace) is not monomorphic to the new virtualspace $(virtualspace)"
-		@tensor tmp[1,3;5] := ms[site-1][1,2] * GrassmannTensorMap(x[site])[2,3,4] * conj(ms[site][5,4])
-		x[site] = get_data(tmp)
+		@tensor tmp[1,3;5] := ms[site-1][1,2] * x[site][2,3,4] * conj(ms[site][5,4])
+		x[site] = tmp
 	end
 	unset_svectors!(x)
 	return x
