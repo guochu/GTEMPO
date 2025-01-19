@@ -24,7 +24,7 @@ LayoutStyle(x::GrassmannOrdering) = LayoutStyle(typeof(x))
 """
 	struct A1A1B1B1
 
-GrassmannOrdering a\bar{a}b\bar{b} a_2\bar{a}_2b_2\bar{b}_2 a_1\bar{a}_1b_1\bar{b}_1
+GrassmannOrdering aābb̄ a₂ā₂b₂b̄₂ a₁ā₁b₁b̄₁
 """
 struct A1A1B1B1 <: ImagGrassmannOrdering end
 ConjugationStyle(::Type{A1A1B1B1}) = AdjacentConjugation()
@@ -34,7 +34,7 @@ const AABB = A1A1B1B1
 """
 	struct A1B1B1A1
 
-GrassmannOrdering ab\bar{b}\bar{a} a_2b_2\bar{b}_2\bar{a}_2 a_1b_1\bar{b}_1\bar{a}_1
+GrassmannOrdering abb̄ā a₂b₂b̄₂ā₂ a₁b₁b̄₁ā₁
 This ordering is convenient to build the impurity dynamics
 """
 struct A1B1B1A1 <: ImagGrassmannOrdering end
@@ -45,7 +45,7 @@ const ABBA = A1B1B1A1
 """
 	struct A2A2A1A1B2B2B1B1
 
-GrassmannOrdering a\bar{a}b\bar{b} a_2\bar{a}_2a_1\bar{a}_1 b_2\bar{b}_2b_1\bar{b}_1
+GrassmannOrdering aābb̄ a₂ā₂a₁ā₁ b₂b̄₂b₁b̄₁
 """
 struct A2A2A1A1B2B2B1B1 <: ImagGrassmannOrdering end
 ConjugationStyle(::Type{A2A2A1A1B2B2B1B1}) = AdjacentConjugation()
@@ -57,7 +57,7 @@ LayoutStyle(::Type{A2A2A1A1B2B2B1B1}) = BandLocalLayout()
 """
 	struct A1A1a1a1B1B1b1b1
 
-GrassmannOrdering aābb̄ a₂^+ā₂^+b₂^+b̄₂^+a₂^-ā₂^-b₂^-b̄₂^- a₁^+ā₁^+b₁^+b̄₁^+a₁^-ā₁^-b₁^-b̄₁^-
+GrassmannOrdering aābb̄ a₂+ā₂+b₂+b̄₂+a₂-ā₂-b₂-b̄₂- a₁+ā₁+b₁+b̄₁+a₁-ā₁-b₁-b̄₁-
 """
 struct A1A1B1B1a1a1b1b1 <: RealGrassmannOrdering end
 ConjugationStyle(::Type{A1A1B1B1a1a1b1b1}) = AdjacentConjugation()
@@ -67,7 +67,7 @@ const AABBaabb = A1A1B1B1a1a1b1b1
 """
 	struct A1A1a1a1B1B1b1b1
 
-GrassmannOrdering a\bar{a}b\bar{b} a_2^+\bar{a}_2^+a_2^-\bar{a}_2^-b_2^+\bar{b}_2^+b_2^-\bar{b}_2^- a_1^+\bar{a}_1^+a_1^-\bar{a}_1^-b_1^+\bar{b}_1^+b_1^-\bar{b}_1^-
+GrassmannOrdering aābb̄ a₂+ā₂+a₂-ā₂-b₂+b̄₂+b₂-b̄₂- a₁+ā₁+a₁-ā₁-b₁+b̄₁+b₁-b̄₁-
 """
 struct A1A1a1a1B1B1b1b1 <: RealGrassmannOrdering end
 ConjugationStyle(::Type{A1A1a1a1B1B1b1b1}) = AdjacentConjugation()
@@ -77,7 +77,7 @@ const AAaaBBbb = A1A1a1a1B1B1b1b1
 """
 	struct A1a1B1b1b1B1a1A1
 
-GrassmannOrdering ab\bar{b}\bar{a} a_2^+a_2^-b_2^+b_2^-\bar{b}_2^-\bar{b}_2^+\bar{a}_2^-\bar{a}_2^+ a_1^+a_1^-b_1^+b_1^-\bar{b}_1^-\bar{b}_1^+\bar{a}_1^-\bar{a}_1^+
+GrassmannOrdering abb̄ā a₂+a₂-b₂+b₂-b̄₂-b̄₂+ā₂-ā₂+ a₁+a₁-b₁+b₁-b̄₁-b̄₁+ā₁-ā₁+
 This is a historical ordering, which may not be very useful
 """
 struct A1a1B1b1b1B1a1A1 <: RealGrassmannOrdering end
@@ -88,7 +88,7 @@ const AaBbbBaA = A1a1B1b1b1B1a1A1
 """
 	struct A1a1B1b1b1B1a1A1
 
-GrassmannOrdering a\bar{a}b\bar{b} a₂^+b₂^+ā₂^-b̄₂^-ā₂^+b̄₂^+a₂^-b₂^-  a₁^+b₁^+ā₁^-b̄₁^-ā₁^+b̄₁^+a₁^-b₁^-
+GrassmannOrdering aābb̄ a₂+b₂+ā₂-b̄₂-ā₂+b̄₂+a₂-b₂-  a₁+b₁+ā₁-b̄₁-ā₁+b̄₁+a₁-b₁-
 This ordering is convenient to build the impurity dynamics for time local ordering
 """
 struct A1B1ā1b̄1A1B1a1b1 <: RealGrassmannOrdering end
@@ -99,7 +99,7 @@ LayoutStyle(::Type{A1B1ā1b̄1A1B1a1b1}) = TimeLocalLayout()
 """
 	struct A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1
 
-GrassmannOrdering a\bar{a}b\bar{b} a_2^+\bar{a}_2^+a_1^+\bar{a}_1^+ a_2^-\bar{a}_2^-a_1^-\bar{a}_1^- b_2^+\bar{b}_2^+b_1^+\bar{b}_1^+  b_2^-\bar{b}_2^-b_1^-\bar{b}_1^-
+GrassmannOrdering aābb̄ a₂+ā₂+a₁+ā₁+ a₂-ā₂-a₁-ā₁- b₂+b̄₂+b₁+b̄₁+  b₂-b̄₂-b₁-b̄₁-
 """
 struct A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1 <: RealGrassmannOrdering end
 ConjugationStyle(::Type{A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1}) = AdjacentConjugation()
@@ -108,7 +108,7 @@ LayoutStyle(::Type{A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1}) = BandLocalLayout()
 """
 	struct A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2
 
-GrassmannOrdering ab\bar{b}\bar{a} a_2^+b_2^+\bar{b}_2^+\bar{a}_2^+a_1^+b_1^+\bar{b}_1^+\bar{a}_1^+ a_1^-b_1^-\bar{b}_1^-\bar{a}_1^-a_2^-b_2^-\bar{b}_2^-\bar{a}_2^-
+GrassmannOrdering abb̄ā a₂+b₂+b̄₂+ā₂+a₁+b₁+b̄₁+ā₁+ a₁-b₁-b̄₁-ā₁-a₂-b₂-b̄₂-ā₂-
 This ordering is convenient to build the impurity dynamics for band local ordering
 """
 struct A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2 <: RealGrassmannOrdering end
@@ -118,7 +118,7 @@ LayoutStyle(::Type{A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}) = BranchLocalLayout()
 """
 	struct A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2
 
-GrassmannOrdering a\bar{a}b\bar{b} a_2^+\bar{a}_2^+b_2^+\bar{b}_2^+a_1^+\bar{a}_1^+b_1^+\bar{b}_1^+ a_1^-\bar{a}_1^-b_1^-\bar{b}_1^-a_2^-\bar{a}_2^-b_2^-\bar{b}_2^-
+GrassmannOrdering aābb̄ a₂+ā₂+b₂+b̄₂+a₁+ā₁+b₁+b̄₁+ a₁-ā₁-b₁-b̄₁-a₂-ā₂-b₂-b̄₂-
 This ordering is convenient to build the impurity dynamics
 """
 struct A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2 <: RealGrassmannOrdering end
