@@ -78,7 +78,7 @@ end
 	tol = 1.0e-5
 	# only supports the following ordering currently
 	ordering = 
-	for ordering in [A1A1a1a1B1B1b1b1(), A1A1B1B1a1a1b1b1()]
+	for ordering in [A1Ā1a1ā1B1B̄1b1b̄1(), A1Ā1B1B̄1a1ā1b1b̄1()]
 		for bands in 1:3
 
 			lattice = GrassmannLattice(N=N, δt=δt, bands=bands, contour=:real, ordering=ordering)

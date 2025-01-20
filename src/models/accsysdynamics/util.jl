@@ -1,6 +1,6 @@
 _scaling(x::GrassmannMPS) = scaling(x)
 
-function _contract_band(x::GrassmannMPS, lattice::ImagGrassmannLattice{<:A1A1B1B1}, j::Int)
+function _contract_band(x::GrassmannMPS, lattice::ImagGrassmannLattice{<:A1Ā1B1B̄1}, j::Int)
 	local tmp2
 	for band in 1:lattice.bands
 		pos1 = index(lattice, j, conj=false, band=band)
@@ -18,7 +18,7 @@ function _contract_band(x::GrassmannMPS, lattice::ImagGrassmannLattice{<:A1A1B1B
 	return tmp2
 end
 
-function _contract_band(x::GrassmannMPS, lattice::ImagGrassmannLattice{<:A1B1B1A1}, j::Int)
+function _contract_band(x::GrassmannMPS, lattice::ImagGrassmannLattice{<:A1B1B̄1Ā1}, j::Int)
 	local tmp2
 	for band in lattice.bands:-1:1
 		pos1 = index(lattice, j, conj=false, band=band)
@@ -37,7 +37,7 @@ function _contract_band(x::GrassmannMPS, lattice::ImagGrassmannLattice{<:A1B1B1A
 	return tmp2	
 end
 
-function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A1A1a1a1B1B1b1b1}, j::Int)
+function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A1Ā1a1ā1B1B̄1b1b̄1}, j::Int)
 	local tmp2
 	for band in 1:lattice.bands
 		if j == 0
@@ -71,7 +71,7 @@ function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A1A1a1a
 	return tmp2
 end
 
-function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A1B1ā1b̄1A1B1a1b1}, j::Int)
+function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A1B1ā1b̄1Ā1B̄1a1b1}, j::Int)
 	local tmp2
 	if j == 0
 		for band in 1:lattice.bands
@@ -124,7 +124,7 @@ function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A1B1ā
 	return tmp2
 end
 
-function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A1a1B1b1b1B1a1A1}, j::Int)
+function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A1Ā1B1B̄1b̄1B̄1ā1Ā1}, j::Int)
 	local tmp2
 	for band in lattice.bands:-1:1
 		if j == 0
@@ -163,7 +163,7 @@ end
 
 
 
-function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2}, j::Int; branch::Symbol)
+function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2}, j::Int; branch::Symbol)
 	local tmp2
 	for band in 1:lattice.bands
 		if j == 0
@@ -195,7 +195,7 @@ function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A2A2B2B
 	return tmp2
 end
 
-function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, j::Int; branch::Symbol)
+function _contract_band(x::GrassmannMPS, lattice::RealGrassmannLattice{<:A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2}, j::Int; branch::Symbol)
 	local tmp2
 	for band in lattice.bands:-1:1
 		if j == 0

@@ -8,9 +8,9 @@ function systhermalstate_iterative!(gmps::GrassmannMPS, lattice::RealGrassmannLa
 	δτ = β / n
 	# println("n=", n)
 
-	lattice_i = GrassmannLattice(δτ=β, N=1, contour=:imag, order=1, ordering=A1B1B1A1(), bands=lattice.bands)
+	lattice_i = GrassmannLattice(δτ=β, N=1, contour=:imag, order=1, ordering=A1B1B̄1Ā1(), bands=lattice.bands)
 	gmps_i = accsysdynamics_fast(lattice_i, model, scaling=n, trunc=trunc)
-	# lattice_i = GrassmannLattice(δτ=δτ, N=n, contour=:imag, order=1, ordering=A1B1B1A1(), bands=lattice.bands)
+	# lattice_i = GrassmannLattice(δτ=δτ, N=n, contour=:imag, order=1, ordering=A1B1B̄1Ā1(), bands=lattice.bands)
 	# gmps_i = accsysdynamics_fast(lattice_i, model, scaling=10, trunc=trunc)
 
 

@@ -1,6 +1,6 @@
-const _AllowedRealGrassmannOrdering = Union{A1A1a1a1B1B1b1b1, A1A1B1B1a1a1b1b1}
+const _AllowedRealGrassmannOrdering = Union{A1Ā1a1ā1B1B̄1b1b̄1, A1Ā1B1B̄1a1ā1b1b̄1}
 
-# full influence operator, only works for ordering A1A1a1a1B1B1b1b1 and A1A1B1B1a1a1b1b1
+# full influence operator, only works for ordering A1Ā1a1ā1B1B̄1b1b̄1 and A1Ā1B1B̄1a1ā1b1b̄1
 function influenceoperator(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction; 
 							band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr, band)
@@ -54,7 +54,7 @@ end
 function differentialinfluencefunctional(lattice::RealGrassmannLattice{O}, corr::RealCorrelationFunction, dt::Real, alg::TimeEvoMPOAlgorithm, algmult::DMRGAlgorithm;
 										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion()) where O
 	if !(OrderingStyle(lattice) isa _AllowedRealGrassmannOrdering)
-		lattice2 = similar(lattice, ordering = A1A1a1a1B1B1b1b1())
+		lattice2 = similar(lattice, ordering = A1Ā1a1ā1B1B̄1b1b̄1())
 		mps = _differentialinfluencefunctional(lattice2, corr, dt, alg, algmult; band=band, algexpan=algexpan)
 		_, mps2 = changeordering(O, lattice2, mps, trunc=algmult.trunc)
 		return mps2

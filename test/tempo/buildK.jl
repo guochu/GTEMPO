@@ -14,18 +14,18 @@ println("------------------------------------")
 	for norb in 1:2
 		exact_model = SKIM(bath, U=U, μ=ϵ_d, J=1.1, norb=norb)
 		bands = 2 * norb
-		lattice1 = GrassmannLattice(δt=δτ, N=N, bands=bands, contour=:real, ordering=A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2())
-		lattice2 = GrassmannLattice(δt=δτ, N=N, bands=bands, contour=:real, ordering=A1A1a1a1B1B1b1b1())
+		lattice1 = GrassmannLattice(δt=δτ, N=N, bands=bands, contour=:real, ordering=A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2())
+		lattice2 = GrassmannLattice(δt=δτ, N=N, bands=bands, contour=:real, ordering=A1Ā1a1ā1B1B̄1b1b̄1())
 		for f in (:+, :-)
 			K1 = sysdynamics(lattice1, exact_model, branch=f)
 			K2 = sysdynamics(lattice2, exact_model, branch=f)
-			K2′ = changeordering(A1A1a1a1B1B1b1b1, lattice1, K1)[2]
+			K2′ = changeordering(A1Ā1a1ā1B1B̄1b1b̄1, lattice1, K1)[2]
 			@test distance(K2, K2′) / norm(K2) < tol
 		end
 		if norb == 1
 			K1 = sysdynamics(lattice1, exact_model)
 			K2 = sysdynamics(lattice2, exact_model)
-			K2′ = changeordering(A1A1a1a1B1B1b1b1, lattice1, K1)[2]
+			K2′ = changeordering(A1Ā1a1ā1B1B̄1b1b̄1, lattice1, K1)[2]
 			@test distance(K2, K2′) / norm(K2) < tol			
 		end
 	end
@@ -37,7 +37,7 @@ end
 	δτ = 0.02
 	N = 5
 	tol = 1.0e-10
-	for ordering in (A1A1B1B1(), A1B1B1A1())
+	for ordering in (A1Ā1B1B̄1(), A1B1B̄1Ā1())
 		for scaling in (2, 3)
 			for bands in (1,2,3)
 				lattice = GrassmannLattice(δτ=δτ, N=N, bands=bands, contour=:imag, ordering=ordering)
@@ -60,7 +60,7 @@ end
 		end
 	end
 
-	for ordering in (A1A1a1a1B1B1b1b1(), A1a1B1b1b1B1a1A1(), A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2(), A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2())
+	for ordering in (A1Ā1a1ā1B1B̄1b1b̄1(), A1Ā1B1B̄1b̄1B̄1ā1Ā1(), A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2(), A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2())
 		for scaling in (2, 3)
 			for bands in (1,2,3)
 				lattice = GrassmannLattice(δt=δτ, N=N, bands=bands, contour=:real, ordering=ordering)
@@ -100,7 +100,7 @@ end
 	# 1 orb
 	exact_model = SISB(bath, U=U, μ=ϵ_d)
 
-	for ordering in (A1A1B1B1(), A1B1B1A1())
+	for ordering in (A1Ā1B1B̄1(), A1B1B̄1Ā1())
 		lattice = GrassmannLattice(δτ=δτ, N=N, bands=2, contour=:imag, ordering=ordering)
 		for scaling in [3,4]
 			lattice_scaling = zoomin(lattice, scaling=scaling)
@@ -136,7 +136,7 @@ end
 	# multi orb
 	for norb in 1:2
 		exact_model = SKIM(bath, U=U, μ=ϵ_d, J=1.1, norb=norb)
-		for ordering in (A1A1B1B1(), A1B1B1A1())
+		for ordering in (A1Ā1B1B̄1(), A1B1B̄1Ā1())
 			lattice = GrassmannLattice(δτ=δτ, N=N, bands=2*norb, contour=:imag, ordering=ordering)
 			for scaling in [2,3]
 				lattice_scaling = zoomin(lattice, scaling=scaling)
@@ -183,7 +183,7 @@ end
 
 	# 1 orb, time-local ordering
 	exact_model = SISB(bath, U=U, μ=ϵ_d)
-	for ordering in (A1A1a1a1B1B1b1b1(), A1a1B1b1b1B1a1A1(), A1B1ā1b̄1A1B1a1b1())
+	for ordering in (A1Ā1a1ā1B1B̄1b1b̄1(), A1Ā1B1B̄1b̄1B̄1ā1Ā1(), A1B1ā1b̄1Ā1B̄1a1b1())
 		lattice = GrassmannLattice(δt=δτ, N=N, bands=2, contour=:real, ordering=ordering)
 		for scaling in [2]
 			lattice_scaling = zoomin(lattice, scaling=scaling)
@@ -214,7 +214,7 @@ end
 
 	# 1 orb, branch-local ordering
 	exact_model = SISB(bath, U=U, μ=ϵ_d)
-	for ordering in (A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2(), A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2())
+	for ordering in (A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2(), A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2())
 		lattice = GrassmannLattice(δt=δτ, N=N, bands=2, contour=:real, ordering=ordering)
 		for scaling in [2,3]
 			lattice_scaling = zoomin(lattice, scaling=scaling)
@@ -254,7 +254,7 @@ end
 
 	for norb in 1:2
 		exact_model = SKIM(bath, U=U, μ=ϵ_d, J=1.1, norb=norb)
-		for ordering in (A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2(), A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2())
+		for ordering in (A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2(), A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2())
 			lattice = GrassmannLattice(δt=δτ, N=N, bands=2*norb, contour=:real, ordering=ordering)
 			for scaling in [2]
 				lattice_scaling = zoomin(lattice, scaling=scaling)
@@ -292,7 +292,7 @@ end
 		end
 	end
 
-	ordering = A1A1a1a1B1B1b1b1()
+	ordering = A1Ā1a1ā1B1B̄1b1b̄1()
 	for norb in 1:2
 		exact_model = SKIM(bath, U=U, μ=ϵ_d, J=1.1, norb=norb)
 		lattice = GrassmannLattice(δt=δτ, N=N, bands=2*norb, contour=:real, ordering=ordering)
@@ -346,7 +346,7 @@ end
 	end
 	n0 = occupation(lattice, K, band=1)
 
-	for ordering in [A1A1a1a1B1B1b1b1(), A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2(), A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2()]
+	for ordering in [A1Ā1a1ā1B1B̄1b1b̄1(), A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2(), A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2()]
 		lattice = GrassmannLattice(δt=δt, N=N, bands=2, contour=:real, ordering=ordering)
 		K = accsysdynamics_fast(lattice, exact_model)
 		K = systhermalstate!(K, lattice, exact_model)

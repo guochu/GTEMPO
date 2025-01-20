@@ -21,12 +21,12 @@ include("util.jl")
 ### tempo
 # how to verify we get the correct correlation in an easy way?
 
-const imag_grassmann_orderings = [A1A1B1B1(), A1B1B1A1(), A2A2A1A1B2B2B1B1()]
-const real_grassmann_orderings = [A1A1B1B1a1a1b1b1(), A1A1a1a1B1B1b1b1(), A1a1B1b1b1B1a1A1(), A1B1ā1b̄1A1B1a1b1(), A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1(), A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2(), A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2()]
-const imag_ac_grassmann_orderings = [A1A1B1B1(), A2A2A1A1B2B2B1B1()]
-const real_ac_grassmann_orderings = [A1A1B1B1a1a1b1b1(), A1A1a1a1B1B1b1b1(), A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1(), A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2()]
-const mixed_grassmann_orderings = [A1A1B1B1_A1A1a1a1B1B1b1b1A2A2a2a2B2B2b2b2(), A1A1B1B1_a1a1A1A1b1b1B1B1a2a2A2A2b2b2B2B2(), A1B1B1A1_A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2()]
-const mixed_ac_grassmann_orderings = [A1A1B1B1_A1A1a1a1B1B1b1b1A2A2a2a2B2B2b2b2(), A1A1B1B1_a1a1A1A1b1b1B1B1a2a2A2A2b2b2B2B2()]
+const imag_grassmann_orderings = [A1Ā1B1B̄1(), A1B1B̄1Ā1(), A2Ā2A1Ā1B2B̄2B1B̄1()]
+const real_grassmann_orderings = [A1Ā1B1B̄1a1ā1b1b̄1(), A1Ā1a1ā1B1B̄1b1b̄1(), A1Ā1B1B̄1b̄1B̄1ā1Ā1(), A1B1ā1b̄1Ā1B̄1a1b1(), A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1(), A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2(), A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2()]
+const imag_ac_grassmann_orderings = [A1Ā1B1B̄1(), A2Ā2A1Ā1B2B̄2B1B̄1()]
+const real_ac_grassmann_orderings = [A1Ā1B1B̄1a1ā1b1b̄1(), A1Ā1a1ā1B1B̄1b1b̄1(), A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1(), A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2()]
+const mixed_grassmann_orderings = [A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2(), A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2(), A1B1B̄1Ā1_A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2()]
+const mixed_ac_grassmann_orderings = [A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2(), A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2()]
 
 include("grassmanntensor.jl")
 include("tempo/grassmannlattice.jl")

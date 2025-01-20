@@ -80,14 +80,14 @@ end
 @testset "GrassmannMPS: ordering conversion" begin
 	for N in (1, 2,3)
 		for bands in (1,2,3)
-			lattice = GrassmannLattice(δτ=0.1, N=N, bands=bands, contour=:imag, ordering=ABBA())
+			lattice = GrassmannLattice(δτ=0.1, N=N, bands=bands, contour=:imag, ordering=ABB̄Ā())
 			K1 = randomgmps(scalartype(lattice), length(lattice), D=6)
 			lattice2, K2 = toadjacentordering(lattice, K1)
 			Z1 = integrate(lattice, K1)
 			Z2 = integrate(lattice2, K2)
 			@test abs((Z1-Z2) / Z1) <= 1.0e-5
 
-			for ordering in (A1a1B1b1b1B1a1A1(), A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2())
+			for ordering in (A1Ā1B1B̄1b̄1B̄1ā1Ā1(), A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2())
 				lattice = GrassmannLattice(δt=0.1, N=N, bands=bands, contour=:real, ordering=ordering)
 				K1 = randomgmps(scalartype(lattice), length(lattice), D=6)
 				lattice2, K2 = toadjacentordering(lattice, K1)

@@ -20,7 +20,7 @@ struct MixedGrassmannLattice1Order{O<:MixedGrassmannOrdering} <: MixedGrassmannL
 end
 
 # the default is that the system starts from 0 temperature (state 0)
-MixedGrassmannLattice1Order(; δt::Real, Nt::Int, δτ::Real, Nτ::Int, bands::Int=1, ordering::MixedGrassmannOrdering=AABB_aaAAbbBB()) = MixedGrassmannLattice1Order(
+MixedGrassmannLattice1Order(; δt::Real, Nt::Int, δτ::Real, Nτ::Int, bands::Int=1, ordering::MixedGrassmannOrdering=AĀBB̄_aāAĀbb̄BB̄()) = MixedGrassmannLattice1Order(
 							δt, Nt, δτ, Nτ, bands, ordering)
 Base.similar(x::MixedGrassmannLattice1Order; δt::Real=x.δt, Nt::Int=x.Nt, δτ::Real=x.δτ, Nτ::Int=x.Nτ, bands::Int=x.bands, ordering::MixedGrassmannOrdering=x.ordering) = MixedGrassmannLattice1Order(
 			δt, Nt, δτ, Nτ, bands, ordering)
@@ -57,7 +57,7 @@ end
 Base.length(x::MixedGrassmannLattice1Order) = 4*x.bands * x.kt + 2 * x.bands + 2*x.bands * (x.Nτ+1)
 
 # acending order for real branch, descending order for imag time
-function index(x::MixedGrassmannLattice1Order{<:A1A1B1B1_A1A1a1a1B1B1b1b1A2A2a2a2B2B2b2b2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function index(x::MixedGrassmannLattice1Order{<:A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
@@ -90,7 +90,7 @@ function index(x::MixedGrassmannLattice1Order{<:A1A1B1B1_A1A1a1a1B1B1b1b1A2A2a2a
 	end
 end
 
-function index(x::MixedGrassmannLattice1Order{<:A1A1B1B1_a1a1A1A1b1b1B1B1a2a2A2A2b2b2B2B2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function index(x::MixedGrassmannLattice1Order{<:A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
@@ -124,7 +124,7 @@ function index(x::MixedGrassmannLattice1Order{<:A1A1B1B1_a1a1A1A1b1b1B1B1a2a2A2A
 end
 
 # acending order for real branch, descending order for imag time
-function index(x::MixedGrassmannLattice1Order{<:A1B1B1A1_A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function index(x::MixedGrassmannLattice1Order{<:A1B1B̄1Ā1_A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))

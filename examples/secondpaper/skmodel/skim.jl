@@ -23,7 +23,7 @@ function main(β, J=0.5)
 	τs = [i*δτ for i in 0:N]
 
 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-9, add_back=0)
-	lattice = GrassmannLattice(N=N, δτ=β/N, bands=2*norb, contour=:imag, ordering=A1A1B1B1())
+	lattice = GrassmannLattice(N=N, δτ=β/N, bands=2*norb, contour=:imag, ordering=A1Ā1B1B̄1())
 
 	println("number of sites ", length(lattice))
 

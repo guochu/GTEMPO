@@ -1,5 +1,5 @@
 """
-	influenceoperator(lattice::ImagGrassmannLattice1Order{<:A1A1B1B1}, corr2::ImagCorrelationFunction; band, algexpan)
+	influenceoperator(lattice::ImagGrassmannLattice1Order{<:A1Ā1B1B̄1}, corr2::ImagCorrelationFunction; band, algexpan)
 """
 function influenceoperator(lattice::ImagGrassmannLattice1Order, corr2::ImagCorrelationFunction; band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	corr = corr2.data
@@ -11,7 +11,7 @@ function influenceoperator(lattice::ImagGrassmannLattice1Order, corr2::ImagCorre
 end
 
 """
-	influenceoperatorexponential(lattice::ImagGrassmannLattice1Order{<:A1A1B1B1}, corr2::ImagCorrelationFunction, dt, alg; band, algexpan)
+	influenceoperatorexponential(lattice::ImagGrassmannLattice1Order{<:A1Ā1B1B̄1}, corr2::ImagCorrelationFunction, dt, alg; band, algexpan)
 """
 function influenceoperatorexponential(lattice::ImagGrassmannLattice1Order, corr2::ImagCorrelationFunction, dt::Real, alg::FirstOrderStepper; 
 										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
@@ -37,7 +37,7 @@ end
 function differentialinfluencefunctional(lattice::ImagGrassmannLattice1Order{O}, corr::ImagCorrelationFunction, dt::Real, alg::TimeEvoMPOAlgorithm, algmult::DMRGAlgorithm; 
 										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion()) where O
 	if !(LayoutStyle(lattice) isa TimeLocalLayout)
-		lattice2 = similar(lattice, ordering = A1A1B1B1())
+		lattice2 = similar(lattice, ordering = A1Ā1B1B̄1())
 		mps = _differentialinfluencefunctional(lattice2, corr, dt, alg, algmult; band=band, algexpan=algexpan)
 		_, mps2 = changeordering(O, lattice2, mps, trunc=algmult.trunc)
 		return mps2

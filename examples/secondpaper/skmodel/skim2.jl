@@ -27,7 +27,7 @@ function main(β, J=0.5; chi=60, chi2=500)
 
 	trunc0 = truncdimcutoff(D=2000, ϵ=1.0e-10, add_back=0)
 
-	lattice = GrassmannLattice(N=N, δτ=β/N, bands=2*norb, contour=:imag, ordering=A1A1B1B1())
+	lattice = GrassmannLattice(N=N, δτ=β/N, bands=2*norb, contour=:imag, ordering=A1Ā1B1B̄1())
 	lattice1 = similar(lattice, bands=1)
 
 	println("number of sites ", length(lattice))

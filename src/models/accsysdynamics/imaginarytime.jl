@@ -1,10 +1,10 @@
 function accsysdynamics_fast(lattice::ImagGrassmannLattice{O}, model::AbstractImpurityHamiltonian; scaling::Int=10, trunc::TruncationScheme=DefaultKTruncation) where O
-	lattice2 = similar(lattice, ordering=A1B1B1A1())
+	lattice2 = similar(lattice, ordering=A1B1B̄1Ā1())
 	x = _accsysdynamics_fast(lattice2, model, scaling=scaling, trunc=trunc)
 	return changeordering(O, lattice2, x, trunc=trunc)[2]
 end
 
-_accsysdynamics_fast(lattice::ImagGrassmannLattice{<:A1B1B1A1}, model::AbstractImpurityHamiltonian; kwargs...) = _accsysdynamics_fast_timelocal(lattice, model; kwargs...)
+_accsysdynamics_fast(lattice::ImagGrassmannLattice{<:A1B1B̄1Ā1}, model::AbstractImpurityHamiltonian; kwargs...) = _accsysdynamics_fast_timelocal(lattice, model; kwargs...)
 
 # accsysdynamics_fast(lattice::ImagGrassmannLattice, model::AbstractImpurityHamiltonian; kwargs...) = error("accsysdynamics_fast only support TimeLocalLayout for ImagGrassmannLattice")
 function _accsysdynamics_fast_timelocal(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian; 
@@ -74,5 +74,5 @@ function _accsysdynamics_fast_timelocal(lattice::AbstractGrassmannLattice, model
 	return gmps
 end
 
-get_left(lattice::ImagGrassmannLattice{<:A1B1B1A1}, j::Int) = index(lattice, j, conj=true, band=lattice.bands)
-get_right(lattice::ImagGrassmannLattice{<:A1B1B1A1}, j::Int) = index(lattice, j, conj=false, band=lattice.bands)
+get_left(lattice::ImagGrassmannLattice{<:A1B1B̄1Ā1}, j::Int) = index(lattice, j, conj=true, band=lattice.bands)
+get_right(lattice::ImagGrassmannLattice{<:A1B1B̄1Ā1}, j::Int) = index(lattice, j, conj=false, band=lattice.bands)

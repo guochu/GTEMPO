@@ -11,7 +11,7 @@ struct ImagGrassmannLattice1Order{O<:ImagGrassmannOrdering} <: ImagGrassmannLatt
 	ImagGrassmannLattice1Order(δτ::Real, bands::Int, N::Int, ordering::ImagGrassmannOrdering) = new{typeof(ordering)}(convert(Float64, δτ), bands, N, ordering)
 end
 
-ImagGrassmannLattice1Order(; δτ::Real, N::Int, bands::Int=1, ordering::ImagGrassmannOrdering=A1A1B1B1()) = ImagGrassmannLattice1Order(δτ, bands, N, ordering)
+ImagGrassmannLattice1Order(; δτ::Real, N::Int, bands::Int=1, ordering::ImagGrassmannOrdering=A1Ā1B1B̄1()) = ImagGrassmannLattice1Order(δτ, bands, N, ordering)
 Base.similar(x::ImagGrassmannLattice1Order; δτ::Real=x.δτ, bands::Int=x.bands, N::Int=x.N, ordering::ImagGrassmannOrdering=x.ordering) = ImagGrassmannLattice1Order(δτ, bands, N, ordering)
 
 function ImagGrassmannLattice(; order::Int=1, kwargs...)
@@ -45,7 +45,7 @@ end
 
 
 # ab\bar{b}\bar{a} a_2b_2\bar{b}_2\bar{a}_2 a_1b_1\bar{b}_1\bar{a}_1
-function index(x::ImagGrassmannLattice{<:A1B1B1A1}, i::Int; conj::Bool, band::Int=1, branch::Symbol=:τ)
+function index(x::ImagGrassmannLattice{<:A1B1B̄1Ā1}, i::Int; conj::Bool, band::Int=1, branch::Symbol=:τ)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
@@ -60,7 +60,7 @@ function index(x::ImagGrassmannLattice{<:A1B1B1A1}, i::Int; conj::Bool, band::In
 	end	
 end
 # a\bar{a}b\bar{b} a_2\bar{a}_2b_2\bar{b}_2 a_1\bar{a}_1b_1\bar{b}_1
-function index(x::ImagGrassmannLattice{<:A1A1B1B1}, i::Int; conj::Bool, band::Int=1, branch::Symbol=:τ)
+function index(x::ImagGrassmannLattice{<:A1Ā1B1B̄1}, i::Int; conj::Bool, band::Int=1, branch::Symbol=:τ)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
@@ -75,7 +75,7 @@ function index(x::ImagGrassmannLattice{<:A1A1B1B1}, i::Int; conj::Bool, band::In
 	end	
 end
 # a\bar{a}b\bar{b} a_2\bar{a}_2a_1\bar{a}_1 b_2\bar{b}_2b_1\bar{b}_1
-function index(x::ImagGrassmannLattice{<:A2A2A1A1B2B2B1B1}, i::Int; conj::Bool, band::Int=1, branch::Symbol=:τ)
+function index(x::ImagGrassmannLattice{<:A2Ā2A1Ā1B2B̄2B1B̄1}, i::Int; conj::Bool, band::Int=1, branch::Symbol=:τ)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
@@ -103,12 +103,12 @@ function indexmappings(lattice::ImagGrassmannLattice)
 	return r
 end
 
-function band_boundary(lattice::ImagGrassmannLattice{<:A1B1B1A1}, j::Int)
+function band_boundary(lattice::ImagGrassmannLattice{<:A1B1B̄1Ā1}, j::Int)
     posa = index(lattice, j, conj=false, band=1)
     posb = index(lattice, j, conj=true, band=1)     
     return posa, posb
 end
-function band_boundary(lattice::ImagGrassmannLattice{<:A1A1B1B1}, j::Int)
+function band_boundary(lattice::ImagGrassmannLattice{<:A1Ā1B1B̄1}, j::Int)
     posa = index(lattice, j, conj=false, band=1)
     posb = index(lattice, j, conj=true, band=lattice.bands)     
     return posa, posb

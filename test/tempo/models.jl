@@ -271,7 +271,7 @@ end
 			mpsKs = boundarycondition_branching(mpsKs, lattice, band=band)
 		end
 		
-		for ordering in [A1A1B1B1a1a1b1b1(), A1A1a1a1B1B1b1b1(), A1a1B1b1b1B1a1A1(), A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1(), A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2()]
+		for ordering in [A1Ā1B1B̄1a1ā1b1b̄1(), A1Ā1a1ā1B1B̄1b1b̄1(), A1Ā1B1B̄1b̄1B̄1ā1Ā1(), A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1(), A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2()]
 
 			lattice_r = GrassmannLattice(δt=0.1, N=5, bands=bands, contour=:real)
 			exact_model = SISB(bath, U=U, μ=ϵ_d)
@@ -315,7 +315,7 @@ end
 		end
 
 
-		lattice_r = GrassmannLattice(δt=0.1, N=2, bands=bands, contour=:real, ordering = A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2())
+		lattice_r = GrassmannLattice(δt=0.1, N=2, bands=bands, contour=:real, ordering = A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2())
 		mps = accsysdynamics_fast(lattice_r, exact_model)
 		mps = systhermalstate!(mps, lattice_r, exact_model)
 		for band in 1:lattice.bands
@@ -395,7 +395,7 @@ end
 			@test norm(currents - currents2) / norm(currents) < rtol
 		end
 		# TEMPO 1 order 2
-		for ordering in (A1A1B1B1a1a1b1b1(), A1A1a1a1B1B1b1b1(), A1a1B1b1b1B1a1A1())
+		for ordering in (A1Ā1B1B̄1a1ā1b1b̄1(), A1Ā1a1ā1B1B̄1b1b̄1(), A1Ā1B1B̄1b̄1B̄1ā1Ā1())
 			lattice_o = GrassmannLattice(N=N, δt=δt, contour=:real, order=1, bands=1)
 			corr = correlationfunction(exact_model.bath, lattice_o)
 			lattice = similar(lattice_o, N=0)
@@ -416,7 +416,7 @@ end
 			@test norm(currents - currents2) / norm(currents) < rtol
 		end
 		# TEMPO 2 order
-		for ordering in (A1A1B1B1a1a1b1b1(), A1A1a1a1B1B1b1b1(), A1a1B1b1b1B1a1A1())
+		for ordering in (A1Ā1B1B̄1a1ā1b1b̄1(), A1Ā1a1ā1B1B̄1b1b̄1(), A1Ā1B1B̄1b̄1B̄1ā1Ā1())
 			lattice_o = GrassmannLattice(N=N, δt=δt, contour=:real, order=2, bands=1)
 			corr = correlationfunction(exact_model.bath, lattice_o)
 			lattice = similar(lattice_o, N=0)
@@ -463,8 +463,8 @@ end
 	trunc = truncdimcutoff(D=200, ϵ=1.0e-7, add_back=0)
 
 	exact_model = SIDB(leftbath, rightbath, μ=epsilon_d, U=U)
-	# TEMPO, order ABBA
-	lattice = GrassmannLattice(N=N, δt=δt, contour=:real, bands=2, order=1, ordering=A1a1B1b1b1B1a1A1())
+	# TEMPO, order ABB̄Ā
+	lattice = GrassmannLattice(N=N, δt=δt, contour=:real, bands=2, order=1, ordering=A1Ā1B1B̄1b̄1B̄1ā1Ā1())
 	leftcorr = correlationfunction(exact_model.leftbath, lattice)
 	rightcorr = correlationfunction(exact_model.rightbath, lattice)
 	corr = leftcorr + rightcorr
@@ -478,8 +478,8 @@ end
 	ns = occupation(lattice, mpsK, mpsI)
 	currents_left = [electriccurrent(lattice, leftcorr, k+1, mpsK, mpsI) for k in 1:N]
 	currents_right = [electriccurrent(lattice, rightcorr, k+1, mpsK, mpsI) for k in 1:N]
-	# TEMPO, order AABB
-	lattice = GrassmannLattice(N=N, δt=δt, contour=:real, bands=2, order=1, ordering=A1A1a1a1B1B1b1b1())
+	# TEMPO, order AĀBB̄
+	lattice = GrassmannLattice(N=N, δt=δt, contour=:real, bands=2, order=1, ordering=A1Ā1a1ā1B1B̄1b1b̄1())
 	leftcorr = correlationfunction(exact_model.leftbath, lattice)
 	rightcorr = correlationfunction(exact_model.rightbath, lattice)
 	corr = leftcorr + rightcorr

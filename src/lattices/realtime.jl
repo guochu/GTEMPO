@@ -21,7 +21,7 @@ struct RealGrassmannLattice1Order{O<:RealGrassmannOrdering} <: RealGrassmannLatt
 end
 
 # the default is that the system starts from 0 temperature (state 0)
-RealGrassmannLattice1Order(; δt::Real, N::Int, bands::Int=1, ordering::RealGrassmannOrdering=A1A1a1a1B1B1b1b1()) = RealGrassmannLattice1Order(δt, bands, N, ordering)
+RealGrassmannLattice1Order(; δt::Real, N::Int, bands::Int=1, ordering::RealGrassmannOrdering=A1Ā1a1ā1B1B̄1b1b̄1()) = RealGrassmannLattice1Order(δt, bands, N, ordering)
 Base.similar(x::RealGrassmannLattice1Order; δt::Real=x.δt, bands::Int=x.bands, N::Int=x.N, ordering::RealGrassmannOrdering=x.ordering) = RealGrassmannLattice1Order(δt, bands, N, ordering)
 
 """
@@ -40,7 +40,7 @@ struct RealGrassmannLattice2Order{O<:RealGrassmannOrdering} <: RealGrassmannLatt
 
 	RealGrassmannLattice2Order(δt::Real, bands::Int, N::Int, ordering::RealGrassmannOrdering) = new{typeof(ordering)}(convert(Float64, δt), bands, N, ordering)
 end
-RealGrassmannLattice2Order(; δt::Real, N::Int=0, bands::Int=1, ordering::RealGrassmannOrdering=A1A1a1a1B1B1b1b1()) = RealGrassmannLattice2Order(δt, bands, N, ordering)
+RealGrassmannLattice2Order(; δt::Real, N::Int=0, bands::Int=1, ordering::RealGrassmannOrdering=A1Ā1a1ā1B1B̄1b1b̄1()) = RealGrassmannLattice2Order(δt, bands, N, ordering)
 Base.similar(x::RealGrassmannLattice2Order; δt::Real=x.δt, bands::Int=x.bands, N::Int=x.N, ordering::RealGrassmannOrdering=x.ordering) = RealGrassmannLattice2Order(δt, bands, N, ordering)
 
 function Base.getproperty(x::RealGrassmannLattice, s::Symbol)
@@ -105,7 +105,7 @@ function timesteps(gmps::GrassmannMPS, x::RealGrassmannLattice)
 end
 
 # ab\bar{b}\bar{a} a_2^+a_2^-b_2^+b_2^-\bar{b}_2^-\bar{b}_2^+\bar{a}_2^-\bar{a}_2^+ a_1^+a_1^-b_1^+b_1^-\bar{b}_1^-\bar{b}_1^+\bar{a}_1^-\bar{a}_1^+
-function index(x::RealGrassmannLattice{<:A1a1B1b1b1B1a1A1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function index(x::RealGrassmannLattice{<:A1Ā1B1B̄1b̄1B̄1ā1Ā1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
@@ -125,7 +125,7 @@ function index(x::RealGrassmannLattice{<:A1a1B1b1b1B1a1A1}, i::Int; conj::Bool, 
 end
 
 # a\bar{a}b\bar{b} a₂^+b₂^+ā₂^-b̄₂^-ā₂^+b̄₂^+a₂^-b₂^-  a₁^+b₁^+ā₁^-b̄₁^-ā₁^+b̄₁^+a₁^-b₁^-
-function index(x::RealGrassmannLattice{<:A1B1ā1b̄1A1B1a1b1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function index(x::RealGrassmannLattice{<:A1B1ā1b̄1Ā1B̄1a1b1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
@@ -145,7 +145,7 @@ function index(x::RealGrassmannLattice{<:A1B1ā1b̄1A1B1a1b1}, i::Int; conj::Bo
 end
 
 # a\bar{a}b\bar{b} a_2^+\bar{a}_2^+a_2^-\bar{a}_2^-b_2^+\bar{b}_2^+b_2^-\bar{b}_2^- a_1^+\bar{a}_1^+a_1^-\bar{a}_1^-b_1^+\bar{b}_1^+b_1^-\bar{b}_1^-
-function index(x::RealGrassmannLattice{<:A1A1a1a1B1B1b1b1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function index(x::RealGrassmannLattice{<:A1Ā1a1ā1B1B̄1b1b̄1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
@@ -165,7 +165,7 @@ function index(x::RealGrassmannLattice{<:A1A1a1a1B1B1b1b1}, i::Int; conj::Bool, 
 end
 
 # aābb̄ a₂^+ā₂^+b₂^+b̄₂^+a₂^-ā₂^-b₂^-b̄₂^- a₁^+ā₁^+b₁^+b̄₁^+a₁^-ā₁^-b₁^-b̄₁^-
-function index(x::RealGrassmannLattice{<:A1A1B1B1a1a1b1b1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function index(x::RealGrassmannLattice{<:A1Ā1B1B̄1a1ā1b1b̄1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
@@ -185,7 +185,7 @@ function index(x::RealGrassmannLattice{<:A1A1B1B1a1a1b1b1}, i::Int; conj::Bool, 
 end
 
 # a\bar{a}b\bar{b} a_2^+\bar{a}_2^+a_1^+\bar{a}_1^+ a_2^-\bar{a}_2^-a_1^-\bar{a}_1^- b_2^+\bar{b}_2^+b_1^+\bar{b}_1^+  b_2^-\bar{b}_2^-b_1^-\bar{b}_1^-
-function index(x::RealGrassmannLattice{<:A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function index(x::RealGrassmannLattice{<:A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
@@ -205,7 +205,7 @@ function index(x::RealGrassmannLattice{<:A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1}, i::I
 end
 
 # ab\bar{b}\bar{a} a_2^+b_2^+\bar{b}_2^+\bar{a}_2^+a_1^+b_1^+\bar{b}_1^+\bar{a}_1^+ a_1^-b_1^-\bar{b}_1^-\bar{a}_1^-a_2^-b_2^-\bar{b}_2^-\bar{a}_2^-
-function index(x::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function index(x::RealGrassmannLattice{<:A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
@@ -226,7 +226,7 @@ end
 
 
 # a\bar{a}b\bar{b} a_2^+\bar{a}_2^+b_2^+\bar{b}_2^+a_1^+\bar{a}_1^+b_1^+\bar{b}_1^+ a_1^-\bar{a}_1^-b_1^-\bar{b}_1^-a_2^-\bar{a}_2^-b_2^-\bar{b}_2^-
-function index(x::RealGrassmannLattice{<:A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function index(x::RealGrassmannLattice{<:A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
@@ -264,7 +264,7 @@ function indexmappings(lattice::RealGrassmannLattice)
 	return r
 end
 
-function band_boundary(lattice::RealGrassmannLattice{<:A1a1B1b1b1B1a1A1}, j::Int)
+function band_boundary(lattice::RealGrassmannLattice{<:A1Ā1B1B̄1b̄1B̄1ā1Ā1}, j::Int)
     if j == 0
         posa = index(lattice, j, conj=false, band=1)
         posb = index(lattice, j, conj=true, band=1)     
@@ -274,7 +274,7 @@ function band_boundary(lattice::RealGrassmannLattice{<:A1a1B1b1b1B1a1A1}, j::Int
     end
     return posa, posb
 end
-function band_boundary(lattice::RealGrassmannLattice{<:A1A1a1a1B1B1b1b1}, j::Int)
+function band_boundary(lattice::RealGrassmannLattice{<:A1Ā1a1ā1B1B̄1b1b̄1}, j::Int)
     if j == 0
         posa = index(lattice, j, conj=false, band=1)
         posb = index(lattice, j, conj=true, band=lattice.bands)     
@@ -284,7 +284,7 @@ function band_boundary(lattice::RealGrassmannLattice{<:A1A1a1a1B1B1b1b1}, j::Int
     end
     return posa, posb
 end
-function band_boundary(lattice::RealGrassmannLattice{<:A1A1B1B1a1a1b1b1}, j::Int)
+function band_boundary(lattice::RealGrassmannLattice{<:A1Ā1B1B̄1a1ā1b1b̄1}, j::Int)
     if j == 0
         posa = index(lattice, j, conj=false, band=1)
         posb = index(lattice, j, conj=true, band=lattice.bands)     
@@ -294,7 +294,7 @@ function band_boundary(lattice::RealGrassmannLattice{<:A1A1B1B1a1a1b1b1}, j::Int
     end
     return posa, posb
 end
-function band_boundary(lattice::RealGrassmannLattice{<:A1B1ā1b̄1A1B1a1b1}, j::Int)
+function band_boundary(lattice::RealGrassmannLattice{<:A1B1ā1b̄1Ā1B̄1a1b1}, j::Int)
     if j == 0
         posa = index(lattice, j, conj=false, band=1)
         posb = index(lattice, j, conj=true, band=lattice.bands)     
@@ -304,7 +304,7 @@ function band_boundary(lattice::RealGrassmannLattice{<:A1B1ā1b̄1A1B1a1b1}, j:
     end
     return posa, posb
 end
-function band_boundary(lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2}, j::Int; branch::Symbol=:+)
+function band_boundary(lattice::RealGrassmannLattice{<:A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2}, j::Int; branch::Symbol=:+)
     if j == 0
         posa = index(lattice, j, conj=false, band=1)
         posb = index(lattice, j, conj=true, band=1)   
@@ -314,7 +314,7 @@ function band_boundary(lattice::RealGrassmannLattice{<:A2B2B2A2A1B1B1A1a1b1b1a1a
     end
     return posa, posb
 end
-function band_boundary(lattice::RealGrassmannLattice{<:A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2}, j::Int; branch::Symbol=:+)
+function band_boundary(lattice::RealGrassmannLattice{<:A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2}, j::Int; branch::Symbol=:+)
     if j == 0
         posa = index(lattice, j, conj=false, band=1)
         posb = index(lattice, j, conj=true, band=lattice.bands)   

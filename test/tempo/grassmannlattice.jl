@@ -16,13 +16,13 @@ println("------------------------------------")
 	@test ContourIndex(1, conj=true, branch=:-) > ContourIndex(2, conj=true, branch=:-)
 end
 
-@testset "GrassmannLattice: imaginary time A1B1B1A1" begin
+@testset "GrassmannLattice: imaginary time A1B1B̄1Ā1" begin
 	# a\bar{a} a_2\bar{a}_2 a_1\bar{a}_1
-	lattice = GrassmannLattice(N=1, δτ=0.1, contour=:imag, ordering=ABBA())
+	lattice = GrassmannLattice(N=1, δτ=0.1, contour=:imag, ordering=ABB̄Ā())
 	@test isa(ConjugationStyle(lattice), GeneralConjugation)
 	@test isa(LayoutStyle(lattice), TimeLocalLayout)
 	@test isa(lattice, ImagGrassmannLattice)
-	@test lattice.ordering == ABBA()
+	@test lattice.ordering == ABB̄Ā()
 	@test scalartype(lattice) == Float64
 	@test length(lattice) == 6
 	@test lattice.N == 1
@@ -43,7 +43,7 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 
 	# ab\bar{b}\bar{a} a_3b_3\bar{b}_3\bar{a}_3 a_2b_2\bar{b}_2\bar{a}_2 a_1b_1\bar{b}_1\bar{a}_1
-	lattice = GrassmannLattice(N=2, δτ=0.05, bands=2, contour=:imag, ordering=ABBA())
+	lattice = GrassmannLattice(N=2, δτ=0.05, bands=2, contour=:imag, ordering=ABB̄Ā())
 	@test isa(lattice, ImagGrassmannLattice)
 	@test length(lattice) == 16
 	@test lattice.N == 2
@@ -78,7 +78,7 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 
 	# abc\bar{c}\bar{b}\bar{a} a_2b_2c_2\bar{c}_2\bar{b}_2\bar{a}_2 a_1b_1c_1\bar{c}_1\bar{b}_1\bar{a}_1
-	lattice = GrassmannLattice(N=1, δτ=0.1, bands=3, contour=:imag, ordering=ABBA())
+	lattice = GrassmannLattice(N=1, δτ=0.1, bands=3, contour=:imag, ordering=ABB̄Ā())
 	@test length(lattice) == 18
 	@test lattice.N == 1
 	@test lattice.k == 2
@@ -109,13 +109,13 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 end
 
-@testset "GrassmannLattice: imaginary time A1A1B1B1" begin
+@testset "GrassmannLattice: imaginary time A1Ā1B1B̄1" begin
 	# a\bar{a} a_2\bar{a}_2 a_1\bar{a}_1
-	lattice = GrassmannLattice(N=1, δτ=0.1, contour=:imag, ordering=AABB())
+	lattice = GrassmannLattice(N=1, δτ=0.1, contour=:imag, ordering=AĀBB̄())
 	@test isa(ConjugationStyle(lattice), AdjacentConjugation)
 	@test isa(LayoutStyle(lattice), TimeLocalLayout)
 	@test isa(lattice, ImagGrassmannLattice)
-	@test lattice.ordering == AABB()
+	@test lattice.ordering == AĀBB̄()
 	@test scalartype(lattice) == Float64
 	@test length(lattice) == 6
 	@test lattice.N == 1
@@ -136,7 +136,7 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 
 	# a\bar{a}b\bar{b} a_3\bar{a}_3b_3\bar{b}_3 a_2\bar{a}_2b_2\bar{b}_2 a_1\bar{a}_1b_1\bar{b}_1
-	lattice = GrassmannLattice(N=2, δτ=0.05, bands=2, contour=:imag, ordering=AABB())
+	lattice = GrassmannLattice(N=2, δτ=0.05, bands=2, contour=:imag, ordering=AĀBB̄())
 	@test isa(lattice, ImagGrassmannLattice)
 	@test length(lattice) == 16
 	@test lattice.N == 2
@@ -171,7 +171,7 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 
 	# abc\bar{c}\bar{b}\bar{a} a_2b_2c_2\bar{c}_2\bar{b}_2\bar{a}_2 a_1b_1c_1\bar{c}_1\bar{b}_1\bar{a}_1
-	lattice = GrassmannLattice(N=1, δτ=0.1, bands=3, contour=:imag, ordering=AABB())
+	lattice = GrassmannLattice(N=1, δτ=0.1, bands=3, contour=:imag, ordering=AĀBB̄())
 	@test length(lattice) == 18
 	@test lattice.N == 1
 	@test lattice.k == 2
@@ -203,13 +203,13 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 end
 
-@testset "GrassmannLattice: imaginary time A2A2A1A1B2B2B1B1" begin
+@testset "GrassmannLattice: imaginary time A2Ā2A1Ā1B2B̄2B1B̄1" begin
 	# one band
-	lattice = GrassmannLattice(N=1, δτ=0.1, contour=:imag, ordering=A2A2A1A1B2B2B1B1())
+	lattice = GrassmannLattice(N=1, δτ=0.1, contour=:imag, ordering=A2Ā2A1Ā1B2B̄2B1B̄1())
 	@test isa(ConjugationStyle(lattice), AdjacentConjugation)
 	@test isa(LayoutStyle(lattice), BandLocalLayout)
 	@test isa(lattice, ImagGrassmannLattice)
-	@test lattice.ordering == A2A2A1A1B2B2B1B1()
+	@test lattice.ordering == A2Ā2A1Ā1B2B̄2B1B̄1()
 	@test scalartype(lattice) == Float64
 	@test length(lattice) == 6
 	@test lattice.N == 1
@@ -230,7 +230,7 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 
 	# two bands
-	lattice = GrassmannLattice(N=1, δτ=0.05, bands=2, contour=:imag, ordering=A2A2A1A1B2B2B1B1())
+	lattice = GrassmannLattice(N=1, δτ=0.05, bands=2, contour=:imag, ordering=A2Ā2A1Ā1B2B̄2B1B̄1())
 	@test length(lattice) == 12
 	@test lattice.N == 1
 	@test lattice.k == 2
@@ -260,7 +260,7 @@ end
 
 
 	# three bands
-	lattice = GrassmannLattice(N=1, δτ=0.05, bands=3, contour=:imag, ordering=A2A2A1A1B2B2B1B1())
+	lattice = GrassmannLattice(N=1, δτ=0.05, bands=3, contour=:imag, ordering=A2Ā2A1Ā1B2B̄2B1B̄1())
 	@test length(lattice) == 18
 	@test lattice.N == 1
 	@test lattice.k == 2
@@ -296,13 +296,13 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 end
 
-@testset "GrassmannLattice: real time A1a1B1b1b1B1a1A1" begin
+@testset "GrassmannLattice: real time A1Ā1B1B̄1b̄1B̄1ā1Ā1" begin
 	# a\bar{a} a_3^+a_3^-\bar{a}_3^-\bar{a}_3^+ a_2^+a_2^-\bar{a}_2^-\bar{a}_2^+ a_1^+a_1^-\bar{a}_1^-\bar{a}_1^+
-	lattice = GrassmannLattice(N=2, δt=0.05, contour=:real, ordering=A1a1B1b1b1B1a1A1())
+	lattice = GrassmannLattice(N=2, δt=0.05, contour=:real, ordering=A1Ā1B1B̄1b̄1B̄1ā1Ā1())
 	@test isa(ConjugationStyle(lattice), GeneralConjugation)
 	@test isa(LayoutStyle(lattice), TimeLocalLayout)
 	@test isa(lattice, RealGrassmannLattice)
-	@test lattice.ordering == A1a1B1b1b1B1a1A1()
+	@test lattice.ordering == A1Ā1B1B̄1b̄1B̄1ā1Ā1()
 	@test scalartype(lattice) == ComplexF64
 	@test length(lattice) == 14
 	@test lattice.N == 2
@@ -330,7 +330,7 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 
 	# ab\bar{b}\bar{a} a_2^+a_2^-b_2^+b_2^-\bar{b}_2^-\bar{b}_2^+\bar{a}_2^-\bar{a}_2^+ a_1^+a_1^-b_1^+b_1^-\bar{b}_1^-\bar{b}_1^+\bar{a}_1^-\bar{a}_1^+
-	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=2, ordering=A1a1B1b1b1B1a1A1())
+	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=2, ordering=A1Ā1B1B̄1b̄1B̄1ā1Ā1())
 	@test isa(lattice, RealGrassmannLattice)
 	@test length(lattice) == 20
 	@test lattice.N == 1
@@ -367,7 +367,7 @@ end
 
 	# abc\bar{c}\bar{b}\bar{a} a_2^+a_2^-b_2^+b_2^-c_2^+c_2^-\bar{c}_2^-\bar{c}_2^+\bar{b}_2^-\bar{b}_2^+\bar{a}_2^-\bar{a}_2^+ 
 	# a_1^+a_1^-b_1^+b_1^-c_1^+c_1^-\bar{c}_1^-\bar{c}_1^+\bar{b}_1^-\bar{b}_1^+\bar{a}_1^-\bar{a}_1^+
-	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=3, ordering=A1a1B1b1b1B1a1A1())
+	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=3, ordering=A1Ā1B1B̄1b̄1B̄1ā1Ā1())
 	@test isa(lattice, RealGrassmannLattice)
 	@test length(lattice) == 30
 	@test lattice.N == 1
@@ -413,13 +413,13 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 end
 
-@testset "GrassmannLattice: real time A1B1ā1b̄1A1B1a1b1" begin
+@testset "GrassmannLattice: real time A1B1ā1b̄1Ā1B̄1a1b1" begin
 	# aā a₃^+ā₃^-ā₃^+a₃^- a₂^+ā₂^-ā₂^+a₂^-  a₁^+ā₁^-ā₁^+a₁^-
-	lattice = GrassmannLattice(N=2, δt=0.05, contour=:real, ordering=A1B1ā1b̄1A1B1a1b1())
+	lattice = GrassmannLattice(N=2, δt=0.05, contour=:real, ordering=A1B1ā1b̄1Ā1B̄1a1b1())
 	@test isa(ConjugationStyle(lattice), GeneralConjugation)
 	@test isa(LayoutStyle(lattice), TimeLocalLayout)
 	@test isa(lattice, RealGrassmannLattice)
-	@test lattice.ordering == A1B1ā1b̄1A1B1a1b1()
+	@test lattice.ordering == A1B1ā1b̄1Ā1B̄1a1b1()
 	@test scalartype(lattice) == ComplexF64
 	@test length(lattice) == 14
 	@test lattice.N == 2
@@ -448,7 +448,7 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 
 	# aābb̄ a₂^+b₂^+ā₂^-b̄₂^-ā₂^+b̄₂^+a₂^-b₂^-  a₁^+b₁^+ā₁^-b̄₁^-ā₁^+b̄₁^+a₁^-b₁^-
-	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=2, ordering=A1B1ā1b̄1A1B1a1b1())
+	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=2, ordering=A1B1ā1b̄1Ā1B̄1a1b1())
 	@test isa(lattice, RealGrassmannLattice)
 	@test length(lattice) == 20
 	@test lattice.N == 1
@@ -484,7 +484,7 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 
 	# aābb̄cc̄ a₂^+b₂^+c₂^+ā₂^-b̄₂^-c̄₂^-ā₂^+b̄₂^+c̄₂^+a₂^-b₂^-c₂^-  a₁^+b₁^+c₁^+ā₁^-b̄₁^-c̄₁^-ā₁^+b̄₁^+c̄₁^+a₁^-b₁^-c₁^-
-	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=3, ordering=A1B1ā1b̄1A1B1a1b1())
+	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=3, ordering=A1B1ā1b̄1Ā1B̄1a1b1())
 	@test isa(lattice, RealGrassmannLattice)
 	@test length(lattice) == 30
 	@test lattice.N == 1
@@ -530,13 +530,13 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 end
 
-@testset "GrassmannLattice: real time A1A1a1a1B1B1b1b1" begin
+@testset "GrassmannLattice: real time A1Ā1a1ā1B1B̄1b1b̄1" begin
 	# a\bar{a} a_3^+\bar{a}_3^+a_3^-\bar{a}_3^- a_2^+\bar{a}_2^+a_2^-\bar{a}_2^- a_1^+\bar{a}_1^+a_1^-\bar{a}_1^-
-	lattice = GrassmannLattice(N=2, δt=0.05, contour=:real, ordering=A1A1a1a1B1B1b1b1())
+	lattice = GrassmannLattice(N=2, δt=0.05, contour=:real, ordering=A1Ā1a1ā1B1B̄1b1b̄1())
 	@test isa(ConjugationStyle(lattice), AdjacentConjugation)
 	@test isa(LayoutStyle(lattice), TimeLocalLayout)
 	@test isa(lattice, RealGrassmannLattice)
-	@test lattice.ordering == A1A1a1a1B1B1b1b1()
+	@test lattice.ordering == A1Ā1a1ā1B1B̄1b1b̄1()
 	@test scalartype(lattice) == ComplexF64
 	@test length(lattice) == 14
 	@test lattice.N == 2
@@ -564,7 +564,7 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 
 	# a\bar{a}b\bar{b} a_2^+\bar{a}_2^+a_2^-\bar{a}_2^-b_2^+\bar{b}_2^+b_2^-\bar{b}_2^- a_1^+\bar{a}_1^+a_1^-\bar{a}_1^-b_1^+\bar{b}_1^+b_1^-\bar{b}_1^-
-	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=2, ordering=A1A1a1a1B1B1b1b1())
+	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=2, ordering=A1Ā1a1ā1B1B̄1b1b̄1())
 	@test isa(lattice, RealGrassmannLattice)
 	@test length(lattice) == 20
 	@test lattice.N == 1
@@ -601,7 +601,7 @@ end
 
 	# a\bar{a}b\bar{b}c\bar{c} a_2^+\bar{a}_2^+a_2^-\bar{a}_2^-b_2^+\bar{b}_2^+b_2^-\bar{b}_2^-c_2^+\bar{c}_2^+c_2^-\bar{c}_2^- 
 	# a_1^+\bar{a}_1^+a_1^-\bar{a}_1^-b_1^+\bar{b}_1^+b_1^-\bar{b}_1^-c_1^+\bar{c}_1^+c_1^-\bar{c}_1^-
-	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=3, ordering=A1A1a1a1B1B1b1b1())
+	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=3, ordering=A1Ā1a1ā1B1B̄1b1b̄1())
 	@test isa(lattice, RealGrassmannLattice)
 	@test length(lattice) == 30
 	@test lattice.N == 1
@@ -647,13 +647,13 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 end
 
-@testset "GrassmannLattice: real time A1A1B1B1a1a1b1b1" begin
+@testset "GrassmannLattice: real time A1Ā1B1B̄1a1ā1b1b̄1" begin
 	# aā a₁^+ā₁^+a₁^-ā₁^-
-	lattice = GrassmannLattice(N=2, δt=0.05, contour=:real, ordering=A1A1B1B1a1a1b1b1())
+	lattice = GrassmannLattice(N=2, δt=0.05, contour=:real, ordering=A1Ā1B1B̄1a1ā1b1b̄1())
 	@test isa(ConjugationStyle(lattice), AdjacentConjugation)
 	@test isa(LayoutStyle(lattice), TimeLocalLayout)
 	@test isa(lattice, RealGrassmannLattice)
-	@test lattice.ordering == A1A1B1B1a1a1b1b1()
+	@test lattice.ordering == A1Ā1B1B̄1a1ā1b1b̄1()
 	@test scalartype(lattice) == ComplexF64
 	@test length(lattice) == 14
 	@test lattice.N == 2
@@ -681,7 +681,7 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 
 	# aābb̄ a₂^+ā₂^+b₂^+b̄₂^+a₂^-ā₂^-b₂^-b̄₂^- a₁^+ā₁^+b₁^+b̄₁^+a₁^-ā₁^-b₁^-b̄₁^-
-	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=2, ordering=A1A1B1B1a1a1b1b1())
+	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=2, ordering=A1Ā1B1B̄1a1ā1b1b̄1())
 	@test isa(lattice, RealGrassmannLattice)
 	@test length(lattice) == 20
 	@test lattice.N == 1
@@ -717,7 +717,7 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 
 	# aābb̄cc̄ a₂^+ā₂^+b₂^+b̄₂^+c₂^+c̄₂^+a₂^-ā₂^-b₂^-b̄₂^-c₂^-c̄₂^- a₁^+ā₁^+b₁^+b̄₁^+c₁^+c̄₁^+a₁^-ā₁^-b₁^-b̄₁^-c₁^-c̄₁^-
-	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=3, ordering=A1A1B1B1a1a1b1b1())
+	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=3, ordering=A1Ā1B1B̄1a1ā1b1b̄1())
 	@test isa(lattice, RealGrassmannLattice)
 	@test length(lattice) == 30
 	@test lattice.N == 1
@@ -763,13 +763,13 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 end
 
-@testset "GrassmannLattice: real time A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1" begin
+@testset "GrassmannLattice: real time A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1" begin
 	# one band
-	lattice = GrassmannLattice(N=2, δt=0.05, contour=:real, ordering=A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1())
+	lattice = GrassmannLattice(N=2, δt=0.05, contour=:real, ordering=A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1())
 	@test isa(ConjugationStyle(lattice), AdjacentConjugation)
 	@test isa(LayoutStyle(lattice), BandLocalLayout)
 	@test isa(lattice, RealGrassmannLattice)
-	@test lattice.ordering == A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1()
+	@test lattice.ordering == A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1()
 	@test scalartype(lattice) == ComplexF64
 	@test length(lattice) == 14
 	@test lattice.N == 2
@@ -797,7 +797,7 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 
 	# two bands
-	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=2, ordering=A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1())
+	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=2, ordering=A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1())
 	@test isa(lattice, RealGrassmannLattice)
 	@test length(lattice) == 20
 	@test lattice.N == 1
@@ -834,7 +834,7 @@ end
 
 
 	# two bands
-	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=3, ordering=A2A2A1A1a2a2a1a1B2B2B1B1b2b2b1b1())
+	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=3, ordering=A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1())
 	@test isa(lattice, RealGrassmannLattice)
 	@test length(lattice) == 30
 	@test lattice.N == 1
@@ -880,13 +880,13 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 end
 
-@testset "GrassmannLattice: real time A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2" begin
+@testset "GrassmannLattice: real time A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2" begin
 	# one band
-	lattice = GrassmannLattice(N=2, δt=0.05, contour=:real, ordering=A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2())
+	lattice = GrassmannLattice(N=2, δt=0.05, contour=:real, ordering=A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2())
 	@test isa(ConjugationStyle(lattice), GeneralConjugation)
 	@test isa(LayoutStyle(lattice), BranchLocalLayout)
 	@test isa(lattice, RealGrassmannLattice)
-	@test lattice.ordering == A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2()
+	@test lattice.ordering == A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2()
 	@test scalartype(lattice) == ComplexF64
 	@test length(lattice) == 14
 	@test lattice.N == 2
@@ -916,7 +916,7 @@ end
 	# @test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 
 	# two bands
-	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=2, ordering=A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2())
+	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=2, ordering=A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2())
 	@test isa(lattice, RealGrassmannLattice)
 	@test length(lattice) == 20
 	@test lattice.N == 1
@@ -952,7 +952,7 @@ end
 	# @test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 
 	# three bands
-	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=3, ordering=A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2())
+	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=3, ordering=A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2())
 	@test isa(lattice, RealGrassmannLattice)
 	@test length(lattice) == 30
 	@test lattice.N == 1
@@ -999,13 +999,13 @@ end
 end
 
 
-@testset "GrassmannLattice: real time A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2" begin
+@testset "GrassmannLattice: real time A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2" begin
 	# one band
-	lattice = GrassmannLattice(N=2, δt=0.05, contour=:real, ordering=A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2())
+	lattice = GrassmannLattice(N=2, δt=0.05, contour=:real, ordering=A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2())
 	@test isa(ConjugationStyle(lattice), AdjacentConjugation)
 	@test isa(LayoutStyle(lattice), BranchLocalLayout)
 	@test isa(lattice, RealGrassmannLattice)
-	@test lattice.ordering == A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2()
+	@test lattice.ordering == A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2()
 	@test scalartype(lattice) == ComplexF64
 	@test length(lattice) == 14
 	@test lattice.N == 2
@@ -1035,7 +1035,7 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 
 	# two bands
-	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=2, ordering=A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2())
+	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=2, ordering=A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2())
 	@test isa(lattice, RealGrassmannLattice)
 	@test length(lattice) == 20
 	@test lattice.N == 1
@@ -1071,7 +1071,7 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 
 	# three bands
-	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=3, ordering=A2A2B2B2A1A1B1B1a1a1b1b1a2a2b2b2())
+	lattice = GrassmannLattice(N=1, δt=0.1, contour=:real, bands=3, ordering=A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2())
 	@test isa(lattice, RealGrassmannLattice)
 	@test length(lattice) == 30
 	@test lattice.N == 1
@@ -1117,14 +1117,14 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 end
 
-@testset "GrassmannLattice: mixed time A1A1B1B1_A1A1a1a1B1B1b1b1A2A2a2a2B2B2b2b2" begin
+@testset "GrassmannLattice: mixed time A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2" begin
 	# imag part: a\bar{a} a_2\bar{a}_2 a_1\bar{a}_1
 	# real part: a_3^+\bar{a}_3^+a_3^-\bar{a}_3^- a_2^+\bar{a}_2^+a_2^-\bar{a}_2^- a_1^+\bar{a}_1^+a_1^-\bar{a}_1^-
-	lattice = GrassmannLattice(Nt=2, δt=0.05, Nτ=2, δτ=0.1, contour=:mixed, ordering=A1A1B1B1_A1A1a1a1B1B1b1b1A2A2a2a2B2B2b2b2())
+	lattice = GrassmannLattice(Nt=2, δt=0.05, Nτ=2, δτ=0.1, contour=:mixed, ordering=A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2())
 	@test isa(ConjugationStyle(lattice), AdjacentConjugation)
 	@test isa(LayoutStyle(lattice), TimeLocalLayout)
 	@test isa(lattice, MixedGrassmannLattice)
-	@test lattice.ordering == A1A1B1B1_A1A1a1a1B1B1b1b1A2A2a2a2B2B2b2b2()
+	@test lattice.ordering == A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2()
 	@test scalartype(lattice) == ComplexF64
 	@test length(lattice) == 20
 	@test lattice.Nt == 2
@@ -1166,7 +1166,7 @@ end
 
 	# imag part: a\bar{a}b\bar{b} a_2\bar{a}_2b_2\bar{b}_2 a_1\bar{a}_1b_1\bar{b}_1
 	# real part: a_2^+\bar{a}_2^+a_2^-\bar{a}_2^-b_2^+\bar{b}_2^+b_2^-\bar{b}_2^- a_1^+\bar{a}_1^+a_1^-\bar{a}_1^-b_1^+\bar{b}_1^+b_1^-\bar{b}_1^-
-	lattice = GrassmannLattice(Nt=1, δt=0.1, Nτ=2, δτ=0.1, contour=:mixed, bands=2, ordering=A1A1B1B1_A1A1a1a1B1B1b1b1A2A2a2a2B2B2b2b2())
+	lattice = GrassmannLattice(Nt=1, δt=0.1, Nτ=2, δτ=0.1, contour=:mixed, bands=2, ordering=A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2())
 	@test isa(lattice, MixedGrassmannLattice)
 	@test length(lattice) == 32
 	@test lattice.Nt == 1
@@ -1221,7 +1221,7 @@ end
 	# imag part: a\bar{a}b\bar{b}c\bar{c} a_1\bar{a}_1b_1\bar{b}_1c_1\bar{c}_1
 	# real part: a_2^+\bar{a}_2^+a_2^-\bar{a}_2^-b_2^+\bar{b}_2^+b_2^-\bar{b}_2^-c_2^+\bar{c}_2^+c_2^-\bar{c}_2^- 
 	# a_1^+\bar{a}_1^+a_1^-\bar{a}_1^-b_1^+\bar{b}_1^+b_1^-\bar{b}_1^-c_1^+\bar{c}_1^+c_1^-\bar{c}_1^-
-	lattice = GrassmannLattice(Nt=1, δt=0.1, Nτ=1, δτ=0.1, contour=:mixed, bands=3, ordering=A1A1B1B1_A1A1a1a1B1B1b1b1A2A2a2a2B2B2b2b2())
+	lattice = GrassmannLattice(Nt=1, δt=0.1, Nτ=1, δτ=0.1, contour=:mixed, bands=3, ordering=A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2())
 	@test isa(lattice, MixedGrassmannLattice)
 	@test length(lattice) == 42
 	@test lattice.Nt == 1
@@ -1284,14 +1284,14 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 end
 
-# swap forward and backward branches compared to A1A1B1B1_A1A1a1a1B1B1b1b1A2A2a2a2B2B2b2b2 
-@testset "GrassmannLattice: mixed time A1A1B1B1_a1a1A1A1b1b1B1B1a2a2A2A2b2b2B2B2" begin
+# swap forward and backward branches compared to A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2 
+@testset "GrassmannLattice: mixed time A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2" begin
 	# one band
-	lattice = GrassmannLattice(Nt=2, δt=0.05, Nτ=2, δτ=0.1, contour=:mixed, ordering=A1A1B1B1_a1a1A1A1b1b1B1B1a2a2A2A2b2b2B2B2())
+	lattice = GrassmannLattice(Nt=2, δt=0.05, Nτ=2, δτ=0.1, contour=:mixed, ordering=A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2())
 	@test isa(ConjugationStyle(lattice), AdjacentConjugation)
 	@test isa(LayoutStyle(lattice), TimeLocalLayout)
 	@test isa(lattice, MixedGrassmannLattice)
-	@test lattice.ordering == A1A1B1B1_a1a1A1A1b1b1B1B1a2a2A2A2b2b2B2B2()
+	@test lattice.ordering == A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2()
 	@test scalartype(lattice) == ComplexF64
 	@test length(lattice) == 20
 	@test lattice.Nt == 2
@@ -1330,7 +1330,7 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 
 	# two bands
-	lattice = GrassmannLattice(Nt=1, δt=0.1, Nτ=2, δτ=0.1, contour=:mixed, bands=2, ordering=A1A1B1B1_a1a1A1A1b1b1B1B1a2a2A2A2b2b2B2B2())
+	lattice = GrassmannLattice(Nt=1, δt=0.1, Nτ=2, δτ=0.1, contour=:mixed, bands=2, ordering=A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2())
 	@test isa(lattice, MixedGrassmannLattice)
 	@test length(lattice) == 32
 	@test lattice.Nt == 1
@@ -1382,7 +1382,7 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 
 	# three bands
-	lattice = GrassmannLattice(Nt=1, δt=0.1, Nτ=1, δτ=0.1, contour=:mixed, bands=3, ordering=A1A1B1B1_a1a1A1A1b1b1B1B1a2a2A2A2b2b2B2B2())
+	lattice = GrassmannLattice(Nt=1, δt=0.1, Nτ=1, δτ=0.1, contour=:mixed, bands=3, ordering=A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2())
 	@test isa(lattice, MixedGrassmannLattice)
 	@test length(lattice) == 42
 	@test lattice.Nt == 1
@@ -1445,14 +1445,14 @@ end
 end
 
 # mixed time lattice
-@testset "GrassmannLattice: mixed time A1B1B1A1_A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2" begin
+@testset "GrassmannLattice: mixed time A1B1B̄1Ā1_A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2" begin
 	# imag part: a_2\bar{a}_2 a_1\bar{a}_1
 	# real part: a\bar{a} a_3^+\bar{a}_3^+a_3^-\bar{a}_3^- a_2^+\bar{a}_2^+a_2^-\bar{a}_2^- a_1^+\bar{a}_1^+a_1^-\bar{a}_1^-
-	lattice = GrassmannLattice(Nt=2, δt=0.05, Nτ=2, δτ=0.1, contour=:mixed, ordering=A1B1B1A1_A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2())
+	lattice = GrassmannLattice(Nt=2, δt=0.05, Nτ=2, δτ=0.1, contour=:mixed, ordering=A1B1B̄1Ā1_A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2())
 	@test isa(ConjugationStyle(lattice), GeneralConjugation)
 	@test isa(LayoutStyle(lattice), BranchLocalLayout)
 	@test isa(lattice, MixedGrassmannLattice)
-	@test lattice.ordering == A1B1B1A1_A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2()
+	@test lattice.ordering == A1B1B̄1Ā1_A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2()
 	@test scalartype(lattice) == ComplexF64
 	@test length(lattice) == 20
 	@test lattice.Nt == 2
@@ -1493,7 +1493,7 @@ end
 
 	# imag part: a_2b_2\bar{b}_2\bar{a}_2 a_1b_1\bar{b}_1\bar{a}_1
 	# real part: a\bar{a}b\bar{b} a_2^+\bar{a}_2^+a_2^-\bar{a}_2^-b_2^+\bar{b}_2^+b_2^-\bar{b}_2^- a_1^+\bar{a}_1^+a_1^-\bar{a}_1^-b_1^+\bar{b}_1^+b_1^-\bar{b}_1^-
-	lattice = GrassmannLattice(Nt=1, δt=0.1, Nτ=2, δτ=0.1, contour=:mixed, bands=2, ordering=A1B1B1A1_A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2())
+	lattice = GrassmannLattice(Nt=1, δt=0.1, Nτ=2, δτ=0.1, contour=:mixed, bands=2, ordering=A1B1B̄1Ā1_A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2())
 	@test isa(lattice, MixedGrassmannLattice)
 	@test length(lattice) == 32
 	@test lattice.Nt == 1
@@ -1545,7 +1545,7 @@ end
 	@test integrate(lattice, mps) ≈ 1 atol = 1.0e-6
 
 	# imag part: a_1b_1c_1\bar{c}_1\bar{b}_1\bar{a}_1
-	lattice = GrassmannLattice(Nt=1, δt=0.1, Nτ=1, δτ=0.1, contour=:mixed, bands=3, ordering=A1B1B1A1_A2B2B2A2A1B1B1A1a1b1b1a1a2b2b2a2())
+	lattice = GrassmannLattice(Nt=1, δt=0.1, Nτ=1, δτ=0.1, contour=:mixed, bands=3, ordering=A1B1B̄1Ā1_A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2())
 	@test isa(lattice, MixedGrassmannLattice)
 	@test length(lattice) == 42
 	@test lattice.Nt == 1
