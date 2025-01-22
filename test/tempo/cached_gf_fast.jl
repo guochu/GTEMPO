@@ -2,7 +2,7 @@ println("------------------------------------")
 println("|          Cached GF fast          |")
 println("------------------------------------")
 
-@testset "Cached GF" begin
+@testset "Cached GF fast" begin
 
 	rtol = 1.0e-5
 
