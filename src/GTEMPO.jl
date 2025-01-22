@@ -15,9 +15,10 @@ export AbstractGrassmannLattice, ImagGrassmannLattice, RealGrassmannLattice, Mix
 export branches, matchindices, indexmappings, swapbandperm, swapband!, swapband, fillband
 export OrderingStyle, ConjugationStyle, AdjacentConjugation, GeneralConjugation
 export LayoutStyle, TimeLocalLayout, BandLocalLayout, BranchLocalLayout
+# export TimeOrderingStyle, ImaginaryTimeOrderingStyle, RealTimeOrderingStyle, TimeAscending, TimeDscending
 export A1Ā1B1B̄1, AĀBB̄, A1B1B̄1Ā1, ABB̄Ā, A2Ā2A1Ā1B2B̄2B1B̄1
 export A1Ā1B1B̄1a1ā1b1b̄1, AĀBB̄aābb̄, A1Ā1a1ā1B1B̄1b1b̄1, AĀaāBB̄bb̄
-export A1Ā1B1B̄1b̄1B̄1ā1Ā1, AaBbb̄B̄āĀ, A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1, A1B1ā1b̄1Ā1B̄1a1b1
+export A1Ā1B1B̄1b̄1B̄1ā1Ā1, AaBbb̄B̄āĀ, A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1, ABāb̄ĀB̄ab, A1B1ā1b̄1Ā1B̄1a1b1
 export A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2, A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2 #band local ordering
 export A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2, AĀBB̄_AĀaāBB̄bb̄, A1B1B̄1Ā1_A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2 #mixedtime lattice
 export A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2, AĀBB̄_aāAĀbb̄BB̄
@@ -42,6 +43,7 @@ export gf, Gτ, parallel_Gτ, Gt, parallel_Gt, Gm, greater, lesser, contour_orde
 export occupation, electriccurrent, electriccurrent_fast
 export cached_gf, cached_Gτ, cached_Gt, cached_Gm, cached_greater, cached_lesser, cached_contour_ordered_gf
 export cached_occupation, cached_electriccurrent, cached_electriccurrent_fast
+export cached_gf_fast, cached_Gτ_fast, cached_Gt_fast, cached_Gm_fast
 
 # utilities for TEMPO
 # exact models

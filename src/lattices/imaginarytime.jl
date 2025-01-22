@@ -1,6 +1,7 @@
 abstract type ImagGrassmannLattice{O<:ImagGrassmannOrdering} <: AbstractGrassmannLattice{O} end
 TK.scalartype(::Type{<:ImagGrassmannLattice}) = Float64
 branches(::Type{<:ImagGrassmannLattice}) = (:τ,)
+TimeOrderingStyle(x::ImagGrassmannLattice) = ImaginaryTimeOrderingStyle(x)
 
 struct ImagGrassmannLattice1Order{O<:ImagGrassmannOrdering} <: ImagGrassmannLattice{O}
 	δτ::Float64

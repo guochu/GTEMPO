@@ -1,6 +1,7 @@
 abstract type RealGrassmannLattice{O<:RealGrassmannOrdering} <: AbstractGrassmannLattice{O} end
 TK.scalartype(::Type{<:RealGrassmannLattice}) = ComplexF64
 branches(::Type{<:RealGrassmannLattice}) = (:+, :-)
+TimeOrderingStyle(x::RealGrassmannLattice) = RealTimeOrderingStyle(x)
 
 # k is the number of discretization, nbands is the number of bands
 # pos is the position within a band

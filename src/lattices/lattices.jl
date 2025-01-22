@@ -8,10 +8,13 @@ Base.getindex(x::AbstractGrassmannLattice, a::ContourIndex) = index(x, a.j, conj
 OrderingStyle(::Type{<:AbstractGrassmannLattice{O}}) where O = O()
 ConjugationStyle(::Type{<:AbstractGrassmannLattice{O}}) where O = ConjugationStyle(O)
 LayoutStyle(::Type{<:AbstractGrassmannLattice{O}}) where O = LayoutStyle(O)
+ImaginaryTimeOrderingStyle(::Type{<:AbstractGrassmannLattice{O}}) where O = ImaginaryTimeOrderingStyle(O)
+RealTimeOrderingStyle(::Type{<:AbstractGrassmannLattice{O}}) where O = RealTimeOrderingStyle(O)
 OrderingStyle(x::AbstractGrassmannLattice) = OrderingStyle(typeof(x))
 ConjugationStyle(x::AbstractGrassmannLattice) = ConjugationStyle(typeof(x))
 LayoutStyle(x::AbstractGrassmannLattice) = LayoutStyle(typeof(x))
-
+ImaginaryTimeOrderingStyle(x::AbstractGrassmannLattice) = ImaginaryTimeOrderingStyle(typeof(x))
+RealTimeOrderingStyle(x::AbstractGrassmannLattice) = RealTimeOrderingStyle(typeof(x))
 
 include("imaginarytime.jl")
 include("realtime.jl")
