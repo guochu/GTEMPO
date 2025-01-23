@@ -24,8 +24,18 @@ include("integrate/integrate.jl")
 include("parallelrun.jl")
 
 
+"""
+	GrassmannLattice(; contour::Symbol, kwargs...)
+
+Return different Grassmann lattices depending on the "contour"
+there are three choices for "contour"
+real (or eauivalent Keldysh): return RealGrassmannLattice
+imag: return ImagGrassmannLattice
+mixed (or equivalent KadanoffBaym): return MixedGrassmannLattice
+The kwargs are different for different lattice types
+"""
 function GrassmannLattice(; contour::Symbol, kwargs...)
-	(contour in (:real, :imag, :Keldysh, :mixed, :Kadanoff)) || throw(ArgumentError("contour must be :real (equivalentlt :Keldysh), :imag or :mixed (equivalentlt :Kadanoff)"))
+	(contour in (:real, :imag, :Keldysh, :mixed, :KadanoffBaym)) || throw(ArgumentError("contour must be :real (equivalentlt :Keldysh), :imag or :mixed (equivalentlt :KadanoffBaym)"))
 	if (contour == :real) || (contour == :Keldysh)
 		return RealGrassmannLattice(; kwargs...)
 	elseif contour == :imag
@@ -35,6 +45,11 @@ function GrassmannLattice(; contour::Symbol, kwargs...)
 	end
 end
 
+"""
+	vacuumstate(x::AbstractGrassmannLattice)
+
+Return the vacuum state as a GMPS
+"""
 vacuumstate(x::AbstractGrassmannLattice) = GrassmannMPS(scalartype(x), length(x))
 
 
@@ -62,6 +77,14 @@ This is an internal function used for changing lattice ordering
 """
 indexmappings(lattice::AbstractGrassmannLattice) = error("indexmappings not implemented for lattice type $(typeof(lattice))")
 
+"""
+	branches(lattice::AbstractGrassmannLattice) 
+
+Return all the possible branches of a lattice
+ImagGrassmannLattice contains a single branch :τ
+RealGrassmannLattice contains two branches :+ and :-
+MixedGrassmannLattice contains three branches :+, :- and :τ
+"""
 branches(lattice::AbstractGrassmannLattice) = branches(typeof(lattice))
 
 # This function is used in some special cases
@@ -70,9 +93,14 @@ band_boundary(lattice::AbstractGrassmannLattice, j::Int; kwargs...) = error("ind
 """
 	swapband(mps::GrassmannMPS, x::AbstractGrassmannLattice, b1::Int, b2::Int; kwargs...)
 
-Swap the two bands b1 b2 of a mps
+Swap the two bands b1 b2 of a GMPS
 """
 swapband(mps::GrassmannMPS, x::AbstractGrassmannLattice, b1::Int, b2::Int; kwargs...) = swapband!(copy(mps), x, b1, b2; kwargs...)
+"""
+	swapband!(mps::GrassmannMPS, x::AbstractGrassmannLattice, b1::Int, b2::Int; kwargs...)
+
+Swap the two bands b1 b2 of GMPS "mps" and change it inplace
+"""
 swapband!(mps::GrassmannMPS, x::AbstractGrassmannLattice, b1::Int, b2::Int; kwargs...) = _swapband!(mps, x, b1, b2; kwargs...)
 
 function _swapband!(mps, x::AbstractGrassmannLattice, b1::Int, b2::Int; kwargs...)
@@ -95,7 +123,13 @@ function swapbandperm(x::AbstractGrassmannLattice, b1::Int, b2::Int)
 end
 
 """
-	fillband(lattice::AbstractGrassmannLattice, gmps::GrassmannMPS; band::Int=1)
+	fillband(lattice::AbstractGrassmannLattice, x::GrassmannMPS; band::Int=1)
+
+lattice contains several bands, the GMPS x is built from a similar lattice 
+but with one band 
+fillband will return a new GMPS with the same size as 
+lattice, with x to be its "band"th band, while the rest site tensors are trivial 
+identity 
 """
 function fillband(lattice::AbstractGrassmannLattice, gmps::GrassmannMPS; band::Int=1)
 	data = _fillband(lattice, gmps, band=band)

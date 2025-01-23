@@ -5,7 +5,17 @@ cached_Gt_fast(lattice::RealGrassmannLattice, A::GrassmannMPS, B::Vararg{Grassma
 cached_Gm_fast(lattice::MixedGrassmannLattice, A::GrassmannMPS, B::Vararg{GrassmannMPS}; c1::Bool=true, c2::Bool=false, kwargs...) = cached_gf_fast(
 				lattice, A, B...; c1=c1, c2=c2, kwargs...)
 
+"""
+	cached_gf_fast(lattice::Union{ImagGrassmannLattice, RealGrassmannLattice}, A::GrassmannMPS, Bs::Vararg{GrassmannMPS}; kwargs...)
 
+Similar to cached_gf, but use a even faster version when calculating 
+many ⟨aᵢaⱼ⟩s with differen distances |i-j|, by more cleverly using the cache
+
+Currently, this function may contain errors if b1=:- and b2=:+, so one should 
+avoid this situation
+In the future, we may either solve this problem or simply 
+throw an error when this situation is met
+"""
 function cached_gf_fast(lattice::Union{ImagGrassmannLattice, RealGrassmannLattice}, A::GrassmannMPS, Bs::Vararg{GrassmannMPS}; kwargs...)
 	GFt = cached_gf_fast(lattice, lattice.k, A, Bs...; kwargs...)
 	if lattice isa ImagGrassmannLattice

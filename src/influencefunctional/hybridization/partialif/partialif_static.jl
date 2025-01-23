@@ -1,3 +1,9 @@
+"""
+	hybriddynamics(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg; band::Int=1) 
+
+Build the IF=e^{ΣᵢⱼΔᵢⱼāᵢaⱼ} as a GMPS using algorithm alg
+corr: fermionic hybridization function calculated using QuAPI
+"""
 hybriddynamics(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::PartialIF; band::Int=1) = hybriddynamics(
 				gmps, lattice, corr; band=band, trunc=alg.trunc)
 hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::PartialIF; band::Int=1) = hybriddynamics!(

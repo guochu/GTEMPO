@@ -3,7 +3,7 @@
 """
     correlationfunction(bath::AbstractBath, lattice::AbstractGrassmannLattice)
 
-Compute the discrete correlation functions (QUAPI)
+Compute the discrete hybridization functions using QuAPI
 """
 function correlationfunction(bath::AbstractBath, lattice::ImagGrassmannLattice1Order)
     # @assert lattice.β == bath.β

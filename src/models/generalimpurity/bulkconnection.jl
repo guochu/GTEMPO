@@ -1,3 +1,9 @@
+"""
+	bulkconnection(x::GrassmannMPS, lattice::AbstractGrassmannLattice; kwargs...)
+
+Similar to boundarycondition, but applies the bulk connection terms instead of 
+the boundary connection term
+"""
 bulkconnection(lattice::AbstractGrassmannLattice; kwargs...) = bulkconnection!(vacuumstate(lattice), lattice; kwargs...)
 # imaginary-time
 function bulkconnection!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice; band::Int=1, trunc::TruncationScheme=DefaultIntegrationTruncation)

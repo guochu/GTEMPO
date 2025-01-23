@@ -23,7 +23,16 @@ include("acintegrate/ac_bmps_integrate.jl")
 
 include("conversion.jl")
 
+"""
+	integrate(alg::IntegrationAlgorithm, lattice::AbstractGrassmannLattice, x0::GrassmannMPS, x1::GrassmannMPS...; trunc)
 
+integrate all the pairs of GVs of the result of the multiplication of x0, x1...
+return the result as a single scalar
+alg is the algorithm used for the integration, for which two choices are supported currently
+ExactIntegrate: do the integration exactly using the zipup algorithm [see PRB 109, 045140 (2024)]
+BMPSIntegrate: do the integration approximately using the BoundaryMPS algorithm, in this case the keyword 
+trunc can be specified to control the truncation
+"""
 function integrate(alg::IntegrationAlgorithm, lattice::AbstractGrassmannLattice, x0::GrassmannMPS, x1::GrassmannMPS...; kwargs...)
 	if ConjugationStyle(lattice) isa AdjacentConjugation
 		return _ac_integrate(alg, lattice, x0, x1...; kwargs...)

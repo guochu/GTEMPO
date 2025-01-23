@@ -1,6 +1,11 @@
 # cached integration
 abstract type AbstractExpectationCache end
 
+"""
+	Zvalue(x::AbstractExpectationCache)
+
+Return the value of partition function
+"""
 Zvalue(x::AbstractExpectationCache) = TK.scalar(x.hleft[end])
 """
 	leftenv(x::AbstractExpectationCache, j::Int)

@@ -26,6 +26,12 @@ function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice
 	return gmps
 end
 
+"""
+	partialif_hybrid(lattice::ImagGrassmannLattice1Order, i::Int, cols::AbstractVector; band)
+
+Build the partial IF I = e^{āᵢΣⱼΔᵢⱼaⱼ} analytically as an MPO with bond dimension 2
+cols: the i-th row of the hybridization function Δᵢⱼ
+"""
 function partialif_hybrid(lattice::ImagGrassmannLattice1Order, i::Int, cols::AbstractVector; band::Int=1)
 	row = index(lattice, i, band=band, conj=true)
 	col_pos = [index(lattice, j, band=band, conj=false) for j in length(cols):-1:1]

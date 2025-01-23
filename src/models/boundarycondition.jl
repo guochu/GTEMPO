@@ -1,3 +1,13 @@
+"""
+	boundarycondition(x::GrassmannMPS, lattice::AbstractGrassmannLattice; kwargs...)
+
+Apply the boundary connection term onto the given GMPS, which connects the GVs on step 1 and N
+One could also use the function boundarycondition_branching instead, which return a vector
+of GMPSs instead of a single one. The sum of these GMPS will be equal to the result of the 
+current function. But the sum may be performed on the fly for efficiency [see PRB 109, 165113 (2024)]
+
+Note that we have different boundary conditions for different contours
+"""
 boundarycondition(x::GrassmannMPS, lattice::AbstractGrassmannLattice; kwargs...) = boundarycondition!(copy(x), lattice; kwargs...)
 
 function boundarycondition_branching(x0::Vector{<:GrassmannMPS}, lattice::AbstractGrassmannLattice; kwargs...)

@@ -1,3 +1,12 @@
+# cached version of calculating Green's functions
+
+"""
+   cached_gf(lattice::AbstractGrassmannLattice, a::ContourIndex, b::ContourIndex, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
+                    cache::AbstractExpectationCache=environments(lattice, A, B...), kwargs...)
+
+The same as gf, but use a cache for efficiency, the cache can be precomputed
+and used for calculating any other observables
+"""
 function cached_gf(lattice::AbstractGrassmannLattice, a::ContourIndex, b::ContourIndex, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
                     cache::AbstractExpectationCache=environments(lattice, A, B...), kwargs...)
     pos1, pos2 = lattice[a], lattice[b]

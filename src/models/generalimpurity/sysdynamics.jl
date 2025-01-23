@@ -11,11 +11,21 @@ function sysdynamics_backward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLat
 	return sysdynamics_util!(gmps, lattice, h, lattice.Nt, im*lattice.δt, :-, trunc)
 end
 
+"""
+	baresysdynamics(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, h::ImpurityHamiltonian; trunc)
+
+For the generic ImpurityHamiltonian type, we offer the function baresysdynamics, 
+which is similar to sysdynamics, but the bulk connection terms are not applied
+
+Apply the function bulkconnection onto the output of baresysdynamics, the result 
+will be equal to sysdynamics
+
+This function will be convenient sometimes 
+
+baresysdynamics! is an inplace version of this function
+"""
 baresysdynamics(lattice::AbstractGrassmannLattice, h::ImpurityHamiltonian; kwargs...) = baresysdynamics!(vacuumstate(lattice), lattice, h; kwargs...)
 
-"""
-	sysdynamics!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, h::ImpurityHamiltonian; trunc)
-"""
 function baresysdynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, h::ImpurityHamiltonian; trunc::TruncationScheme=DefaultKTruncation)
 	(lattice.bands == h.bands) || throw(ArgumentError("lattice bands and ImpurityHamiltonian bands mismatch"))
 	return baresysdynamics_util!(gmps, lattice, h, lattice.N, -lattice.δτ, :τ, trunc)

@@ -8,6 +8,14 @@
 # end 
 # changeordering(::Type{A}, lattice::AbstractGrassmannLattice, x::GrassmannMPS; kwargs...) where A = convert_ordering(A, lattice, x; kwargs...)
 
+
+"""
+    changeordering(::Type{A}, lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS, zs::GrassmannMPS...; trunc::TruncationScheme) where {A}
+
+Change the ordering of GVs of the GMPSs x, y, zs from the ordering in lattice to the new ordering A
+Inside this function, truncation may not done since swap gate may be used, and "trunc" is used for the
+truncation
+"""
 function changeordering(::Type{A}, lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS, zs::GrassmannMPS...; 
                         trunc::TruncationScheme=DefaultKTruncation) where {A <: GrassmannOrdering} 
     if OrderingStyle(lattice) isa A
@@ -88,6 +96,11 @@ function toadjacentordering(lattice::RealGrassmannLattice, x::GrassmannMPS...; k
     end
 end 
 
+"""
+    toadjacentordering(lattice::MixedGrassmannLattice{<:A1B1B̄1Ā1_A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2}, x::GrassmannMPS...; trunc) 
+
+Convert the ordering of GVs in x... from the ordering in lattice into an optimal "AdjacentConjugation" ordering 
+"""
 toadjacentordering(lattice::MixedGrassmannLattice{<:A1B1B̄1Ā1_A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2}, x::GrassmannMPS...; kwargs...) = changeordering(
                     A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2, lattice, x...; kwargs...)
 

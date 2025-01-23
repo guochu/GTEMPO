@@ -1,5 +1,11 @@
 """
-	GrassmannMPS{A, B}
+	GrassmannMPS{A<:MPSTensor, B<:MPSBondTensor}
+
+Each site of GMPS is divided by a scalar "scaling", such 
+that the site tensors of a GMPS is always stored in canonical
+form 
+It should be understood that each site tensor of the GMPS 
+should be multiplied by "scaling"
 """
 struct GrassmannMPS{A <: MPSTensor, B <: MPSBondTensor} <: AbstractFiniteGMPS{A}
 	data::Vector{A}
@@ -38,7 +44,17 @@ function Base.getproperty(psi::GrassmannMPS, s::Symbol)
 end
 
 # GrassmannMPS(psi::MPS; kwargs...) = GrassmannMPS(psi.data; kwargs...)
+
+"""
+	scaling(x::GrassmannMPS)
+
+Return the scaling factor of the GMPS
+"""
 scaling(x::GrassmannMPS) = x.scaling[]
+"""
+	setscaling!(x::GrassmannMPS, new_scaling::Real)
+Replace the scaling factor of the GMPS by new_scaling 
+"""
 setscaling!(x::GrassmannMPS, scaling::Real) = (x.scaling[] = scaling)
 
 Base.length(x::GrassmannMPS) = length(x.data)

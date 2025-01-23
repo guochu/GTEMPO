@@ -3,6 +3,7 @@ abstract type InfluenceFunctionalAlgorithm end
 	struct PartialIF
 
 Build the IF as the product of partial MPOs, each with D=2
+see [SciPost Phys. Core 7, 063 (2024)]
 """
 struct PartialIF <: InfluenceFunctionalAlgorithm 
 	trunc::TruncationDimCutoff
@@ -12,6 +13,7 @@ PartialIF(; trunc::TruncationDimCutoff=DefaultITruncation) = PartialIF(trunc)
 	struct TranslationInvariantIF
 
 Build the IF as a translational variant MPO
+see [SciPost Phys. Core 7, 063 (2024)]
 """
 struct TranslationInvariantIF{T<:ExponentialExpansionAlgorithm, E<:TimeEvoMPOAlgorithm, M<:DMRGAlgorithm} <: InfluenceFunctionalAlgorithm 
 	algexpan::T

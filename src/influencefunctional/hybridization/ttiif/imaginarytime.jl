@@ -1,5 +1,7 @@
 """
 	influenceoperator(lattice::ImagGrassmannLattice1Order{<:A1Ā1B1B̄1}, corr2::ImagCorrelationFunction; band, algexpan)
+
+The influenceoperator ΣᵢⱼΔᵢⱼāᵢaⱼ as an MPO, the bond dimension of MPO is 2n, where n is number of the prony expansion
 """
 function influenceoperator(lattice::ImagGrassmannLattice1Order, corr2::ImagCorrelationFunction; band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
 	corr = corr2.data

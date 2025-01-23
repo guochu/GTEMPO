@@ -18,6 +18,11 @@ function mult2!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=DMRG.D
 end
 mult2(x::GrassmannMPS, y::GrassmannMPS; kwargs...) = mult2!(copy(x), y; kwargs...)
 
+"""
+    mult!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme)
+
+Multiplication of two GMPS x and y, and the result is stored in x
+"""
 function mult!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=DMRG.DefaultTruncation)
     (length(x) == length(y)) || throw(DimensionMismatch())
     left = GrassmannTensorMap(isomorphism(scalartype(x), fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) ))

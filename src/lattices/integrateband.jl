@@ -1,5 +1,7 @@
 """
 	integrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS; band::Int=1)
+
+integrate our the "band"th band of GMPS x, return the result as another GMPS
 """
 function integrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS; band::Int=1) 
 	data = _integrateband(lattice, x, band=band)

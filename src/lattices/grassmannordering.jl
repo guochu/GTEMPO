@@ -1,3 +1,13 @@
+"""
+	GrassmannOrdering
+
+Ordering style of Grassmann variables within a GMPS
+There are two properties of GrassmannOrdering:
+ConjugationStyle: decides whether the conjugate pairs of GVs are 
+placed in nearby position
+LayoutStyle: decides how the GVs for different time steps
+or different bands are placed
+"""
 abstract type GrassmannOrdering end
 abstract type ImagGrassmannOrdering <: GrassmannOrdering end
 abstract type RealGrassmannOrdering <: GrassmannOrdering end
@@ -6,6 +16,16 @@ abstract type MixedGrassmannOrdering <: GrassmannOrdering end
 abstract type ConjugationStyle end
 struct AdjacentConjugation <: ConjugationStyle end
 struct GeneralConjugation <: ConjugationStyle end
+"""
+	ConjugationStyle(x::GrassmannOrdering)
+
+There are two kinds of ConjugationStyle
+AdjacentConjugation: conjugate pairs of GVs are placed nearby
+AdjacentConjugation is optimal for integration of GVs
+GeneralConjugation: conjugate pairs of GVs are not placed nearby
+GeneralConjugation is convenient for build the GMPS erpresentation 
+of the bare impurity dynamics
+"""
 ConjugationStyle(x::GrassmannOrdering) = ConjugationStyle(typeof(x))
 
 abstract type LayoutStyle end
@@ -17,6 +37,16 @@ struct BandLocalLayout <: LayoutStyle end
 TimeTimeLocalLayout intra branch, but the two branches are separated
 """
 struct BranchLocalLayout <: LayoutStyle end
+"""
+	LayoutStyle(x::GrassmannOrdering)
+
+There are three kinds of ConjugationStyle
+TimeLocalLayout: the GVs within the same single time step are placed nearby
+BandLocalLayout: the GVs within the same single band are placed nearby
+BranchLocalLayout: the GVs within the same branch are placed nearby, this is
+used for the real-axis calculation, which contains the the forward (+) and 
+backward (-) branches
+"""
 LayoutStyle(x::GrassmannOrdering) = LayoutStyle(typeof(x))
 
 abstract type TimeOrderingStyle end
