@@ -165,9 +165,9 @@ function main_mixed(ϵ_d; β=1, Nτ=20, t=1, Nt=100, d=3, chi = 100, α=1)
 	# @time lt = [cached_lesser(lattice, j, mpsK, mpsI, cache=cache) for j in 1:lattice.kt]
 	# return gt, lt
 
-	@time g₁ = [cached_Gm(lattice, k, 1, mpsK, mpsI, c1=false, c2=true, b1=:+, b2=:+, band=1, cache=cache) for k in 1:Nt+1]
-	@time g₂ = [cached_Gm(lattice, 1, k, mpsK, mpsI, c1=true, c2=false, b1=:-, b2=:+, band=1, cache=cache) for k in 1:Nt+1]
-	@time g₃ = [cached_Gm(lattice, k, 1, mpsK, mpsI, c1=false, c2=true, b1=:τ, b2=:τ, band=1, cache=cache) for k in 1:Nτ+1]
+	@time g₁ = cached_greater_fast(lattice, mpsK, mpsI, band=1, cache=cache) 
+	@time g₂ = cached_lesser_fast(lattice, mpsK, mpsI, band=1, cache=cache) 
+	@time g₃ = cached_Gτ_fast(lattice, mpsK, mpsI, band=1, cache=cache) 
 	@time ns = cached_occupation(lattice, mpsK, mpsI, cache=cache)
 
 	g₁, g₂ = -im*g₁, im*g₂

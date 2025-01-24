@@ -86,7 +86,7 @@ function main_real(ϵ_d; β=Inf, t=1, N=100, ω₀=1, α₀=0.5, chi = 100)
 	# @time lt = [cached_lesser(lattice, j, mpsK, mpsI, cache=cache) for j in 1:lattice.kt]
 	# return gt, lt
 
-	@time g = [cached_greater(lattice, k, mpsK, mpsI1, mpsI2, c1=false, c2=true, b1=:+, b2=:+, band=1, cache=cache) for k in 1:N+1]
+	@time g = cached_greater_fast(lattice, mpsK, mpsI1, mpsI2, band=1, cache=cache) 
 
 	data_path = "result/holstein_realgtempo_beta$(β)_t$(t)_dt$(δt)_omega0$(ω₀)_alpha0$(α₀)_mu$(ϵ_d)_chi$(chi).json"
 
