@@ -82,7 +82,7 @@ function main(β, J=0.5; chi=60, chi2=200, chi3=1000)
 
 	data_path = "result/anderson_tempo1_norb$(norb)_beta$(β)_U$(U)_J$(J)_mu$(μ)_N$(N)_chi$(chi)_chi2$(chi2)_chi3$(chi3).json"
 
-	results = Dict("ts"=>τs, "gf" => g, "bd"=>bond_dimensions(mps_adt))
+	results = Dict("ts"=>τs, "gf" => gtau, "bd"=>bond_dimensions(mps_adt))
 
 	open(data_path, "w") do f
 		write(f, JSON.json(results))
