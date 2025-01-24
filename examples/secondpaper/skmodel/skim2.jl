@@ -8,7 +8,7 @@ J(D, ε) = sqrt(D^2-ε^2)/pi
 spectrum_func(D=1) = SpectrumFunction(ω -> J(D, ω), lb = -D, ub = D)
 
 
-function main(β, J=0.5; chi=60, chi2=100, chi3=1000)
+function main(β, J=0.5; chi=60, chi2=200, chi3=1000)
 	# β = 5.
 	norb = 2
 	U = 2.
@@ -24,7 +24,8 @@ function main(β, J=0.5; chi=60, chi2=100, chi3=1000)
 
 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
 	trunc2 = truncdimcutoff(D=chi2, ϵ=1.0e-10, add_back=0)
-	trunc2 = truncdimcutoff(D=chi3, ϵ=1.0e-10, add_back=0)
+	trunc3 = truncdimcutoff(D=chi3, ϵ=1.0e-10, add_back=0)
+	algmult = DMRGMult1(trunc=trunc3)
 
 	lattice = GrassmannLattice(N=N, δτ=β/N, bands=2*norb, contour=:imag, ordering=A1Ā1B1B̄1())
 	lattice1 = similar(lattice, bands=1)
@@ -59,7 +60,7 @@ function main(β, J=0.5; chi=60, chi2=100, chi3=1000)
 	for band in 1:lattice.bands-1
 		mps_adt = boundarycondition!(mps_adt, lattice_tmp, band=1)
 		mpsI1 = fillband(lattice_tmp, mpsI, band=1)
-		tmp = mps_adt * mpsI1
+		tmp = mult(mps_adt, mpsI1, algmult)
 		mps_adt = integrateband(lattice_tmp, tmp, band=1)
 		b1 = bond_dimension(mps_adt)
 		canonicalize!(mps_adt, alg = Orthogonalize(trunc=trunc2))
@@ -70,7 +71,7 @@ function main(β, J=0.5; chi=60, chi2=100, chi3=1000)
 	mps_adt = boundarycondition!(mps_adt, lattice1, band=1)
 
 
-	algmult = DMRGMult1(trunc=trunc3)
+	
 	mps_adt = mult(mps_adt, mpsI, algmult)
 
 	println("bond dimension of final ADT is ", bond_dimension(mps_adt))
