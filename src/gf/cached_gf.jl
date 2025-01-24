@@ -50,10 +50,10 @@ end
 
 #########*******************************###########
 
-function cached_Gτ(lattice::ImagGrassmannLattice, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...;
+function cached_Gτ(lattice::Union{ImagGrassmannLattice, MixedGrassmannLattice}, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...;
                     cache::AbstractExpectationCache=environments(lattice, A, B...), kwargs...)
-	g = zeros(Float64, lattice.k)
-	for i in 1:lattice.k-1
+	g = zeros(scalartype(lattice), lattice.kτ)
+	for i in 1:lattice.kτ-1
 		g[i] = cached_Gτ(lattice, i, A, B...; cache=cache, kwargs...)
 	end
 	g[end] = 1 - g[1]

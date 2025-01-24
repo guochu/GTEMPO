@@ -46,6 +46,12 @@ println("------------------------------------")
 							@test norm(g1-g2)/norm(g1) < rtol
 						end
 					end
+					g1 = [cached_greater(lattice, i, A, cache=cache, band=band) for i in 1:lattice.k]
+					g2 = cached_greater_fast(lattice, A, cache=cache, band=band)
+					@test norm(g1-g2)/norm(g1) < rtol
+					g1 = [cached_lesser(lattice, i, A, cache=cache, band=band) for i in 1:lattice.k]
+					g2 = cached_lesser_fast(lattice, A, cache=cache, band=band)
+					@test norm(g1-g2)/norm(g1) < rtol					
 				end
 
 				B = randomgmps(Float64, length(lattice), D=6)
@@ -59,6 +65,13 @@ println("------------------------------------")
 							@test norm(g1-g2)/norm(g1) < rtol
 						end
 					end
+
+					g1 = [cached_greater(lattice, i, A, B, cache=cache, band=band) for i in 1:lattice.k]
+					g2 = cached_greater_fast(lattice, A, B, cache=cache, band=band)
+					@test norm(g1-g2)/norm(g1) < rtol
+					g1 = [cached_lesser(lattice, i, A, B, cache=cache, band=band) for i in 1:lattice.k]
+					g2 = cached_lesser_fast(lattice, A, B, cache=cache, band=band)
+					@test norm(g1-g2)/norm(g1) < rtol	
 				end
 	
 			end
@@ -68,9 +81,16 @@ println("------------------------------------")
 	for N in 2:3
 		for bands in 1:2
 			for ordering in mixed_ac_grassmann_orderings
+				# println("N=", N, " bands=", bands, " ordering=", ordering)
+
 				lattice = GrassmannLattice(Nt=N, δt = 0.1, δτ=0.05, Nτ=2, bands=bands, contour=:mixed, ordering=ordering)
 				A = randomgmps(scalartype(lattice), length(lattice), D=4)
 				cache = environments(lattice, A)
+				band = 1
+
+				g1 = cached_Gτ(lattice, A, cache=cache, band=band)
+				g2 = cached_Gτ_fast(lattice, A, cache=cache, band=band)
+				@test norm(g1-g2)/norm(g1) < rtol
 
 				for f1 in (:+, ), f2 in (:+, :-, :τ), c1 in (true, false), c2 in (true, false)
 					if !((f1 == f2) && (c1 == c2))
@@ -79,6 +99,12 @@ println("------------------------------------")
 						@test norm(g1-g2)/norm(g1) < rtol
 					end
 				end
+				g1 = [cached_greater(lattice, i, A, cache=cache, band=band) for i in 1:lattice.kt]
+				g2 = cached_greater_fast(lattice, A, cache=cache, band=band)
+				@test norm(g1-g2)/norm(g1) < rtol
+				g1 = [cached_lesser(lattice, i, A, cache=cache, band=band) for i in 1:lattice.kt]
+				g2 = cached_lesser_fast(lattice, A, cache=cache, band=band)
+				@test norm(g1-g2)/norm(g1) < rtol					
 
 				B = randomgmps(scalartype(lattice), length(lattice), D=6)
 				cache = environments(lattice, A, B)
@@ -90,6 +116,13 @@ println("------------------------------------")
 						@test norm(g1-g2)/norm(g1) < rtol
 					end
 				end
+
+				g1 = [cached_greater(lattice, i, A, B, cache=cache, band=band) for i in 1:lattice.kt]
+				g2 = cached_greater_fast(lattice, A, B, cache=cache, band=band)
+				@test norm(g1-g2)/norm(g1) < rtol
+				g1 = [cached_lesser(lattice, i, A, B, cache=cache, band=band) for i in 1:lattice.kt]
+				g2 = cached_lesser_fast(lattice, A, B, cache=cache, band=band)
+				@test norm(g1-g2)/norm(g1) < rtol	
 
 			end
 		end
