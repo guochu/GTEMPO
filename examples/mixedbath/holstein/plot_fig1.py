@@ -24,7 +24,7 @@ def read_real_tempo(t, N, mu, omega, alpha, chi=80):
 		data = json.loads(data)
 	gt = parse_complex_array(data['gt'])
 	ts = asarray(data['ts'])
-	return ts-ts[0], -gt * 1j
+	return ts-ts[0], -gt * 1j, data['bd1'], data['bd2']
 
 
 def read_real_analytic(t, N, mu, omega, alpha, order=10):
@@ -62,14 +62,14 @@ chi = 100
 mu = 0.
 
 t = 1
-Nt = 100
+Nt = 400
 omega = 1
 alpha = 1
 
 order = 10
 
 # noninteracting case
-ts, gt = read_real_tempo(t, Nt, mu, omega, alpha, chi)
+ts, gt, bd1, bd2 = read_real_tempo(t, Nt, mu, omega, alpha, chi)
 
 ax[0].plot(ts, gt.real, ls='--', color='k', linewidth=linewidth, label=r'GTEMPO')
 ax[1].plot(ts, gt.imag, ls='--', color='k', linewidth=linewidth, label=r'GTEMPO')

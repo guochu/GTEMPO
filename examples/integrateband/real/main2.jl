@@ -41,8 +41,8 @@ function main(t; β=1., U=1., ϵ_d=U/2, δt=0.1, chi=60, chi2=500)
 	println("bond dimension of mpsI is ", bond_dimension(mpsI))
 
 	@time mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
-	println("bond dimension of mpsK is ", bond_dimension(mpsK))
-	println("mpsK scale is ", scaling(mpsK))
+	# println("bond dimension of mpsK is ", bond_dimension(mpsK))
+	# println("mpsK scale is ", scaling(mpsK))
 
 	for band in 1:lattice.bands
 		mpsK = boundarycondition!(mpsK, lattice, band=band)
@@ -51,16 +51,19 @@ function main(t; β=1., U=1., ϵ_d=U/2, δt=0.1, chi=60, chi2=500)
 
 	mpsI1 = fillband(lattice, mpsI, band=1)
 	trunc2 = truncdimcutoff(D=chi2, ϵ=1.0e-10, add_back=0)
-	mpsKI1 = mult(mpsK, mpsI1, trunc=trunc2)
+	mpsKI1 = mpsK * mpsI1
 	mpsKI1′ = integrateband(lattice, mpsKI1, band=1)
 	canonicalize!(mpsKI1′, alg = Orthogonalize(trunc=trunc2))
 
-	mps_adt = mult(mpsKI1′, mpsI, trunc=trunc2)
+	println("bond dimension of mpsKI1 after compression:", bond_dimension(mpsKI1′))
+
+	algmult = DMRGMult1(trunc=trunc2)
+	mps_adt = mult(mpsKI1′, mpsI, algmult)
 	println("bond dimension of ADT is ", bond_dimension(mps_adt))
 
 	cache = environments(lattice1, mps_adt)
-	@time gt = [cached_greater(lattice1, k, mps_adt, cache=cache) for k in 1:lattice.kt]
-	@time lt = [cached_lesser(lattice1, k, mps_adt, cache=cache) for k in 1:lattice.kt]
+	@time gt = cached_greater_fast(lattice1, mps_adt, cache=cache) 
+	@time lt = cached_lesser_fast(lattice1, mps_adt, cache=cache) 
 
 	data_path = "result/anderson_tempo_beta$(β)_t$(t)_dt$(δt)_U$(U)_e$(ϵ_d)_chi$(chi)_chi2$(chi2).json"
 
