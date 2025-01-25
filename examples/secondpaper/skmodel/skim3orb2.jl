@@ -10,10 +10,10 @@ spectrum_func(D=1) = SpectrumFunction(ω -> J(D, ω), lb = -D, ub = D)
 
 function main(β; δτ = 0.1, chi=60, chi2=4*chi, chi3=1000)
 	# β = 5.
-	norb = 2
+	norb = 3
 	U = 2.
 	J=0.5
-	μ = (3*U - 5*J)/2
+	μ = 2.5*U - 5*J
 	# μ = U / 2
 
 	N = round(Int, β/δτ)
@@ -26,7 +26,7 @@ function main(β; δτ = 0.1, chi=60, chi2=4*chi, chi3=1000)
 	trunc3 = truncdimcutoff(D=chi3, ϵ=1.0e-10, add_back=0)
 	algmult = DMRGMult1(trunc=trunc3)
 
-	lattice = GrassmannLattice(N=N, δτ=β/N, bands=2*norb, contour=:imag, ordering=A1Ā1B1B̄1())
+	lattice = GrassmannLattice(N=N, δτ=β/N, bands=3*norb, contour=:imag, ordering=A1Ā1B1B̄1())
 	lattice1 = similar(lattice, bands=1)
 
 	println("number of sites ", length(lattice))
