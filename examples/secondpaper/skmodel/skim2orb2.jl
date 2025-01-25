@@ -8,15 +8,14 @@ J(D, ε) = sqrt(D^2-ε^2)/pi
 spectrum_func(D=1) = SpectrumFunction(ω -> J(D, ω), lb = -D, ub = D)
 
 
-function main(β, J=0.5; chi=60, chi2=200, chi3=1000)
+function main(β; δτ = 0.1, chi=60, chi2=4*chi, chi3=1000)
 	# β = 5.
 	norb = 2
 	U = 2.
-	# J = 0.5
+	J=0.5
 	μ = (3*U - 5*J)/2
 	# μ = U / 2
 
-	δτ = 0.1
 	N = round(Int, β/δτ)
 	# chi = 2048
 
