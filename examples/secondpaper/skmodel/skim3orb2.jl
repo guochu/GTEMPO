@@ -26,7 +26,7 @@ function main(β; δτ = 0.1, chi=60, chi2=4*chi, chi3=1000)
 	trunc3 = truncdimcutoff(D=chi3, ϵ=1.0e-10, add_back=0)
 	algmult = DMRGMult1(trunc=trunc3)
 
-	lattice = GrassmannLattice(N=N, δτ=β/N, bands=3*norb, contour=:imag, ordering=A1Ā1B1B̄1())
+	lattice = GrassmannLattice(N=N, δτ=β/N, bands=2*norb, contour=:imag, ordering=A1Ā1B1B̄1())
 	lattice1 = similar(lattice, bands=1)
 
 	println("number of sites ", length(lattice))
