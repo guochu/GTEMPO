@@ -22,6 +22,7 @@ function main(β; δτ = 0.1, chi=60, chi2=4*chi, chi3=1000)
 	τs = [i*δτ for i in 0:N]
 
 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
+	truncK = truncdimcutoff(D=100, ϵ=1.0e-10, add_back=0)
 	trunc2 = truncdimcutoff(D=chi2, ϵ=1.0e-10, add_back=0)
 	trunc3 = truncdimcutoff(D=chi3, ϵ=1.0e-10, add_back=0)
 	algmult = DMRGMult1(trunc=trunc3)
@@ -49,7 +50,7 @@ function main(β; δτ = 0.1, chi=60, chi2=4*chi, chi3=1000)
 
 	println("bond dimension of mpsI is ", bond_dimension(mpsI))
 
-	@time mpsK = accsysdynamics_fast(lattice, exact_model, trunc=trunc, scaling=100)
+	@time mpsK = accsysdynamics_fast(lattice, exact_model, trunc=truncK, scaling=100)
 	# mpsK = boundarycondition!(mpsK, lattice, band=1)
 	println("bond dimension of mpsK is ", bond_dimension(mpsK))
 	mps_adt = mpsK
