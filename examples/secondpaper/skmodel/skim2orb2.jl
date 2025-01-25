@@ -77,7 +77,7 @@ function main(β; δτ = 0.1, chi=60, chi2=4*chi, chi3=1000)
 
 	cache = environments(lattice1, mps_adt)
 
-	@time gtau = cached_Gτ(lattice1, mps_adt, cache=cache)
+	@time gtau = cached_Gτ_fast(lattice1, mps_adt, cache=cache)
 
 	data_path = "result/anderson_tempo1_norb$(norb)_beta$(β)_U$(U)_J$(J)_mu$(μ)_N$(N)_chi$(chi)_chi2$(chi2)_chi3$(chi3).json"
 
