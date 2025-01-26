@@ -4,7 +4,9 @@
     gf(lattice::AbstractGrassmannLattice, a::ContourIndex, b::ContourIndex, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
                 alg=ExactIntegrate(), Z = integrate(lattice, A, B..., alg=alg))
 
-Calculate the Green's function ⟨x y⟩, where x, y are GVs specified by contour indices a and b
+Calculate the Green's function ⟨x y⟩, where x, y are GVs 
+specified by contour indices a and b
+
 If A is type Vector{GrassmannMPS}, it means A is a sum of GMPSs
 The multiplication of A and B... is assumed
 alg: the algorithm to perform the integration

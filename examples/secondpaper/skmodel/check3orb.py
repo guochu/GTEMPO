@@ -44,12 +44,20 @@ ax.plot(ts, gf, linewidth=linewidth, color='r', marker='o', ls='-.', markerfacec
 
 chi = 60
 chi2 = 240
-chi3 = 2000
+chi3 = 1000
 data_path = 'result/anderson_tempo1_norb3_beta%s_U%s_J%s_mu%s_N%s_chi%s_chi2%s_chi3%s.json'%(beta, U, J, mu, N, chi, chi2, chi3)
 ts, gf = read_data(data_path)
 
 ax.plot(ts, gf, linewidth=linewidth, color='b', marker='^', ls='-.', markerfacecolor='none', label=r'GTEMPO')
 
+
+chi = 60
+chi2 = 300
+chi3 = 1000
+data_path = 'result/anderson_tempo1_norb3_beta%s_U%s_J%s_mu%s_N%s_chi%s_chi2%s_chi3%s.json'%(beta, U, J, mu, N, chi, chi2, chi3)
+ts, gf = read_data(data_path)
+
+ax.plot(ts, gf, linewidth=linewidth, color='y', marker='+', ls='-.', markerfacecolor='none', label=r'GTEMPO')
 
 
 mc_data_path = '/Users/guochu/Documents/Since2018/GTEMPO/gtempo/chen/im/3orbs/half/beta2/G-7.dat'

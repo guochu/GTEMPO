@@ -1,5 +1,5 @@
 # standard multiplication and truncation using SVD
-function mult2!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=DMRG.DefaultTruncation)
+function mult2!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=DMRG.DefaultTruncation, verbosity::Int=0)
     (length(x) == length(y)) || throw(DimensionMismatch())
     left = GrassmannTensorMap(isomorphism(scalartype(x), fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) ))
     tmp5 = g_fuse(_mult_site(x[1], y[1]), 3)
@@ -12,7 +12,7 @@ function mult2!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=DMRG.D
     end
     @tensor tmp[1,2;5] := tmp4[1,2,3,4] * conj(left[5,3,4])
     x[end] = get_data(tmp)
-    _rightorth!(x, SVD(), trunc, false)
+    _rightorth!(x, SVD(), trunc, false, verbosity)
     setscaling!(x, scaling(x) * scaling(y))
     return x
 end
@@ -23,7 +23,7 @@ mult2(x::GrassmannMPS, y::GrassmannMPS; kwargs...) = mult2!(copy(x), y; kwargs..
 
 Multiplication of two GMPS x and y, and the result is stored in x
 """
-function mult!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=DMRG.DefaultTruncation)
+function mult!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=DMRG.DefaultTruncation, verbosity::Int=0)
     (length(x) == length(y)) || throw(DimensionMismatch())
     left = GrassmannTensorMap(isomorphism(scalartype(x), fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) ))
     tmp5 = g_fuse(_mult_site(x[1], y[1]), 3)
@@ -43,7 +43,7 @@ function mult!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=DMRG.De
     end
     @tensor tmp[1,2;5] := tmp4[1,2,3,4] * conj(left[5,3,4])
     x[end] = get_data(tmp)
-    _rightorth!(x, SVD(), trunc, false)
+    _rightorth!(x, SVD(), trunc, false, verbosity)
     setscaling!(x, scaling(x) * scaling(y))
     return x
 end

@@ -18,7 +18,7 @@ when both x and y have large bond dimensions, then one
 should use DMRGMultAlgorithm, and the perferred choice 
 is DMRGMult1
 """
-mult(x::GrassmannMPS, y::GrassmannMPS, alg::SVDCompression) = mult(x, y, trunc=alg.trunc)
+mult(x::GrassmannMPS, y::GrassmannMPS, alg::SVDCompression) = mult(x, y, trunc=alg.trunc, verbosity=alg.verbosity)
 mult(x::GrassmannMPS, y::GrassmannMPS, alg::DMRGMultAlgorithm) = iterativemult(x, y, alg)
 
 

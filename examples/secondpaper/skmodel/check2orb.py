@@ -3,7 +3,8 @@ import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib import rc
 from matplotlib.colors import LogNorm
-from numpy import linspace, asarray, loadtxt, linspace
+from numpy import linspace, asarray, loadtxt, linspace, sqrt
+from numpy.linalg import norm
 import math
 
 
@@ -17,8 +18,14 @@ def read_data(filename):
 
 def read_mc_data(filename):
 	data = loadtxt(filename)
-	print(data)
 	return data[:, 0], data[:, 1]
+
+def mse_error(a, b):
+	assert len(a) == len(b)
+	L = len(a)
+	diff = asarray(a) - asarray(b)
+	v = norm(diff)
+	return sqrt(v * v / L)
 
 
 fontsize = 18
@@ -32,30 +39,32 @@ U = 2.
 J = 0.5
 mu = (3*U - 5*J)/2
 # mu = U / 2
-beta = 2.
-N = 20
+beta = 10.
+N = 100
 
 
 data_path = 'result/anderson_tempo1_norb2_beta%s_U%s_J%s_mu%s_N%s_b.json'%(beta, U, J, mu, N)
 ts, gf = read_data(data_path)
 
-ax.plot(ts, gf, linewidth=linewidth, color='r', marker='o', ls='-.', markerfacecolor='none', label=r'GTEMPO')
+ax.plot(ts, gf, linewidth=linewidth, color='r', marker='o', ls='-.', markerfacecolor='none', label=r'Zipup')
 
 
-chi = 60
-chi2 = 240
+chi = 80
+chi2 = 320
 chi3 = 1000
 data_path = 'result/anderson_tempo1_norb2_beta%s_U%s_J%s_mu%s_N%s_chi%s_chi2%s_chi3%s.json'%(beta, U, J, mu, N, chi, chi2, chi3)
-ts, gf = read_data(data_path)
+ts2, gf2 = read_data(data_path)
 
-ax.plot(ts, gf, linewidth=linewidth, color='b', marker='^', ls='-.', markerfacecolor='none', label=r'GTEMPO')
+print('mse error ', mse_error(gf, gf2))
+
+ax.plot(ts2, gf2, linewidth=linewidth, color='b', marker='^', ls='-.', markerfacecolor='none', label=r'PartialIntegration')
 
 
 
-mc_data_path = '/Users/guochu/Documents/Since2018/GTEMPO/gtempo/chen/im/2orbs/half/beta2/G-7.dat'
+mc_data_path = '/Users/guochu/Documents/Since2018/GTEMPO/gtempo/chen/im/2orbs/half/beta%s/G-7.dat'%(round(beta))
 ts, gf = read_mc_data(mc_data_path)
 ts = linspace(0, beta, num=len(ts))
-ax.scatter(ts, gf, linewidth=0.5, color='g', marker='+', ls='--', label=r'CT-MQC')
+ax.scatter(ts, gf, linewidth=0.5, color='g', marker='+', ls='--', label=r'CTMQC')
 
 
 ax.legend(fontsize=labelsize)

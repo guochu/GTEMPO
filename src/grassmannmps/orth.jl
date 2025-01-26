@@ -1,6 +1,6 @@
 
-TK.leftorth!(psi::GrassmannMPS; alg::Orthogonalize = Orthogonalize()) = _leftorth!(psi, alg.orth, alg.trunc, alg.normalize)
-function _leftorth!(psi::GrassmannMPS, alg::QR, trunc::TruncationScheme, normalize::Bool)
+TK.leftorth!(psi::GrassmannMPS; alg::Orthogonalize = Orthogonalize()) = _leftorth!(psi, alg.orth, alg.trunc, alg.normalize, alg.verbosity)
+function _leftorth!(psi::GrassmannMPS, alg::QR, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
 	!isa(trunc, NoTruncation) &&  @warn "truncation has no effect with QR"
 	L = length(psi)
 	for i in 1:L-1
@@ -19,26 +19,31 @@ function _leftorth!(psi::GrassmannMPS, alg::QR, trunc::TruncationScheme, normali
 	return psi
 end
 
-function _leftorth!(psi::GrassmannMPS, alg::SVD, trunc::TruncationScheme, normalize::Bool)
+function _leftorth!(psi::GrassmannMPS, alg::SVD, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
 	L = length(psi)
 	# errs = Float64[]
+	maxerr = 0.
 	for i in 1:L-1
 		u, s, v, err = stable_tsvd!(GrassmannTensorMap(psi[i]), trunc=trunc)
-		_renormalize!(psi, s, normalize)
+		nr = _renormalize!(psi, s, normalize)
+		rerror = sqrt(err * err / (nr * nr + err * err))
+		(verbosity > 1) && println("SVD truncerror at bond $(i): ", rerror)
 		psi[i] = get_data(u)
 		v2 = s * v
 		@tensor tmp[-1 -2; -3] := v2[-1, 1] * GrassmannTensorMap(psi[i+1])[1,-2,-3]
 		psi[i+1] = get_data(tmp)
 		psi.s[i+1] = get_data(s)
 		# push!(errs, err)
+		maxerr = max(maxerr, rerror)
 	end
+	(verbosity > 0) && println("Max SVD truncerror in leftorth: ", maxerr)
 	_renormalize!(psi, psi[L], normalize)
 	_renormalize_coeff!(psi, normalize)
 	return psi
 end
 
-TK.rightorth!(psi::GrassmannMPS; alg::Orthogonalize = Orthogonalize()) = _rightorth!(psi, alg.orth, alg.trunc, alg.normalize)
-function _rightorth!(psi::GrassmannMPS, alg::QR, trunc::TruncationScheme, normalize::Bool)
+TK.rightorth!(psi::GrassmannMPS; alg::Orthogonalize = Orthogonalize()) = _rightorth!(psi, alg.orth, alg.trunc, alg.normalize, alg.verbosity)
+function _rightorth!(psi::GrassmannMPS, alg::QR, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
 	!isa(trunc, NoTruncation) &&  @warn "truncation has no effect with QR"
 	L = length(psi)
 	for i in L:-1:2
@@ -57,12 +62,15 @@ function _rightorth!(psi::GrassmannMPS, alg::QR, trunc::TruncationScheme, normal
 	return psi
 end
 
-function _rightorth!(psi::GrassmannMPS, alg::SVD, trunc::TruncationScheme, normalize::Bool)
+function _rightorth!(psi::GrassmannMPS, alg::SVD, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
 	L = length(psi)
+	maxerr = 0.
 	for i in L:-1:2
 		u, s, v, err = stable_tsvd(GrassmannTensorMap(psi[i]), (1,), (2, 3), trunc=trunc)
 		psi[i] = get_data(permute(v, (1,2), (3,)))
-		_renormalize!(psi, get_data(s), normalize)
+		nr = _renormalize!(psi, get_data(s), normalize)
+		rerror = sqrt(err * err / (nr * nr + err * err))
+		(verbosity > 1) && println("SVD truncerror at bond $(i): ", rerror)
 		u2 = u * s
 		# nl = norm(u2)
 		# (nl ≈ zero(nl)) && @warn "norm of GrassmannMPS is zero"
@@ -71,7 +79,9 @@ function _rightorth!(psi::GrassmannMPS, alg::SVD, trunc::TruncationScheme, norma
 		@tensor tmp[-1 -2; -3] := GrassmannTensorMap(psi[i-1])[-1, -2, 1] * u2[1, -3]
 		psi[i-1] = get_data(tmp)
 		psi.s[i] = get_data(s)
+		maxerr = max(maxerr, err)
 	end
+	(verbosity > 0) && println("Max SVD truncerror in rightorth: ", maxerr)
 	_renormalize!(psi, psi[1], normalize)
 	_renormalize_coeff!(psi, normalize)
 	return psi
@@ -80,8 +90,8 @@ end
 function DMRG.canonicalize!(psi::GrassmannMPS; alg::Orthogonalize = Orthogonalize(trunc=DMRG.DefaultTruncation, normalize=false))
 	alg.normalize && @warn "canonicalize with renormalization not recommanded for GrassmannMPS"
 	L = length(psi)
-	_leftorth!(psi, QR(), NoTruncation(), alg.normalize)
-	_rightorth!(psi, alg.orth, alg.trunc, alg.normalize)
+	_leftorth!(psi, QR(), NoTruncation(), alg.normalize, alg.verbosity)
+	_rightorth!(psi, alg.orth, alg.trunc, alg.normalize, alg.verbosity)
 	return psi
 end
 
@@ -106,6 +116,7 @@ function _renormalize!(psi::GrassmannMPS, r, normalize::Bool)
 		end
 		lmul!(1/nr, r)  
   	end
+  	return nr
 end
 
 function _renormalize_coeff!(psi::GrassmannMPS, normalize::Bool)
