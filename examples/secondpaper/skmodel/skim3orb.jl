@@ -26,7 +26,7 @@ function main(β, J=0.5)
 	println("number of sites ", length(lattice))
 
 	bath = fermionicbath(spectrum_func(), β=β, μ=0)
-	exact_model = SKIM(bath, U=U, J=J, μ=-μ, norb=norb)
+	exact_model = KanamoriIM(U=U, J=J, μ=-μ, norb=norb)
 
 	mpspath = "data/tempo1_norb$(norb)_beta$(β)_N$(N)_chi$(chi)_b.mps"
 	if ispath(mpspath)

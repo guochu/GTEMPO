@@ -14,8 +14,8 @@ spectrum_func(D=1.) = SpectrumFunction(ω -> 0.1 * ρ₀(ω, D), lb = -D, ub = D
 
 
 function quench_sysdynamics(lattice, bath; ϵ_d, U, trunc)
-	model1 = SISB(bath, U=U, μ=-ϵ_d)
-	model2 = SISB(bath, U=0, μ=-ϵ_d)
+	model1 = AndersonIM(U=U, μ=-ϵ_d)
+	model2 = AndersonIM(U=0, μ=-ϵ_d)
 	mpsK = sysdynamics_forward!(vacuumstate(lattice), lattice, model1, trunc=trunc)
 	mpsK = sysdynamics_backward!(mpsK, lattice, model1, trunc=trunc)
 	mpsK = sysdynamics_imaginary!(mpsK, lattice, model2, trunc=trunc)
@@ -44,7 +44,7 @@ function main(; β=10., δτ=0.1, t=2., δt=0.05, U=1., ϵ_d=U/2, chi=100)
 
 	# initial guess for Δiw
 	bath = fermionicbath(spectrum_func(D), β=β, μ=0)
-	exact_model = SISB(bath, U=U, μ=-ϵ_d)
+	exact_model = AndersonIM(U=U, μ=-ϵ_d)
 
 	# initial guess for Δiw
 	lb = -5.
@@ -117,7 +117,7 @@ end
 
 # 	# initial guess for Δiw
 # 	bath = fermionicbath(spectrum_func(D), β=β, μ=0)
-# 	exact_model = SISB(bath, U=U, μ=-ϵ_d)
+# 	exact_model = AndersonIM( U=U, μ=-ϵ_d)
 
 # 	# initial guess for Δiw
 # 	lb = -5.
@@ -168,7 +168,7 @@ end
 
 # 	# initial guess for Δiw
 # 	bath = fermionicbath(spectrum_func(D), β=β, μ=0)
-# 	exact_model = SISB(bath, U=U, μ=-ϵ_d)
+# 	exact_model = AndersonIM( U=U, μ=-ϵ_d)
 
 # 	# initial guess for Δiw
 # 	lb = -5.

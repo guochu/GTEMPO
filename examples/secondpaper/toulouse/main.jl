@@ -58,7 +58,7 @@ function main(β; ϵ_d=1., δτ=0.1)
 	println("number of sites ", length(lattice))
 
 	bath = fermionicbath(spectrum_func(D), β=β, μ=0)
-	exact_model = SISB(bath, U=0., μ=-ϵ_d)
+	exact_model = AndersonIM(U=0., μ=-ϵ_d)
 	corr = correlationfunction(bath, lattice)
 
 	# mpspath = "data/tempo_beta$(β)_N$(N)_chi$(chi).mps"

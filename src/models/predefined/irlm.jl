@@ -4,16 +4,12 @@
 Interacting resonant level model, a spinless fermionic model with 
 three impurities and two baths
 """
-struct IRLM{L<:AbstractFermionicBath, R<:AbstractFermionicBath} <: AbstractImpurityModel
-	leftbath::L
-	rightbath::R
+struct IRLM <: AbstractImpurityHamiltonian
 	μ::Float64	
 	J::Float64
 	U::Float64
 end
-sys_size(x::IRLM) = 3
-IRLM(leftenv::AbstractFermionicBath, rightenv::AbstractFermionicBath; μ::Real, J::Real, U::Real) = IRLM(
-	leftenv, rightenv, convert(Float64, μ), convert(Float64, J), convert(Float64, U))
+IRLM(; μ::Real, J::Real, U::Real) = IRLM(convert(Float64, μ), convert(Float64, J), convert(Float64, U))
 
 
 
@@ -76,7 +72,7 @@ function sysdynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::
 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))					
 	end
 
-	# forward evolution
+	# backward evolution
 	## ε part
 	a = exp(im*δt*(μ-U))
 	for i in 1:lattice.k-1

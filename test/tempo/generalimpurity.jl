@@ -2,7 +2,7 @@ println("------------------------------------")
 println("|          General Impurity        |")
 println("------------------------------------")
 
-function gSISB(;μ::Real, U::Real)
+function gAndersonIM(;μ::Real, U::Real)
 	if U != zero(U)
 		h = ImpurityHamiltonian(bands=2)
 		push!(h, interaction(1,2,2,1, coeff=U))
@@ -15,7 +15,7 @@ function gSISB(;μ::Real, U::Real)
 	return h
 end
 
-function gSKIM(; U::Real, J::Real, norb::Int, μ::Real=-U/2)
+function gKanamoriIM(; U::Real, J::Real, norb::Int, μ::Real=-U/2)
 	h = ImpurityHamiltonian(bands = 2*norb)
 
 	for band in 1:h.bands
@@ -66,8 +66,8 @@ end
 
 	# 1 orb
 	for U in [0, 1]
-		model1 = SISB(bath, U=U, μ=ϵ_d)
-		model2 = gSISB(U=U, μ=ϵ_d)
+		model1 = AndersonIM(U=U, μ=ϵ_d)
+		model2 = gAndersonIM(U=U, μ=ϵ_d)
 		bands = (U == zero(U)) ? 1 : 2
 		lattice = GrassmannLattice(δτ=δτ, N=N, bands=bands, contour=:imag)
 		K1 = accsysdynamics(lattice, model1)
@@ -98,8 +98,8 @@ end
 
 	# 1 orb
 	for U in [0, 1]
-		model1 = SISB(bath, U=U, μ=ϵ_d)
-		model2 = gSISB(U=U, μ=ϵ_d)
+		model1 = AndersonIM(U=U, μ=ϵ_d)
+		model2 = gAndersonIM(U=U, μ=ϵ_d)
 		bands = (U == zero(U)) ? 1 : 2
 		lattice = GrassmannLattice(δt=δt, N=N, bands=bands, contour=:real)
 		K1 = accsysdynamics(lattice, model1)
@@ -123,7 +123,7 @@ end
 	end
 end
 
-@testset "SKIM: imag-time" begin
+@testset "KanamoriIM: imag-time" begin
 	U = 1.
 	ϵ_d = 0.7
 	J = 1.1
@@ -137,8 +137,8 @@ end
 	tol = 1.0e-2
 
 	for norb in [1, 2]
-		model1 = SKIM(bath, U=U, μ=ϵ_d, J=J, norb=norb)
-		model2 = gSKIM(U=U, μ=ϵ_d, J=J, norb=norb)
+		model1 = KanamoriIM(U=U, μ=ϵ_d, J=J, norb=norb)
+		model2 = gKanamoriIM(U=U, μ=ϵ_d, J=J, norb=norb)
 		bands = 2 * norb
 		lattice = GrassmannLattice(δτ=δτ, N=N, bands=bands, contour=:imag)
 		K1 = accsysdynamics(lattice, model1)
@@ -159,7 +159,7 @@ end
 	
 end
 
-@testset "SKIM: real-time" begin
+@testset "KanamoriIM: real-time" begin
 	U = 1.
 	ϵ_d = 0.7
 	J = 1.1
@@ -173,8 +173,8 @@ end
 
 	# 1 orb
 	for norb in [1]
-		model1 = SKIM(bath, U=U, μ=ϵ_d, J=J, norb=norb)
-		model2 = gSKIM(U=U, μ=ϵ_d, J=J, norb=norb)
+		model1 = KanamoriIM(U=U, μ=ϵ_d, J=J, norb=norb)
+		model2 = gKanamoriIM(U=U, μ=ϵ_d, J=J, norb=norb)
 		bands = 2 * norb
 		lattice = GrassmannLattice(δt=δt, N=N, bands=bands, contour=:real)
 		K1 = accsysdynamics(lattice, model1)

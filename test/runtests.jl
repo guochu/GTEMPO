@@ -42,15 +42,16 @@ include("tempo/gf.jl")
 include("tempo/cached_gf.jl")
 include("tempo/cached_gf_fast.jl")
 include("tempo/bmps_gf.jl")
+include("tempo/observables.jl")
 
 include("tempo/swapband.jl")
 include("tempo/fillband.jl")
 include("tempo/integrateband.jl")
+
+
 include("tempo/models.jl")
 include("tempo/independentbosons.jl")
 include("tempo/generalimpurity.jl")
-include("tempo/observables.jl")
-
 include("tempo/buildK.jl")
 
 

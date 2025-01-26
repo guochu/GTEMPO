@@ -48,7 +48,7 @@ export cached_greater_fast, cached_lesser_fast
 
 # utilities for TEMPO
 # exact models
-export AbstractImpurityHamiltonian, AbstractImpurityModel, SISB, SIDB, IRLM, SKIM
+export AbstractImpurityHamiltonian, AndersonIM, IRLM, KanamoriIM
 export boundarycondition!, boundarycondition, boundarycondition_branching
 export systhermalstate, systhermalstate!, sysdynamics, sysdynamics!, sysdynamicsstepper!, accsysdynamics, accsysdynamics_fast
 # export sysdynamics_forward!, sysdynamics_backward!, sysdynamics_imaginary!

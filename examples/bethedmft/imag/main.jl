@@ -27,7 +27,7 @@ function main(; β=10., δτ=0.1, U=1., ϵ_d=U/2, chi=100)
 
 	# initial guess for Δiw
 	bath = fermionicbath(spectrum_func(2*t), β=β, μ=0)
-	exact_model = SISB(bath, U=U, μ=-ϵ_d)
+	exact_model = AndersonIM(U=U, μ=-ϵ_d)
 
 	# initial guess for Δiw
 	Δiw =  toulouse_Δiw(bath, nmax=Nw) .* t^2

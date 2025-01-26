@@ -108,7 +108,7 @@ function main(δt, order=7)
 	N = round(Int, t / δt)
 
 	bath = fermionicbath(spectrum_func(D), β=β, μ=0)
-	exact_model = SISB(bath, μ = ϵ_d, U=U)
+	exact_model = AndersonIM(μ = ϵ_d, U=U)
 
 	bands = 2
 	lattice = GrassmannLattice(N=N, δt=δt, contour=:real, order=1, bands=bands)

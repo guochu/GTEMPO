@@ -8,11 +8,11 @@ println("------------------------------------")
 	δτ = 0.02
 	β = 0.06
 	N = round(Int, β / δτ)
-	bath = fermionicbath(spectrum_func(1), β=β, μ=1)
+	# bath = fermionicbath(spectrum_func(1), β=β, μ=1)
 	tol = 1.0e-6
 
 	for norb in 1:2
-		exact_model = SKIM(bath, U=U, μ=ϵ_d, J=1.1, norb=norb)
+		exact_model = KanamoriIM(U=U, μ=ϵ_d, J=1.1, norb=norb)
 		bands = 2 * norb
 		lattice1 = GrassmannLattice(δt=δτ, N=N, bands=bands, contour=:real, ordering=A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2())
 		lattice2 = GrassmannLattice(δt=δτ, N=N, bands=bands, contour=:real, ordering=A1Ā1a1ā1B1B̄1b1b̄1())
@@ -94,11 +94,11 @@ end
 	δτ = 0.02
 	β = 0.1
 	N = round(Int, β / δτ)
-	bath = fermionicbath(spectrum_func(1), β=β, μ=1)
+	# bath = fermionicbath(spectrum_func(1), β=β, μ=1)
 	tol = 1.0e-9
 
 	# 1 orb
-	exact_model = SISB(bath, U=U, μ=ϵ_d)
+	exact_model = AndersonIM(U=U, μ=ϵ_d)
 
 	for ordering in (A1Ā1B1B̄1(), A1B1B̄1Ā1())
 		lattice = GrassmannLattice(δτ=δτ, N=N, bands=2, contour=:imag, ordering=ordering)
@@ -135,7 +135,7 @@ end
 
 	# multi orb
 	for norb in 1:2
-		exact_model = SKIM(bath, U=U, μ=ϵ_d, J=1.1, norb=norb)
+		exact_model = KanamoriIM(U=U, μ=ϵ_d, J=1.1, norb=norb)
 		for ordering in (A1Ā1B1B̄1(), A1B1B̄1Ā1())
 			lattice = GrassmannLattice(δτ=δτ, N=N, bands=2*norb, contour=:imag, ordering=ordering)
 			for scaling in [2,3]
@@ -178,11 +178,11 @@ end
 	δτ = 0.02
 	β = 0.06
 	N = round(Int, β / δτ)
-	bath = fermionicbath(spectrum_func(1), β=β, μ=1)
+	# bath = fermionicbath(spectrum_func(1), β=β, μ=1)
 	tol = 1.0e-9
 
 	# 1 orb, time-local ordering
-	exact_model = SISB(bath, U=U, μ=ϵ_d)
+	exact_model = AndersonIM(U=U, μ=ϵ_d)
 	for ordering in (A1Ā1a1ā1B1B̄1b1b̄1(), A1Ā1B1B̄1b̄1B̄1ā1Ā1(), A1B1ā1b̄1Ā1B̄1a1b1())
 		lattice = GrassmannLattice(δt=δτ, N=N, bands=2, contour=:real, ordering=ordering)
 		for scaling in [2]
@@ -213,7 +213,7 @@ end
 	end
 
 	# 1 orb, branch-local ordering
-	exact_model = SISB(bath, U=U, μ=ϵ_d)
+	exact_model = AndersonIM(U=U, μ=ϵ_d)
 	for ordering in (A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2(), A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2())
 		lattice = GrassmannLattice(δt=δτ, N=N, bands=2, contour=:real, ordering=ordering)
 		for scaling in [2,3]
@@ -253,7 +253,7 @@ end
 	end
 
 	for norb in 1:2
-		exact_model = SKIM(bath, U=U, μ=ϵ_d, J=1.1, norb=norb)
+		exact_model = KanamoriIM(U=U, μ=ϵ_d, J=1.1, norb=norb)
 		for ordering in (A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2(), A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2())
 			lattice = GrassmannLattice(δt=δτ, N=N, bands=2*norb, contour=:real, ordering=ordering)
 			for scaling in [2]
@@ -294,7 +294,7 @@ end
 
 	ordering = A1Ā1a1ā1B1B̄1b1b̄1()
 	for norb in 1:2
-		exact_model = SKIM(bath, U=U, μ=ϵ_d, J=1.1, norb=norb)
+		exact_model = KanamoriIM(U=U, μ=ϵ_d, J=1.1, norb=norb)
 		lattice = GrassmannLattice(δt=δτ, N=N, bands=2*norb, contour=:real, ordering=ordering)
 		for scaling in [2]
 			for f in (:+, :-)
@@ -335,12 +335,12 @@ end
 	D = 1.
 	N = 3
 
-	bath = fermionicbath(spectrum_func(D), β=β, μ=1)
-	exact_model = SISB(bath, U=U, μ=ϵ_d)
+	# bath = fermionicbath(spectrum_func(D), β=β, μ=1)
+	exact_model = AndersonIM(U=U, μ=ϵ_d)
 
 	lattice = GrassmannLattice(δt=δt, N=N, bands=2, contour=:real)
 	K = sysdynamics(lattice, exact_model)
-	K = systhermalstate!(K, lattice, exact_model)
+	K = systhermalstate!(K, lattice, exact_model, β=β)
 	for band in 1:lattice.bands
 		K = boundarycondition(K, lattice, band=band)
 	end
@@ -349,7 +349,7 @@ end
 	for ordering in [A1Ā1a1ā1B1B̄1b1b̄1(), A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2(), A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2()]
 		lattice = GrassmannLattice(δt=δt, N=N, bands=2, contour=:real, ordering=ordering)
 		K = accsysdynamics_fast(lattice, exact_model)
-		K = systhermalstate!(K, lattice, exact_model)
+		K = systhermalstate!(K, lattice, exact_model, β=β)
 		for band in 1:lattice.bands
 			K = boundarycondition(K, lattice, band=band)
 		end

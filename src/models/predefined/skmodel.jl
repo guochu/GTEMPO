@@ -1,25 +1,25 @@
 # The SK impurity model
 
-struct SKIM{B <: AbstractFermionicBath} <: AbstractImpurityModel
-	bath::B
+struct KanamoriIM <: AbstractImpurityHamiltonian
 	norb::Int
 	U::Float64
 	J::Float64
 	μ::Float64
 end
-SKIM(bath::AbstractFermionicBath; U::Real, J::Real, norb::Int, μ::Real=-U/2) = SKIM(bath, norb, convert(Float64, U), convert(Float64, J), convert(Float64, μ))
+KanamoriIM(; U::Real, J::Real, norb::Int, μ::Real=-U/2) = KanamoriIM(norb, convert(Float64, U), convert(Float64, J), convert(Float64, μ))
 
 
-function sysdynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, model::SKIM; trunc::TruncationScheme=DefaultKTruncation)
+function sysdynamics_imaginary!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::KanamoriIM; trunc::TruncationScheme=DefaultKTruncation)
 	@assert 2 * model.norb == lattice.bands
 	# @assert lattice.β == model.bath.β
 
 	μ, U, J, nimp = model.μ, model.U, model.J, model.norb
+	branch=:τ
 	### free dynamics
 	a = exp(-lattice.δτ*μ)
 	for band in 1:lattice.bands
 		for i in 1:lattice.k-1
-            pos1, pos2 = index(lattice, i+1, conj=true, band=band), index(lattice, i, conj=false, band=band)
+            pos1, pos2 = index(lattice, i+1, conj=true, band=band, branch=branch), index(lattice, i, conj=false, band=band, branch=branch)
             apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
             canonicalize!(gmps, alg=Orthogonalize(trunc = trunc))			
 		end
@@ -29,10 +29,10 @@ function sysdynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, m
 	a = -lattice.δτ*U
 	for x in 1:nimp
 		for i in 1:lattice.k - 1
-			pos1 = index(lattice, i+1, conj=true, band=2*x)
-			pos2 = index(lattice, i+1, conj=true, band=2*x-1)
-			pos3 = index(lattice, i, conj=false, band=2*x-1)
-			pos4 = index(lattice, i, conj=false, band=2*x)
+			pos1 = index(lattice, i+1, conj=true, band=2*x, branch=branch)
+			pos2 = index(lattice, i+1, conj=true, band=2*x-1, branch=branch)
+			pos3 = index(lattice, i, conj=false, band=2*x-1, branch=branch)
+			pos4 = index(lattice, i, conj=false, band=2*x, branch=branch)
 			apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=a)), gmps)
 			canonicalize!(gmps, alg=Orthogonalize(trunc = trunc))			
 		end
@@ -55,10 +55,10 @@ function sysdynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, m
 		for y in 1:nimp
 			if x != y
 				for i in 1:lattice.k-1
-					pos1 = index(lattice, i+1, conj=true, band=2 * y)
-					pos2 = index(lattice, i+1, conj=true, band=2 * x - 1)
-					pos3 = index(lattice, i, conj=false, band=2 * x - 1)
-					pos4 = index(lattice, i, conj=false, band=2 * y)	
+					pos1 = index(lattice, i+1, conj=true, band=2 * y, branch=branch)
+					pos2 = index(lattice, i+1, conj=true, band=2 * x - 1, branch=branch)
+					pos3 = index(lattice, i, conj=false, band=2 * x - 1, branch=branch)
+					pos4 = index(lattice, i, conj=false, band=2 * y, branch=branch)	
 					apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=a)), gmps)
 					canonicalize!(gmps, alg=Orthogonalize(trunc = trunc))
 				end
@@ -70,18 +70,18 @@ function sysdynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, m
 	for y in 1:nimp
 		for x in (y+1):nimp
 			for i in 1:lattice.k-1
-				pos1 = index(lattice, i+1, conj=true, band=2*y - 1)
-				pos2 = index(lattice, i+1, conj=true, band=2*x - 1)
-				pos3 = index(lattice, i, conj=false, band=2*x - 1)
-				pos4 = index(lattice, i, conj=false, band=2*y - 1)	
+				pos1 = index(lattice, i+1, conj=true, band=2*y - 1, branch=branch)
+				pos2 = index(lattice, i+1, conj=true, band=2*x - 1, branch=branch)
+				pos3 = index(lattice, i, conj=false, band=2*x - 1, branch=branch)
+				pos4 = index(lattice, i, conj=false, band=2*y - 1, branch=branch)	
 				apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=a)), gmps)
 				canonicalize!(gmps, alg=Orthogonalize(trunc = trunc))
 			end
 			for i in 1:lattice.k-1
-				pos1 = index(lattice, i+1, conj=true, band=2*y )
-				pos2 = index(lattice, i+1, conj=true, band=2*x )
-				pos3 = index(lattice, i, conj=false, band=2*x )
-				pos4 = index(lattice, i, conj=false, band=2*y )	
+				pos1 = index(lattice, i+1, conj=true, band=2*y, branch=branch)
+				pos2 = index(lattice, i+1, conj=true, band=2*x, branch=branch)
+				pos3 = index(lattice, i, conj=false, band=2*x, branch=branch)
+				pos4 = index(lattice, i, conj=false, band=2*y, branch=branch)	
 				apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=a)), gmps)
 				canonicalize!(gmps, alg=Orthogonalize(trunc = trunc))
 			end
@@ -93,18 +93,18 @@ function sysdynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, m
 		for y in 1:nimp
 			if x != y
 				for i in 1:lattice.k-1
-					pos1 = index(lattice, i+1, conj=true, band=2*x-1)
-					pos2 = index(lattice, i+1, conj=true, band=2*x)
-					pos3 = index(lattice, i, conj=false, band=2*y-1)
-					pos4 = index(lattice, i, conj=false, band=2*y)	
+					pos1 = index(lattice, i+1, conj=true, band=2*x-1, branch=branch)
+					pos2 = index(lattice, i+1, conj=true, band=2*x, branch=branch)
+					pos3 = index(lattice, i, conj=false, band=2*y-1, branch=branch)
+					pos4 = index(lattice, i, conj=false, band=2*y, branch=branch)	
 					apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=a)), gmps)
 					canonicalize!(gmps, alg=Orthogonalize(trunc = trunc))
 				end
 				for i in 1:lattice.k-1
-					pos1 = index(lattice, i+1, conj=true, band=2*x-1)
-					pos2 = index(lattice, i+1, conj=true, band=2*y)
-					pos3 = index(lattice, i, conj=false, band=2*y-1)
-					pos4 = index(lattice, i, conj=false, band=2*x)	
+					pos1 = index(lattice, i+1, conj=true, band=2*x-1, branch=branch)
+					pos2 = index(lattice, i+1, conj=true, band=2*y, branch=branch)
+					pos3 = index(lattice, i, conj=false, band=2*y-1, branch=branch)
+					pos4 = index(lattice, i, conj=false, band=2*x, branch=branch)	
 					apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=a)), gmps)
 					canonicalize!(gmps, alg=Orthogonalize(trunc = trunc))					
 				end
@@ -115,7 +115,7 @@ function sysdynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, m
 end
 
 
-function sysdynamics_forward!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, model::SKIM; trunc::TruncationScheme=DefaultKTruncation)
+function sysdynamics_forward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::KanamoriIM; trunc::TruncationScheme=DefaultKTruncation)
 	@assert 2 * model.norb == lattice.bands
 	# @assert lattice.β == model.bath.β
 
@@ -208,7 +208,7 @@ function sysdynamics_forward!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1
 	return gmps
 end
 
-function sysdynamics_backward!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, model::SKIM; trunc::TruncationScheme=DefaultKTruncation)
+function sysdynamics_backward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::KanamoriIM; trunc::TruncationScheme=DefaultKTruncation)
 	@assert 2 * model.norb == lattice.bands
 	# @assert lattice.β == model.bath.β
 
@@ -309,13 +309,13 @@ end
 
 
 
-function hybriddynamics(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, model::SKIM; 
-					corr::Union{Nothing, <:ImagCorrelationFunction}=nothing, trunc::TruncationScheme=DefaultITruncation)
-	@assert 2 * model.norb == lattice.bands
-	@assert lattice.β == model.bath.β
-	if isnothing(corr)
-		corr = correlationfunction(model.bath, lattice)
-	end
-	return qim_hybriddynamics(gmps, lattice, corr, trunc=trunc)
-end
+# function hybriddynamics(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, model::KanamoriIM; 
+# 					corr::Union{Nothing, <:ImagCorrelationFunction}=nothing, trunc::TruncationScheme=DefaultITruncation)
+# 	@assert 2 * model.norb == lattice.bands
+# 	@assert lattice.β == model.bath.β
+# 	if isnothing(corr)
+# 		corr = correlationfunction(model.bath, lattice)
+# 	end
+# 	return qim_hybriddynamics(gmps, lattice, corr, trunc=trunc)
+# end
 

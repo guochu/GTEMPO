@@ -1,73 +1,58 @@
 """
-	struct SISB{B <: AbstractFermionicBath}
+	struct AndersonIM{B <: AbstractFermionicBath}
 
 Single-orbital Anderson impurity model with one bath
 """
-struct SISB{B <: AbstractFermionicBath} <: AbstractImpurityModel
-	bath::B
+struct AndersonIM <: AbstractImpurityHamiltonian
 	U::Float64
 	μ::Float64
 end
-sys_size(x::SISB) = 1
-SISB(bath::AbstractFermionicBath; U::Real, μ::Real) = SISB(bath, convert(Float64, U), convert(Float64, μ))
+AndersonIM(; U::Real, μ::Real) = AndersonIM(convert(Float64, U), convert(Float64, μ))
 
-struct SIDB{L <: AbstractFermionicBath, R <: AbstractFermionicBath} <: AbstractImpurityModel
-	leftbath::L
-	rightbath::R
-	U::Float64
-	μ::Float64
-end
-sys_size(x::SIDB) = 1
-SIDB(leftbath::AbstractFermionicBath, rightbath::AbstractFermionicBath; U::Real, μ::Real) = SIDB(
-	leftbath, rightbath, convert(Float64, U), convert(Float64, μ))
+# function hybriddynamics(gmps::GrassmannMPS, lattice::ImagGrassmannLattice, model::AndersonIM; 
+# 					corr::Union{Nothing, <:ImagCorrelationFunction}=nothing, trunc::TruncationScheme=DefaultITruncation)
+# 	@assert lattice.β == model.bath.β
+# 	if isnothing(corr)
+# 		corr = correlationfunction(model.bath, lattice)
+# 	end
+# 	return qim_hybriddynamics(gmps, lattice, corr, trunc=trunc)
+# end
 
+# function hybriddynamics(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::AndersonIM; 
+# 					corr::Union{Nothing, <:RealCorrelationFunction}=nothing, 
+# 					trunc::TruncationScheme=DefaultITruncation)
+# 	if isnothing(corr)
+# 		corr = correlationfunction(model.bath, lattice)
+# 	end
+# 	return qim_hybriddynamics(gmps, lattice, corr, trunc=trunc)
+# end
 
-const SingleImpurityModel = Union{SISB, SIDB}
+# function hybriddynamics(gmps::GrassmannMPS, lattice::MixedGrassmannLattice, model::AndersonIM; 
+# 					corr::Union{Nothing, <:MixedCorrelationFunction}=nothing, 
+# 					trunc::TruncationScheme=DefaultITruncation)
+# 	@assert lattice.β == model.bath.β
+# 	if isnothing(corr)
+# 		corr = correlationfunction(model.bath, lattice)
+# 	end
+# 	return qim_hybriddynamics(gmps, lattice, corr, trunc=trunc)
+# end
 
-function hybriddynamics(gmps::GrassmannMPS, lattice::ImagGrassmannLattice, model::SISB; 
-					corr::Union{Nothing, <:ImagCorrelationFunction}=nothing, trunc::TruncationScheme=DefaultITruncation)
-	@assert lattice.β == model.bath.β
-	if isnothing(corr)
-		corr = correlationfunction(model.bath, lattice)
-	end
-	return qim_hybriddynamics(gmps, lattice, corr, trunc=trunc)
-end
+# function hybriddynamics(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, model::SIDB; 
+# 					corr::Union{Nothing, <:ImagCorrelationFunction}=nothing, trunc::TruncationScheme=DefaultITruncation)
+# 	if isnothing(corr)
+# 		corr = correlationfunction(model.leftbath, lattice) + correlationfunction(model.rightbath, lattice)
+# 	end
+# 	return qim_hybriddynamics(gmps, lattice, corr, trunc=trunc)
+# end
 
-function hybriddynamics(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::SISB; 
-					corr::Union{Nothing, <:RealCorrelationFunction}=nothing, 
-					trunc::TruncationScheme=DefaultITruncation)
-	if isnothing(corr)
-		corr = correlationfunction(model.bath, lattice)
-	end
-	return qim_hybriddynamics(gmps, lattice, corr, trunc=trunc)
-end
-
-function hybriddynamics(gmps::GrassmannMPS, lattice::MixedGrassmannLattice, model::SISB; 
-					corr::Union{Nothing, <:MixedCorrelationFunction}=nothing, 
-					trunc::TruncationScheme=DefaultITruncation)
-	@assert lattice.β == model.bath.β
-	if isnothing(corr)
-		corr = correlationfunction(model.bath, lattice)
-	end
-	return qim_hybriddynamics(gmps, lattice, corr, trunc=trunc)
-end
-
-function hybriddynamics(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, model::SIDB; 
-					corr::Union{Nothing, <:ImagCorrelationFunction}=nothing, trunc::TruncationScheme=DefaultITruncation)
-	if isnothing(corr)
-		corr = correlationfunction(model.leftbath, lattice) + correlationfunction(model.rightbath, lattice)
-	end
-	return qim_hybriddynamics(gmps, lattice, corr, trunc=trunc)
-end
-
-function hybriddynamics(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, model::SIDB; 
-					corr::Union{Nothing, <:RealCorrelationFunction}=nothing, 
-					trunc::TruncationScheme=DefaultITruncation)
-	if isnothing(corr)
-		corr = correlationfunction(model.leftbath, lattice) + correlationfunction(model.rightbath, lattice)
-	end
-	return qim_hybriddynamics(gmps, lattice, corr, trunc=trunc)
-end
+# function hybriddynamics(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, model::SIDB; 
+# 					corr::Union{Nothing, <:RealCorrelationFunction}=nothing, 
+# 					trunc::TruncationScheme=DefaultITruncation)
+# 	if isnothing(corr)
+# 		corr = correlationfunction(model.leftbath, lattice) + correlationfunction(model.rightbath, lattice)
+# 	end
+# 	return qim_hybriddynamics(gmps, lattice, corr, trunc=trunc)
+# end
 
 
 # function sysdynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice, model::SingleImpurityModel; trunc::TruncationScheme=DefaultKTruncation) 
@@ -165,7 +150,7 @@ end
 # 	return gmps
 # end
 
-function sysdynamics_imaginary!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::SingleImpurityModel; trunc::TruncationScheme=DefaultKTruncation)
+function sysdynamics_imaginary!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::AndersonIM; trunc::TruncationScheme=DefaultKTruncation)
 	# free dynamics
 	μ, U = model.μ, model.U
 	a, b = siam_coeffs(μ, U, -lattice.δτ)   
@@ -195,7 +180,7 @@ function sysdynamics_imaginary!(gmps::GrassmannMPS, lattice::AbstractGrassmannLa
 	end
 	return gmps
 end
-function sysdynamics_forward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::SingleImpurityModel; trunc::TruncationScheme=DefaultKTruncation)
+function sysdynamics_forward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::AndersonIM; trunc::TruncationScheme=DefaultKTruncation)
 	# free dynamics
 	μ, U = model.μ, model.U
 	a, b = siam_coeffs(μ, U, -im*lattice.δt) 
@@ -225,7 +210,7 @@ function sysdynamics_forward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLatt
 	end
 	return gmps
 end
-function sysdynamics_backward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::SingleImpurityModel; trunc::TruncationScheme=DefaultKTruncation)
+function sysdynamics_backward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::AndersonIM; trunc::TruncationScheme=DefaultKTruncation)
 	# free dynamics
 	μ, U = model.μ, model.U
 	# a = exp(-im*lattice.δt*μ)
@@ -299,7 +284,7 @@ function si_sysdynamics_stepper!(gmps::GrassmannMPS, lattice::RealGrassmannLatti
 	canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
 	return gmps
 end
-sysdynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::SingleImpurityModel; kwargs...) = si_sysdynamics_stepper!(gmps, lattice; μ=model.μ, U=model.U, kwargs...)
+sysdynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::AndersonIM; kwargs...) = si_sysdynamics_stepper!(gmps, lattice; μ=model.μ, U=model.U, kwargs...)
 
 
 function siam_coeffs(μ, U, dt)

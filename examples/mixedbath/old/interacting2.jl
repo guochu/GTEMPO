@@ -137,7 +137,7 @@ function main(U, ϵ_d=U/2)
 	println("bond dimension of mpsI is ", bond_dimension(mpsI))
 
 	fbath = fermionicbath(semicircular(), β=β, μ=0)
-	exact_model = SISB(fbath, U=U, μ=-ϵ_d)
+	exact_model = AndersonIM(U=U, μ=-ϵ_d)
 	@time mpsK = sysdynamics(lattice, exact_model, trunc=truncK)
 	println("bond dimension of mpsK is ", bond_dimension(mpsK))
 	println("mpsK scale is ", scaling(mpsK))

@@ -64,7 +64,7 @@ function main(t::Real; U=1., ϵ_d=U/2, δt=0.05, β=40, δτ=0.1, order=10, chi=
 
 	
 	bath = fermionicbath(spectrum_func(D), β=β, μ=0.)
-	exact_model = SISB(bath, μ = -ϵ_d, U = U)
+	exact_model = AndersonIM(μ = -ϵ_d, U = U)
 
 	lattice = GrassmannLattice(Nt=Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed, order=1, bands=2)
 	println("number of sites, ", length(lattice))

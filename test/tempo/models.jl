@@ -16,13 +16,17 @@ println("------------------------------------")
 
 	for μ in (-5, 0, 5)
 		bath = fermionicbath(spectrum_func(), β=β, μ=μ)
-		exact_model = SISB(bath, μ=ϵ_d, U=1.3)
+		exact_model = AndersonIM(μ=ϵ_d, U=1.3)
 
 		Inrms = Float64[]
 		Knrms = Float64[]
 		for ordering in imag_grassmann_orderings
 			lattice = GrassmannLattice(N=N, δτ=β/N, bands=2, contour=:imag, ordering=ordering)
-			mpsI = hybriddynamics(lattice, exact_model, trunc=trunc) 
+			mpsI = vacuumstate(lattice)
+			corr = correlationfunction(bath, lattice)
+			for band in 1:lattice.bands
+				mpsI = hybriddynamics!(mpsI, lattice, corr, trunc=trunc, band=band)
+			end
 			push!(Inrms, norm(mpsI))
 			mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
 			push!(Knrms, norm(mpsK))
@@ -36,7 +40,11 @@ println("------------------------------------")
 		Knrms = Float64[]
 		for ordering in real_grassmann_orderings
 			lattice = GrassmannLattice(N=N, δt=β/N, bands=2, contour=:real, ordering=ordering)
-			mpsI = hybriddynamics(lattice, exact_model, trunc=trunc) 
+			mpsI = vacuumstate(lattice)
+			corr = correlationfunction(bath, lattice)
+			for band in 1:lattice.bands
+				mpsI = hybriddynamics!(mpsI, lattice, corr, trunc=trunc, band=band)
+			end
 			push!(Inrms, norm(mpsI))
 			mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
 			push!(Knrms, norm(mpsK))
@@ -69,10 +77,14 @@ end
 		g₂ = [toulouse_Gτ(spec, τ, β = β, ϵ_d = ϵ_d, μ = μ) for τ in τs]
 		@test norm(g₁ - g₂) / norm(g₁) < rtol
 
-		exact_model = SISB(bath, μ=ϵ_d, U=0)
+		exact_model = AndersonIM(μ=ϵ_d, U=0)
 		for ordering in imag_grassmann_orderings
 			lattice = GrassmannLattice(N=N, δτ=β/N, contour=:imag, ordering=ordering)
-			mpsI = hybriddynamics(lattice, exact_model, trunc=trunc) 
+			mpsI = vacuumstate(lattice)
+			corr = correlationfunction(bath, lattice)
+			for band in 1:lattice.bands
+				mpsI = hybriddynamics!(mpsI, lattice, corr, trunc=trunc, band=band)
+			end
 			mpsI = boundarycondition(mpsI, lattice)
 			mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
 			g₃ = Gτ(lattice, mpsK, mpsI)
@@ -84,10 +96,14 @@ end
 		bath = fermionicbath(spec, β=β, μ=μ)
 		g₂ = [toulouse_Gτ(spec, τ, β = β, ϵ_d = ϵ_d, μ = μ) for τ in τs]
 
-		exact_model = SISB(bath, μ=ϵ_d, U=0)
+		exact_model = AndersonIM(μ=ϵ_d, U=0)
 		for ordering in imag_grassmann_orderings
 			lattice = GrassmannLattice(N=N, δτ=β/N, contour=:imag, ordering=ordering)
-			mpsI = hybriddynamics(lattice, exact_model, trunc=trunc) 
+			mpsI = vacuumstate(lattice)
+			corr = correlationfunction(bath, lattice)
+			for band in 1:lattice.bands
+				mpsI = hybriddynamics!(mpsI, lattice, corr, trunc=trunc, band=band)
+			end
 			mpsI = boundarycondition(mpsI, lattice)
 			mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
 			g₃ = Gτ(lattice, mpsK, mpsI)
@@ -113,7 +129,7 @@ end
 		bath = fermionicbath(spec, β=β, μ=0.)
 		gt = [im*toulouse_Gt(spectrum_func(), tj, ϵ_d = ϵ_d, μ = 0.) for tj in ts]
 
-		exact_model = SISB(bath, μ=ϵ_d, U=0)
+		exact_model = AndersonIM(μ=ϵ_d, U=0)
 		corr = Δt(bath, N=N, t=t)
 		for ordering in real_ac_grassmann_orderings
 			lattice = GrassmannLattice(N=N, δt=δt, contour=:real, ordering=ordering)
@@ -149,7 +165,7 @@ end
 	gt2 = [freefermion_lesser(tj, β=β, μ=ϵ_d) for tj in ts]
 	gτ = [freefermion_Gτ(τ, β=β, μ=ϵ_d) for τ in τs]
 
-	exact_model = SISB(bath, μ=-ϵ_d, U=0)
+	exact_model = AndersonIM(μ=-ϵ_d, U=0)
 	for ordering in mixed_ac_grassmann_orderings
 		lattice = GrassmannLattice(Nt=Nt, δt=δt, Nτ=N, δτ=β/N, contour=:mixed, ordering=ordering)
 		mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
@@ -196,10 +212,11 @@ end
 	gt1, gt2 = toulouse_greater_lesser(b2, ts, ϵ_d=ϵ_d)
 	gt1, gt2 = im*gt1, -im*gt2
 
-	exact_model = SISB(bath, μ=ϵ_d, U=0)
+	exact_model = AndersonIM(μ=ϵ_d, U=0)
 	for ordering in mixed_ac_grassmann_orderings
 		lattice = GrassmannLattice(Nt=Nt, δt=δt, Nτ=N, δτ=β/N, contour=:mixed, ordering=ordering)
-		mpsI = hybriddynamics(lattice, exact_model, trunc=trunc) 
+		corr = correlationfunction(bath, lattice)
+		mpsI = hybriddynamics(lattice, corr, trunc=trunc) 
 		mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
 		mpsK = boundarycondition(mpsK, lattice)
 		cache = environments(lattice, mpsK, mpsI)
@@ -215,14 +232,14 @@ end
 
 @testset "GF-real time, thermal initial state" begin
 
-	function _test_sisb(U, ϵ_d)
+	function _test_AndersonIM(U, ϵ_d)
 		trunc = truncdimcutoff(D=200, ϵ=1.0e-8, add_back=0)
 		δτ = 0.05
 		β = 1.
 		N = round(Int, β / δτ)
 
 		bath = fermionicbath(spectrum_func(), β=β, μ=0)
-		exact_model = SISB(bath, U=U, μ=ϵ_d)
+		exact_model = AndersonIM(U=U, μ=ϵ_d)
 
 		bands = (U == 0.) ? 1 : 2
 		lattice = GrassmannLattice(δτ=δτ, N=N, bands=bands, contour=:imag)
@@ -236,9 +253,9 @@ end
 		for ordering in real_grassmann_orderings
 
 			lattice_r = GrassmannLattice(δt=0.1, N=5, bands=bands, contour=:real)
-			exact_model = SISB(bath, U=U, μ=ϵ_d)
+			exact_model = AndersonIM(U=U, μ=ϵ_d)
 			mps = sysdynamics(lattice_r, exact_model)
-			mps = systhermalstate!(mps, lattice_r, exact_model)
+			mps = systhermalstate!(mps, lattice_r, exact_model, β= β)
 			for band in 1:lattice.bands
 				mps = boundarycondition(mps, lattice_r, band=band)
 			end
@@ -254,14 +271,14 @@ end
 		end
 	end
 
-	function _test_sisb_2(U, ϵ_d)
+	function _test_AndersonIM_2(U, ϵ_d)
 		trunc = truncdimcutoff(D=200, ϵ=1.0e-8, add_back=0)
 		δτ = 0.05
 		β = 10
 		N = round(Int, β / δτ)
 
 		bath = fermionicbath(spectrum_func(), β=β, μ=0)
-		exact_model = SISB(bath, U=U, μ=ϵ_d)
+		exact_model = AndersonIM(U=U, μ=ϵ_d)
 
 		bands = (U == 0.) ? 1 : 2
 		lattice = GrassmannLattice(δτ=δτ, N=N, bands=bands, contour=:imag)
@@ -274,9 +291,9 @@ end
 		for ordering in [A1Ā1B1B̄1a1ā1b1b̄1(), A1Ā1a1ā1B1B̄1b1b̄1(), A1Ā1B1B̄1b̄1B̄1ā1Ā1(), A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1(), A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2()]
 
 			lattice_r = GrassmannLattice(δt=0.1, N=5, bands=bands, contour=:real)
-			exact_model = SISB(bath, U=U, μ=ϵ_d)
+			exact_model = AndersonIM(U=U, μ=ϵ_d)
 			mps = accsysdynamics_fast(lattice_r, exact_model)
-			mps = systhermalstate!(mps, lattice_r, exact_model)
+			mps = systhermalstate!(mps, lattice_r, exact_model, β= β)
 			for band in 1:lattice.bands
 				mps = boundarycondition(mps, lattice_r, band=band)
 			end
@@ -304,7 +321,7 @@ end
 		N = round(Int, β / δτ)
 
 		bath = fermionicbath(spectrum_func(D), β=β, μ=0)
-		exact_model = SKIM(bath, U=U, μ=ϵ_d, J=J, norb=norb)
+		exact_model = KanamoriIM(U=U, μ=ϵ_d, J=J, norb=norb)
 
 		bands = 2 * norb
 		lattice = GrassmannLattice(δτ=δτ, N=N, bands=bands, contour=:imag)
@@ -317,7 +334,7 @@ end
 
 		lattice_r = GrassmannLattice(δt=0.1, N=2, bands=bands, contour=:real, ordering = A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2())
 		mps = accsysdynamics_fast(lattice_r, exact_model)
-		mps = systhermalstate!(mps, lattice_r, exact_model)
+		mps = systhermalstate!(mps, lattice_r, exact_model, β= β)
 		for band in 1:lattice.bands
 			mps = boundarycondition(mps, lattice_r, band=band)
 		end
@@ -332,15 +349,15 @@ end
 
 	end
 
-	_test_sisb(0, 1)
-	_test_sisb(0, -1)
-	_test_sisb(1, 0.5)
-	_test_sisb(1, -0.5)
+	_test_AndersonIM(0, 1)
+	_test_AndersonIM(0, -1)
+	_test_AndersonIM(1, 0.5)
+	_test_AndersonIM(1, -0.5)
 
-	_test_sisb_2(0, 1)
-	_test_sisb_2(0, -1)
-	_test_sisb_2(1, 0.7)
-	_test_sisb_2(1, -0.7)
+	_test_AndersonIM_2(0, 1)
+	_test_AndersonIM_2(0, -1)
+	_test_AndersonIM_2(1, 0.7)
+	_test_AndersonIM_2(1, -0.7)
 
 	_test_sk(0.7)
 	_test_sk(-1.875)
@@ -380,12 +397,12 @@ end
 		# currents = currents[1:end-1]
 
 		# TEMPO 1 order
-		exact_model = SISB(bath, μ=ϵ_d, U=0)
+		exact_model = AndersonIM(μ=ϵ_d, U=0)
 		for ordering in real_grassmann_orderings
 			lattice = GrassmannLattice(N=N, δt=δt, contour=:real, order=1, ordering=ordering)
 
-			corr = correlationfunction(exact_model.bath, lattice)
-			mpsI = hybriddynamics(lattice, exact_model, corr=corr, trunc=trunc) 
+			corr = correlationfunction(bath, lattice)
+			mpsI = hybriddynamics(lattice, corr, trunc=trunc) 
 			mpsI = boundarycondition(mpsI, lattice)
 			mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
 
@@ -397,7 +414,7 @@ end
 		# TEMPO 1 order 2
 		for ordering in (A1Ā1B1B̄1a1ā1b1b̄1(), A1Ā1a1ā1B1B̄1b1b̄1(), A1Ā1B1B̄1b̄1B̄1ā1Ā1())
 			lattice_o = GrassmannLattice(N=N, δt=δt, contour=:real, order=1, bands=1)
-			corr = correlationfunction(exact_model.bath, lattice_o)
+			corr = correlationfunction(bath, lattice_o)
 			lattice = similar(lattice_o, N=0)
 			ns2 = zeros(Float64, N)
 			currents2 = zeros(ComplexF64, N)
@@ -418,7 +435,7 @@ end
 		# TEMPO 2 order
 		for ordering in (A1Ā1B1B̄1a1ā1b1b̄1(), A1Ā1a1ā1B1B̄1b1b̄1(), A1Ā1B1B̄1b̄1B̄1ā1Ā1())
 			lattice_o = GrassmannLattice(N=N, δt=δt, contour=:real, order=2, bands=1)
-			corr = correlationfunction(exact_model.bath, lattice_o)
+			corr = correlationfunction(bath, lattice_o)
 			lattice = similar(lattice_o, N=0)
 			ns2 = zeros(Float64, N)
 			currents2 = zeros(ComplexF64, N)
@@ -462,11 +479,11 @@ end
 	rightbath = fermionicbath(spectrum_func(Dr), β=rightbeta, μ=rightmu)
 	trunc = truncdimcutoff(D=200, ϵ=1.0e-7, add_back=0)
 
-	exact_model = SIDB(leftbath, rightbath, μ=epsilon_d, U=U)
+	exact_model = AndersonIM(μ=epsilon_d, U=U)
 	# TEMPO, order ABB̄Ā
 	lattice = GrassmannLattice(N=N, δt=δt, contour=:real, bands=2, order=1, ordering=A1Ā1B1B̄1b̄1B̄1ā1Ā1())
-	leftcorr = correlationfunction(exact_model.leftbath, lattice)
-	rightcorr = correlationfunction(exact_model.rightbath, lattice)
+	leftcorr = correlationfunction(leftbath, lattice)
+	rightcorr = correlationfunction(rightbath, lattice)
 	corr = leftcorr + rightcorr
 	mpsI = vacuumstate(lattice)
 	for band in 1:lattice.bands
@@ -480,8 +497,8 @@ end
 	currents_right = [electriccurrent(lattice, rightcorr, k+1, mpsK, mpsI) for k in 1:N]
 	# TEMPO, order AĀBB̄
 	lattice = GrassmannLattice(N=N, δt=δt, contour=:real, bands=2, order=1, ordering=A1Ā1a1ā1B1B̄1b1b̄1())
-	leftcorr = correlationfunction(exact_model.leftbath, lattice)
-	rightcorr = correlationfunction(exact_model.rightbath, lattice)
+	leftcorr = correlationfunction(leftbath, lattice)
+	rightcorr = correlationfunction(rightbath, lattice)
 	corr = leftcorr + rightcorr
 	mpsI1 = hybriddynamics(lattice, corr, trunc=trunc, band=1) 
 	mpsI1 = boundarycondition(mpsI1, lattice, band=1)

@@ -29,7 +29,7 @@ function main(t::Real; ϵ_d=1., δt=0.05, δτ=0.1, order=8, β=40, chi=1024)
 	truncK = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
 
 	bath = fermionicbath(spectrum_func(D), β=β, μ=0)
-	exact_model = SISB(bath, μ = -ϵ_d, U=0.)
+	exact_model = AndersonIM(μ = -ϵ_d, U=0.)
 
 	lattice = GrassmannLattice(Nt=Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed, order=1)
 	println("number of sites, ", length(lattice))

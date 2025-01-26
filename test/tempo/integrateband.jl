@@ -73,7 +73,7 @@ end
 		
 	bath = fermionicbath(spectrum_func(), β=β, μ=0)
 
-	exact_model = SISB(bath, μ=ϵ_d, U=1)
+
 	corr = Δm(bath, Nτ=N, Nt=Nt, t=t)
 	for ordering in mixed_ac_grassmann_orderings
 		lattice = GrassmannLattice(Nt=Nt, δt=δt, Nτ=N, δτ=β/N, contour=:mixed, ordering=ordering, bands=2)

@@ -14,7 +14,7 @@ function main(β, U)
 	t = N * δt
 
 	bath = fermionicbath(spectrum_func(D), β=β, μ=0)
-	exact_model = SISB(bath, μ = ϵ_d, U=U)
+	exact_model = AndersonIM(μ = ϵ_d, U=U)
 
 	bands = (U ≈ 0) ? 1 : 2
 	lattice_o = GrassmannLattice(N=N, δt=δt, contour=:real, order=2, bands=bands)

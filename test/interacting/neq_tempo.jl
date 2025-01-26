@@ -32,9 +32,13 @@ println("----------------------------------------------")
 	@test norm(l_tcmps) < tol
 
 	# tempo
-	exact_model = SISB(bath, U=U, μ=ϵ_d)
+	exact_model = AndersonIM(U=U, μ=ϵ_d)
 	lattice = GrassmannLattice(N=N, δt=δt, bands=2, contour=:real, order=1)
-	mpsI = hybriddynamics(lattice, exact_model, trunc=trunc) 
+	corr = correlationfunction(bath, lattice)
+	mpsI = vacuumstate(lattice)
+	for band in 1:lattice.bands
+		mpsI = hybriddynamics!(mpsI, lattice, corr, trunc=trunc, band=band) 
+	end
 	mpsI = boundarycondition(mpsI, lattice, band=1)
 	mpsI = boundarycondition(mpsI, lattice, band=2)
 	mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
@@ -118,9 +122,9 @@ end
 
 	# TEMPO
 	lattice = GrassmannLattice(N=N, δt=δt, contour=:real, bands=2, order=1)
-	exact_model = SIDB(leftbath, rightbath, μ=epsilon_d, U=U)
-	leftcorr = correlationfunction(exact_model.leftbath, lattice)
-	rightcorr = correlationfunction(exact_model.rightbath, lattice)
+	exact_model = AndersonIM(μ=epsilon_d, U=U)
+	leftcorr = correlationfunction(leftbath, lattice)
+	rightcorr = correlationfunction(rightbath, lattice)
 	corr = leftcorr + rightcorr
 	mpsI = vacuumstate(lattice)
 	for band in 1:lattice.bands

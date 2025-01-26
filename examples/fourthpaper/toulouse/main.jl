@@ -64,7 +64,7 @@ function main_partial(t; ϵ_d=0, β=20., order=7, δt = 0.05, chi=50)
 	N = round(Int, t / δt)
 
 	bath = fermionicbath(spectrum_func(D), β=β, μ=0)
-	exact_model = SISB(bath, μ = -ϵ_d, U=0)
+	exact_model = AndersonIM(μ = -ϵ_d, U=0)
 
 	lattice = GrassmannLattice(N=N, δt=δt, contour=:real, order=1, bands=1)
 	println("number of sites, ", length(lattice))
@@ -130,7 +130,7 @@ function main_ti(t; ϵ_d=0, β = 20., order=7, prony=5, k=5, δt = 0.05, chi=50)
 	N = round(Int, t / δt)
 
 	bath = fermionicbath(spectrum_func(D), β=β, μ=0)
-	exact_model = SISB(bath, μ = -ϵ_d, U=0)
+	exact_model = AndersonIM(μ = -ϵ_d, U=0)
 
 	lattice = GrassmannLattice(N=N, δt=δt, contour=:real, order=1, bands=1)
 	println("number of sites, ", length(lattice))

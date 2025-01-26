@@ -149,7 +149,7 @@ end
 			@test distance(mpsI, mpsI′) / norm(mpsI) <= rtol2
 
 			fbath = fermionicbath(semicircular(), β=β, μ=0)
-			exact_model = SISB(fbath, U=0., μ=-ϵ_d)
+			exact_model = AndersonIM(U=0., μ=-ϵ_d)
 			mpsK = sysdynamics(lattice, exact_model, trunc=truncK)
 			mpsKs = [mpsK]
 			for band in 1:lattice.bands
@@ -177,7 +177,7 @@ end
 			@test distance(mpsI, mpsI′) / norm(mpsI) <= rtol2
 
 			fbath = fermionicbath(semicircular(), β=β, μ=0)
-			exact_model = SISB(fbath, U=U, μ=-ϵ_d)
+			exact_model = AndersonIM(U=U, μ=-ϵ_d)
 			mpsK = sysdynamics(lattice, exact_model, trunc=truncK)
 			mpsKs = [mpsK]
 			for band in 1:lattice.bands
@@ -214,12 +214,12 @@ end
 		@test distance(mpsI, mpsI′) / norm(mpsI) <= rtol2
 
 		fbath = fermionicbath(semicircular(), β=β, μ=0)
-		exact_model = SISB(fbath, U=0., μ=-ϵ_d)
+		exact_model = AndersonIM(U=0., μ=-ϵ_d)
 		mpsK = sysdynamics(lattice, exact_model, trunc=truncK)
 		for band in 1:lattice.bands
 			mpsK = boundarycondition!(mpsK, lattice, band=band)
 		end
-		mpsK = systhermalstate!(mpsK, lattice, exact_model, trunc=trunc, δτ=0.001)
+		mpsK = systhermalstate!(mpsK, lattice, exact_model, trunc=trunc, δτ=0.001, β=β)
 		cache = environments(lattice, mpsK, mpsI)
 
 		g1 = [-im*cached_greater(lattice, k, mpsK, mpsI, c1=false, c2=true, b1=:+, b2=:+, band=1, cache=cache) for k in 1:Nt+1]
@@ -241,12 +241,12 @@ end
 		@test distance(mpsI, mpsI′) / norm(mpsI) <= rtol2
 
 		fbath = fermionicbath(semicircular(), β=β, μ=0)
-		exact_model = SISB(fbath, U=U, μ=-ϵ_d)
+		exact_model = AndersonIM(U=U, μ=-ϵ_d)
 		mpsK = sysdynamics(lattice, exact_model, trunc=truncK)
 		for band in 1:lattice.bands
 			mpsK = boundarycondition!(mpsK, lattice, band=band)
 		end
-		mpsK = systhermalstate!(mpsK, lattice, exact_model, trunc=trunc, δτ=0.001)
+		mpsK = systhermalstate!(mpsK, lattice, exact_model, trunc=trunc, δτ=0.001, β=β)
 		cache = environments(lattice, mpsK, mpsI)
 
 		g1 = [-im*cached_greater(lattice, k, mpsK, mpsI, c1=false, c2=true, b1=:+, b2=:+, band=1, cache=cache) for k in 1:Nt+1]
@@ -288,7 +288,7 @@ end
 	@test distance(mpsI, mpsI′) / norm(mpsI) <= rtol2
 
 	fbath = fermionicbath(semicircular(), β=β, μ=0)
-	exact_model = SISB(fbath, U=0., μ=-ϵ_d)
+	exact_model = AndersonIM(U=0., μ=-ϵ_d)
 	mpsK = sysdynamics(lattice, exact_model, trunc=truncK)
 	for band in 1:lattice.bands
 		mpsK = boundarycondition!(mpsK, lattice, band=band)
@@ -316,7 +316,7 @@ end
 	@test distance(mpsI, mpsI′) / norm(mpsI) <= rtol2
 	
 	fbath = fermionicbath(semicircular(), β=β, μ=0)
-	exact_model = SISB(fbath, U=U, μ=-ϵ_d)
+	exact_model = AndersonIM(U=U, μ=-ϵ_d)
 	mpsK = sysdynamics(lattice, exact_model, trunc=truncK)
 	for band in 1:lattice.bands
 		mpsK = boundarycondition!(mpsK, lattice, band=band)

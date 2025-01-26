@@ -70,7 +70,7 @@ function main_real(ϵ_d; β=Inf, t=1, N=100, ω₀=1, α₀=0.5, chi = 100)
 
 	println("bond dimension of mpsI is ", bond_dimension(mpsI1), " ", bond_dimension(mpsI2))
 
-	exact_model = SISB(fbath, U=0., μ=-ϵ_d)
+	exact_model = AndersonIM(U=0., μ=-ϵ_d)
 	@time mpsK = sysdynamics(lattice, exact_model, trunc=truncK)
 	println("bond dimension of mpsK is ", bond_dimension(mpsK))
 	println("mpsK scale is ", scaling(mpsK))

@@ -31,7 +31,7 @@ function main(; β=10., δτ=0.1, t=2., δt=0.05, U=1., ϵ_d=U/2, chi=100)
 
 	# initial guess for Δiw
 	bath = fermionicbath(spectrum_func(D), β=β, μ=0)
-	exact_model = SISB(bath, U=U, μ=-ϵ_d)
+	exact_model = AndersonIM(U=U, μ=-ϵ_d)
 
 	# initial guess for Δiw
 	lb = -5.
