@@ -25,7 +25,8 @@ def mse_error(a, b):
 	L = len(a)
 	diff = asarray(a) - asarray(b)
 	v = norm(diff)
-	return sqrt(v * v / L)
+	# return sqrt(v * v / L)
+	return v / norm(a)
 
 
 fontsize = 18
@@ -49,15 +50,15 @@ ts, gf = read_data(data_path)
 ax.plot(ts, gf, linewidth=linewidth, color='r', marker='o', ls='-.', markerfacecolor='none', label=r'Zipup')
 
 
-chi = 80
-chi2 = 320
-chi3 = 1000
+chi = 60
+chi2 = 240
+chi3 = 2000
 data_path = 'result/anderson_tempo1_norb2_beta%s_U%s_J%s_mu%s_N%s_chi%s_chi2%s_chi3%s.json'%(beta, U, J, mu, N, chi, chi2, chi3)
 ts2, gf2 = read_data(data_path)
 
 print('mse error ', mse_error(gf, gf2))
 
-ax.plot(ts2, gf2, linewidth=linewidth, color='b', marker='^', ls='-.', markerfacecolor='none', label=r'PartialIntegration')
+ax.plot(ts2, gf2, linewidth=linewidth, color='b', marker='+', ls='-.', markerfacecolor='none', label=r'PartialIntegration')
 
 
 

@@ -2,9 +2,9 @@
 2. Particle current: why left current does not converge to the right current?
 3. Imaginary infinite GTEMPO: how to overcome the inaccuracy at the beginning?
 4. Rewriting the code from GrassmannTensor to imporve efficiency and easier integration of GPU
-5. Higher order extension
+5. Higher order extension, do we really need to do that?
 6. Continuous time extension
-7. Optimal control
+7. Application to optimal control of fermionic problems?
 
 Killer applications:
 1. Seebeck effect and Onsager relation
