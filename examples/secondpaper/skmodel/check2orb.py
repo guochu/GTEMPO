@@ -52,7 +52,7 @@ ax.plot(ts, gf, linewidth=linewidth, color='r', marker='o', ls='-.', markerfacec
 
 chi = 60
 chi2 = 240
-chi3 = 2000
+chi3 = 3000
 data_path = 'result/anderson_tempo1_norb2_beta%s_U%s_J%s_mu%s_N%s_chi%s_chi2%s_chi3%s.json'%(beta, U, J, mu, N, chi, chi2, chi3)
 ts2, gf2 = read_data(data_path)
 
