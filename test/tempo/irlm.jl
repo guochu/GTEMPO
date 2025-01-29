@@ -12,7 +12,7 @@ function free_irlm(;μ::Real, J::Real)
 	return hsys
 end
 
-@testset "Independent bosons: real time" begin
+@testset "IRLM: real time transport" begin
 	rtol = 5.0e-2
 
 	β = 10
