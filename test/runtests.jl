@@ -51,6 +51,7 @@ include("tempo/integrateband.jl")
 
 include("tempo/models.jl")
 include("tempo/independentbosons.jl")
+include("tempo/irlm.jl")
 include("tempo/generalimpurity.jl")
 include("tempo/buildK.jl")
 
