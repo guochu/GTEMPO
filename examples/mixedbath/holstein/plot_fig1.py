@@ -61,7 +61,7 @@ chi = 100
 
 mu = 0.
 
-t = 1
+t = 2
 Nt = 400
 omega = 1
 alpha = 1

@@ -36,8 +36,8 @@ function main_real(ϵ_d; β=Inf, t=1, N=100, ω₀=1, α₀=0.5, chi = 100)
 
 	ts = [i*δt for i in 1:N+1]
 
-	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
-	truncK = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
+	trunc = truncdimcutoff(D=chi, ϵ=1.0e-12, add_back=0)
+	truncK = truncdimcutoff(D=chi, ϵ=1.0e-12, add_back=0)
 
 	
 	lattice = GrassmannLattice(N=N, δt=δt, contour=:real, order=1)
