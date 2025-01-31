@@ -57,7 +57,7 @@ markers = ['o', '^', '+']
 fig, ax = plt.subplots(1,2, figsize=(8,3.5))
 
 
-chi = 100
+chi = 60
 
 mu = 0.
 
@@ -66,7 +66,7 @@ Nt = 400
 omega = 1
 alpha = 1
 
-order = 10
+order = 15
 
 # noninteracting case
 ts, gt, bd1, bd2 = read_real_tempo(t, Nt, mu, omega, alpha, chi)
@@ -75,13 +75,14 @@ ax[0].plot(ts, gt.real, ls='--', color='k', linewidth=linewidth, label=r'GTEMPO'
 ax[1].plot(ts, gt.imag, ls='--', color='k', linewidth=linewidth, label=r'GTEMPO')
 
 
-# Nt = 100
+Nt = 200
 ts2, gt2 = read_real_analytic(t, Nt, mu, omega, alpha, order=order)
 
 ax[0].plot(ts2, gt2.real, ls='-', color='r', linewidth=linewidth, label=r'Analytic')
 ax[1].plot(ts2, gt2.imag, ls='-', color='r', linewidth=linewidth, label=r'Analytic')
 
-print('errors: ', mse_error(gt, gt2))
+# print(len(gt), len(gt2))
+# print('errors: ', mse_error(gt, gt2[0:-1:2]))
 
 
 ax[0].set_xlabel(r'$t$', fontsize=fontsize)
