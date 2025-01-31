@@ -27,9 +27,9 @@ def read_real_tempo(t, N, mu, omega, alpha, chi=80):
 	return ts-ts[0], -gt * 1j, data['bd1'], data['bd2']
 
 
-def read_real_analytic(t, N, mu, omega, alpha, order=10):
+def read_real_analytic(t, N, mu, omega, alpha, order=10, wmax=100.):
 	dt = t / N
-	filename = 'result/holstein_analytic_betaInf_t%s_dt%s_omega0%s_alpha0%s_mu%s_order%s.json'%(t, dt, omega, alpha, mu, order)
+	filename = 'result/holstein_analytic_betaInf_t%s_dt%s_omega0%s_alpha0%s_mu%s_order%s_wmax%s.json'%(t, dt, omega, alpha, mu, order, wmax)
 	with open(filename, 'r') as f:
 		data = f.read()
 		data = json.loads(data)
@@ -62,11 +62,12 @@ chi = 60
 mu = 0.
 
 t = 2
-Nt = 400
+Nt = 100
 omega = 1
 alpha = 1
 
-order = 15
+order = 10
+wmax = 50.
 
 # noninteracting case
 ts, gt, bd1, bd2 = read_real_tempo(t, Nt, mu, omega, alpha, chi)
@@ -75,8 +76,8 @@ ax[0].plot(ts, gt.real, ls='--', color='k', linewidth=linewidth, label=r'GTEMPO'
 ax[1].plot(ts, gt.imag, ls='--', color='k', linewidth=linewidth, label=r'GTEMPO')
 
 
-Nt = 200
-ts2, gt2 = read_real_analytic(t, Nt, mu, omega, alpha, order=order)
+Nt = 100
+ts2, gt2 = read_real_analytic(t, Nt, mu, omega, alpha, order=order, wmax=wmax)
 
 ax[0].plot(ts2, gt2.real, ls='-', color='r', linewidth=linewidth, label=r'Analytic')
 ax[1].plot(ts2, gt2.imag, ls='-', color='r', linewidth=linewidth, label=r'Analytic')
