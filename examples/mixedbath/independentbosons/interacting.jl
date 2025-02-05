@@ -5,11 +5,11 @@ using GTEMPO
 # include("../../../src/includes.jl")
 using DelimitedFiles, JSON, Serialization
 
-spectrum_func(;α=1, d=3) = Leggett(d=d, ωc=1, α=α)
+spectrum_func(;α=1, d=3) = Leggett(d=d, ωc=5, α=α)
 
 # spectrum_func() = DiracDelta(ω=1, α=0.5)
 
-function main_imag_analytic(U, ϵ_d=U/2; β=1, N=20, d=3, α=1)
+function main_imag_analytic(U, ϵ_d=U/2; β=1, N=20, d=1, α=1)
 	# ϵ_d = 0.5
 	g = independentbosons_Gτ(spectrum_func(d=d, α=α), β=β, ϵ_d=-ϵ_d, U=U, Nτ=N, bands=2)
 
@@ -27,7 +27,7 @@ function main_imag_analytic(U, ϵ_d=U/2; β=1, N=20, d=3, α=1)
 	return g
 end
 
-function main_real_analytic(U, ϵ_d=U/2; β=1, t=1, N=100, d=3, α=1)
+function main_real_analytic(U, ϵ_d=U/2; β=1, t=1, N=100, d=1, α=1)
 	# ϵ_d = 0.5
 	δt=t/N
 	ts = collect(0:δt:t)
@@ -45,7 +45,7 @@ function main_real_analytic(U, ϵ_d=U/2; β=1, t=1, N=100, d=3, α=1)
 	return g1, g2
 end
 
-function main_mixed(U, ϵ_d=U/2; β=1, Nτ=20, t=1, Nt=100, d=3, chi = 100, α=1)
+function main_mixed(U, ϵ_d=U/2; β=1, Nτ=20, t=1, Nt=100, d=1, chi = 100, α=1)
 	# ϵ_d = 0.5
 	δτ = β / Nτ
 	δt = t / Nt

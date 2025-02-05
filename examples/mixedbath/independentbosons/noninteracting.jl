@@ -6,11 +6,11 @@ using GTEMPO
 using DelimitedFiles, JSON, Serialization
 
 
-spectrum_func(;α=1, d=3) = Leggett(d=d, ωc=1, α=α)
+spectrum_func(;α=1, d=3) = Leggett(d=d, ωc=5, α=α)
 
 # spectrum_func() = DiracDelta(ω=1, α=0.5)
 
-function main_imag_analytic(ϵ_d; β=1, N=20, d=3, α=1)
+function main_imag_analytic(ϵ_d; β=1, N=20, d=1, α=1)
 	g = independentbosons_Gτ(spectrum_func(d=d, α=α), β=β, ϵ_d=-ϵ_d, Nτ=N)
 
 	data_path = "result/noninteracting_analytic_imag_beta$(β)_mu$(ϵ_d)_N$(N)_d$(d)_alpha$(α).json"
@@ -27,7 +27,7 @@ function main_imag_analytic(ϵ_d; β=1, N=20, d=3, α=1)
 	return g
 end
 
-function main_real_analytic(ϵ_d; β=1, t=1, N=100, d=3, α=1)
+function main_real_analytic(ϵ_d; β=1, t=1, N=100, d=1, α=1)
 	# ϵ_d = 0.5
 	δt=t/N
 	ts = collect(0:δt:t)
@@ -45,7 +45,7 @@ function main_real_analytic(ϵ_d; β=1, t=1, N=100, d=3, α=1)
 	return g1, g2
 end
 
-function main_imag(ϵ_d; β=1, Nτ=20, d=3, chi = 100, α=1)
+function main_imag(ϵ_d; β=1, Nτ=20, d=1, chi = 100, α=1)
 	# ϵ_d = 0.5
 	δτ = β / Nτ
 
@@ -111,7 +111,7 @@ function main_imag(ϵ_d; β=1, Nτ=20, d=3, chi = 100, α=1)
 	return τs, gtau
 end
 
-function main_mixed(ϵ_d; β=1, Nτ=20, t=1, Nt=100, d=3, chi = 100, α=1)
+function main_mixed(ϵ_d; β=1, Nτ=20, t=1, Nt=100, d=1, chi = 100, α=1)
 	# ϵ_d = 0.5
 	δτ = β / Nτ
 	δt = t / Nt

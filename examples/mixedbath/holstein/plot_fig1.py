@@ -57,12 +57,12 @@ markers = ['o', '^', '+']
 fig, ax = plt.subplots(1,2, figsize=(8,3.5))
 
 
-chi = 60
+chi = 100
 
 mu = 0.
 
 t = 2
-Nt = 100
+Nt = 200
 omega = 1
 alpha = 1
 
