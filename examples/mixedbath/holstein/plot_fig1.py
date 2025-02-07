@@ -57,17 +57,17 @@ markers = ['o', '^', '+']
 fig, ax = plt.subplots(1,2, figsize=(8,3.5))
 
 
-chi = 100
+chi = 60
 
 mu = 0.
 
 t = 2
-Nt = 200
+Nt = 100
 omega = 1
-alpha = 1
+alpha = 0.5
 
 order = 10
-wmax = 50.
+wmax = 100.
 
 # noninteracting case
 ts, gt, bd1, bd2 = read_real_tempo(t, Nt, mu, omega, alpha, chi)
@@ -106,5 +106,7 @@ ax[1].annotate(r'(b)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsiz
 
 
 plt.tight_layout(pad=0.5)
+
+plt.savefig('fig2.pdf', bbox_inches='tight')
 
 plt.show()
