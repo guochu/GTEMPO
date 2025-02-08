@@ -107,6 +107,6 @@ ax[1].annotate(r'(b)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsiz
 
 plt.tight_layout(pad=0.5)
 
-plt.savefig('fig2.pdf', bbox_inches='tight')
+# plt.savefig('fig2.pdf', bbox_inches='tight')
 
 plt.show()
