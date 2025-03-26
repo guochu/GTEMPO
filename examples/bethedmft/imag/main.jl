@@ -40,7 +40,7 @@ function main(; β=10., δτ=0.1, U=1., ϵ_d=U/2, chi=100)
 
 	for i in 1:10
 		println("the $i-th DMFT iteration...")
-		corr = Δiw_to_Cτ(Δiw, β=β, N=N)
+		corr = Δiw_to_Δτ(Δiw, β=β, N=N)
 		# bath2 = fermionicbath(SpectrumFunction(ω -> ρ₀(ω, D) * t^2, lb = -D, ub = D), β=β, μ=0)
 		# corr2 = correlationfunction(bath2, lattice)
 		# return corr, corr2
