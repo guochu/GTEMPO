@@ -90,6 +90,26 @@ function index(x::ImagGrassmannLattice{<:A2Ā2A1Ā1B2B̄2B1B̄1}, i::Int; conj
 	end	
 end
 
+function index(x::ImagGrassmannLattice{<:Ā2A1B̄2B1}, i::Int; conj::Bool, band::Int=1, branch::Symbol=:τ)
+	@boundscheck begin
+		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
+		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
+		(branch == :τ) || throw(ArgumentError("branch must be :τ"))
+	end
+	n = 2 * x.k 
+	bands = x.bands
+	if i == 0
+		ifelse(conj, 2*band, 2*band-1)
+	else
+		if (i == 1) && conj
+			length(x) - bands + band
+		elseif (i == x.k) && (!conj)
+			2*bands + band
+		else
+			ifelse(conj, (x.k-i)*2*bands + 2*(band-1)+1, (x.k-i-1)*2*bands + 2*band) + 3*bands
+		end
+	end	
+end
 
 
 function indexmappings(lattice::ImagGrassmannLattice)

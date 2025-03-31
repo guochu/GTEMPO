@@ -56,6 +56,16 @@ export zoomin, zoomout
 export ImpurityHamiltonian, tunneling, interaction, TunnelingTerm, InteractionTerm, AbstractFTerm
 export bulkconnection!, bulkconnection, baresysdynamics!, baresysdynamics
 
+
+# electron-phonon interaction
+export AbstractNTerm, NTerm, ExpNTerm
+export FockMPS
+export FockOrdering, ImagFockOrdering, RealFockOrdering, MixedFockOrdering, similargrassmannordering
+export M1N1, MN, M1m1N1n1, MmNn, M1N1_M1m1N1n1M2m2N2n2, MN_MmNn
+export AbstractFockLattice, FockLattice, ImagFockLattice, similargrassmannlattice
+export RealFockLattice, MixedFockLattice
+export focktograssmann
+
 using Base: @boundscheck, @propagate_inbounds
 using Logging: @warn
 using Permutations, Reexport, TupleTools, Strided, Statistics, TensorKit
@@ -104,4 +114,6 @@ include("gf/gf.jl")
 # utility functions and models
 include("models/models.jl")
 
+# electron phonon interactions
+include("electronphonon/electronphonon.jl")
 end

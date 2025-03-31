@@ -37,6 +37,8 @@ struct BandLocalLayout <: LayoutStyle end
 TimeTimeLocalLayout intra branch, but the two branches are separated
 """
 struct BranchLocalLayout <: LayoutStyle end
+
+struct GeneralLayout <: LayoutStyle end
 """
 	LayoutStyle(x::GrassmannOrdering)
 
@@ -89,6 +91,17 @@ GrassmannOrdering aābb̄ a₂ā₂a₁ā₁ b₂b̄₂b₁b̄₁
 struct A2Ā2A1Ā1B2B̄2B1B̄1 <: ImagGrassmannOrdering end
 ConjugationStyle(::Type{A2Ā2A1Ā1B2B̄2B1B̄1}) = AdjacentConjugation()
 LayoutStyle(::Type{A2Ā2A1Ā1B2B̄2B1B̄1}) = BandLocalLayout()
+
+"""
+	struct Ā2A1B̄2B1
+
+GrassmannOrdering aābb̄ a₃b₃ ā₃a₂b̄₃b₂ ā₂a₁b̄₂b₁ ā₁b̄₁
+This ordering is used for interface with retarded interaction,
+e.g., electron-phonon interaction
+"""
+struct Ā2A1B̄2B1 <: ImagGrassmannOrdering end
+ConjugationStyle(::Type{Ā2A1B̄2B1}) = GeneralConjugation()
+LayoutStyle(::Type{Ā2A1B̄2B1}) = GeneralLayout()
 
 
 # caption means forward, small means backword
@@ -166,6 +179,16 @@ struct A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2 <: RealGrassmannOrdering
 ConjugationStyle(::Type{A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2}) = AdjacentConjugation()
 LayoutStyle(::Type{A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2}) = BranchLocalLayout()
 
+"""
+	struct Ā2A1ā1a2B̄2B1b̄1b̄2
+
+GrassmannOrdering aābb̄ a₃+ā₃-b₃+b̄₃- ā₃+a₂+ā₂-a₃-b̄₃+b₂+b̄₂-b₃- ā₂+a₁+ā₁-a₂-b̄₂+b₁+b̄₁-b₂- ā₁+a₁-b̄₁+b₁-
+This ordering is used for interface with retarded interaction,
+e.g., electron-phonon interaction
+"""
+struct Ā2A1ā1a2B̄2B1b̄1b̄2 <: RealGrassmannOrdering end
+ConjugationStyle(::Type{Ā2A1ā1a2B̄2B1b̄1b̄2}) = GeneralConjugation()
+LayoutStyle(::Type{Ā2A1ā1a2B̄2B1b̄1b̄2}) = GeneralLayout()
 
 # mixed time
 """
@@ -203,3 +226,17 @@ struct A1B1B̄1Ā1_A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2 <: MixedGra
 ConjugationStyle(::Type{A1B1B̄1Ā1_A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2}) = GeneralConjugation()
 LayoutStyle(::Type{A1B1B̄1Ā1_A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2}) = BranchLocalLayout()
 RealTimeOrderingStyle(::Type{A1B1B̄1Ā1_A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2}) = TimeDscending()
+
+"""
+	struct Ā3A2B̄3B2Ā2A1B̄2B1_ā1a2Ā2A1b̄1b2B̄2B1ā2a3Ā3A2b̄2b3B̄3B2
+
+This ordering is used for interface with retarded interaction,
+imaginary time ordering: aābb̄ a₃b₃ ā₁b̄₁ a₁-ā₁+b₁-b̄₁+ ā₃a₂b̄₃b₂ ā₂a₁b̄₂b₁
+real time ordering: ā₁-a₂-ā₂+a₁+b̄₁-b₂-b̄₂+b₁+ ā₂-a₃-ā₃+a₂+b̄₂-b₃-b̄₃+b₂+ ā₃-a₃+b̄₃-b₃+
+e.g., electron-phonon interaction
+This ordering looks strength, but I have to keep the bulk part (corresponding to 
+FockMPS) continuous
+"""
+struct Ā3A2B̄3B2Ā2A1B̄2B1_ā1a2Ā2A1b̄1b2B̄2B1ā2a3Ā3A2b̄2b3B̄3B2 <: MixedGrassmannOrdering end
+ConjugationStyle(::Type{Ā3A2B̄3B2Ā2A1B̄2B1_ā1a2Ā2A1b̄1b2B̄2B1ā2a3Ā3A2b̄2b3B̄3B2}) = GeneralConjugation()
+LayoutStyle(::Type{Ā3A2B̄3B2Ā2A1B̄2B1_ā1a2Ā2A1b̄1b2B̄2B1ā2a3Ā3A2b̄2b3B̄3B2}) = GeneralLayout()

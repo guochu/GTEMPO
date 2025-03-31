@@ -157,6 +157,55 @@ function index(x::MixedGrassmannLattice1Order{<:A1B1B̄1Ā1_A2B2B̄2Ā2A1B1B̄
 	end
 end
 
+"""
+	index(x::MixedGrassmannLattice1Order, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+"""
+function index(x::MixedGrassmannLattice1Order{<:Ā3A2B̄3B2Ā2A1B̄2B1_ā1a2Ā2A1b̄1b2B̄2B1ā2a3Ā3A2b̄2b3B̄3B2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+	@boundscheck begin
+		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
+		(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
+		if i != 0
+			if branch == :τ
+				(1 <= i <= x.Nτ + 1) || throw(BoundsError(1:x.kτ, i))
+			else
+				(1 <= i <= x.Nt + 1) || throw(BoundsError(1:x.kt, i))
+			end
+		end
+	end
+	
+	bands = x.bands
+	if i == 0
+		ifelse(conj, 2*band, 2*band-1) 
+	else
+		if branch == :τ
+			if (i == 1) && conj
+				3bands + band
+			elseif (i == x.kτ) && (!conj)
+				2bands + band
+			else
+				ifelse(conj, (x.kτ-i)*2*bands + 2*(band-1)+1, (x.kτ-i-1)*2*bands + 2*band) + 6bands
+			end
+		else
+			n_imag = 2bands*(x.kτ+1)
+			kt = x.kt			
+			if (i == 1) && conj && (branch==:+)
+				2*band + 4bands
+			elseif (i == 1) && (!conj) && (branch==:-)
+				2*(band-1)+1 + 4bands
+			elseif (i == kt) && (!conj) && (branch==:+)
+				length(x) - 2bands + 2*band
+			elseif (i == kt) && conj && (branch==:-)
+				length(x) - 2bands + 2*(band-1)+1
+			else
+				if branch == :-
+					ifelse(conj, (i-1)*4*bands + 4*(band-1)+1, (i-2)*4*bands + 4*(band-1)+2) + n_imag + 2bands
+				else
+					ifelse(conj, (i-2)*4*bands + 4*(band-1)+3, (i-1)*4*bands + 4*band) + n_imag + 2bands
+				end
+			end
+		end
+	end
+end
 
 # key is timestep, conj, branch, band
 function indexmappings(lattice::MixedGrassmannLattice1Order)

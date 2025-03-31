@@ -246,6 +246,36 @@ function index(x::RealGrassmannLattice{<:A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2a
 	end
 end
 
+
+function index(x::RealGrassmannLattice{<:Ā2A1ā1a2B̄2B1b̄1b̄2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+	@boundscheck begin
+		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
+		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
+		(branch in (:+, :-)) || throw(ArgumentError("branch must be :+ or :-"))
+	end
+	TL = length(x)
+	bands = x.bands
+	if i == 0
+		ifelse(conj, 2*band, 2*band-1)
+	else
+		if (i == 1) && conj && (branch==:+)
+			length(x) - 2bands + 2*(band-1)+1
+		elseif (i == 1) && (!conj) && (branch==:-)
+			length(x) - 2bands + 2*band
+		elseif (i == x.k) && (!conj) && (branch==:+)
+			2bands + 2*(band-1)+1
+		elseif (i == x.k) && conj && (branch==:-)
+			2bands + 2*band
+		else
+			if branch == :+
+				ifelse(conj, (x.k-i)*4*bands + 4*(band-1)+1, (x.k-i-1)*4*bands + 4*(band-1)+2) + 4bands
+			else
+				ifelse(conj, (x.k-i-1)*4*bands + 4*(band-1)+3, (x.k-i)*4*bands + 4*band) + 4bands
+			end
+		end
+	end
+end
+
 # key is timestep, conj, branch, band
 function indexmappings(lattice::RealGrassmannLattice)
 	r = Dict{Tuple{Int, Bool, Symbol, Int}, Int}()

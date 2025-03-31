@@ -58,3 +58,7 @@ include("tempo/buildK.jl")
 
 ### tempo for interacting systems
 include("Interacting/neq_tempo.jl")
+
+### electron-phonon interaction
+include("electronphonon/focklattice.jl")
+include("electronphonon/fockmps.jl")

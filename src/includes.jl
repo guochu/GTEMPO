@@ -45,3 +45,7 @@ include("gf/gf.jl")
 
 # utility functions and models
 include("models/models.jl")
+
+
+# electron phonon interactions
+include("electronphonon/electronphonon.jl")

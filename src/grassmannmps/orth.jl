@@ -95,20 +95,20 @@ function DMRG.canonicalize!(psi::GrassmannMPS; alg::Orthogonalize = Orthogonaliz
 	return psi
 end
 
-function _rescaling!(psi::GrassmannMPS, n::Real)
+function _rescaling!(psi, n::Real)
 	L = length(psi)
 	scale1 = n^(1/L)
 	setscaling!(psi, scaling(psi) * scale1)
 	return psi
 end
-function _rescaling!(psi::GrassmannMPS)
+function _rescaling!(psi)
 	nrm1 = norm(psi[1])
 	psi[1] = rmul!(psi[1], 1/nrm1)
 	return _rescaling!(psi, nrm1)
 end
 
 
-function _renormalize!(psi::GrassmannMPS, r, normalize::Bool)
+function _renormalize!(psi, r, normalize::Bool)
 	nr = norm(r)
 	if nr != zero(nr)
 		if !normalize
@@ -119,6 +119,6 @@ function _renormalize!(psi::GrassmannMPS, r, normalize::Bool)
   	return nr
 end
 
-function _renormalize_coeff!(psi::GrassmannMPS, normalize::Bool)
+function _renormalize_coeff!(psi, normalize::Bool)
 	normalize && setscaling!(psi, 1)
 end
