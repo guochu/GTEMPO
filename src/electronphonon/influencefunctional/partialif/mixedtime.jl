@@ -51,11 +51,7 @@ function hybriddynamics_2band_naive!(gmps::FockMPS, lattice::MixedFockLattice1Or
 		for i in 1:k1, j in 1:k2
 			pos1, pos2 = index(lattice, i, band=1, branch=b1), index(lattice, j, band=2, branch=b2)
 			c = exp(2*index(corr, i, j, b1=b1, b2=b2)) - 1
-			if pos1 == pos2
-				t = exp(NTerm(pos1, coeff=c)) 
-			else
-				t = exp(NTerm(pos1, pos2, coeff=c)) 
-			end
+			t = exp(NTerm(pos1, pos2, coeff=c)) 
 			apply!(t, gmps)
 			canonicalize!(gmps, alg=alg)						
 		end

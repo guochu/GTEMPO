@@ -75,6 +75,26 @@ function noninteracting_operators(ϵ_d; ω₀=1, α₀=0.5, ω₁=1, α₁=1, d=
 	return H, A, B, Himp + Hbath0 + Hbath1
 end
 
+function noninteracting_imag(ϵ_d; β=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1)
+	δτ=β/N
+
+	H, a, adag, H0 = noninteracting_operators(ϵ_d, ω₀=ω₀, α₀=α₀, ω₁=ω₁, α₁=α₁, d=100)
+
+	g1 = gf_imag(H, a, adag, β, N)
+
+	data_path = "result/noninteracting_neq_ED_real_beta$(β)_mu$(ϵ_d)_dtau$(δτ)_omega0$(ω₀)_alpha0$(α₀)_omega1$(ω₁)_alpha1$(α₁).json"
+
+	τs = collect(0:δτ:β)
+	results = Dict("taus"=>τs, "gt" => g1)
+
+	open(data_path, "w") do f
+		write(f, JSON.json(results))
+	end
+
+	return g1
+
+end
+
 function noninteracting_neq(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1)
 	δt=t/N
 
