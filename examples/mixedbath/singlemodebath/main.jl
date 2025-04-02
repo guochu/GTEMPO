@@ -188,7 +188,7 @@ function main_mixed(ϵ_d; β=1, t=1, Nτ=20, Nt=100, ω₀=1, α₀=0.5, ω₁=1
 		println("computing MPS-IF...")
 		bath = bosonicbath(DiracDelta(ω=ω₀, α=α₀), β=β)
 		corr = correlationfunction(bath, lattice)
-		@time fmpsI1 = hybriddynamics_naive(flattice, corr, trunc=trunc)
+		@time fmpsI1 = hybriddynamics(flattice, corr, trunc=trunc)
 
 		fcorr = correlationfunction(fbath, lattice)
 		@time mpsI2 = hybriddynamics(lattice, fcorr, trunc=trunc)
