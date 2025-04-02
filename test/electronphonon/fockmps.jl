@@ -39,3 +39,30 @@ println("------------------------------------")
 	end
 	
 end
+
+
+@testset "FockMPS: multiplications" begin
+	L = 6
+	chi = 20
+	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10)
+	tol = 1.0e-7
+	for T in (Float64, ComplexF64)
+		psi1 = randomgmps(T, L, D=4)
+		psi2 = randomgmps(T, L, D=4)
+
+		psi3 = psi1 * psi2
+		_n = norm(psi3)
+		psi4 = mult(psi1, psi2, trunc=trunc)
+		@test distance(psi3, psi4) / _n < tol
+
+
+		canonicalize!(psi1)
+		canonicalize!(psi2)
+		psi5 = psi1 * psi2
+		@test distance(psi3, psi5) / _n < tol
+
+		psi4 = mult(psi1, psi2, trunc=trunc)
+		@test distance(psi3, psi4) / _n < tol
+
+	end
+end

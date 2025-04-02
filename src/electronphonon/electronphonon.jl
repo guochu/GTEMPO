@@ -10,6 +10,7 @@ include("fockmps/fockmps.jl")
 include("fockmps/orth.jl")
 include("fockmps/linalg.jl")
 include("fockmps/integrate.jl")
+include("fockmps/mult/mult.jl")
 
 # implementation of densempo
 include("densempo/densempo.jl")

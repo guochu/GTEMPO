@@ -32,7 +32,7 @@ function n_fuse(m::AbstractArray{<:Number, N}, i::Int) where {N}
 	s2 = prod(s_tail)
 
 	m4 = reshape(m, s1, 2, 2, s2)
-	m3 = zeros(s1, 2, s2)
+	m3 = zeros(scalartype(m), s1, 2, s2)
 	m3[:,1,:] = m4[:, 1, 1, :]
 	m3[:,2,:] = m4[:, 1, 2, :] + m4[:, 2, 1, :] + m4[:, 2, 2, :] 
 

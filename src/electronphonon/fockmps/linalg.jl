@@ -35,7 +35,6 @@ end
 # the reuslt is also a GrassmannMPS
 function Base.:*(x::FockMPS, y::FockMPS)
     (length(x) == length(y)) || throw(DimensionMismatch())
-    T = scalartype(x)
     r = [n_fuse(_mult_site_n(x[i], y[i]), 3) for i in 1:length(x)]
     return FockMPS([tie(rj, (2,1,2)) for rj in r], scaling=scaling(x)*scaling(y))
 end
