@@ -35,7 +35,7 @@ function main_imag(ϵ_d; β=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, chi 
 		println("computing MPS-IF...")
 		bath = bosonicbath(DiracDelta(ω=ω₀, α=α₀), β=β)
 		corr = correlationfunction(bath, flattice)
-		@time fmpsI1 = hybriddynamics_naive(flattice, corr, trunc=trunc)
+		@time fmpsI1 = hybriddynamics(flattice, corr, trunc=trunc)
 
 		fcorr = correlationfunction(fbath, lattice)
 		@time mpsI2 = hybriddynamics(lattice, fcorr, trunc=trunc)
@@ -112,7 +112,7 @@ function main_real(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1,
 		println("computing MPS-IF...")
 		bath = bosonicbath(DiracDelta(ω=ω₀, α=α₀), β=β)
 		corr = correlationfunction(bath, flattice)
-		@time fmpsI1 = hybriddynamics_naive(flattice, corr, trunc=trunc)
+		@time fmpsI1 = hybriddynamics(flattice, corr, trunc=trunc)
 
 		fcorr = correlationfunction(fbath, lattice)
 		@time mpsI2 = hybriddynamics(lattice, fcorr, trunc=trunc)
