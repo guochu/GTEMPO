@@ -35,6 +35,8 @@ function changeordering(::Type{A}, lattice::AbstractGrassmannLattice, x::Grassma
     end
 end
 
+changeordering(o::GrassmannOrdering, lattice::AbstractGrassmannLattice, x::Vararg{GrassmannMPS}; kwargs...) = changeordering(typeof(o), lattice, x...; kwargs...)
+
 # function convert_ordering(::Type{A}, lattice::AbstractGrassmannLattice, x::GrassmannMPS; trunc::TruncationScheme=DefaultKTruncation) where {A <: GrassmannOrdering} 
 #     lattice2 = similar(lattice, ordering=A())
 #     return permute(x, matchindices2(lattice2, lattice), trunc=trunc)

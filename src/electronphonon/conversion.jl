@@ -20,14 +20,14 @@ function focktograssmann(lattice::AbstractFockLattice, mps::FockMPS)
 end
 
 
-function focktograssmann(::Type{O}, lattice::AbstractFockLattice, mps::FockMPS) where {O<:GrassmannOrdering}
+function focktograssmann(::Type{O}, lattice::AbstractFockLattice, mps::FockMPS; kwargs...) where {O<:GrassmannOrdering}
 	lattice2, mps2 = focktograssmann(lattice, mps)
 	if !(lattice2.ordering isa O)
-		lattice2, mps2 = changeordering(O, lattice2, mps2)
+		lattice2, mps2 = changeordering(O, lattice2, mps2; kwargs...)
 	end
 	return lattice2, mps2
 end
-
+focktograssmann(o::GrassmannOrdering, lattice::AbstractFockLattice, mps::FockMPS; kwargs...) = focktograssmann(typeof(o), lattice, mps; kwargs...)
 
 function focktograssmann_one_step!(lattice2::AbstractGrassmannLattice, mps2::GrassmannMPS, lattice::AbstractFockLattice, mps::FockMPS, j::Int, band::Int, b::Symbol)
 	ph = grassmannpspace()

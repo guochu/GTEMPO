@@ -86,10 +86,10 @@ mu = 0.5
 t = 1
 Nt = 100
 beta = 1
-# Ntau = 20
+Ntau = 10
 
-# real time data
-ts, gt, lt = read_neq_ed(beta, t, Nt, mu, omega0, alpha0, omega1, alpha1)
+# mixed time data
+ts, gt, lt = read_eq_ed(beta, t, Nt, mu, omega0, alpha0, omega1, alpha1)
 
 ax[0,0].plot(ts, gt.real, ls='--', color='k', linewidth=linewidth, label=r'ED')
 ax[0,1].plot(ts, gt.imag, ls='--', color='k', linewidth=linewidth, label=r'ED')
@@ -97,14 +97,15 @@ ax[0,1].plot(ts, gt.imag, ls='--', color='k', linewidth=linewidth, label=r'ED')
 ax[1,0].plot(ts, lt.real, ls='--', color='k', linewidth=linewidth, label=r'ED')
 ax[1,1].plot(ts, lt.imag, ls='--', color='k', linewidth=linewidth, label=r'ED')
 
-ts, gt, lt = read_real_tempo(beta, t, Nt, mu, omega0, alpha0, omega1, alpha1, chi)
+
+ts, gt, lt = read_mixed_tempo(beta, Ntau, t, Nt, mu, omega0, alpha0, omega1, alpha1, chi)
 
 ax[0,0].plot(ts, gt.real, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
 ax[0,1].plot(ts, gt.imag, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
 
-
 ax[1,0].plot(ts, lt.real, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
 ax[1,1].plot(ts, lt.imag, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
+
 
 ax[0,0].set_xlabel(r'$t$', fontsize=fontsize)
 ax[0,0].set_ylabel(r'${\rm Re}[G^{>}(t)]$', fontsize=fontsize)
@@ -112,7 +113,7 @@ ax[0,0].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[0,0].locator_params(axis='both', nbins=6)
 ax[0,0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 ax[0,0].annotate(r'(a)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
-ax[0,0].legend(loc='lower right', fontsize=12)
+ax[0,0].legend(loc='upper right', fontsize=12)
 
 
 ax[0,1].set_xlabel(r'$t$', fontsize=fontsize)

@@ -51,62 +51,55 @@ function main_mixed(U, ϵ_d=U/2; β=1, Nτ=20, t=1, Nt=100, d=1, chi = 100, α=1
 	δt = t / Nt
 
 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
-	truncK = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
 
 	ts = [i*δt for i in 1:Nt+1]
 	τs = [i*δτ for i in 1:Nτ+1]
 	
 	lattice = GrassmannLattice(Nt=Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed, bands=2, order=1)
 	println("number of sites, ", length(lattice))
+	flattice = FockLattice(Nt=Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed, bands=2, order=1)
 
 	mpspath = "data/interacting_mixedgtempo_beta$(β)_dtau$(δτ)_t$(t)_dt$(δt)_d$(d)_alpha$(α)_chi$(chi).mps"
 	if ispath(mpspath)
 		println("load MPS-IF from path ", mpspath)
-		mpsI = Serialization.deserialize(mpspath)
+		fmpsI = Serialization.deserialize(mpspath)
 	else
 		println("computing MPS-IF...")
 		bath = bosonicbath(spectrum_func(d=d,α=α), β=β)
-		corr = correlationfunction(bath, lattice)
-		@time mpsI = retardedinteractdynamics(lattice, corr, trunc=trunc)
+		corr = correlationfunction(bath, flattice)
+		@time fmpsI = hybriddynamics(flattice, corr, trunc=trunc)
 
 		println("save MPS-IF to path ", mpspath)
-		Serialization.serialize(mpspath, mpsI)
+		Serialization.serialize(mpspath, fmpsI)
 	end
 
-	# bath = bosonicbath(spectrum_func(), β=β)
-	# corr = correlationfunction(bath, lattice)
-	# println("computing MPS-IF...")
-	# @time mpsI = retardedinteractdynamics(lattice, corr, trunc=trunc)
-	println("bond dimension of mpsI is ", bond_dimension(mpsI))
+	println("bond dimension of fmpsI is ", bond_dimension(fmpsI))
 
-	fbath = fermionicbath(semicircular(), β=β, μ=0)
 	exact_model = AndersonIM(U=U, μ=-ϵ_d)
-	@time mpsK = sysdynamics(lattice, exact_model, trunc=truncK)
-	println("bond dimension of mpsK is ", bond_dimension(mpsK))
-	println("mpsK scale is ", scaling(mpsK))
+
+	fadt = sysdynamics!(fmpsI, flattice, exact_model, trunc=trunc)
+	lattice, adt = focktograssmann(lattice.ordering, flattice, fadt, trunc=trunc)
+
+	
 	for band in 1:lattice.bands
-		mpsK = boundarycondition!(mpsK, lattice, band=band)
+		adt = boundarycondition!(adt, lattice, band=band, trunc=trunc)
+		adt = bulkconnection!(adt, lattice, band=band, trunc=trunc)
 	end
-	# mpsK = systhermalstate!(mpsK, lattice, exact_model, trunc=trunc, δτ=0.001)
-	println("bond dimension of mpsK is ", bond_dimension(mpsK))
+	println("bond dimension of bosonic adt is ", bond_dimension(adt))
 
-	# println(length(lattice), " ", length(mpsK), " ", length(mpsI))
 
-	cache = environments(lattice, mpsK, mpsI)
-	# @time gt = [cached_greater(lattice, j, mpsK, mpsI, cache=cache) for j in 1:lattice.kt]
-	# @time lt = [cached_lesser(lattice, j, mpsK, mpsI, cache=cache) for j in 1:lattice.kt]
-	# return gt, lt
+	cache = environments(lattice, adt)
 
-	@time g₁ = cached_greater_fast(lattice, mpsK, mpsI, band=1, cache=cache) 
-	@time g₂ = cached_lesser_fast(lattice, mpsK, mpsI, band=1, cache=cache) 
-	@time g₃ = cached_Gτ_fast(lattice, mpsK, mpsI, band=1, cache=cache) 
-	@time ns = cached_occupation(lattice, mpsK, mpsI, cache=cache)
+	@time g₁ = cached_greater_fast(lattice, adt, band=1, cache=cache) 
+	@time g₂ = cached_lesser_fast(lattice, adt, band=1, cache=cache) 
+	@time g₃ = cached_Gτ_fast(lattice, adt, band=1, cache=cache) 
+	@time ns = cached_occupation(lattice, adt, cache=cache)
 
 	g₁, g₂ = -im*g₁, im*g₂
 
 	data_path = "result/interacting_mixedgtempo_beta$(β)_dtau$(δτ)_t$(t)_dt$(δt)_U$(U)_mu$(ϵ_d)_d$(d)_alpha$(α)_chi$(chi).json"
 
-	results = Dict("ts"=>ts, "taus"=>τs, "bd"=>bond_dimensions(mpsI), "gt"=>g₁, "lt"=>g₂, "gtau"=>g₃, "ns" => ns)
+	results = Dict("ts"=>ts, "taus"=>τs, "bd"=>bond_dimensions(adt), "gt"=>g₁, "lt"=>g₂, "gtau"=>g₃, "ns" => ns)
 
 	println("save results to ", data_path)
 

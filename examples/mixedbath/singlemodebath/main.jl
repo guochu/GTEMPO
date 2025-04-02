@@ -18,7 +18,6 @@ function main_imag(ϵ_d; β=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, chi 
 	τs = [i*δτ for i in 0:N]
 
 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
-	truncK = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
 
 	
 	lattice = GrassmannLattice(N=N, δτ=δτ, contour=:imag, order=1, ordering=A1Ā1B1B̄1())
@@ -49,12 +48,12 @@ function main_imag(ϵ_d; β=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, chi 
 	exact_model = AndersonIM(U=0., μ=-ϵ_d)
 
 	fadt = sysdynamics!(fmpsI1, flattice, exact_model, trunc=trunc)
-	lattice, mpsI1 = focktograssmann(A1Ā1B1B̄1, flattice, fadt)
+	lattice, mpsI1 = focktograssmann(lattice.ordering, flattice, fadt, trunc=trunc)
 
 	
 	for band in 1:lattice.bands
-		mpsI1 = boundarycondition!(mpsI1, lattice, band=band)
-		mpsI1 = bulkconnection!(mpsI1, lattice, band=band)
+		mpsI1 = boundarycondition!(mpsI1, lattice, band=band, trunc=trunc)
+		mpsI1 = bulkconnection!(mpsI1, lattice, band=band, trunc=trunc)
 	end
 	println("bond dimension of bosonic adt is ", bond_dimension(mpsI1))
 
@@ -89,7 +88,6 @@ function main_real(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1,
 	ts = [i*δt for i in 1:N+1]
 
 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
-	truncK = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
 
 	
 	lattice = GrassmannLattice(N=N, δt=δt, contour=:real, order=1)
@@ -126,11 +124,11 @@ function main_real(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1,
 	exact_model = AndersonIM(U=0., μ=-ϵ_d)
 
 	fadt = sysdynamics!(fmpsI1, flattice, exact_model, trunc=trunc)
-	lattice, mpsI1 = focktograssmann(A1Ā1a1ā1B1B̄1b1b̄1, flattice, fadt)
+	lattice, mpsI1 = focktograssmann(lattice.ordering, flattice, fadt, trunc=trunc)
 
 	for band in 1:lattice.bands
-		mpsI1 = boundarycondition!(mpsI1, lattice, band=band)
-		mpsI1 = bulkconnection!(mpsI1, lattice, band=band)
+		mpsI1 = boundarycondition!(mpsI1, lattice, band=band, trunc=trunc)
+		mpsI1 = bulkconnection!(mpsI1, lattice, band=band, trunc=trunc)
 	end
 	mpsI1 = systhermalstate!(mpsI1, lattice, exact_model, β=β)
 	println("bond dimension of bosonic adt is ", bond_dimension(mpsI1))
@@ -202,11 +200,11 @@ function main_mixed(ϵ_d; β=1, t=1, Nτ=20, Nt=100, ω₀=1, α₀=0.5, ω₁=1
 	exact_model = AndersonIM(U=0., μ=-ϵ_d)
 
 	fadt = sysdynamics!(fmpsI1, flattice, exact_model, trunc=trunc)
-	lattice, mpsI1 = focktograssmann(AĀBB̄_aāAĀbb̄BB̄, flattice, fadt)
+	lattice, mpsI1 = focktograssmann(lattice.ordering, flattice, fadt, trunc=trunc)
 
 	for band in 1:lattice.bands
-		mpsI1 = boundarycondition!(mpsI1, lattice, band=band)
-		mpsI1 = bulkconnection!(mpsI1, lattice, band=band)
+		mpsI1 = boundarycondition!(mpsI1, lattice, band=band, trunc=trunc)
+		mpsI1 = bulkconnection!(mpsI1, lattice, band=band, trunc=trunc)
 	end
 	println("bond dimension of bosonic adt is ", bond_dimension(mpsI1))
 
