@@ -57,7 +57,7 @@ markers = ['o', '^', '+']
 fig, ax = plt.subplots(1,2, figsize=(8,3.5))
 
 
-chi = 60
+chi = 120
 
 mu = 0.
 
@@ -75,6 +75,7 @@ ts, gt, bd1, bd2 = read_real_tempo(t, Nt, mu, omega, alpha, chi)
 ax[0].plot(ts, gt.real, ls='--', color='k', linewidth=linewidth, label=r'GTEMPO')
 ax[1].plot(ts, gt.imag, ls='--', color='k', linewidth=linewidth, label=r'GTEMPO')
 
+t = 2
 Nt = 100
 ts2, gt2 = read_real_analytic(t, Nt, mu, omega, alpha, order=order, wmax=wmax)
 

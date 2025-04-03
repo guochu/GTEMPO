@@ -83,7 +83,7 @@ chi = 80
 
 mu = 0.5
 
-t = 1
+t = 2
 Nt = 100
 beta = 1
 # Ntau = 20

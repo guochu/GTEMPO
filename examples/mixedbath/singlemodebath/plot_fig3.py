@@ -83,10 +83,10 @@ chi = 80
 
 mu = 0.5
 
-t = 1
-Nt = 100
+t = 2
+Nt = 40
 beta = 1
-Ntau = 10
+Ntau = 20
 
 # mixed time data
 ts, gt, lt = read_eq_ed(beta, t, Nt, mu, omega0, alpha0, omega1, alpha1)
