@@ -79,14 +79,14 @@ omega0 = 1
 alpha0 = 0.5
 omega1 = 1
 alpha1 = 1
-chi = 80
+chi = 120
 
-mu = 0.5
+mu = 0.
 
-t = 2
-Nt = 40
-beta = 1
-Ntau = 20
+t = 10
+Nt = 200
+beta = 5
+Ntau = 100
 
 # mixed time data
 ts, gt, lt = read_eq_ed(beta, t, Nt, mu, omega0, alpha0, omega1, alpha1)
@@ -98,13 +98,16 @@ ax[1,0].plot(ts, lt.real, ls='--', color='k', linewidth=linewidth, label=r'ED')
 ax[1,1].plot(ts, lt.imag, ls='--', color='k', linewidth=linewidth, label=r'ED')
 
 
-ts, gt, lt = read_mixed_tempo(beta, Ntau, t, Nt, mu, omega0, alpha0, omega1, alpha1, chi)
 
-ax[0,0].plot(ts, gt.real, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
-ax[0,1].plot(ts, gt.imag, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
+ts2, gt2, lt2 = read_mixed_tempo(beta, Ntau, t, Nt, mu, omega0, alpha0, omega1, alpha1, chi)
 
-ax[1,0].plot(ts, lt.real, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
-ax[1,1].plot(ts, lt.imag, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
+print('error is ', mse_error(gt, gt2), ' ', mse_error(lt, lt2))
+
+ax[0,0].plot(ts2, gt2.real, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
+ax[0,1].plot(ts2, gt2.imag, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
+
+ax[1,0].plot(ts2, lt2.real, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
+ax[1,1].plot(ts2, lt2.imag, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
 
 
 ax[0,0].set_xlabel(r'$t$', fontsize=fontsize)
