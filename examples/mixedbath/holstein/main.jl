@@ -108,7 +108,7 @@ end
 function main_real_vs_chi_Nt(ϵ_d; t=5, ω₀=1, α₀=0.5)
 	for chi in [20, 40,60,80,100]
 		for Nt in [50, 100,200,400]
-			main_real(ϵ_d, t=t, Nt=Nt, ω₀=ω₀, α₀=α₀, chi=chi)
+			main_real(ϵ_d, t=t, N=Nt, ω₀=ω₀, α₀=α₀, chi=chi)
 		end
 	end
 end
