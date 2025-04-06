@@ -110,3 +110,10 @@ function main_mixed(U, ϵ_d=U/2; β=1, Nτ=20, t=1, Nt=100, d=1, chi = 100, α=1
 	return g₁, g₂, real(g₃), ns
 end
 
+function main_mixed_vs_chi_Nt(U, ϵ_d=U/2; β=5, Nτ=50, t=5, d=1, α=1)
+	for chi in [40,60,80,100, 120, 140, 160]
+		for Nt in [50, 100,200,400,800]
+			main_mixed(U, ϵ_d, β=β, Nτ=Nτ, t=t, Nt=Nt, d=d, α=α, chi=chi)
+		end
+	end
+end
