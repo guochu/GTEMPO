@@ -57,7 +57,7 @@ markers = ['o', '^', '+']
 fig, ax = plt.subplots(1,2, figsize=(8,3.5))
 
 
-chi = 100
+chi = 40
 
 mu = 1.1
 
@@ -67,7 +67,7 @@ omega = 1
 alpha = 0.5
 
 order = 10
-wmax = 20.
+wmax = 50.
 
 # noninteracting case
 ts, gt, bd1, bd2 = read_real_tempo(t, Nt, mu, omega, alpha, chi)
