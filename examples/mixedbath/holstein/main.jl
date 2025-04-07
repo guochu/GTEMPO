@@ -13,7 +13,7 @@ function main_real_analytic(ϵ_d; t=1, N=100, ω₀=1, α₀=0.5, order=10, wmax
 
 	α = sqrt(α₀)
 
-	spec = semicircular(t=t)
+	spec = semicircular(t=1)
 
 	println(holstein_Gw(spec, -wmax, ϵ_d=-ϵ_d, ω=ω₀, g=α, maxiter=order), " ", holstein_Gw(spec, wmax, ϵ_d=-ϵ_d, ω=ω₀, g=α, maxiter=order))
 
@@ -51,7 +51,7 @@ function main_real(ϵ_d; β=Inf, t=1, N=100, ω₀=1, α₀=0.5, chi = 100)
 	# println("computing MPS-IF...")
 	# @time mpsI = retardedinteractdynamics(lattice, corr, trunc=trunc)
 
-	fbath = fermionicbath(semicircular(t=t), β=β, μ=0)
+	fbath = fermionicbath(semicircular(t=1), β=β, μ=0)
 
 	mpspath = "data/holstein_realgtempo_beta$(β)_t$(t)_dt$(δt)_omega0$(ω₀)_alpha0$(α₀)_chi$(chi).mps"
 	if ispath(mpspath)
