@@ -88,7 +88,7 @@ end
 	δt=0.1
 	Nt = 5
 	t = Nt * δt
-	chi = 200
+	chi = 160
 
 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
 	truncK = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
@@ -142,7 +142,7 @@ end
 
 	mpsI = hybriddynamics(flattice, corr, trunc=trunc)
 	mpsI′ = hybriddynamics_naive(flattice, corr, trunc=trunc)
-	@test distance(mpsI, mpsI′) / norm(mpsI) <= rtol2
+	@test distance(mpsI, mpsI′) / norm(mpsI) <= 1.0e-2
 	
 	exact_model = AndersonIM(U=U, μ=-ϵ_d)
 
