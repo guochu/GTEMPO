@@ -78,6 +78,82 @@ println("------------------------------------")
 	end
 end
 
+@testset "Independent bosons: real time" begin
+	rtol = 1.0e-2
+	rtol2 = 1.0e-3
+	β = 0.1
+	δt=0.01
+	Nt = 10
+	t = Nt * δt
+	chi = 60
+
+	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
+	truncK = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
+
+	lattice = GrassmannLattice(N=Nt, δt=δt, contour=:real, order=1)
+	flattice = FockLattice(N=Nt, δt=δt, contour=:real, order=1)
+	for ϵ_d in (-0.5, 0, 0.5)
+
+		bath = bosonicbath(DiracDelta(ω=1, α=0.5), β=β)
+		corr = correlationfunction(bath, flattice)
+		mpsI = hybriddynamics(flattice, corr, trunc=trunc)
+		mpsI′ = hybriddynamics_naive(flattice, corr, trunc=trunc)
+		@test distance(mpsI, mpsI′) / norm(mpsI) <= rtol2
+
+		exact_model = AndersonIM(U=0., μ=-ϵ_d)
+		fadt = sysdynamics!(mpsI, flattice, exact_model, trunc=truncK)
+
+		lattice, adt = focktograssmann(lattice.ordering, flattice, fadt, trunc=trunc)
+		for band in 1:lattice.bands
+			adt = boundarycondition!(adt, lattice, band=band, trunc=trunc)
+			adt = bulkconnection!(adt, lattice, band=band, trunc=trunc)
+		end
+
+		adt = systhermalstate!(adt, lattice, exact_model, trunc=trunc, δτ=0.001, β=β)
+		cache = environments(lattice, adt)
+
+		g1 = [-im*cached_greater(lattice, k, adt, c1=false, c2=true, b1=:+, b2=:+, band=1, cache=cache) for k in 1:Nt+1]
+		g2 = [-im*cached_lesser(lattice, k, adt, c1=true, c2=false, b1=:-, b2=:+, band=1, cache=cache) for k in 1:Nt+1]
+
+		g1′, g2′ = noninteracting_real(ϵ_d)
+		@test norm(g1 - g1′) / norm(g1) < rtol	
+		@test norm(g2 - g2′) / norm(g2) < rtol	
+	end
+
+	lattice = GrassmannLattice(N=Nt, δt=δt, contour=:real, order=1, bands=2)
+	flattice = FockLattice(N=Nt, δt=δt, contour=:real, order=1, bands=2)
+	ϵ_d = 0.3
+	for U in (0, 1)
+
+		bath = bosonicbath(DiracDelta(ω=1, α=0.5), β=β)
+		corr = correlationfunction(bath, lattice)
+		mpsI = hybriddynamics(flattice, corr, trunc=trunc)
+		mpsI′ = hybriddynamics_naive(flattice, corr, trunc=trunc)
+		@test distance(mpsI, mpsI′) / norm(mpsI) <= rtol2
+
+		exact_model = AndersonIM(U=U, μ=-ϵ_d)
+		fadt = sysdynamics!(mpsI, flattice, exact_model, trunc=truncK)
+
+		lattice, adt = focktograssmann(lattice.ordering, flattice, fadt, trunc=trunc)
+		for band in 1:lattice.bands
+			adt = boundarycondition!(adt, lattice, band=band, trunc=trunc)
+			adt = bulkconnection!(adt, lattice, band=band, trunc=trunc)
+		end
+
+		adt = systhermalstate!(adt, lattice, exact_model, trunc=trunc, δτ=0.001, β=β)
+		cache = environments(lattice, adt)
+
+		g1 = [-im*cached_greater(lattice, k, adt, c1=false, c2=true, b1=:+, b2=:+, band=1, cache=cache) for k in 1:Nt+1]
+		g2 = [-im*cached_lesser(lattice, k, adt, c1=true, c2=false, b1=:-, b2=:+, band=1, cache=cache) for k in 1:Nt+1]
+
+		g1′, g2′ = interacting_real(U, ϵ_d)
+		@test norm(g1 - g1′) / norm(g1) < rtol	
+		@test norm(g2 - g2′) / norm(g2) < rtol	
+
+	end
+
+end
+
 
 @testset "Independent bosons: mixed time" begin
 	rtol = 5.0e-2
