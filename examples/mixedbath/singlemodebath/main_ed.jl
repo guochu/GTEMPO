@@ -82,7 +82,7 @@ function noninteracting_imag(ϵ_d; β=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α�
 
 	g1 = gf_imag(H, a, adag, β, N)
 
-	data_path = "result/noninteracting_neq_ED_real_beta$(β)_mu$(ϵ_d)_dtau$(δτ)_omega0$(ω₀)_alpha0$(α₀)_omega1$(ω₁)_alpha1$(α₁).json"
+	data_path = "result/noninteracting_eq_ED_imag_beta$(β)_mu$(ϵ_d)_dtau$(δτ)_omega0$(ω₀)_alpha0$(α₀)_omega1$(ω₁)_alpha1$(α₁).json"
 
 	τs = collect(0:δτ:β)
 	results = Dict("taus"=>τs, "gt" => g1)
