@@ -40,6 +40,7 @@ include("tempo/hybriddynamics.jl")
 
 include("tempo/gf.jl")
 include("tempo/cached_gf.jl")
+include("tempo/cached_nn.jl")
 include("tempo/cached_gf_fast.jl")
 include("tempo/bmps_gf.jl")
 include("tempo/observables.jl")

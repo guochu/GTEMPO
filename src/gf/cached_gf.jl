@@ -1,5 +1,12 @@
 # cached version of calculating Green's functions
 
+function cached_gf(lattice::AbstractGrassmannLattice, a::NTuple{N, ContourIndex}, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
+                    cache::AbstractExpectationCache=environments(lattice, A, B...), kwargs...) where {N}
+    pos = map(x->lattice[x], a)
+    t = GTerm(pos, coeff=1)
+    return expectationvalue(t, cache; kwargs...)
+end
+
 """
    cached_gf(lattice::AbstractGrassmannLattice, a::ContourIndex, b::ContourIndex, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
                     cache::AbstractExpectationCache=environments(lattice, A, B...), kwargs...)

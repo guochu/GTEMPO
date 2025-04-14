@@ -64,11 +64,12 @@ function main_imag(ϵ_d; β=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, chi 
 	# return gt, lt
 
 	@time g₁ = cached_Gτ(lattice, mpsI1, mpsI2, cache=cache)
+	@time g₃ = [cached_nn(lattice, i, 1, mpsI1, mpsI2, cache=cache) for i in 2:N]
 
 
 	data_path = "result/noninteracting_imaggtempo_beta$(β)_dtau$(δτ)_omega0$(ω₀)_alpha0$(α₀)_omega1$(ω₁)_alpha1$(α₁)_mu$(ϵ_d)_chi$(chi).json"
 
-	results = Dict("taus"=>τs, "bd1"=>bond_dimensions(mpsI1), "bd2"=>bond_dimensions(mpsI2), "gf"=>g₁)
+	results = Dict("taus"=>τs, "bd1"=>bond_dimensions(mpsI1), "bd2"=>bond_dimensions(mpsI2), "gf"=>g₁, "nn"=>g₃)
 
 	println("save results to ", data_path)
 
@@ -77,7 +78,7 @@ function main_imag(ϵ_d; β=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, chi 
 	end
 
 
-	return g₁
+	return g₁, g₃
 end
 
 function main_real(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, chi = 100)
@@ -141,12 +142,13 @@ function main_real(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1,
 
 	@time g₁ = [cached_greater(lattice, k, mpsI1, mpsI2, c1=false, c2=true, b1=:+, b2=:+, band=1, cache=cache) for k in 1:N+1]
 	@time g₂ = [cached_lesser(lattice, k, mpsI1, mpsI2, c1=true, c2=false, b1=:-, b2=:+, band=1, cache=cache) for k in 1:N+1]
+	@time g₃ = [cached_nn(lattice, i, 1, mpsI1, mpsI2, cache=cache, b1=:+, b2=:-) for i in 2:N]
 
 	g₁, g₂ = -im*g₁, -im*g₂
 
 	data_path = "result/noninteracting_realgtempo_beta$(β)_t$(t)_dt$(δt)_omega0$(ω₀)_alpha0$(α₀)_omega1$(ω₁)_alpha1$(α₁)_mu$(ϵ_d)_chi$(chi).json"
 
-	results = Dict("ts"=>ts, "bd1"=>bond_dimensions(mpsI1), "bd2"=>bond_dimensions(mpsI2), "gt"=>g₁, "lt"=>g₂)
+	results = Dict("ts"=>ts, "bd1"=>bond_dimensions(mpsI1), "bd2"=>bond_dimensions(mpsI2), "gt"=>g₁, "lt"=>g₂, "nn"=>g₃)
 
 	println("save results to ", data_path)
 
@@ -155,7 +157,7 @@ function main_real(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1,
 	end
 
 
-	return g₁, g₂ 
+	return g₁, g₂, g₃
 end
 
 function main_mixed(ϵ_d; β=1, t=1, Nτ=20, Nt=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, chi = 100)
@@ -213,13 +215,14 @@ function main_mixed(ϵ_d; β=1, t=1, Nτ=20, Nt=100, ω₀=1, α₀=0.5, ω₁=1
 	@time g₁ = [cached_Gm(lattice, k, 1, mpsI1, mpsI2, c1=false, c2=true, b1=:+, b2=:+, band=1, cache=cache) for k in 1:Nt+1]
 	@time g₂ = [cached_Gm(lattice, 1, k, mpsI1, mpsI2, c1=true, c2=false, b1=:-, b2=:+, band=1, cache=cache) for k in 1:Nt+1]
 	@time g₃ = [cached_Gm(lattice, k, 1, mpsI1, mpsI2, c1=false, c2=true, b1=:τ, b2=:τ, band=1, cache=cache) for k in 1:Nτ+1]
+	@time g₄ = [cached_nn(lattice, i, 1, mpsI1, mpsI2, cache=cache, b1=:+, b2=:-) for i in 2:Nt]
 	@time ns = cached_occupation(lattice, mpsI1, mpsI2, cache=cache)
 
 	g₁, g₂ = -im*g₁, im*g₂
 
 	data_path = "result/noninteracting_mixedgtempo_beta$(β)_dtau$(δτ)_t$(t)_dt$(δt)_omega0$(ω₀)_alpha0$(α₀)_omega1$(ω₁)_alpha1$(α₁)_mu$(ϵ_d)_chi$(chi).json"
 
-	results = Dict("ts"=>ts, "taus"=>τs, "bd1"=>bond_dimensions(mpsI1), "bd2"=>bond_dimensions(mpsI2), "gt"=>g₁, "lt"=>g₂, "gtau"=>g₃, "ns" => ns)
+	results = Dict("ts"=>ts, "taus"=>τs, "bd1"=>bond_dimensions(mpsI1), "bd2"=>bond_dimensions(mpsI2), "gt"=>g₁, "lt"=>g₂, "gtau"=>g₃, "ns" => ns, "nn"=>g₄)
 
 	println("save results to ", data_path)
 
@@ -227,7 +230,7 @@ function main_mixed(ϵ_d; β=1, t=1, Nτ=20, Nt=100, ω₀=1, α₀=0.5, ω₁=1
 		write(f, JSON.json(results))
 	end
 
-	return g₁, g₂, real(g₃), ns
+	return g₁, g₂, real(g₃), g₄, ns
 end
 
 function main_real_vs_chi(ϵ_d; β=5, t=10, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1)

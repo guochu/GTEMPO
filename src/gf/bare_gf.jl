@@ -1,5 +1,13 @@
 ###--------------imaginary time----------------
 
+function gf(lattice::AbstractGrassmannLattice, a::NTuple{N, ContourIndex}, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
+            alg::IntegrationAlgorithm=ExactIntegrate(), Z::Number = integrate(lattice, A, B..., alg=alg)) where {N}
+    pos = map(x->lattice[x], a)
+    t = GTerm(pos, coeff=1)
+    A2 = _mult_A(t, A)
+    return integrate(lattice, A2, B..., alg=alg)/Z    
+end
+
 """
     gf(lattice::AbstractGrassmannLattice, a::ContourIndex, b::ContourIndex, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
                 alg=ExactIntegrate(), Z = integrate(lattice, A, B..., alg=alg))

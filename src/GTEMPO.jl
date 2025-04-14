@@ -45,6 +45,7 @@ export cached_gf, cached_Gτ, cached_Gt, cached_Gm, cached_greater, cached_lesse
 export cached_occupation, cached_electriccurrent, cached_electriccurrent_fast
 export cached_gf_fast, cached_Gτ_fast, cached_Gt_fast, cached_Gm_fast
 export cached_greater_fast, cached_lesser_fast
+export nn, cached_nn
 
 # utilities for TEMPO
 # exact models
