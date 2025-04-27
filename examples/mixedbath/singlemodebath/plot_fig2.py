@@ -84,7 +84,7 @@ chi = 140
 mu = 0.
 
 t = 10
-Nt = 200
+Nt = 100
 beta = 5
 # Ntau = 20
 

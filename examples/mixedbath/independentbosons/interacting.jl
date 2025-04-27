@@ -1,5 +1,6 @@
 push!(LOAD_PATH, "../../../src")
 using GTEMPO
+using LinearAlgebra: norm
 
 
 # include("../../../src/includes.jl")
@@ -80,20 +81,24 @@ function main_mixed(U, ϵ_d=U/2; β=1, Nτ=20, t=1, Nt=100, d=1, chi = 100, α=1
 	fadt = sysdynamics!(fmpsI, flattice, exact_model, trunc=trunc)
 	lattice, adt = focktograssmann(lattice.ordering, flattice, fadt, trunc=trunc)
 
-	
+	blk = vacuumstate(lattice)
 	for band in 1:lattice.bands
-		adt = boundarycondition!(adt, lattice, band=band, trunc=trunc)
-		adt = bulkconnection!(adt, lattice, band=band, trunc=trunc)
+		blk = boundarycondition!(blk, lattice, band=band, trunc=trunc)
+		blk = bulkconnection!(blk, lattice, band=band, trunc=trunc)
 	end
 	println("bond dimension of bosonic adt is ", bond_dimension(adt))
+	println("bond dimension of boundary and bulk connections is ", bond_dimension(blk))
 
 
-	cache = environments(lattice, adt)
+	cache = environments(lattice, adt, blk)
 
-	@time g₁ = cached_greater_fast(lattice, adt, band=1, cache=cache) 
-	@time g₂ = cached_lesser_fast(lattice, adt, band=1, cache=cache) 
-	@time g₃ = cached_Gτ_fast(lattice, adt, band=1, cache=cache) 
-	@time ns = cached_occupation(lattice, adt, cache=cache)
+	@time g₁ = cached_greater_fast(lattice, adt, blk, band=1, cache=cache) 
+	@time g₂ = cached_lesser_fast(lattice, adt, blk, band=1, cache=cache) 
+	@time g₃ = cached_Gτ_fast(lattice, adt, blk, band=1, cache=cache) 
+	@time g₃′ = cached_Gτ_fast(lattice, adt, blk, band=2, cache=cache) 
+	@time ns = cached_occupation(lattice, adt, blk, cache=cache)
+
+	println("Gτ rerror is: " , norm(g₃-g₃′) / norm(g₃))
 
 	g₁, g₂ = -im*g₁, im*g₂
 
@@ -107,11 +112,11 @@ function main_mixed(U, ϵ_d=U/2; β=1, Nτ=20, t=1, Nt=100, d=1, chi = 100, α=1
 		write(f, JSON.json(results))
 	end
 
-	return g₁, g₂, real(g₃), ns
+	return g₁, g₂, g₃, ns
 end
 
 function main_mixed_vs_chi_Nt(U, ϵ_d=U/2; β=5, Nτ=50, t=5, d=1, α=1)
-	for chi in [80,120, 160, 200, 240, 300]
+	for chi in [100, 200, 300, 400, 500, 600]
 		for Nt in [50, 100,200,400]
 			main_mixed(U, ϵ_d, β=β, Nτ=Nτ, t=t, Nt=Nt, d=d, α=α, chi=chi)
 		end
