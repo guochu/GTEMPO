@@ -103,6 +103,8 @@ function main_real(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1,
 
 	fbath = fermionicbath(DiracDelta(ω=ω₁, α=α₁), β=β, μ=0)
 
+	exact_model = AndersonIM(U=0., μ=-ϵ_d)
+
 	mpspath = "data/noninteracting_realgtempo_beta$(β)_t$(t)_dt$(δt)_omega0$(ω₀)_alpha0$(α₀)_omega1$(ω₁)_alpha1$(α₁)_chi$(chi).mps"
 	if ispath(mpspath)
 		println("load MPS-IF from path ", mpspath)
@@ -129,7 +131,6 @@ function main_real(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1,
 
 	println("bond dimension of mpsI is ", bond_dimension(fmpsI1), " ", bond_dimension(mpsI2))
 
-	exact_model = AndersonIM(U=0., μ=-ϵ_d)
 
 	fadt = sysdynamics!(fmpsI1, flattice, exact_model, trunc=trunc)
 	lattice, mpsI1 = focktograssmann(lattice.ordering, flattice, fadt, trunc=trunc)
