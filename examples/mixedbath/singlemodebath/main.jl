@@ -116,6 +116,13 @@ function main_real(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1,
 		fcorr = correlationfunction(fbath, lattice)
 		@time mpsI2 = hybriddynamics(lattice, fcorr, trunc=trunc)
 
+
+		for band in 1:lattice.bands
+			mpsI2 = boundarycondition!(mpsI2, lattice, band=band, trunc=trunc)
+			mpsI2 = bulkconnection!(mpsI2, lattice, band=band, trunc=trunc)
+		end
+		mpsI2 = systhermalstate!(mpsI2, lattice, exact_model, β=β)
+
 		println("save MPS-IF to path ", mpspath)
 		Serialization.serialize(mpspath, (fmpsI1, mpsI2))
 	end
@@ -127,11 +134,6 @@ function main_real(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1,
 	fadt = sysdynamics!(fmpsI1, flattice, exact_model, trunc=trunc)
 	lattice, mpsI1 = focktograssmann(lattice.ordering, flattice, fadt, trunc=trunc)
 
-	for band in 1:lattice.bands
-		mpsI1 = boundarycondition!(mpsI1, lattice, band=band, trunc=trunc)
-		mpsI1 = bulkconnection!(mpsI1, lattice, band=band, trunc=trunc)
-	end
-	mpsI1 = systhermalstate!(mpsI1, lattice, exact_model, β=β)
 	println("bond dimension of bosonic adt is ", bond_dimension(mpsI1))
 
 
@@ -193,6 +195,11 @@ function main_mixed(ϵ_d; β=1, t=1, Nτ=20, Nt=100, ω₀=1, α₀=0.5, ω₁=1
 		fcorr = correlationfunction(fbath, lattice)
 		@time mpsI2 = hybriddynamics(lattice, fcorr, trunc=trunc)
 
+		for band in 1:lattice.bands
+			mpsI2 = boundarycondition!(mpsI2, lattice, band=band, trunc=trunc)
+			mpsI2 = bulkconnection!(mpsI2, lattice, band=band, trunc=trunc)
+		end
+
 		println("save MPS-IF to path ", mpspath)
 		Serialization.serialize(mpspath, (fmpsI1, mpsI2))
 	end
@@ -204,10 +211,6 @@ function main_mixed(ϵ_d; β=1, t=1, Nτ=20, Nt=100, ω₀=1, α₀=0.5, ω₁=1
 	fadt = sysdynamics!(fmpsI1, flattice, exact_model, trunc=trunc)
 	lattice, mpsI1 = focktograssmann(lattice.ordering, flattice, fadt, trunc=trunc)
 
-	for band in 1:lattice.bands
-		mpsI1 = boundarycondition!(mpsI1, lattice, band=band, trunc=trunc)
-		mpsI1 = bulkconnection!(mpsI1, lattice, band=band, trunc=trunc)
-	end
 	println("bond dimension of bosonic adt is ", bond_dimension(mpsI1))
 
 	cache = environments(lattice, mpsI1, mpsI2)
@@ -234,7 +237,7 @@ function main_mixed(ϵ_d; β=1, t=1, Nτ=20, Nt=100, ω₀=1, α₀=0.5, ω₁=1
 end
 
 function main_real_vs_chi(ϵ_d; β=5, t=10, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1)
-	for chi in [100, 150, 200, 250, 300]
+	for chi in [100, 200, 300, 400, 500]
 		main_real(ϵ_d, β=β, t=t, N=N, ω₀=ω₀, α₀=α₀, ω₁=ω₁, α₁=α₁, chi=chi)
 	end
 end

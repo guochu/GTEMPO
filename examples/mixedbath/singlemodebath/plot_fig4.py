@@ -23,8 +23,9 @@ def read_real_tempo(beta, t, N, mu, omega0, alpha0, omega1, alpha1, chi=80):
 		data = json.loads(data)
 	gt = parse_complex_array(data['gt'])
 	lt = parse_complex_array(data['lt'])
+	nn = parse_complex_array(data['nn'])
 	ts = asarray(data['ts'])
-	return ts-ts[0], gt, lt
+	return ts-ts[0], gt, lt, nn
 
 def read_mixed_tempo(beta, Ntau, t, N, mu, omega0, alpha0, omega1, alpha1, chi=80):
 	dt = t / N
@@ -35,8 +36,9 @@ def read_mixed_tempo(beta, Ntau, t, N, mu, omega0, alpha0, omega1, alpha1, chi=8
 		data = json.loads(data)
 	gt = parse_complex_array(data['gt'])
 	lt = parse_complex_array(data['lt'])
+	nn = parse_complex_array(data['nn'])
 	ts = asarray(data['ts'])
-	return ts-ts[0], gt, lt
+	return ts-ts[0], gt, lt, nn
 
 def read_neq_ed(beta, t, N, mu, omega0, alpha0, omega1, alpha1):
 	filename = 'result/noninteracting_neq_ED_real_beta%s_mu%s_t%s_N%s_omega0%s_alpha0%s_omega1%s_alpha1%s.json'%(beta, mu, t, N, omega0, alpha0, omega1, alpha1)
@@ -45,7 +47,8 @@ def read_neq_ed(beta, t, N, mu, omega0, alpha0, omega1, alpha1):
 		data = json.loads(data)
 	gt = parse_complex_array(data['gt'])
 	lt = parse_complex_array(data['lt'])
-	return data['ts'], gt, lt
+	nn = parse_complex_array(data['nn'])
+	return data['ts'], gt, lt, nn
 
 def read_eq_ed(beta, t, N, mu, omega0, alpha0, omega1, alpha1):
 	filename = 'result/noninteracting_eq_ED_real_beta%s_mu%s_t%s_N%s_omega0%s_alpha0%s_omega1%s_alpha1%s.json'%(beta, mu, t, N, omega0, alpha0, omega1, alpha1)
@@ -54,7 +57,8 @@ def read_eq_ed(beta, t, N, mu, omega0, alpha0, omega1, alpha1):
 		data = json.loads(data)
 	gt = parse_complex_array(data['gt'])
 	lt = parse_complex_array(data['lt'])
-	return data['ts'], gt, lt
+	nn = parse_complex_array(data['nn'])
+	return data['ts'], gt, lt, nn
 
 
 def mse_error(a, b):
@@ -79,18 +83,18 @@ omega0 = 1
 alpha0 = 0.5
 omega1 = 1
 alpha1 = 1
-chi = 300
+chi = 500
 
 mu = 0.
 
-t = 10
+t = 5
 Nt = 200
 beta = 5
-Ntau = 200
+Ntau = 50
 
 # mixed time data
-ts, gt, lt = read_eq_ed(beta, t, Nt, mu, omega0, alpha0, omega1, alpha1)
-ts2, gt2, lt2 = read_mixed_tempo(beta, Ntau, t, Nt, mu, omega0, alpha0, omega1, alpha1, chi)
+ts, gt, lt, nn = read_eq_ed(beta, t, Nt, mu, omega0, alpha0, omega1, alpha1)
+ts2, gt2, lt2, nn2 = read_mixed_tempo(beta, Ntau, t, Nt, mu, omega0, alpha0, omega1, alpha1, chi)
 
 ax[0,0].plot(ts, gt.real, ls='-', color='k', linewidth=linewidth, label=r'ED')
 ax[0,0].plot(ts2, gt2.real, ls='--', color='k', linewidth=linewidth, label=r'GTEMPO')
@@ -143,12 +147,12 @@ ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 ax2.annotate(r'(d)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
 
 
-chis = [100, 120, 140, 160, 200, 240, 300]
+chis = [100, 200, 300, 400, 500]
 gt_errs = []
 lt_errs = []
 
 for chi in chis:
-	ts2, gt2, lt2 = read_mixed_tempo(beta, Ntau, t, Nt, mu, omega0, alpha0, omega1, alpha1, chi)
+	ts2, gt2, lt2, nn2 = read_mixed_tempo(beta, Ntau, t, Nt, mu, omega0, alpha0, omega1, alpha1, chi)
 	gt_errs.append(mse_error(gt, gt2))
 	lt_errs.append(mse_error(lt, lt2))
 
