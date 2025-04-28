@@ -149,8 +149,8 @@ ax[0,0].legend(fontsize=12)
 # interacting case
 
 beta = 1
-Ntau = 10
-Nt = 50
+Ntau = 20
+Nt = 100
 mu = 0.5
 U = 1
 

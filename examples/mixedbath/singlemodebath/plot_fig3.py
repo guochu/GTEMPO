@@ -83,12 +83,12 @@ omega0 = 1
 alpha0 = 0.5
 omega1 = 1
 alpha1 = 1
-chi = 250
+chi = 500
 
 mu = 0.
 
 t = 10
-Nt = 200
+Nt = 400
 beta = 5
 # Ntau = 20
 
@@ -109,10 +109,10 @@ ax[0].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[0].locator_params(axis='both', nbins=6)
 ax[0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 ax[0].annotate(r'(a)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
-# ax[0,0].legend(loc='lower right', fontsize=12)
+ax[0].legend(loc='lower right', fontsize=10)
 
 
-chis = [100, 150, 200, 250,300]
+chis = [100, 200,300, 400, 500]
 nn_errs = []
 
 for chi in chis:

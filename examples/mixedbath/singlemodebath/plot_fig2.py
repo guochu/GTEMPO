@@ -83,12 +83,12 @@ omega0 = 1
 alpha0 = 0.5
 omega1 = 1
 alpha1 = 1
-chi = 250
+chi = 300
 
 mu = 0.
 
 t = 10
-Nt = 200
+Nt = 400
 beta = 5
 # Ntau = 20
 
@@ -147,7 +147,7 @@ ax2.locator_params(axis='both', nbins=6)
 ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 
-chis = [100, 150, 200, 250, 300]
+chis = [100, 200, 300, 400, 500]
 gt_errs = []
 lt_errs = []
 
