@@ -154,12 +154,12 @@ Nt = 50
 mu = 0.5
 U = 1
 
-chi = 80
+chi = 100
 
 taus, gtau = read_interacting_imag_analytic(beta, Ntau, U, mu, d, alpha)
 ts, gt, lt = read_interacting_real_analytic(beta, t, Nt, U, mu, d, alpha)
 gf = gt - lt
-print(lt[:5])
+# print(gtau)
 
 ax[1,0].plot(taus, gtau, ls='--', color='k', linewidth=linewidth, label=r'Analytic')
 ax[1,1].plot(ts, lt.imag, ls='--', color='k', linewidth=linewidth, label=r'Analytic')
@@ -167,7 +167,8 @@ ax[1,1].plot(ts, lt.imag, ls='--', color='k', linewidth=linewidth, label=r'Analy
 
 ts2, taus2, gt2, lt2, gtau2 = read_interacting_mixed_tempo(beta, Ntau, t, Nt, U, mu, d, alpha, chi)
 gf2 = gt2 - lt2
-print(lt2[:5])
+# print(lt2[:5])
+# print(gtau2)
 
 
 ax[1,0].plot(taus2, gtau2.real, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')

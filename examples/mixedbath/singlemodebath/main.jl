@@ -234,7 +234,7 @@ function main_mixed(ϵ_d; β=1, t=1, Nτ=20, Nt=100, ω₀=1, α₀=0.5, ω₁=1
 end
 
 function main_real_vs_chi(ϵ_d; β=5, t=10, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1)
-	for chi in [100, 120, 140, 160]
+	for chi in [100, 150, 200, 250, 300]
 		main_real(ϵ_d, β=β, t=t, N=N, ω₀=ω₀, α₀=α₀, ω₁=ω₁, α₁=α₁, chi=chi)
 	end
 end

@@ -79,22 +79,22 @@ omega0 = 1
 alpha0 = 0.5
 omega1 = 1
 alpha1 = 1
-chi = 140
+chi = 300
 
 mu = 0.
 
 t = 10
-Nt = 500
+Nt = 200
 beta = 5
-# Ntau = 20
+Ntau = 200
 
-# real time data
-ts, gt, lt = read_neq_ed(beta, t, Nt, mu, omega0, alpha0, omega1, alpha1)
-ts2, gt2, lt2 = read_real_tempo(beta, t, Nt, mu, omega0, alpha0, omega1, alpha1, chi)
-
+# mixed time data
+ts, gt, lt = read_eq_ed(beta, t, Nt, mu, omega0, alpha0, omega1, alpha1)
+ts2, gt2, lt2 = read_mixed_tempo(beta, Ntau, t, Nt, mu, omega0, alpha0, omega1, alpha1, chi)
 
 ax[0,0].plot(ts, gt.real, ls='-', color='k', linewidth=linewidth, label=r'ED')
-ax[0,0].plot(ts2, gt2.real, ls='--', color='k', linewidth=linewidth, markersize=markersize, markerfacecolor='none', label=r'$\chi=%s$'%(chi))
+ax[0,0].plot(ts2, gt2.real, ls='--', color='k', linewidth=linewidth, label=r'GTEMPO')
+
 
 ax[0,0].set_xlabel(r'$t$', fontsize=fontsize)
 ax[0,0].set_ylabel(r'${\rm Re}[G^{>}(t)]$', fontsize=fontsize)
@@ -102,16 +102,15 @@ ax[0,0].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[0,0].locator_params(axis='both', nbins=6)
 ax[0,0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 ax[0,0].annotate(r'(a)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
-# ax[0,0].legend(loc='lower right', fontsize=12)
+# ax[0,0].legend(loc='upper right', fontsize=12)
+
 
 ax2color = 'y'
 
 ax2 = ax[0,0].twinx()
 
-
 ax2.plot(ts, gt.imag, ls='-', color=ax2color, linewidth=linewidth, label=r'ED')
 ax2.plot(ts2, gt2.imag, ls='--', color=ax2color, linewidth=linewidth, label=r'GTEMPO')
-
 
 ax2.set_ylabel(r'${\rm Im}[G^{>}(t)]$', fontsize=fontsize, color=ax2color)
 ax2.tick_params(axis='both', which='major', labelsize=labelsize, colors=ax2color)
@@ -120,7 +119,7 @@ ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 
 
-ax[1,0].plot(ts, lt.real, ls='-', color='k', linewidth=linewidth, label=r'ED')
+ax[1,0].plot(ts, lt.real, ls='--', color='k', linewidth=linewidth, label=r'ED')
 ax[1,0].plot(ts2, lt2.real, ls='--', color='k', linewidth=linewidth, label=r'GTEMPO')
 
 ax[1,0].set_xlabel(r'$t$', fontsize=fontsize)
@@ -141,14 +140,15 @@ ax2.set_ylabel(r'${\rm Im}[G^{<}(t)]$', fontsize=fontsize, color=ax2color)
 ax2.tick_params(axis='both', which='major', labelsize=labelsize, colors=ax2color)
 ax2.locator_params(axis='both', nbins=6)
 ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+ax2.annotate(r'(d)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
 
 
-chis = [100, 120, 140, 160]
+chis = [100, 120, 140, 160, 200, 240, 300]
 gt_errs = []
 lt_errs = []
 
 for chi in chis:
-	ts2, gt2, lt2 = read_real_tempo(beta, t, Nt, mu, omega0, alpha0, omega1, alpha1, chi)
+	ts2, gt2, lt2 = read_mixed_tempo(beta, Ntau, t, Nt, mu, omega0, alpha0, omega1, alpha1, chi)
 	gt_errs.append(mse_error(gt, gt2))
 	lt_errs.append(mse_error(lt, lt2))
 
@@ -169,8 +169,9 @@ ax[1,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 ax[1,1].annotate(r'(d)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
 
 
+
 plt.tight_layout(pad=0.5)
 
-plt.savefig('independentbosons2.pdf', bbox_inches='tight')
+plt.savefig('independentbosons4.pdf', bbox_inches='tight')
 
 plt.show()
