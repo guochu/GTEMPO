@@ -123,7 +123,7 @@ ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 
 
-ax[1,0].plot(ts, lt.real, ls='--', color='k', linewidth=linewidth, label=r'ED')
+ax[1,0].plot(ts, lt.real, ls='-', color='k', linewidth=linewidth, label=r'ED')
 ax[1,0].plot(ts2, lt2.real, ls='--', color='k', linewidth=linewidth, label=r'GTEMPO')
 
 ax[1,0].set_xlabel(r'$t$', fontsize=fontsize)

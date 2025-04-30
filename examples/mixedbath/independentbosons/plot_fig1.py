@@ -149,12 +149,13 @@ ax[0,0].legend(fontsize=12)
 # interacting case
 
 beta = 1
-Ntau = 20
-Nt = 100
+Ntau = 10
+t = 2
+Nt = 20
 mu = 0.5
 U = 1
 
-chi = 100
+chi = 400
 
 taus, gtau = read_interacting_imag_analytic(beta, Ntau, U, mu, d, alpha)
 ts, gt, lt = read_interacting_real_analytic(beta, t, Nt, U, mu, d, alpha)
