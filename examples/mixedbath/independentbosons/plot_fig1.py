@@ -106,7 +106,7 @@ markers = ['o', '^', '+']
 fig, ax = plt.subplots(2,2, figsize=(8,6))
 
 
-chi = 120
+chi = 80
 
 mu = 0.
 
@@ -151,11 +151,11 @@ ax[0,0].legend(fontsize=12)
 beta = 1
 Ntau = 10
 t = 2
-Nt = 20
+Nt = 40
 mu = 0.5
 U = 1
 
-chi = 400
+chi = 600
 
 taus, gtau = read_interacting_imag_analytic(beta, Ntau, U, mu, d, alpha)
 ts, gt, lt = read_interacting_real_analytic(beta, t, Nt, U, mu, d, alpha)

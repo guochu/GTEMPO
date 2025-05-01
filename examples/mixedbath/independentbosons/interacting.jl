@@ -81,22 +81,20 @@ function main_mixed(U, ϵ_d=U/2; β=1, Nτ=20, t=1, Nt=100, d=1, chi = 100, α=1
 	fadt = sysdynamics!(fmpsI, flattice, exact_model, trunc=trunc)
 	lattice, adt = focktograssmann(lattice.ordering, flattice, fadt, trunc=trunc)
 
-	blk = vacuumstate(lattice)
 	for band in 1:lattice.bands
-		blk = boundarycondition!(blk, lattice, band=band, trunc=trunc)
-		blk = bulkconnection!(blk, lattice, band=band, trunc=trunc)
+		adt = boundarycondition!(adt, lattice, band=band, trunc=trunc)
+		adt = bulkconnection!(adt, lattice, band=band, trunc=trunc)
 	end
 	println("bond dimension of bosonic adt is ", bond_dimension(adt))
-	println("bond dimension of boundary and bulk connections is ", bond_dimension(blk))
 
 
-	cache = environments(lattice, adt, blk)
+	cache = environments(lattice, adt)
 
-	@time g₁ = cached_greater_fast(lattice, adt, blk, band=1, cache=cache) 
-	@time g₂ = cached_lesser_fast(lattice, adt, blk, band=1, cache=cache) 
-	@time g₃ = cached_Gτ_fast(lattice, adt, blk, band=1, cache=cache) 
-	@time g₃′ = cached_Gτ_fast(lattice, adt, blk, band=2, cache=cache) 
-	@time ns = cached_occupation(lattice, adt, blk, cache=cache)
+	@time g₁ = cached_greater_fast(lattice, adt, band=1, cache=cache) 
+	@time g₂ = cached_lesser_fast(lattice, adt, band=1, cache=cache) 
+	@time g₃ = cached_Gτ_fast(lattice, adt, band=1, cache=cache) 
+	@time g₃′ = cached_Gτ_fast(lattice, adt, band=2, cache=cache) 
+	@time ns = cached_occupation(lattice, adt, cache=cache)
 
 	println("Gτ rerror is: " , norm(g₃-g₃′) / norm(g₃))
 
@@ -124,7 +122,7 @@ function main_mixed_vs_chi_Nt(U, ϵ_d=U/2; β=5, Nτ=50, t=5, d=1, α=1)
 end
 
 function main_mixed_vs_chi(U, ϵ_d=U/2; β=5, Nτ=50, t=5, Nt=50, d=1, α=1)
-	for chi in [100, 200, 300, 400, 500, 600]
+	for chi in [400, 500, 600, 700, 800, 900, 1000]
 		main_mixed(U, ϵ_d, β=β, Nτ=Nτ, t=t, Nt=Nt, d=d, α=α, chi=chi)
 	end
 end
