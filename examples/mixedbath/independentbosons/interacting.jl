@@ -54,8 +54,7 @@ function main_imag(U, ϵ_d=U/2; β=1, Nτ=20, d=1, chi = 100, α=1)
 
 	τs = [i*δτ for i in 1:Nτ+1]
 
-	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
-	truncK = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
+	trunc = truncdimcutoff(D=chi, ϵ=1.0e-14, add_back=0)
 
 	
 	lattice = GrassmannLattice(N=Nτ, δτ=δτ, contour=:imag, bands=2, order=1)

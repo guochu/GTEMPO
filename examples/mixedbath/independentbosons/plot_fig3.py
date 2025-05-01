@@ -47,6 +47,7 @@ def read_noninteracting_imag_analytic(beta, N, mu, d, alpha):
 	gt = data['gf']
 	return data['ts'], gt
 
+
 def read_noninteracting_real_analytic(beta, t, N, mu, d, alpha):
 	filename = 'result/noninteracting_analytic_real_beta%s_mu%s_t%s_N%s_d%s_alpha%s.json'%(beta, mu, t, N, d, alpha)
 	with open(filename, 'r') as f:
@@ -70,6 +71,16 @@ def read_interacting_mixed_tempo(beta, Ntau, t, N, U, mu, d, alpha, chi=80):
 	ts = asarray(data['ts'])
 	taus = asarray(data['taus'])
 	return ts-ts[0], taus-taus[0], gt, lt, gtau
+
+def read_interacting_imag_tempo(beta, Ntau, U, mu, d, alpha, chi=80):
+	dtau = beta / Ntau
+	filename = 'result/interacting_imaggtempo_beta%s_dtau%s_U%s_mu%s_d%s_alpha%s_chi%s.json'%(beta, dtau, U, mu, d, alpha, chi)
+	with open(filename, 'r') as f:
+		data = f.read()
+		data = json.loads(data)
+	gtau = asarray(data['gtau'])
+	taus = asarray(data['taus'])
+	return taus-taus[0], gtau
 
 def read_interacting_imag_analytic(beta, N, U, mu, d, alpha):
 	filename = 'result/interacting_analytic_imag_beta%s_U%s_mu%s_N%s_d%s_alpha%s.json'%(beta, U, mu, N, d, alpha)
@@ -95,87 +106,66 @@ def mse_error(a, b):
 	v = norm(diff)
 	return sqrt(v * v / L)
 
-fontsize = 14
-labelsize = 12
-linewidth = 1.5
-markersize = 4
+fontsize = 20
+labelsize = 18
+linewidth = 2.5
+markersize = 10
 
 colors = ['b', 'g', 'c', 'y', 'r']
 markers = ['o', '^', '+']
 
-fig, ax = plt.subplots(2,2, figsize=(8,6))
+fig, ax = plt.subplots(1,1, figsize=(8,6))
 
 
-chi = 120
+chi = 100
 
-mu = 0.
+U = 1
+mu = 0.5
 
-t = 5
-Nt = 100
 beta = 5
 Ntau = 50
 d = 1
 alpha = 1
 
 # noninteracting case
-taus, gtau = read_noninteracting_imag_analytic(beta, Ntau, mu, d, alpha)
-ts, gt, lt = read_noninteracting_real_analytic(beta, t, Nt, mu, d, alpha)
-# gf = gt - lt
+taus, gtau = read_interacting_imag_analytic(beta, Ntau, U, mu, d, alpha)
 
-ts2, taus2, gt2, lt2, gtau2 = read_noninteracting_mixed_tempo(beta, Ntau, t, Nt, mu, d, alpha, chi)
-# gf2 = gt2 - lt2
-
-chi2 = 100
-taus3, gtau3 = read_noninteracting_imag_tempo(beta, Ntau, mu, d, alpha, chi2)
+taus2, gtau2 = read_interacting_imag_tempo(beta, Ntau, U, mu, d, alpha, chi)
 # ts4, taus4, gt4, lt4, gtau4 = read_noninteracting_mixed_tempo(beta, Ntau, 0.1, 10, mu, d, alpha, chi)
 
+ax.plot(taus, gtau, ls='-', color='k', linewidth=linewidth, label=r'Analytic')
+ax.plot(taus2, gtau2.real, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
 
-ax[0,0].plot(ts, gt.real, ls='-', color='k', linewidth=linewidth, label=r'Analytic')
-ax[0,0].plot(ts2, gt2.real, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
+ax.set_xlabel(r'$\tau$', fontsize=fontsize)
+ax.set_ylabel(r'$G(\tau)$', fontsize=fontsize)
+ax.tick_params(axis='both', which='major', labelsize=labelsize)
+ax.locator_params(axis='both', nbins=6)
+ax.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
-ax[0,0].set_xlabel(r'$t$', fontsize=fontsize)
-ax[0,0].set_ylabel(r'${\rm Re}[G^{>}(t)]$', fontsize=fontsize)
-ax[0,0].tick_params(axis='both', which='major', labelsize=labelsize)
-ax[0,0].locator_params(axis='both', nbins=6)
-ax[0,0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[0,0].annotate(r'(a)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
+gtau_errors = []
+chis = [20, 40,60,80,100, 120]
 
-ax[0,0].legend(fontsize=12)
-
-ax[0,1].plot(ts, gt.imag, ls='-', color='k', linewidth=linewidth, label=r'GTEMPO')
-ax[0,1].plot(ts2, gt2.imag, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
-
-ax[0,1].set_xlabel(r'$t$', fontsize=fontsize)
-ax[0,1].set_ylabel(r'${\rm Im}[G^{>}(t)]$', fontsize=fontsize)
-ax[0,1].tick_params(axis='both', which='major', labelsize=labelsize)
-ax[0,1].locator_params(axis='both', nbins=6)
-ax[0,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[0,1].annotate(r'(b)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
+for i, chi in enumerate(chis):
+	taus2, gtau2 = read_interacting_imag_tempo(beta, Ntau, U, mu, d, alpha, chi)
+	gtau_errors.append(mse_error(gtau, gtau2.real))
 
 
+linewidth_s = 1.4
+markersize_s = 4
+fontsize_s = 16
+labelsize_s = 14
 
-ax[1,0].plot(ts, lt.real, ls='-', color='k', linewidth=linewidth, label=r'GTEMPO')
-ax[1,0].plot(ts2, lt2.real, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
+ax1 = ax.inset_axes([0.25, 0.2, 0.5, 0.5])
 
-ax[1,0].set_xlabel(r'$t$', fontsize=fontsize)
-ax[1,0].set_ylabel(r'${\rm Re}[G^{<}(t)]$', fontsize=fontsize)
-ax[1,0].tick_params(axis='both', which='major', labelsize=labelsize)
-ax[1,0].locator_params(axis='both', nbins=6)
-ax[1,0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[1,0].annotate(r'(c)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
+ax1.plot(chis, gtau_errors, ls='--', color='k', marker='o', markersize=markersize, markerfacecolor='none', linewidth=linewidth_s, label=r'Partial')
 
-
-ax[1,1].plot(ts, lt.imag, ls='-', color='k', linewidth=linewidth, label=r'GTEMPO')
-ax[1,1].plot(ts2, lt2.imag, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
-
-ax[1,1].set_xlabel(r'$t$', fontsize=fontsize)
-ax[1,1].set_ylabel(r'${\rm Im}[G^{<}(t)]$', fontsize=fontsize)
-ax[1,1].tick_params(axis='both', which='major', labelsize=labelsize)
-ax[1,1].locator_params(axis='both', nbins=6)
-ax[1,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[1,1].annotate(r'(d)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
+ax1.set_ylabel(r'Error', fontsize=fontsize_s)
+ax1.set_xlabel(r'$\chi$', fontsize=fontsize_s)
+ax1.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 
+
+ax.legend(fontsize=14)
 
 plt.tight_layout(pad=0.5)
 
