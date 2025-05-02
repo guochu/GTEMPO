@@ -118,9 +118,9 @@ alpha = 1
 # interacting case
 
 beta = 1
-Ntau = 20
+Ntau = 10
 t = 1
-Nt = 10
+Nt = 40
 mu = 0.5
 U = 1
 
@@ -133,7 +133,7 @@ ts, gt, lt = read_interacting_real_analytic(beta, t, Nt, U, mu, d, alpha)
 ts2, taus2, gt2, lt2, gtau2 = read_interacting_mixed_tempo(beta, Ntau, t, Nt, U, mu, d, alpha, chi)
 
 
-ax[0,0].plot(ts, gt.real, ls='-', color='k', linewidth=linewidth, label=r'GTEMPO')
+ax[0,0].plot(ts, gt.real, ls='-', color='k', linewidth=linewidth, label=r'Analytic')
 ax[0,0].plot(ts2, gt2.real, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
 
 ax[0,0].set_xlabel(r'$t$', fontsize=fontsize)

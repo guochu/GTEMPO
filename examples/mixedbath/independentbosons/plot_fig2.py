@@ -125,10 +125,6 @@ ts, gt, lt = read_noninteracting_real_analytic(beta, t, Nt, mu, d, alpha)
 ts2, taus2, gt2, lt2, gtau2 = read_noninteracting_mixed_tempo(beta, Ntau, t, Nt, mu, d, alpha, chi)
 # gf2 = gt2 - lt2
 
-chi2 = 100
-taus3, gtau3 = read_noninteracting_imag_tempo(beta, Ntau, mu, d, alpha, chi2)
-# ts4, taus4, gt4, lt4, gtau4 = read_noninteracting_mixed_tempo(beta, Ntau, 0.1, 10, mu, d, alpha, chi)
-
 
 ax[0,0].plot(ts, gt.real, ls='-', color='k', linewidth=linewidth, label=r'Analytic')
 ax[0,0].plot(ts2, gt2.real, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')

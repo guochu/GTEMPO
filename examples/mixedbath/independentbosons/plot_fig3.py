@@ -117,7 +117,7 @@ markers = ['o', '^', '+']
 fig, ax = plt.subplots(1,1, figsize=(8,6))
 
 
-chi = 100
+chi = 160
 
 U = 1
 mu = 0.5
@@ -143,7 +143,7 @@ ax.locator_params(axis='both', nbins=6)
 ax.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 gtau_errors = []
-chis = [20, 40,60,80,100, 120]
+chis = [20, 40,60,80,100, 120, 140, 160]
 
 for i, chi in enumerate(chis):
 	taus2, gtau2 = read_interacting_imag_tempo(beta, Ntau, U, mu, d, alpha, chi)
@@ -159,7 +159,7 @@ ax1 = ax.inset_axes([0.25, 0.2, 0.5, 0.5])
 
 ax1.plot(chis, gtau_errors, ls='--', color='k', marker='o', markersize=markersize, markerfacecolor='none', linewidth=linewidth_s, label=r'Partial')
 
-ax1.set_ylabel(r'Error', fontsize=fontsize_s)
+ax1.set_ylabel(r'$\mathcal{E}$', fontsize=fontsize_s)
 ax1.set_xlabel(r'$\chi$', fontsize=fontsize_s)
 ax1.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 

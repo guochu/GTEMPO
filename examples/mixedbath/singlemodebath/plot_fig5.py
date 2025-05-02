@@ -97,7 +97,7 @@ ts, gt, lt, nn = read_eq_ed(beta, t, Nt, mu, omega0, alpha0, omega1, alpha1)
 ts2, gt2, lt2, nn2 = read_mixed_tempo(beta, Ntau, t, Nt, mu, omega0, alpha0, omega1, alpha1, chi)
 
 ax[0].plot(ts[2:], nn.real[2:], ls='-', color='k', linewidth=linewidth, label=r'ED')
-ax[0].plot(ts2[2:], nn2.real, ls='--', color='k', linewidth=linewidth, markersize=markersize, markerfacecolor='none', label=r'$\chi=%s$'%(chi))
+ax[0].plot(ts2[2:], nn2.real, ls='--', color='g', linewidth=linewidth, markersize=markersize, markerfacecolor='none', label=r'GTEMPO, $\chi=%s$'%(chi))
 
 ax[0].set_xlabel(r'$t$', fontsize=fontsize)
 ax[0].set_ylabel(r'${\rm Re}[G^{>}(t)]$', fontsize=fontsize)
@@ -105,7 +105,7 @@ ax[0].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[0].locator_params(axis='both', nbins=6)
 ax[0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 ax[0].annotate(r'(a)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
-
+ax[0].legend(fontsize=12)
 
 
 chis = [100, 200, 300, 400, 500]
@@ -116,7 +116,7 @@ for chi in chis:
 	ts2, gt2, lt2, nn2 = read_mixed_tempo(beta, Ntau, t, Nt, mu, omega0, alpha0, omega1, alpha1, chi)
 	nn_errs.append(mse_error(nn[2:], nn2))
 
-ax[1].plot(chis, nn_errs, ls='--', color='c', linewidth=linewidth, marker='o', markersize=markersize, markerfacecolor='none')
+ax[1].plot(chis, nn_errs, ls='--', color='g', linewidth=linewidth, marker='o', markersize=markersize, markerfacecolor='none')
 ax[1].set_xlabel(r'$\chi$', fontsize=fontsize)
 ax[1].set_ylabel(r'$\mathcal{E}$', fontsize=fontsize)
 ax[1].tick_params(axis='both', which='major', labelsize=labelsize)
