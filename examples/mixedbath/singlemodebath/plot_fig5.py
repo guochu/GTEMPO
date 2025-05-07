@@ -90,7 +90,7 @@ mu = 0.
 t = 5
 Nt = 200
 beta = 5
-Ntau = 50
+Ntau = 100
 
 # mixed time data
 ts, gt, lt, nn = read_eq_ed(beta, t, Nt, mu, omega0, alpha0, omega1, alpha1)
@@ -108,7 +108,7 @@ ax[0].annotate(r'(a)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsiz
 ax[0].legend(fontsize=12)
 
 
-chis = [100, 200, 300, 400, 500]
+chis = [100, 200, 300, 400, 500, 600, 700]
 nn_errs = []
 
 

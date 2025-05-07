@@ -118,9 +118,9 @@ alpha = 1
 # interacting case
 
 beta = 1
-Ntau = 10
+Ntau =10
 t = 1
-Nt = 40
+Nt = 10
 mu = 0.5
 U = 1
 

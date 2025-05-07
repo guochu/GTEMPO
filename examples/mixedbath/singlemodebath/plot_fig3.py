@@ -112,7 +112,7 @@ ax[0].annotate(r'(a)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsiz
 ax[0].legend(loc='lower right', fontsize=10)
 
 
-chis = [100, 200,300, 400, 500]
+chis = [100, 200,300, 400, 500, 600]
 nn_errs = []
 
 for chi in chis:

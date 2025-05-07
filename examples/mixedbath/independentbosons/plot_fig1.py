@@ -111,7 +111,7 @@ chi = 100
 mu = 0.
 
 beta = 5
-Ntau = 25
+Ntau = 100
 d = 1
 alpha = 1
 
@@ -145,11 +145,11 @@ labelsize_s = 14
 
 ax1 = ax.inset_axes([0.25, 0.2, 0.5, 0.5])
 
-ax1.plot(chis, gtau_errors, ls='--', color='k', marker='o', markersize=markersize, markerfacecolor='none', linewidth=linewidth_s, label=r'Partial')
+ax1.semilogy(chis, gtau_errors, ls='--', color='k', marker='o', markersize=markersize, markerfacecolor='none', linewidth=linewidth_s, label=r'Partial')
 
 ax1.set_ylabel(r'$\mathcal{E}$', fontsize=fontsize_s)
 ax1.set_xlabel(r'$\chi$', fontsize=fontsize_s)
-ax1.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+# ax1.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 
 

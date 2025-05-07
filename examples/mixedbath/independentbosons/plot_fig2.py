@@ -111,7 +111,7 @@ chi = 120
 mu = 0.
 
 t = 5
-Nt = 100
+Nt = 400
 beta = 5
 Ntau = 50
 d = 1

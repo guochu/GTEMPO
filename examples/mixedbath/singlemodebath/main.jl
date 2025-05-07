@@ -145,7 +145,18 @@ function main_real(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1,
 
 	@time g₁ = [cached_greater(lattice, k, mpsI1, mpsI2, c1=false, c2=true, b1=:+, b2=:+, band=1, cache=cache) for k in 1:N+1]
 	@time g₂ = [cached_lesser(lattice, k, mpsI1, mpsI2, c1=true, c2=false, b1=:-, b2=:+, band=1, cache=cache) for k in 1:N+1]
-	@time g₃ = [cached_nn(lattice, i, 1, mpsI1, mpsI2, cache=cache, b1=:+, b2=:-) for i in 2:N]
+	# @time g₃ = [cached_nn(lattice, i, 1, mpsI1, mpsI2, cache=cache, b1=:+, b2=:-) for i in 2:N]
+	println("start calculating nn...")
+	g₃ = ComplexF64[]
+	pos2 = index(flattice, 1, branch=:-, band=1)
+	for i in 2:N
+		pos1 = index(flattice, i, branch=:+, band=1)
+		ftmp = apply!(NTerm(pos1, pos2, coeff=1), copy(fadt))
+		lattice, mpsItmp = focktograssmann(lattice.ordering, flattice, ftmp, trunc=trunc)
+		v = integrate(lattice, mpsItmp, mpsI2) / Zvalue(cache)
+		push!(g₃, v)
+	end
+	println("finish calculating nn...")
 
 	g₁, g₂ = -im*g₁, -im*g₂
 
@@ -219,8 +230,21 @@ function main_mixed(ϵ_d; β=1, t=1, Nτ=20, Nt=100, ω₀=1, α₀=0.5, ω₁=1
 	@time g₁ = [cached_Gm(lattice, k, 1, mpsI1, mpsI2, c1=false, c2=true, b1=:+, b2=:+, band=1, cache=cache) for k in 1:Nt+1]
 	@time g₂ = [cached_Gm(lattice, 1, k, mpsI1, mpsI2, c1=true, c2=false, b1=:-, b2=:+, band=1, cache=cache) for k in 1:Nt+1]
 	@time g₃ = [cached_Gm(lattice, k, 1, mpsI1, mpsI2, c1=false, c2=true, b1=:τ, b2=:τ, band=1, cache=cache) for k in 1:Nτ+1]
-	@time g₄ = [cached_nn(lattice, i, 1, mpsI1, mpsI2, cache=cache, b1=:+, b2=:-) for i in 2:Nt]
+	# @time g₄ = [cached_nn(lattice, i, 1, mpsI1, mpsI2, cache=cache, b1=:+, b2=:-) for i in 2:Nt]
 	@time ns = cached_occupation(lattice, mpsI1, mpsI2, cache=cache)
+
+	println("start calculating nn...")
+	g₄ = ComplexF64[]
+	pos2 = index(flattice, 1, branch=:-, band=1)
+	for i in 2:Nt
+		pos1 = index(flattice, i, branch=:+, band=1)
+		ftmp = apply!(NTerm(pos1, pos2, coeff=1), copy(fadt))
+		lattice, mpsItmp = focktograssmann(lattice.ordering, flattice, ftmp, trunc=trunc)
+		v = integrate(lattice, mpsItmp, mpsI2) / Zvalue(cache)
+		push!(g₄, v)
+	end
+	println("finish calculating nn...")
+
 
 	g₁, g₂ = -im*g₁, im*g₂
 
