@@ -83,7 +83,7 @@ omega0 = 1
 alpha0 = 0.5
 omega1 = 1
 alpha1 = 1
-chi = 500
+chi = 300
 
 mu = 0.
 
@@ -96,12 +96,15 @@ beta = 5
 ts, gt, lt, nn = read_neq_ed(beta, t, Nt, mu, omega0, alpha0, omega1, alpha1)
 ts2, gt2, lt2, nn2 = read_real_tempo(beta, t, Nt, mu, omega0, alpha0, omega1, alpha1, chi)
 
-# print(len(nn), ' ', len(nn2))
+print(len(nn), ' ', len(nn2))
 # print(nn[:5])
 # print(nn2[:5])
 
 ax[0].plot(ts[2:], nn.real[2:], ls='-', color='k', linewidth=linewidth, label=r'ED')
 ax[0].plot(ts2[2:], nn2.real, ls='--', color='k', linewidth=linewidth, markersize=markersize, markerfacecolor='none', label=r'$\chi=%s$'%(chi))
+
+print(nn.real[2:][:50])
+print(nn2.real[:50])
 
 ax[0].set_xlabel(r'$t$', fontsize=fontsize)
 ax[0].set_ylabel(r'${\rm Re}[G^{>}(t)]$', fontsize=fontsize)
@@ -112,7 +115,7 @@ ax[0].annotate(r'(a)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsiz
 ax[0].legend(loc='lower right', fontsize=10)
 
 
-chis = [100, 200,300, 400, 500, 600]
+chis = [100, 200,300, 400, 500, 600,700]
 nn_errs = []
 
 for chi in chis:
