@@ -88,7 +88,7 @@ chi = 600
 mu = 0.
 
 t = 10
-Nt = 800
+Nt = 400
 beta = 5
 # Ntau = 20
 

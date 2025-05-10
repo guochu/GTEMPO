@@ -114,7 +114,7 @@ nn_errs = []
 
 for chi in chis:
 	ts2, gt2, lt2, nn2 = read_mixed_tempo(beta, Ntau, t, Nt, mu, omega0, alpha0, omega1, alpha1, chi)
-	nn_errs.append(mse_error(nn[2:], nn2))
+	nn_errs.append(mse_error(nn.real[2:], nn2.real))
 
 ax[1].plot(chis, nn_errs, ls='--', color='g', linewidth=linewidth, marker='o', markersize=markersize, markerfacecolor='none')
 ax[1].set_xlabel(r'$\chi$', fontsize=fontsize)

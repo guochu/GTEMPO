@@ -147,7 +147,7 @@ ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 ax2.annotate(r'(d)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
 
 
-chis = [100, 200, 300, 400, 500]
+chis = [100, 200, 300, 400, 500, 600, 700]
 gt_errs = []
 lt_errs = []
 

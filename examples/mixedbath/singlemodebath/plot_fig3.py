@@ -88,7 +88,7 @@ chi = 500
 mu = 0.
 
 t = 10
-Nt = 800
+Nt = 400
 beta = 5
 # Ntau = 20
 
@@ -117,7 +117,7 @@ nn_errs = []
 
 for chi in chis:
 	ts2, gt2, lt2, nn2 = read_real_tempo(beta, t, Nt, mu, omega0, alpha0, omega1, alpha1, chi)
-	nn_errs.append(mse_error(nn[2:], nn2))
+	nn_errs.append(mse_error(nn.real[2:], nn2.real))
 
 ax[1].plot(chis, nn_errs, ls='--', color='c', linewidth=linewidth, marker='o', markersize=markersize, markerfacecolor='none')
 ax[1].set_xlabel(r'$\chi$', fontsize=fontsize)
