@@ -3,6 +3,7 @@ TK.dot(psiA::GrassmannMPS, psiB::GrassmannMPS) = _dot(psiA, psiB) * (scaling(psi
 function TK.norm(psi::GrassmannMPS) 
 	a = real(_dot(psi, psi))
     # println("a is ", a)
+    a = (abs(a) >= 1.0e-14) ? a : zero(a)
 	return sqrt(a) * scaling(psi)^(length(psi))
 end
 DMRG.distance(a::AbstractGMPS, b::AbstractGMPS) = DMRG._distance(a, b)

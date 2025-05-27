@@ -2,6 +2,7 @@
 TK.dot(psiA::FockMPS, psiB::FockMPS) = _dot(psiA, psiB) * (scaling(psiA) * scaling(psiB))^length(psiA)
 function TK.norm(psi::FockMPS) 
 	a = real(_dot(psi, psi))
+    a = (abs(a) >= 1.0e-14) ? a : zero(a)
 	return sqrt(a) * scaling(psi)^(length(psi))
 end
 DMRG.distance(a::FockMPS, b::FockMPS) = DMRG._distance(a, b)

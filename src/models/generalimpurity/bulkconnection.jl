@@ -20,7 +20,7 @@ function bulkconnection!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice; ban
 end
 
 
-# the overlap between ⟨āⱼ₊₁ āⱼ
+# the overlap between āⱼ₊₁ and aⱼ
 function bulkconnection_util!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, N::Int, band::Int, branch::Symbol, trunc)
 	# applying the overlap of GVs
 	alg = Orthogonalize(trunc = trunc)
