@@ -142,7 +142,7 @@ end
 function noninteracting_neq(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1)
 	δt=t/N
 
-	H, a, adag, Nimp, H0 = noninteracting_operators(ϵ_d, ω₀=ω₀, α₀=α₀, ω₁=ω₁, α₁=α₁, d=100)
+	H, a, adag, Nimp, H0 = noninteracting_operators(ϵ_d, ω₀=ω₀, α₀=α₀, ω₁=ω₁, α₁=α₁, d=10)
 	ρ = exp(-β*H0)
 	cache = eigencache(H)
 	g1, g2 = gf_real(a, adag, β, t, N, cache, ρ)

@@ -118,13 +118,13 @@ alpha = 1
 # interacting case
 
 beta = 1
-Ntau =10
-t = 2
-Nt = 40
+Ntau = 10
+t = 1
+Nt = 20
 mu = 0.5
 U = 1
 
-chi = 800
+chi = 700
 
 taus, gtau = read_interacting_imag_analytic(beta, Ntau, U, mu, d, alpha)
 ts, gt, lt = read_interacting_real_analytic(beta, t, Nt, U, mu, d, alpha)
