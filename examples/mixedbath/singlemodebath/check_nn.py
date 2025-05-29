@@ -81,14 +81,14 @@ fig, ax = plt.subplots(1,2, figsize=(8,4))
 
 
 omega0 = 1
-alpha0 = 0.5
+alpha0 = 0.25
 omega1 = 1
 alpha1 = 1
-chi = 500
+chi = 200
 
 mu = 0.
 
-t = 10
+t = 5
 Nt = 400
 beta = 5
 # Ntau = 20
@@ -110,7 +110,7 @@ print(nn.real[2:][:50])
 print(nn2.real[:50])
 
 ax[0].set_xlabel(r'$t$', fontsize=fontsize)
-ax[0].set_ylabel(r'${\rm Re}[G^{>}(t)]$', fontsize=fontsize)
+ax[0].set_ylabel(r'$nn$', fontsize=fontsize)
 ax[0].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[0].locator_params(axis='both', nbins=6)
 ax[0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
@@ -118,24 +118,24 @@ ax[0].annotate(r'(a)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsiz
 ax[0].legend(loc='lower right', fontsize=10)
 
 
-chis = [100, 200,300, 400, 500, 600,700]
-nn_errs = []
-nn2_errs = []
+# chis = [100, 200,300, 400, 500, 600,700]
+# nn_errs = []
+# nn2_errs = []
 
-for chi in chis:
-	ts2, gt2, lt2, nn, nn2 = read_real_tempo(beta, t, Nt, mu, omega0, alpha0, omega1, alpha1, chi)
-	nn_errs.append(mse_error(nn_ed.real[2:], nn.real))
-	nn2_errs.append(mse_error(nn_ed.real[2:], nn2.real))
+# for chi in chis:
+# 	ts2, gt2, lt2, nn, nn2 = read_real_tempo(beta, t, Nt, mu, omega0, alpha0, omega1, alpha1, chi)
+# 	nn_errs.append(mse_error(nn_ed.real[2:], nn.real))
+# 	nn2_errs.append(mse_error(nn_ed.real[2:], nn2.real))
 
-ax[1].plot(chis, nn_errs, ls='--', color='r', linewidth=linewidth, marker='o', markersize=markersize, markerfacecolor='none', label=r'new')
-ax[1].plot(chis, nn2_errs, ls='--', color='g', linewidth=linewidth, marker='o', markersize=markersize, markerfacecolor='none', label=r'old')
-ax[1].set_xlabel(r'$\chi$', fontsize=fontsize)
-ax[1].set_ylabel(r'$\mathcal{E}$', fontsize=fontsize)
-ax[1].tick_params(axis='both', which='major', labelsize=labelsize)
-ax[1].locator_params(axis='both', nbins=6)
-ax[1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[1].annotate(r'(b)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
-ax[1].legend(fontsize=10)
+# ax[1].plot(chis, nn_errs, ls='--', color='r', linewidth=linewidth, marker='o', markersize=markersize, markerfacecolor='none', label=r'new')
+# ax[1].plot(chis, nn2_errs, ls='--', color='g', linewidth=linewidth, marker='o', markersize=markersize, markerfacecolor='none', label=r'old')
+# ax[1].set_xlabel(r'$\chi$', fontsize=fontsize)
+# ax[1].set_ylabel(r'$\mathcal{E}$', fontsize=fontsize)
+# ax[1].tick_params(axis='both', which='major', labelsize=labelsize)
+# ax[1].locator_params(axis='both', nbins=6)
+# ax[1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+# ax[1].annotate(r'(b)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
+# ax[1].legend(fontsize=10)
 
 plt.tight_layout(pad=0.5)
 

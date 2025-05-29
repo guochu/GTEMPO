@@ -120,11 +120,11 @@ alpha = 1
 beta = 1
 Ntau = 10
 t = 1
-Nt = 20
+Nt = 10
 mu = 0.5
 U = 1
 
-chi = 700
+chi = 600
 
 taus, gtau = read_interacting_imag_analytic(beta, Ntau, U, mu, d, alpha)
 ts, gt, lt = read_interacting_real_analytic(beta, t, Nt, U, mu, d, alpha)
