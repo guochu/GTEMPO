@@ -120,7 +120,7 @@ end
 function noninteracting_imag(ϵ_d; β=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1)
 	δτ=β/N
 
-	H, a, adag, Nimp, H0 = noninteracting_operators(ϵ_d, ω₀=ω₀, α₀=α₀, ω₁=ω₁, α₁=α₁, d=100)
+	H, a, adag, Nimp, H0 = noninteracting_operators(ϵ_d, ω₀=ω₀, α₀=α₀, ω₁=ω₁, α₁=α₁, d=10)
 
 	cache = eigencache(H)
 	g1 = gf_imag(a, adag, β, N, cache)

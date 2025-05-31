@@ -24,8 +24,9 @@ def read_imag_tempo(beta, N, mu, omega, alpha, chi=80):
 		data = json.loads(data)
 	gt = data['gtau']
 	gnn = data['nn']
+	gnn2 = data['nn2']
 	ts = asarray(data['taus'])
-	return ts, gt, gnn
+	return ts, gt, gnn, gnn2
 
 
 
@@ -54,15 +55,16 @@ mu = 0.
 beta = 5
 N = 50
 omega = 1
-alpha = 0.5
+# alpha = 0.5
+alpha = 1
 
 
 chis = [20, 60, 100, 140]
 
 for i, chi in enumerate(chis):
-	taus, gtau, gnn = read_imag_tempo(beta, N, mu, omega, alpha, chi)
+	taus, gtau, gnn, gnn2 = read_imag_tempo(beta, N, mu, omega, alpha, chi)
 	ax[0].plot(taus, gtau, ls='--', color=colors[i],  markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
-	ax[1].plot(taus[1:-1], gnn, ls='--', color=colors[i], markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
+	ax[1].plot(taus[:-1], gnn, ls='--', color=colors[i], markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
 
 
 ax[0].set_xlabel(r'$\tau$', fontsize=fontsize)
@@ -71,7 +73,7 @@ ax[0].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[0].locator_params(axis='both', nbins=6)
 ax[0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 ax[0].annotate(r'(a)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
-ax[0].legend(fontsize=12)
+ax[0].legend(loc = 'center', fontsize=12)
 
 ax[1].set_xlabel(r'$\tau$', fontsize=fontsize)
 ax[1].set_ylabel(r'$\langle \hat{n}(\tau)\hat{n}\rangle$', fontsize=fontsize)
