@@ -16,17 +16,18 @@ def parse_complex_array(data):
 	return asarray(re) + 1j * asarray(im)
 
 
-def read_imag_tempo(beta, N, mu, d, alpha, chi=80):
-	dt = beta / N
-	filename = 'result/andersonholstein_imaggtempo_beta%s_dtau%s_d%s_alpha%s_mu%s_chi%s.json'%(beta, dt, d, alpha, mu, chi)
+def read_real_tempo(beta, t, N, mu, d, alpha, chi=80):
+	dt = t / N
+	filename = 'result/andersonholstein_realgtempo_beta%s_t%s_dt%s_d%s_alpha%s_mu%s_chi%s.json'%(beta, t, dt, d, alpha, mu, chi)
 	with open(filename, 'r') as f:
 		data = f.read()
 		data = json.loads(data)
-	gt = data['gtau']
-	gnn = data['nn']
-	gnn2 = data['nn2']
-	ts = asarray(data['taus'])
-	return ts, gt, gnn, gnn2
+	gt = parse_complex_array(data['gt'])
+	lt = parse_complex_array(data['lt'])
+	gnn = parse_complex_array(data['nn'])
+	gnn2 = parse_complex_array(data['nn2'])
+	ts = asarray(data['ts'])
+	return ts, gt, lt, gnn, gnn2
 
 
 
@@ -53,19 +54,19 @@ fig, ax = plt.subplots(1,2, figsize=(8,3.5))
 mu = 0.
 
 beta = 5
-N = 50
-d = 1
-alpha = 0.1
+t = 1
+N = 20
+d = 3
+alpha = 1
 
 
-chis = [60, 80, 100, 120, 140]
+chis = [40,  80,  120, 140]
 
 
 for i, chi in enumerate(chis):
-	taus, gtau, gnn, gnn2 = read_imag_tempo(beta, N, mu, d, alpha, chi)
-	print('chi=', chi, ' ', gtau[-1], ' ', gnn[0])
-	ax[0].plot(taus, gtau, ls='--', color=colors[i],  markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
-	ax[1].plot(taus[:-1], gnn, ls='--', color=colors[i], markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
+	ts, gt, lt, gnn, gnn2 = read_real_tempo(beta, t, N, mu, d, alpha, chi)
+	ax[0].plot(ts, lt.real, ls='--', color=colors[i],  markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
+	ax[1].plot(ts[:-1], gnn.real, ls='--', color=colors[i], markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
 
 
 ax[0].set_xlabel(r'$\tau$', fontsize=fontsize)

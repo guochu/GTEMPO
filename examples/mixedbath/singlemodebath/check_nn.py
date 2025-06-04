@@ -81,7 +81,7 @@ fig, ax = plt.subplots(1,2, figsize=(8,4))
 
 
 omega0 = 1
-alpha0 = 0.5
+alpha0 = 0.25
 omega1 = 1
 alpha1 = 1
 chi = 200
@@ -89,7 +89,7 @@ chi = 200
 mu = 0.
 
 t = 5
-Nt = 400
+Nt = 800
 beta = 5
 # Ntau = 20
 

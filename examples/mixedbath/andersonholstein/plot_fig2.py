@@ -16,9 +16,9 @@ def parse_complex_array(data):
 	return asarray(re) + 1j * asarray(im)
 
 
-def read_imag_tempo(beta, N, mu, d, alpha, chi=80):
+def read_imag_tempo(beta, N, U, mu, d, alpha, chi=80):
 	dt = beta / N
-	filename = 'result/andersonholstein_imaggtempo_beta%s_dtau%s_d%s_alpha%s_mu%s_chi%s.json'%(beta, dt, d, alpha, mu, chi)
+	filename = 'result/andersonholstein_int_imaggtempo_beta%s_dtau%s_d%s_alpha%s_U%s_mu%s_chi%s.json'%(beta, dt, d, alpha, U, mu, chi)
 	with open(filename, 'r') as f:
 		data = f.read()
 		data = json.loads(data)
@@ -50,20 +50,20 @@ fig, ax = plt.subplots(1,2, figsize=(8,3.5))
 
 # chi = 100
 
-mu = 0.
+U = 1
+mu = U / 2
 
-beta = 5
-N = 50
+beta = 1
+N = 10
 d = 1
 alpha = 0.1
 
 
-chis = [60, 80, 100, 120, 140]
+chis = [50, 100, 150, 200]
 
 
 for i, chi in enumerate(chis):
-	taus, gtau, gnn, gnn2 = read_imag_tempo(beta, N, mu, d, alpha, chi)
-	print('chi=', chi, ' ', gtau[-1], ' ', gnn[0])
+	taus, gtau, gnn, gnn2 = read_imag_tempo(beta, N, U, mu, d, alpha, chi)
 	ax[0].plot(taus, gtau, ls='--', color=colors[i],  markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
 	ax[1].plot(taus[:-1], gnn, ls='--', color=colors[i], markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
 
