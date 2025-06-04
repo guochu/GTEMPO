@@ -64,6 +64,7 @@ chis = [50, 100, 150, 200]
 
 for i, chi in enumerate(chis):
 	taus, gtau, gnn, gnn2 = read_imag_tempo(beta, N, U, mu, d, alpha, chi)
+	print('chi=', chi, ' ', gtau[-1], ' ', gnn[0])
 	ax[0].plot(taus, gtau, ls='--', color=colors[i],  markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
 	ax[1].plot(taus[:-1], gnn, ls='--', color=colors[i], markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
 

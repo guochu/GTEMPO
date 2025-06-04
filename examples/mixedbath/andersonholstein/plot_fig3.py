@@ -65,6 +65,7 @@ chis = [40,  80,  120, 140]
 
 for i, chi in enumerate(chis):
 	ts, gt, lt, gnn, gnn2 = read_real_tempo(beta, t, N, mu, d, alpha, chi)
+	print('chi=', chi, ' ', ' error ', mse_error(gnn, gnn2))
 	ax[0].plot(ts, lt.real, ls='--', color=colors[i],  markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
 	ax[1].plot(ts[:-1], gnn.real, ls='--', color=colors[i], markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
 
