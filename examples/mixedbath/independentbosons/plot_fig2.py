@@ -106,12 +106,12 @@ markers = ['o', '^', '+']
 fig, ax = plt.subplots(2,2, figsize=(8,6))
 
 
-chi = 120
+chi = 140
 
 mu = 0.
 
 t = 5
-Nt = 400
+Nt = 100
 beta = 5
 Ntau = 50
 d = 1

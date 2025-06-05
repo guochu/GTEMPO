@@ -54,13 +54,13 @@ fig, ax = plt.subplots(1,2, figsize=(8,3.5))
 mu = 0.
 
 beta = 5
-t = 1
-N = 20
+t = 5
+N = 200
 d = 3
 alpha = 1
 
 
-chis = [40,  80,  120, 140]
+chis = [  80,  120, 140]
 
 
 for i, chi in enumerate(chis):
@@ -70,16 +70,16 @@ for i, chi in enumerate(chis):
 	ax[1].plot(ts[:-1], gnn.real, ls='--', color=colors[i], markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
 
 
-ax[0].set_xlabel(r'$\tau$', fontsize=fontsize)
-ax[0].set_ylabel(r'$G(\tau)$', fontsize=fontsize)
+ax[0].set_xlabel(r'$t$', fontsize=fontsize)
+ax[0].set_ylabel(r'$G(t)$', fontsize=fontsize)
 ax[0].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[0].locator_params(axis='both', nbins=6)
 ax[0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 ax[0].annotate(r'(a)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
 ax[0].legend(loc = 'center', fontsize=12)
 
-ax[1].set_xlabel(r'$\tau$', fontsize=fontsize)
-ax[1].set_ylabel(r'$\langle \hat{n}(\tau)\hat{n}\rangle$', fontsize=fontsize)
+ax[1].set_xlabel(r'$t$', fontsize=fontsize)
+ax[1].set_ylabel(r'$\langle \hat{n}(t)\hat{n}\rangle$', fontsize=fontsize)
 ax[1].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[1].locator_params(axis='both', nbins=6)
 ax[1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))

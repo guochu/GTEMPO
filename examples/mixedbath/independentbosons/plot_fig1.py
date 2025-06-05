@@ -108,12 +108,13 @@ fig, ax = plt.subplots(1,1, figsize=(8,6))
 
 chi = 100
 
-mu = 0.
 
 beta = 5
-Ntau = 100
+Ntau = 25
 d = 1
 alpha = 1
+
+mu = 0.
 
 # noninteracting case
 taus, gtau = read_noninteracting_imag_analytic(beta, Ntau, mu, d, alpha)
@@ -122,7 +123,7 @@ taus2, gtau2 = read_noninteracting_imag_tempo(beta, Ntau, mu, d, alpha, chi)
 # ts4, taus4, gt4, lt4, gtau4 = read_noninteracting_mixed_tempo(beta, Ntau, 0.1, 10, mu, d, alpha, chi)
 
 ax.plot(taus, gtau, ls='-', color='k', linewidth=linewidth, label=r'Analytic')
-ax.plot(taus2, gtau2.real, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
+ax.plot(taus2, gtau2.real, ls='--', color='r', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
 
 ax.set_xlabel(r'$\tau$', fontsize=fontsize)
 ax.set_ylabel(r'$G(\tau)$', fontsize=fontsize)
@@ -138,14 +139,14 @@ for i, chi in enumerate(chis):
 	gtau_errors.append(mse_error(gtau, gtau2.real))
 
 
-linewidth_s = 1.4
+linewidth_s = 2
 markersize_s = 4
 fontsize_s = 16
 labelsize_s = 14
 
 ax1 = ax.inset_axes([0.25, 0.2, 0.5, 0.5])
 
-ax1.semilogy(chis, gtau_errors, ls='--', color='k', marker='o', markersize=markersize, markerfacecolor='none', linewidth=linewidth_s, label=r'Partial')
+ax1.semilogy(chis, gtau_errors, ls='--', color='r', marker='o', markersize=markersize, markerfacecolor='none', linewidth=linewidth_s, label=r'Partial')
 
 ax1.set_ylabel(r'$\mathcal{E}$', fontsize=fontsize_s)
 ax1.set_xlabel(r'$\chi$', fontsize=fontsize_s)

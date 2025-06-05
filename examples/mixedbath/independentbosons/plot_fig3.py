@@ -123,7 +123,7 @@ U = 1
 mu = 0.5
 
 beta = 5
-Ntau = 50
+Ntau = 25
 d = 1
 alpha = 1
 

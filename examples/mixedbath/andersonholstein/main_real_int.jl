@@ -100,7 +100,7 @@ end
 
 
 function main_real_vs_chi(U, ϵ_d=U/2; β=5, t=1, N=10, d=3, α=1)
-	for chi in [50, 100, 150, 200, 300, 400]
+	for chi in [50, 100, 150, 200, 300, 400, 500]
 		main_real(U, ϵ_d, β=β, t=t, N=N, d=d, α=α, chi=chi)
 	end
 end
