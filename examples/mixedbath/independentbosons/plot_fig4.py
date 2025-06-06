@@ -95,15 +95,17 @@ def mse_error(a, b):
 	v = norm(diff)
 	return sqrt(v * v / L)
 
-fontsize = 14
-labelsize = 12
-linewidth = 1.5
-markersize = 4
+
+fontsize = 20
+labelsize = 16
+linewidth1 = 1.5
+linewidth2 = 3
+markersize = 10
 
 colors = ['b', 'g', 'c', 'y', 'r']
 markers = ['o', '^', '+']
 
-fig, ax = plt.subplots(2,2, figsize=(8,6))
+fig, ax = plt.subplots(2,2, figsize=(8,6.5))
 
 
 chi = 80
@@ -121,8 +123,8 @@ beta = 1
 Ntau = 10
 t = 1
 Nt = 10
-mu = 0.5
 U = 1
+mu = U / 2
 
 chi = 1000
 
@@ -132,55 +134,90 @@ ts, gt, lt = read_interacting_real_analytic(beta, t, Nt, U, mu, d, alpha)
 
 ts2, taus2, gt2, lt2, gtau2 = read_interacting_mixed_tempo(beta, Ntau, t, Nt, U, mu, d, alpha, chi)
 
+annotate_xy = (-0.15, 1.05)
 
-ax[0,0].plot(ts, gt.real, ls='-', color='k', linewidth=linewidth, label=r'Analytic')
-ax[0,0].plot(ts2, gt2.real, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
+ax1color = 'purple'
+
+ax[0,0].plot(ts, gt.real, ls='-', color=ax1color, linewidth=linewidth1, label=r'Analytic')
+ax[0,0].plot(ts2, gt2.real, ls='--', color=ax1color, linewidth=linewidth2, label=r'GTEMPO')
 
 ax[0,0].set_xlabel(r'$t$', fontsize=fontsize)
-ax[0,0].set_ylabel(r'${\rm Re}[G^{>}(t)]$', fontsize=fontsize)
-ax[0,0].tick_params(axis='both', which='major', labelsize=labelsize)
+ax[0,0].set_ylabel(r'${\rm Re}[G^{>}(t)]$', fontsize=fontsize, color=ax1color)
+ax[0,0].tick_params(axis='both', which='major', labelsize=labelsize, colors=ax1color)
 ax[0,0].locator_params(axis='both', nbins=6)
 ax[0,0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[0,0].annotate(r'(a)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
+ax[0,0].annotate(r'(a)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
 
 
-ax[0,0].legend(fontsize=12)
+# ax[0,0].legend(fontsize=12)
+
+ax2color = 'c'
+
+ax2 = ax[0,0].twinx()
+
+ax2.plot(ts, gt.imag, ls='-', color=ax2color, linewidth=linewidth1, label=r'GTEMPO')
+ax2.plot(ts2, gt2.imag, ls='--', color=ax2color, linewidth=linewidth2, label=r'GTEMPO')
+
+ax2.set_xlabel(r'$t$', fontsize=fontsize)
+ax2.set_ylabel(r'${\rm Im}[G^{>}(t)]$', fontsize=fontsize, color=ax2color)
+ax2.tick_params(axis='both', which='major', labelsize=labelsize, colors=ax2color)
+ax2.locator_params(axis='both', nbins=6)
+ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 
-ax[0,1].plot(ts, gt.imag, ls='-', color='k', linewidth=linewidth, label=r'GTEMPO')
-ax[0,1].plot(ts2, gt2.imag, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
 
-ax[0,1].set_xlabel(r'$t$', fontsize=fontsize)
-ax[0,1].set_ylabel(r'${\rm Im}[G^{>}(t)]$', fontsize=fontsize)
+ax[1,0].plot(ts, lt.real, ls='-', color=ax1color, linewidth=linewidth1, label=r'GTEMPO')
+ax[1,0].plot(ts2, lt2.real, ls='--', color=ax1color, linewidth=linewidth2, label=r'GTEMPO')
+
+ax[1,0].set_xlabel(r'$t$', fontsize=fontsize)
+ax[1,0].set_ylabel(r'${\rm Re}[G^{<}(t)]$', fontsize=fontsize, color=ax1color)
+ax[1,0].tick_params(axis='both', which='major', labelsize=labelsize, colors=ax1color)
+ax[1,0].locator_params(axis='both', nbins=6)
+ax[1,0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+ax[1,0].annotate(r'(c)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
+
+ax2 = ax[1,0].twinx()
+
+ax2.plot(ts, lt.imag, ls='-', color=ax2color, linewidth=linewidth1, label=r'GTEMPO')
+ax2.plot(ts2, lt2.imag, ls='--', color=ax2color, linewidth=linewidth2, label=r'GTEMPO')
+
+ax2.set_xlabel(r'$t$', fontsize=fontsize)
+ax2.set_ylabel(r'${\rm Im}[G^{<}(t)]$', fontsize=fontsize,color=ax2color)
+ax2.tick_params(axis='both', which='major', labelsize=labelsize,colors=ax2color)
+ax2.locator_params(axis='both', nbins=6)
+ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+
+
+chis = [400, 500, 600, 700, 800, 900, 1000]
+
+gt_errs = []
+lt_errs = []
+
+for chi in chis:
+	ts2, taus2, gt2, lt2, gtau2 = read_interacting_mixed_tempo(beta, Ntau, t, Nt, U, mu, d, alpha, chi)
+	gt_errs.append(mse_error(gt, gt2))
+	lt_errs.append(mse_error(lt, lt2))
+
+
+ax[0,1].plot(chis, gt_errs, ls='--', color='k', linewidth=linewidth2, marker='o', markersize=markersize, markerfacecolor='none')
+ax[0,1].set_xlabel(r'$\chi$', fontsize=fontsize)
+ax[0,1].set_ylabel(r'$\mathcal{E}[G^{>}(t)]$', fontsize=fontsize)
 ax[0,1].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[0,1].locator_params(axis='both', nbins=6)
 ax[0,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[0,1].annotate(r'(b)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
+ax[0,1].annotate(r'(b)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
 
-
-
-ax[1,0].plot(ts, lt.real, ls='-', color='k', linewidth=linewidth, label=r'GTEMPO')
-ax[1,0].plot(ts2, lt2.real, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
-
-ax[1,0].set_xlabel(r'$t$', fontsize=fontsize)
-ax[1,0].set_ylabel(r'${\rm Re}[G^{<}(t)]$', fontsize=fontsize)
-ax[1,0].tick_params(axis='both', which='major', labelsize=labelsize)
-ax[1,0].locator_params(axis='both', nbins=6)
-ax[1,0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[1,0].annotate(r'(d)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
-
-
-
-ax[1,1].plot(ts, lt.imag, ls='-', color='k', linewidth=linewidth, label=r'GTEMPO')
-ax[1,1].plot(ts2, lt2.imag, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
-
-ax[1,1].set_xlabel(r'$t$', fontsize=fontsize)
-ax[1,1].set_ylabel(r'${\rm Im}[G^{<}(t)]$', fontsize=fontsize)
+ax[1,1].plot(chis, lt_errs, ls='--', color='k', linewidth=linewidth2, marker='o', markersize=markersize, markerfacecolor='none')
+ax[1,1].set_xlabel(r'$\chi$', fontsize=fontsize)
+ax[1,1].set_ylabel(r'$\mathcal{E}[G^{<}(t)]$', fontsize=fontsize)
 ax[1,1].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[1,1].locator_params(axis='both', nbins=6)
 ax[1,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[1,1].annotate(r'(d)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsize)
+ax[1,1].annotate(r'(d)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
+
 
 plt.tight_layout(pad=0.5)
+
+plt.savefig('independentbosons_int_mixed.pdf', bbox_inches='tight')
 
 plt.show()

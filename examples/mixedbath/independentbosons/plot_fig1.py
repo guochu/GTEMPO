@@ -97,13 +97,14 @@ def mse_error(a, b):
 
 fontsize = 20
 labelsize = 18
-linewidth = 2.5
+linewidth1 = 2
+linewidth2 = 3.5
 markersize = 10
 
 colors = ['b', 'g', 'c', 'y', 'r']
 markers = ['o', '^', '+']
 
-fig, ax = plt.subplots(1,1, figsize=(8,6))
+fig, ax = plt.subplots(1,1, figsize=(6,5))
 
 
 chi = 100
@@ -114,7 +115,9 @@ Ntau = 25
 d = 1
 alpha = 1
 
-mu = 0.
+mu = 0.5
+
+color = 'k'
 
 # noninteracting case
 taus, gtau = read_noninteracting_imag_analytic(beta, Ntau, mu, d, alpha)
@@ -122,8 +125,8 @@ taus, gtau = read_noninteracting_imag_analytic(beta, Ntau, mu, d, alpha)
 taus2, gtau2 = read_noninteracting_imag_tempo(beta, Ntau, mu, d, alpha, chi)
 # ts4, taus4, gt4, lt4, gtau4 = read_noninteracting_mixed_tempo(beta, Ntau, 0.1, 10, mu, d, alpha, chi)
 
-ax.plot(taus, gtau, ls='-', color='k', linewidth=linewidth, label=r'Analytic')
-ax.plot(taus2, gtau2.real, ls='--', color='r', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
+ax.plot(taus, gtau, ls='-', color=color, linewidth=linewidth1, label=r'Analytic')
+ax.plot(taus2, gtau2.real, ls='--', color=color, linewidth=linewidth2, label=r'$\chi=%s$'%(chi))
 
 ax.set_xlabel(r'$\tau$', fontsize=fontsize)
 ax.set_ylabel(r'$G(\tau)$', fontsize=fontsize)
@@ -146,16 +149,17 @@ labelsize_s = 14
 
 ax1 = ax.inset_axes([0.25, 0.2, 0.5, 0.5])
 
-ax1.semilogy(chis, gtau_errors, ls='--', color='r', marker='o', markersize=markersize, markerfacecolor='none', linewidth=linewidth_s, label=r'Partial')
+ax1.semilogy(chis, gtau_errors, ls='--', color=color, marker='o', markersize=markersize, markerfacecolor='none', linewidth=linewidth1, label=r'Partial')
 
-ax1.set_ylabel(r'$\mathcal{E}$', fontsize=fontsize_s)
+ax1.set_ylabel(r'$\mathcal{E}[G(\tau)]$', fontsize=fontsize_s)
 ax1.set_xlabel(r'$\chi$', fontsize=fontsize_s)
-# ax1.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-
+ax1.tick_params(axis='both', which='major', labelsize=labelsize_s)
 
 
 ax.legend(fontsize=14)
 
 plt.tight_layout(pad=0.5)
+
+plt.savefig('independentbosons_noint_imag.pdf', bbox_inches='tight')
 
 plt.show()

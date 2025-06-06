@@ -106,15 +106,17 @@ def mse_error(a, b):
 	v = norm(diff)
 	return sqrt(v * v / L)
 
+
 fontsize = 20
 labelsize = 18
-linewidth = 2.5
+linewidth1 = 2
+linewidth2 = 3.5
 markersize = 10
 
 colors = ['b', 'g', 'c', 'y', 'r']
 markers = ['o', '^', '+']
 
-fig, ax = plt.subplots(1,1, figsize=(8,6))
+fig, ax = plt.subplots(1,1, figsize=(6,5))
 
 
 chi = 160
@@ -133,8 +135,10 @@ taus, gtau = read_interacting_imag_analytic(beta, Ntau, U, mu, d, alpha)
 taus2, gtau2 = read_interacting_imag_tempo(beta, Ntau, U, mu, d, alpha, chi)
 # ts4, taus4, gt4, lt4, gtau4 = read_noninteracting_mixed_tempo(beta, Ntau, 0.1, 10, mu, d, alpha, chi)
 
-ax.plot(taus, gtau, ls='-', color='k', linewidth=linewidth, label=r'Analytic')
-ax.plot(taus2, gtau2.real, ls='--', color='r', linewidth=linewidth, label=r'GTEMPO')
+color = 'k'
+
+ax.plot(taus, gtau, ls='-', color=color, linewidth=linewidth1, label=r'Analytic')
+ax.plot(taus2, gtau2.real, ls='--', color=color, linewidth=linewidth2, label=r'$\chi=%s$'%(chi))
 
 ax.set_xlabel(r'$\tau$', fontsize=fontsize)
 ax.set_ylabel(r'$G(\tau)$', fontsize=fontsize)
@@ -150,23 +154,24 @@ for i, chi in enumerate(chis):
 	gtau_errors.append(mse_error(gtau, gtau2.real))
 
 
-linewidth_s = 1.4
+linewidth_s = 2
 markersize_s = 4
 fontsize_s = 16
 labelsize_s = 14
 
 ax1 = ax.inset_axes([0.25, 0.2, 0.5, 0.5])
 
-ax1.plot(chis, gtau_errors, ls='--', color='k', marker='o', markersize=markersize, markerfacecolor='none', linewidth=linewidth_s, label=r'Partial')
+ax1.semilogy(chis, gtau_errors, ls='--', color=color, marker='o', markersize=markersize, markerfacecolor='none', linewidth=linewidth1, label=r'Partial')
 
-ax1.set_ylabel(r'$\mathcal{E}$', fontsize=fontsize_s)
+ax1.set_ylabel(r'$\mathcal{E}[G(\tau)]$', fontsize=fontsize_s)
 ax1.set_xlabel(r'$\chi$', fontsize=fontsize_s)
-ax1.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-
+ax1.tick_params(axis='both', which='major', labelsize=labelsize_s)
 
 
 ax.legend(fontsize=14)
 
 plt.tight_layout(pad=0.5)
+
+plt.savefig('independentbosons_int_imag.pdf', bbox_inches='tight')
 
 plt.show()

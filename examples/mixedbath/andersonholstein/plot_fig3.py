@@ -79,7 +79,7 @@ ax[0].annotate(r'(a)', xy=(0.1, 0.85),xycoords='axes fraction', fontsize=fontsiz
 ax[0].legend(loc = 'center', fontsize=12)
 
 ax[1].set_xlabel(r'$t$', fontsize=fontsize)
-ax[1].set_ylabel(r'$\langle \hat{n}(t)\hat{n}\rangle$', fontsize=fontsize)
+ax[1].set_ylabel(r'$X(t)$', fontsize=fontsize)
 ax[1].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[1].locator_params(axis='both', nbins=6)
 ax[1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
