@@ -30,6 +30,8 @@ function main_real(ϵ_d; β=5, t=5, N=50, d=3, α=1, chi = 100)
 	fbath = fermionicbath(semicircular(t=1), β=β, μ=0)
 	bbath = bosonicbath(boson_spectrum_func(d=d, α=α), β=β)
 
+	exact_model = AndersonIM(U=0., μ=-ϵ_d)
+
 	mpspath = "data/andersonholstein_realgtempo_beta$(β)_t$(t)_dt$(δt)_d$(d)_alpha$(α)_chi$(chi).mps"
 	if ispath(mpspath)
 		println("load MPS-IF from path ", mpspath)
@@ -46,6 +48,7 @@ function main_real(ϵ_d; β=5, t=5, N=50, d=3, α=1, chi = 100)
 			mpsI2 = boundarycondition!(mpsI2, lattice, band=band, trunc=trunc)
 			mpsI2 = bulkconnection!(mpsI2, lattice, band=band, trunc=trunc)
 		end
+		mpsI2 = systhermalstate!(mpsI2, lattice, exact_model, β=β)
 
 		println("save MPS-IF to path ", mpspath)
 		Serialization.serialize(mpspath, (fmpsI1, mpsI2))
@@ -53,7 +56,6 @@ function main_real(ϵ_d; β=5, t=5, N=50, d=3, α=1, chi = 100)
 
 	println("bond dimension of mpsI is ", bond_dimension(fmpsI1), " ", bond_dimension(mpsI2))
 
-	exact_model = AndersonIM(U=0., μ=-ϵ_d)
 
 	fadt = sysdynamics!(fmpsI1, flattice, exact_model, trunc=trunc)
 	lattice, mpsI1 = focktograssmann(lattice.ordering, flattice, fadt, trunc=trunc)
