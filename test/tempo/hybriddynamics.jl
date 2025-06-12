@@ -13,7 +13,7 @@ println("------------------------------------")
 	trunc = truncdimcutoff(D=300, ϵ=1.0e-6, add_back=0)
 
 	base_alg = PartialIF(trunc=trunc)
-	algs = [TranslationInvariantIF(k=5, fast=true), TranslationInvariantIF(k=5, fast=false)]
+	algs = [TranslationInvariantIF(k=5, fast=true), TranslationInvariantIF(k=5, fast=false), ExactTranslationInvariantIF()]
 		
 	for μ in (-5, 0, 5)
 		# println("μ = ", μ)
@@ -56,8 +56,9 @@ end
 	alg5 = TranslationInvariantIF(k=5, algmult=DMRGMult1(trunc=trunc, initguess=:rand, maxiter=10))
 	alg6 = TranslationInvariantIF(k=5, algmult=DMRGMult1(trunc=trunc), fast=false)
 	alg7 = TranslationInvariantIF(k=5, algevo=ComplexStepper(WII()), algmult=DMRGMult2(trunc=trunc, initguess=:svd))
+	alg8 = ExactTranslationInvariantIF(algmult=DMRGMult1(trunc=trunc, initguess=:rand))
 
-	algs = [alg2, alg3, alg4, alg5, alg6, alg7]
+	algs = [alg2, alg3, alg4, alg5, alg6, alg7, alg8]
 
 		
 
