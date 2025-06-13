@@ -121,7 +121,7 @@ fig, ax = plt.subplots(1,1, figsize=(6,5))
 
 chi = 160
 
-U = 10
+U = 1
 mu = U/2
 
 beta = 10
