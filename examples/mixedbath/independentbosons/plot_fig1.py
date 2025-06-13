@@ -107,7 +107,7 @@ markers = ['o', '^', '+']
 fig, ax = plt.subplots(1,1, figsize=(6,5))
 
 
-chi = 100
+chi = 120
 
 
 beta = 10
@@ -115,7 +115,7 @@ Ntau = 50
 d = 3
 alpha = 1
 
-mu = -5.
+mu = 0.
 
 color = 'k'
 
@@ -135,7 +135,7 @@ ax.locator_params(axis='both', nbins=6)
 ax.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 gtau_errors = []
-chis = [20, 40,60,80, 100]
+chis = [20, 40,60,80, 100, 120, 140]
 
 for i, chi in enumerate(chis):
 	taus2, gtau2 = read_noninteracting_imag_tempo(beta, Ntau, mu, d, alpha, chi)
