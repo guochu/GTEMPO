@@ -57,8 +57,9 @@ end
 	alg6 = TranslationInvariantIF(k=5, algmult=DMRGMult1(trunc=trunc), fast=false)
 	alg7 = TranslationInvariantIF(k=5, algevo=ComplexStepper(WII()), algmult=DMRGMult2(trunc=trunc, initguess=:svd))
 	alg8 = ExactTranslationInvariantIF(algmult=DMRGMult1(trunc=trunc, initguess=:rand))
+	alg9 = ExactTranslationInvariantIF(algmult=SVDCompression(trunc))
 
-	algs = [alg2, alg3, alg4, alg5, alg6, alg7, alg8]
+	algs = [alg2, alg3, alg4, alg5, alg6, alg7, alg8, alg9]
 
 		
 
