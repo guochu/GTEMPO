@@ -183,7 +183,7 @@ function main_imag_vs_chi_Ntau(ϵ_d; β=5, d=1, α=1)
 end
 
 function main_imag_vs_chi(ϵ_d; β=5, Nτ=50, d=1, α=1)
-	for chi in [20, 40,60,80,100]
+	for chi in [20, 40,60,80,100,120, 140]
 		main_imag(ϵ_d, β=β, Nτ=Nτ, d=d, α=α, chi=chi)
 	end
 end

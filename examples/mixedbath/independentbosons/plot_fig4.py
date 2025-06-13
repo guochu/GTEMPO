@@ -96,8 +96,8 @@ def mse_error(a, b):
 	return sqrt(v * v / L)
 
 
-fontsize = 20
-labelsize = 16
+fontsize = 22
+labelsize = 18
 linewidth1 = 1.5
 linewidth2 = 3
 markersize = 10

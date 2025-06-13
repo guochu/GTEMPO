@@ -129,19 +129,19 @@ ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 
 
-ax[0,1].plot(ts, lt.real, ls='-', color=ax1color, linewidth=linewidth1, label=r'ED')
-ax[0,1].plot(ts2, lt2.real, ls='--', color=ax1color, linewidth=linewidth2, label=r'GTEMPO')
+ax[1,0].plot(ts, lt.real, ls='-', color=ax1color, linewidth=linewidth1, label=r'ED')
+ax[1,0].plot(ts2, lt2.real, ls='--', color=ax1color, linewidth=linewidth2, label=r'GTEMPO')
 
-ax[0,1].set_xlabel(r'$t$', fontsize=fontsize)
-ax[0,1].set_ylabel(r'${\rm Re}[G^{<}(t)]$', fontsize=fontsize, color=ax1color)
-ax[0,1].tick_params(axis='both', which='major', labelsize=labelsize)
-ax[0,1].tick_params(axis='y', colors=ax1color)
-ax[0,1].locator_params(axis='both', nbins=6)
-ax[0,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[0,1].annotate(r'(b)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
+ax[1,0].set_xlabel(r'$t$', fontsize=fontsize)
+ax[1,0].set_ylabel(r'${\rm Re}[G^{<}(t)]$', fontsize=fontsize, color=ax1color)
+ax[1,0].tick_params(axis='both', which='major', labelsize=labelsize)
+ax[1,0].tick_params(axis='y', colors=ax1color)
+ax[1,0].locator_params(axis='both', nbins=6)
+ax[1,0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+ax[1,0].annotate(r'(d)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
 
 
-ax2 = ax[0,1].twinx()
+ax2 = ax[1,0].twinx()
 
 ax2.plot(ts, lt.imag, ls='-', color=ax2color, linewidth=linewidth1, label=r'ED')
 ax2.plot(ts2, lt2.imag, ls='--', color=ax2color, linewidth=linewidth2, label=r'GTEMPO')
@@ -154,18 +154,18 @@ ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 ax3color = 'b'
 
-ax[0,2].plot(ts[2:], nn.real[2:], ls='-', color=ax3color, linewidth=linewidth1, label=r'ED')
-ax[0,2].plot(ts2[1:-1], nn2.real, ls='--', color=ax3color, linewidth=linewidth2, markersize=markersize, markerfacecolor='none', label=r'GTEMPO, $\chi=%s$'%(chi))
+ax[2,0].plot(ts[2:], nn.real[2:], ls='-', color=ax3color, linewidth=linewidth1, label=r'ED')
+ax[2,0].plot(ts2[1:-1], nn2.real, ls='--', color=ax3color, linewidth=linewidth2, markersize=markersize, markerfacecolor='none', label=r'GTEMPO, $\chi=%s$'%(chi))
 
-ax[0,2].set_xlabel(r'$t$', fontsize=fontsize)
-ax[0,2].set_ylabel(r'$X(t)$', fontsize=fontsize)
-ax[0,2].tick_params(axis='both', which='major', labelsize=labelsize)
-ax[0,2].locator_params(axis='both', nbins=6)
-ax[0,2].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[0,2].annotate(r'(c)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
+ax[2,0].set_xlabel(r'$t$', fontsize=fontsize)
+ax[2,0].set_ylabel(r'$X(t)$', fontsize=fontsize)
+ax[2,0].tick_params(axis='both', which='major', labelsize=labelsize)
+ax[2,0].locator_params(axis='both', nbins=6)
+ax[2,0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+ax[2,0].annotate(r'(g)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
 
 
-chis = [100, 200, 300, 400, 500, 600, 700]
+chis = [100, 200, 300, 400, 500]
 nn_errs = []
 gt_errs = []
 lt_errs = []
@@ -176,13 +176,13 @@ for chi in chis:
 	lt_errs.append(mse_error(lt, lt2))
 	nn_errs.append(mse_error(nn.real[1:-1], nn2.real))
 
-ax[1,0].plot(chis, gt_errs, ls='--', color='k', linewidth=linewidth2, marker='o', markersize=markersize, markerfacecolor='none')
-ax[1,0].set_xlabel(r'$\chi$', fontsize=fontsize)
-ax[1,0].set_ylabel(r'$\mathcal{E}$', fontsize=fontsize)
-ax[1,0].tick_params(axis='both', which='major', labelsize=labelsize)
-ax[1,0].locator_params(axis='both', nbins=6)
-ax[1,0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[1,0].annotate(r'(d)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
+ax[0,1].plot(chis, gt_errs, ls='--', color='k', linewidth=linewidth2, marker='o', markersize=markersize, markerfacecolor='none')
+ax[0,1].set_xlabel(r'$\chi$', fontsize=fontsize)
+ax[0,1].set_ylabel(r'$\mathcal{E}$', fontsize=fontsize)
+ax[0,1].tick_params(axis='both', which='major', labelsize=labelsize)
+ax[0,1].locator_params(axis='both', nbins=6)
+ax[0,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+ax[0,1].annotate(r'(b)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
 
 ax[1,1].plot(chis, lt_errs, ls='--', color='k', linewidth=linewidth2, marker='o', markersize=markersize, markerfacecolor='none')
 ax[1,1].set_xlabel(r'$\chi$', fontsize=fontsize)
@@ -192,13 +192,13 @@ ax[1,1].locator_params(axis='both', nbins=6)
 ax[1,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 ax[1,1].annotate(r'(e)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
 
-ax[1,2].plot(chis, nn_errs, ls='--', color='k', linewidth=linewidth2, marker='o', markersize=markersize, markerfacecolor='none')
-ax[1,2].set_xlabel(r'$\chi$', fontsize=fontsize)
-ax[1,2].set_ylabel(r'$\mathcal{E}$', fontsize=fontsize)
-ax[1,2].tick_params(axis='both', which='major', labelsize=labelsize)
-ax[1,2].locator_params(axis='both', nbins=6)
-ax[1,2].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[1,2].annotate(r'(f)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
+ax[2,1].plot(chis, nn_errs, ls='--', color='k', linewidth=linewidth2, marker='o', markersize=markersize, markerfacecolor='none')
+ax[2,1].set_xlabel(r'$\chi$', fontsize=fontsize)
+ax[2,1].set_ylabel(r'$\mathcal{E}$', fontsize=fontsize)
+ax[2,1].tick_params(axis='both', which='major', labelsize=labelsize)
+ax[2,1].locator_params(axis='both', nbins=6)
+ax[2,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+ax[2,1].annotate(r'(h)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
 
 
 
@@ -217,21 +217,21 @@ for Nt in Nts:
 	nn_errs.append(mse_error(nn.real[1:-1], nn2.real))
 
 
-ax[2,0].plot(dts, gt_errs, ls='--', color='k', linewidth=linewidth2, marker='o', markersize=markersize, markerfacecolor='none')
-ax[2,0].set_xlabel(r'$\delta t$', fontsize=fontsize)
-ax[2,0].set_ylabel(r'$\mathcal{E}[G^{>}(t)]$', fontsize=fontsize)
-ax[2,0].tick_params(axis='both', which='major', labelsize=labelsize)
-ax[2,0].locator_params(axis='both', nbins=6)
-ax[2,0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[2,0].annotate(r'(g)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
+ax[0,2].plot(dts, gt_errs, ls='--', color='k', linewidth=linewidth2, marker='o', markersize=markersize, markerfacecolor='none')
+ax[0,2].set_xlabel(r'$\delta t$', fontsize=fontsize)
+ax[0,2].set_ylabel(r'$\mathcal{E}[G^{>}(t)]$', fontsize=fontsize)
+ax[0,2].tick_params(axis='both', which='major', labelsize=labelsize)
+ax[0,2].locator_params(axis='both', nbins=6)
+ax[0,2].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+ax[0,2].annotate(r'(c)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
 
-ax[2,1].plot(dts, lt_errs, ls='--', color='k', linewidth=linewidth2, marker='o', markersize=markersize, markerfacecolor='none')
-ax[2,1].set_xlabel(r'$\delta t$', fontsize=fontsize)
-ax[2,1].set_ylabel(r'$\mathcal{E}[G^{<}(t)]$', fontsize=fontsize)
-ax[2,1].tick_params(axis='both', which='major', labelsize=labelsize)
-ax[2,1].locator_params(axis='both', nbins=6)
-ax[2,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[2,1].annotate(r'(h)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
+ax[1,2].plot(dts, lt_errs, ls='--', color='k', linewidth=linewidth2, marker='o', markersize=markersize, markerfacecolor='none')
+ax[1,2].set_xlabel(r'$\delta t$', fontsize=fontsize)
+ax[1,2].set_ylabel(r'$\mathcal{E}[G^{<}(t)]$', fontsize=fontsize)
+ax[1,2].tick_params(axis='both', which='major', labelsize=labelsize)
+ax[1,2].locator_params(axis='both', nbins=6)
+ax[1,2].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+ax[1,2].annotate(r'(f)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
 
 ax[2,2].plot(dts, nn_errs, ls='--', color='k', linewidth=linewidth2, marker='o', markersize=markersize, markerfacecolor='none')
 ax[2,2].set_xlabel(r'$\delta t$', fontsize=fontsize)

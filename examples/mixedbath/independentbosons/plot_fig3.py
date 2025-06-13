@@ -138,7 +138,7 @@ taus2, gtau2 = read_interacting_imag_tempo(beta, Ntau, U, mu, d, alpha, chi)
 color = 'k'
 
 ax.plot(taus, gtau, ls='-', color=color, linewidth=linewidth1, label=r'Analytic')
-ax.plot(taus2, gtau2.real, ls='--', color=color, linewidth=linewidth2, label=r'$\chi=%s$'%(chi))
+ax.plot(taus2, gtau2.real, ls='--', color=color, linewidth=linewidth2, label=r'GTEMPO')
 
 ax.set_xlabel(r'$\tau$', fontsize=fontsize)
 ax.set_ylabel(r'$G(\tau)$', fontsize=fontsize)
