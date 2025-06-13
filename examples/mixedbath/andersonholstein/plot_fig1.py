@@ -59,7 +59,7 @@ d = 3
 alpha = 1
 
 
-chis = [20, 40, 60]
+chis = [20, 40, 60, 100]
 
 
 for i, chi in enumerate(chis):
@@ -88,7 +88,7 @@ ax[0,1].legend( fontsize=12)
 Ns = [5, 10, 20, 40]
 
 
-chi = 60
+chi = 100
 for i, N in enumerate(Ns):
 	taus, gtau, gnn, gnn2 = read_imag_tempo(beta, N, mu, d, alpha, chi)
 	ax[0,2].plot(taus, gtau, ls='--', color=colors[i], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'$\delta t=%s$'%(beta/N))
@@ -112,9 +112,9 @@ ax[0,3].legend(fontsize=12)
 
 
 # beta = 10
-chis = [60, 100, 140]
+chis = [100, 140, 200]
 beta = 10
-N = 400
+N = 200
 
 for i, chi in enumerate(chis):
 	taus, gtau, gnn, gnn2 = read_imag_tempo(beta, N, mu, d, alpha, chi)
@@ -139,7 +139,7 @@ ax[1,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 ax[1,1].annotate(r'(b2)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
 ax[1,1].legend( fontsize=12)
 
-Ns = [50, 100, 200, 400]
+Ns = [50, 100, 200]
 
 chi = 140
 for i, N in enumerate(Ns):

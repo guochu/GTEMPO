@@ -60,14 +60,14 @@ ax3color = 'b'
 U = 1
 mu = U / 2
 
-beta = 5
+beta = 10
 t = 1
 N = 20
-d = 3
-alpha = 1
+d = 1
+alpha = 0.1
 
 
-chis = [100, 200, 300, 400]
+chis = [100, 200, 300]
 
 alphas = [0.2, 0.5, 0.7, 1]
 
@@ -127,9 +127,9 @@ ax2.locator_params(axis='both', nbins=6)
 ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 
-Nts = [5, 10, 20, 40]
+Nts = [5, 10, 20]
 dts = [t / Nt for Nt in Nts]
-chi = 400
+chi = 300
 
 
 for i, Nt in enumerate(Nts):

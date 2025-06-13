@@ -46,6 +46,8 @@ function main_real(U, ϵ_d=U/2; β=1, t=1, N=10, d=3, α=1, chi = 200)
 
 		mpsI3 = swapband(mpsI2, lattice, 1, 2, trunc=trunc)
 
+		mpsI2 = systhermalstate!(mpsI2, lattice, exact_model, β=β)
+
 		println("save MPS-IF to path ", mpspath)
 		Serialization.serialize(mpspath, (fmpsI1, mpsI2, mpsI3))
 	end
@@ -56,7 +58,6 @@ function main_real(U, ϵ_d=U/2; β=1, t=1, N=10, d=3, α=1, chi = 200)
 
 	fadt = sysdynamics!(fmpsI1, flattice, exact_model, trunc=trunc)
 	lattice, mpsI1 = focktograssmann(lattice.ordering, flattice, fadt, trunc=trunc)
-	mpsI1 = systhermalstate!(mpsI1, lattice, exact_model, β=β)
 
 	println("bond dimension of bosonic adt is ", bond_dimension(mpsI1))
 
