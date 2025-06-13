@@ -141,7 +141,7 @@ ax[1,1].legend( fontsize=12)
 
 Ns = [50, 100, 200]
 
-chi = 140
+chi = 200
 for i, N in enumerate(Ns):
 	taus, gtau, gnn, gnn2 = read_imag_tempo(beta, N, mu, d, alpha, chi)
 	ax[1,2].plot(taus, gtau, ls='--', color=colors[i], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'$\delta t=%s$'%(beta/N))

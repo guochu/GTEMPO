@@ -30,6 +30,8 @@ function main_real(U, ϵ_d=U/2; β=1, t=1, N=10, d=3, α=1, chi = 200)
 	fbath = fermionicbath(semicircular(t=1), β=β, μ=0)
 	bbath = bosonicbath(boson_spectrum_func(d=d, α=α), β=β)
 
+	exact_model = AndersonIM(U=U, μ=-ϵ_d)
+
 	mpspath = "data/andersonholstein_int_realgtempo_beta$(β)_t$(t)_dt$(δt)_d$(d)_alpha$(α)_chi$(chi).mps"
 	if ispath(mpspath)
 		println("load MPS-IF from path ", mpspath)
@@ -54,7 +56,6 @@ function main_real(U, ϵ_d=U/2; β=1, t=1, N=10, d=3, α=1, chi = 200)
 
 	println("bond dimension of mpsI is ", bond_dimension(fmpsI1), " ", bond_dimension(mpsI2), " ", bond_dimension(mpsI3))
 
-	exact_model = AndersonIM(U=U, μ=-ϵ_d)
 
 	fadt = sysdynamics!(fmpsI1, flattice, exact_model, trunc=trunc)
 	lattice, mpsI1 = focktograssmann(lattice.ordering, flattice, fadt, trunc=trunc)

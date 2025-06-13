@@ -63,7 +63,7 @@ beta = 10
 t = 5
 N = 200
 d = 1
-alpha = 1
+alpha = 0.1
 
 
 chis = [80, 120, 160]
