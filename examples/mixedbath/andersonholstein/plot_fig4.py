@@ -67,7 +67,7 @@ d = 3
 alpha = 1
 
 
-chis = [200, 300, 400]
+chis = [100, 200, 300, 400]
 
 alphas = [0.2, 0.5, 0.7, 1]
 
@@ -127,7 +127,7 @@ ax2.locator_params(axis='both', nbins=6)
 ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 
-Nts = [5, 10, 20]
+Nts = [5, 10, 20, 40]
 dts = [t / Nt for Nt in Nts]
 chi = 400
 

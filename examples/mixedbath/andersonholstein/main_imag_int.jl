@@ -100,7 +100,7 @@ end
 
 
 function main_imag_vs_chi(U, ϵ_d=U/2; β=1, N=10, d=3, α=1)
-	for chi in [50, 100, 150, 200, 300, 400]
+	for chi in [50, 100, 150, 200, 300, 400, 500]
 		main_imag(U, ϵ_d, β=β, N=N, d=d, α=α, chi=chi)
 	end
 end

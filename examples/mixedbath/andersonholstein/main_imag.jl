@@ -100,8 +100,14 @@ end
 
 
 
-function main_imag_vs_chi(ϵ_d; β=5, N=50, d=3, α=1)
-	for chi in [20, 40,60,80,100, 120, 140]
+function main_imag_vs_chi_1(ϵ_d; β=5, N=50, d=3, α=1)
+	for chi in [20, 40,60,80,100]
+		main_imag(ϵ_d, β=β, N=N, d=d, α=α, chi=chi)
+	end
+end
+
+function main_imag_vs_chi_2(ϵ_d; β=5, N=50, d=3, α=1)
+	for chi in [120, 140, 160, 200, 250]
 		main_imag(ϵ_d, β=β, N=N, d=d, α=α, chi=chi)
 	end
 end

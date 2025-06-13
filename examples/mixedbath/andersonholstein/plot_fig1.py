@@ -54,9 +54,9 @@ annotate_xy = (-0.15, 1.07)
 mu = 0.
 
 beta = 1
-N = 20
-d = 1
-alpha = 0.1
+N = 10
+d = 3
+alpha = 1
 
 
 chis = [20, 40, 60]

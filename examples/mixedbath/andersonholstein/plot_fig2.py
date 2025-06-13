@@ -115,7 +115,7 @@ ax[0,3].legend(fontsize=12)
 
 
 beta = 10
-N = 100
+N = 200
 
 for i, chi in enumerate(chis):
 	taus, gtau, gnn, gnn2 = read_imag_tempo(beta, N, U, mu, d, alpha, chi)
