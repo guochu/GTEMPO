@@ -66,7 +66,7 @@ d = 1
 alpha = 0.1
 
 
-chis = [80, 120, 160]
+chis = [80, 120, 160, 200]
 
 alphas = [0.2, 0.5, 0.7, 1]
 
@@ -130,7 +130,7 @@ ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 Nts = [25, 50, 100, 200]
 dts = [t / Nt for Nt in Nts]
-chi = 160
+chi = 200
 
 for i, Nt in enumerate(Nts):
 	ts, gt, lt, gnn, gnn2 = read_real_tempo(beta, t, Nt, mu, d, alpha, chi)
