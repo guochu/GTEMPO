@@ -122,7 +122,7 @@ fig, ax = plt.subplots(1,1, figsize=(6,5))
 chi = 160
 
 U = 1
-mu = U/2
+mu = -U/2
 
 beta = 10
 Ntau = 50
@@ -147,7 +147,7 @@ ax.locator_params(axis='both', nbins=6)
 ax.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 gtau_errors = []
-chis = [20, 40,60,80,100, 120, 140, 160]
+chis = [40,80,120, 160, 200, 300, 400]
 
 for i, chi in enumerate(chis):
 	taus2, gtau2 = read_interacting_imag_tempo(beta, Ntau, U, mu, d, alpha, chi)

@@ -113,9 +113,9 @@ chi = 120
 beta = 10
 Ntau = 50
 d = 1
-alpha = 0.1
+alpha = 1
 
-mu = 0.
+mu = -5.
 
 color = 'k'
 

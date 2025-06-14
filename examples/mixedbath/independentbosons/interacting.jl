@@ -174,7 +174,7 @@ function main_mixed(U, ϵ_d=U/2; β=1, Nτ=20, t=1, Nt=100, d=1, chi = 100, α=1
 end
 
 function main_imag_vs_chi(U, ϵ_d=U/2; β=5, Nτ=50, d=1, α=1)
-	for chi in [40,80,120,160, 200, 300, 400]
+	for chi in [40,80,120,160, 200, 300, 400, 600, 800]
 		main_imag(U, ϵ_d, β=β, Nτ=Nτ, d=d, α=α, chi=chi)
 	end
 end
