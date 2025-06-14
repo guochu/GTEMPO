@@ -104,6 +104,65 @@ function main_imag(ϵ_d; β=1, Nτ=20, d=1, chi = 100, α=1)
 	return τs, gtau
 end
 
+function main_imag_2(ϵ_d; β=1, Nτ=20, d=1, chi = 100, α=1)
+	# ϵ_d = 0.5
+	δτ = β / Nτ
+
+	println(" Nτ=", Nτ, " δτ=", δτ, " ϵ_d=", ϵ_d, " β=", β, " chi=", chi, " d=", d, " α=", α)
+
+	τs = [i*δτ for i in 1:Nτ+1]
+
+	trunc = truncdimcutoff(D=chi, ϵ=1.0e-14, add_back=0)
+
+	lattice = GrassmannLattice(N=Nτ, δτ=δτ, contour=:imag, order=1)
+	println("number of sites, ", length(lattice))
+	flattice = FockLattice(N=Nτ, δτ=δτ, contour=:imag, order=1)
+
+	mpspath = "data/noninteracting_imaggtempo_beta$(β)_dtau$(δτ)_d$(d)_alpha$(α)_chi$(chi).mps"
+	if ispath(mpspath)
+		println("load MPS-IF from path ", mpspath)
+		fmpsI = Serialization.deserialize(mpspath)
+	else
+		println("computing MPS-IF...")
+		bath = bosonicbath(spectrum_func(d=d, α=α), β=β)
+		corr = correlationfunction(bath, flattice)
+		@time fmpsI = hybriddynamics(flattice, corr, trunc=trunc)
+
+		println("save MPS-IF to path ", mpspath)
+		Serialization.serialize(mpspath, fmpsI)
+	end
+
+	println("bond dimension of fmpsI is ", bond_dimension(fmpsI))
+
+	exact_model = AndersonIM(U=0., μ=-ϵ_d)
+
+	lattice, mpsI = focktograssmann(lattice.ordering, flattice, fmpsI, trunc=trunc)
+
+	mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
+	
+	for band in 1:lattice.bands
+		mpsK = boundarycondition!(mpsK, lattice, band=band, trunc=trunc)
+		# adt = bulkconnection!(adt, lattice, band=band, trunc=trunc)
+	end
+	println("bond dimension of bosonic adt is ", bond_dimension(mpsI))
+
+	cache = environments(lattice, mpsK, mpsI)
+
+	@time gtau = [cached_Gτ(lattice, k, 1, mpsK, mpsI, c1=false, c2=true, band=1, cache=cache) for k in 1:Nτ+1]
+
+	data_path = "result/noninteracting_imaggtempo_beta$(β)_dtau$(δτ)_mu$(ϵ_d)_d$(d)_alpha$(α)_chi$(chi)_2.json"
+
+	results = Dict("taus"=>τs, "bd"=>bond_dimensions(mpsI), "gtau"=>gtau)
+
+	println("save results to ", data_path)
+
+	open(data_path, "w") do f
+		write(f, JSON.json(results))
+	end
+
+	return τs, gtau
+end
+
 function main_mixed(ϵ_d; β=1, Nτ=20, t=1, Nt=100, d=1, chi = 100, α=1)
 	# ϵ_d = 0.5
 	δτ = β / Nτ
@@ -185,6 +244,12 @@ end
 function main_imag_vs_chi(ϵ_d; β=5, Nτ=50, d=1, α=1)
 	for chi in [20, 40,60,80,100,120, 140]
 		main_imag(ϵ_d, β=β, Nτ=Nτ, d=d, α=α, chi=chi)
+	end
+end
+
+function main_imag_vs_chi_2(ϵ_d; β=5, Nτ=50, d=1, α=1)
+	for chi in [20, 40,60,80,100,120, 140]
+		main_imag_2(ϵ_d, β=β, Nτ=Nτ, d=d, α=α, chi=chi)
 	end
 end
 

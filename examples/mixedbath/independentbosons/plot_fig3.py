@@ -121,13 +121,13 @@ fig, ax = plt.subplots(1,1, figsize=(6,5))
 
 chi = 160
 
-U = 1
-mu = -U/2
+U = 5
+mu = U/2
 
 beta = 10
 Ntau = 50
 d = 1
-alpha = 1
+alpha = 0.1
 
 # noninteracting case
 taus, gtau = read_interacting_imag_analytic(beta, Ntau, U, mu, d, alpha)
