@@ -53,8 +53,12 @@ function main_real(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1
 
 		fcorr = correlationfunction(fbath, lattice)
 		@time mpsI2 = hybriddynamics(lattice, fcorr, band=1, trunc=trunc)
+		for band in 1:lattice.bands
+			mpsI2 = boundarycondition!(mpsI2, lattice, band=band, trunc=trunc)
+			# mpsI2 = bulkconnection!(mpsI2, lattice, band=band, trunc=trunc)
+		end
 
-		mpsI2 = boundarycondition!(mpsI2, lattice, band=1, trunc=trunc)
+		
 
 		# mpsI2 = systhermalstate!(mpsI2, lattice, exact_model, β=β)
 
@@ -77,9 +81,10 @@ function main_real(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1
 	# @time lt = [cached_lesser(lattice, j, mpsK, mpsI, cache=cache) for j in 1:lattice.kt]
 	# return gt, lt
 
-	@time g₁ = [cached_greater(lattice, k, mpsI1, mpsI2, c1=false, c2=true, b1=:+, b2=:+, band=2, cache=cache) for k in 1:N+1]
-	@time g₂ = [cached_lesser(lattice, k, mpsI1, mpsI2, c1=true, c2=false, b1=:-, b2=:+, band=2, cache=cache) for k in 1:N+1]
-	@time g₃′ = [cached_nn(lattice, i, 1, mpsI1, mpsI2, cache=cache, b1=:+, b2=:-) for i in 1:N]
+	band = 1
+	@time g₁ = [cached_greater(lattice, k, mpsI1, mpsI2, c1=false, c2=true, b1=:+, b2=:+, band=band, cache=cache) for k in 1:N+1]
+	@time g₂ = [cached_lesser(lattice, k, mpsI1, mpsI2, c1=true, c2=false, b1=:-, b2=:+, band=band, cache=cache) for k in 1:N+1]
+	# @time g₃′ = [cached_nn(lattice, i, 1, mpsI1, mpsI2, cache=cache, b1=:+, b2=:-) for i in 1:N]
 	# println("start calculating nn...")
 	# g₃ = ComplexF64[]
 	# pos2 = index(flattice, 1, branch=:-, band=1)
@@ -112,5 +117,5 @@ function main_real(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1
 	# return g₁, g₂, g₃
 
 	g₁, g₂ = -im*g₁, -im*g₂
-	return g₁, g₂, g₃′
+	return g₁, g₂
 end

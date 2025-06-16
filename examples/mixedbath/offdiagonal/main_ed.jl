@@ -121,8 +121,8 @@ function interacting_operators(U, J, ϵ_d=U/2; ω₀=1, α₀=0.5, ω₁=1, α�
 	Hhyb1 = sqrt(α₁) * (tmp + tmp')
 	H = Himp + Hhyb0 + Hhyb1 + Hbath0 + Hbath1
 
-	# A, B = kron(kron(kron(σ₋, Is), Is), Ib), kron(kron(kron(σ₊, Is), Is), Ib)
-	A, B = kron(kron(kron(JW, σ₋), Is), Ib), kron(kron(kron(JW, σ₊), Is), Ib)
+	A, B = kron(kron(kron(σ₋, Is), Is), Ib), kron(kron(kron(σ₊, Is), Is), Ib)
+	# A, B = kron(kron(kron(JW, σ₋), Is), Ib), kron(kron(kron(JW, σ₊), Is), Ib)
 
 	return H, A, B, Himp + Hbath0 + Hbath1
 end
