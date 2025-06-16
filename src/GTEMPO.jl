@@ -59,13 +59,13 @@ export bulkconnection!, bulkconnection, baresysdynamics!, baresysdynamics
 
 
 # electron-phonon interaction
-export AbstractNTerm, NTerm, ExpNTerm
-export FockMPS, partialdensempo
+export AbstractNTerm, ExpNTerm
+export FockMPS
 export FockOrdering, ImagFockOrdering, RealFockOrdering, MixedFockOrdering, similargrassmannordering
 export M1N1, MN, M1m1N1n1, MmNn, M1N1_M1m1N1n1M2m2N2n2, MN_MmNn
 export AbstractFockLattice, FockLattice, ImagFockLattice, similargrassmannlattice
 export RealFockLattice, MixedFockLattice
-export focktograssmann
+export reweighting!, reweighting
 
 using Base: @boundscheck, @propagate_inbounds
 using Logging: @warn

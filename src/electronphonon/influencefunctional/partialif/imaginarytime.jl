@@ -23,9 +23,9 @@ function _hybriddynamics_1band!(gmps::FockMPS, lattice::ImagFockLattice1Order, c
 			pos2 = index(lattice, j, band=band)
 			coef = exp(corr[i, j]) - 1 
 			if pos1==pos2
-				t = exp(NTerm(pos1, coeff=coef))
+				t = ExpNTerm(pos1, coeff=coef)
 			else
-				t = exp(NTerm(pos1, pos2, coeff=coef))
+				t = ExpNTerm(pos1, pos2, coeff=coef)
 			end
 			apply!(t, tmp)
 			canonicalize!(tmp, alg=Orthogonalize(TK.SVD(), trunc))
@@ -49,9 +49,9 @@ function hybriddynamics_2band!(gmps::FockMPS, lattice::ImagFockLattice1Order, co
 			coef = ifelse(b2==1, exp(corr[i, j]) - 1, exp(corr[i, j] + corr[j, i]) - 1)
 			pos2 = index(lattice, j, band=b2)
 			if pos1==pos2
-				t = exp(NTerm(pos1, coeff=coef))
+				t = ExpNTerm(pos1, coeff=coef)
 			else
-				t = exp(NTerm(pos1, pos2, coeff=coef))
+				t = ExpNTerm(pos1, pos2, coeff=coef)
 			end
 			apply!(t, tmp)
 			canonicalize!(tmp, alg=Orthogonalize(TK.SVD(), trunc))			
@@ -120,10 +120,10 @@ function _hybriddynamics_1band_naive!(gmps::FockMPS, lattice::ImagFockLattice1Or
 		# coef = corr[i, j]
 		coef = exp(corr[i, j]) - 1
 		if i == j
-			t = exp(NTerm(pos1, coeff=coef))
+			t = ExpNTerm(pos1, coeff=coef)
 			apply!(t, gmps)
 		else
-			t = exp(NTerm(pos1, pos2, coeff=coef))
+			t = ExpNTerm(pos1, pos2, coeff=coef)
 			apply!(t, gmps)
 		end
 		
@@ -146,7 +146,7 @@ function hybriddynamics_2band_naive!(gmps::FockMPS, lattice::ImagFockLattice1Ord
 		# coef = corr[i, j] + corr[j, i]
 		# coef = exp(corr[i, j]) + exp(corr[j, i]) - 2
 		coef = exp(corr[i, j] + corr[j, i]) - 1
-		t = exp(NTerm(pos1, pos2, coeff=coef))
+		t = ExpNTerm(pos1, pos2, coeff=coef)
 		apply!(t, gmps)
 		canonicalize!(gmps, alg=Orthogonalize(TK.SVD(), trunc))
 	end

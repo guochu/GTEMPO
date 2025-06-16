@@ -19,10 +19,10 @@ println("------------------------------------")
 				coef = exp(η[i, j]) - 1
 				if (i == j) 
 					pos1 = index(lattice, i, band=band)
-					t = exp(NTerm(pos1, coeff=coef)) 
+					t = ExpNTerm(pos1, coeff=coef)
 				else
 					pos1, pos2 = index(lattice, i, band=band), index(lattice, j, band=band)
-					t = exp(NTerm(pos1, pos2, coeff=coef)) 
+					t = ExpNTerm(pos1, pos2, coeff=coef)
 				end
 				apply!(t, mps1)
 				canonicalize!(mps1, alg=Orthogonalize(TK.SVD(), trunc))
@@ -52,9 +52,9 @@ println("------------------------------------")
 				pos1, pos2 = index(lattice, i, band=band), index(lattice, j, band=band)
 				coef = exp(η[i, j]) - 1
 				if pos1 == pos2
-					t = exp(NTerm(pos1, coeff=coef))
+					t = ExpNTerm(pos1, coeff=coef)
 				else
-					t = exp(NTerm(pos1, pos2, coeff=coef))
+					t = ExpNTerm(pos1, pos2, coeff=coef)
 				end
 				apply!(t, mpsa)
 				canonicalize!(mpsa, alg=Orthogonalize(TK.SVD(), trunc))
@@ -64,7 +64,7 @@ println("------------------------------------")
 		for i in 1:k, j in 1:k
 			pos1, pos2 = index(lattice, i, band=1), index(lattice, j, band=2)
 			coef = exp(η[i, j] + η[j, i]) - 1
-			t = exp(NTerm(pos1, pos2, coeff=coef))
+			t = ExpNTerm(pos1, pos2, coeff=coef)
 			apply!(t, mpsa)
 			canonicalize!(mpsa, alg=Orthogonalize(TK.SVD(), trunc))
 		end

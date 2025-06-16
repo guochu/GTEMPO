@@ -35,9 +35,14 @@ function FockMPS(data::AbstractVector{<:DenseMPSTensor{T}}; scaling::Real=1) whe
 	return FockMPS{T, R}(data, Ref(convert(R, scaling)))
 end
 
+# function FockMPS(::Type{T}, L::Int) where {T <: Number}
+# 	v = zeros(T, 1, 2, 1)
+# 	v[1,1,1] = 1
+# 	data = [copy(v) for i in 1:L]
+# 	return FockMPS(data, scaling=1)
+# end
 function FockMPS(::Type{T}, L::Int) where {T <: Number}
-	v = zeros(T, 1, 2, 1)
-	v[1,1,1] = 1
+	v = ones(T, 1, 2, 1)
 	data = [copy(v) for i in 1:L]
 	return FockMPS(data, scaling=1)
 end
