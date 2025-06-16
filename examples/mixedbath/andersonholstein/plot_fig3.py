@@ -128,7 +128,7 @@ ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 
 
-Nts = [25, 50, 100, 200]
+Nts = [50, 100, 200]
 dts = [t / Nt for Nt in Nts]
 chi = 200
 

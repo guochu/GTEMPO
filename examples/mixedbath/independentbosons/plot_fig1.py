@@ -141,12 +141,10 @@ color2 = 'g'
 taus, gtau = read_noninteracting_imag_analytic(beta, Ntau, mu, d, alpha)
 
 taus2, gtau2 = read_noninteracting_imag_tempo(beta, Ntau, mu, d, alpha, chi)
-taus3, gtau3 = read_noninteracting_imag_tempo_2(beta, Ntau, mu, d, alpha, chi)
-# ts4, taus4, gt4, lt4, gtau4 = read_noninteracting_mixed_tempo(beta, Ntau, 0.1, 10, mu, d, alpha, chi)
+
 
 ax[0,0].plot(taus, gtau, ls='-', color=color, linewidth=linewidth1, label=r'Analytic')
 ax[0,0].plot(taus2, gtau2.real, ls='--', color=color, linewidth=linewidth2, label=r'GTEMPO')
-ax[0,0].plot(taus3, gtau3.real, ls='--', color=color2, linewidth=linewidth2, label=r'GTEMPO')
 
 
 ax[0,0].set_xlabel(r'$\tau$', fontsize=fontsize)
@@ -159,21 +157,16 @@ ax[0,0].annotate(r'(a)', xy=annotate_xy,xycoords='axes fraction', fontsize=fonts
 
 
 gtau_errors = []
-gtau_errors_2 = []
 chis = [20, 40,60,80, 100, 120, 140]
 
 for i, chi in enumerate(chis):
 	taus2, gtau2 = read_noninteracting_imag_tempo(beta, Ntau, mu, d, alpha, chi)
-	taus3, gtau3 = read_noninteracting_imag_tempo_2(beta, Ntau, mu, d, alpha, chi)
 	gtau_errors.append(mse_error(gtau, gtau2.real))
-	gtau_errors_2.append(mse_error(gtau, gtau3.real))
-
 
 
 ax1 = ax[0,0].inset_axes([0.25, 0.4, 0.5, 0.5])
 
 ax1.semilogy(chis, gtau_errors, ls='--', color=color, marker='o', markersize=markersize, markerfacecolor='none', linewidth=linewidth1, label=r'Partial')
-ax1.semilogy(chis, gtau_errors_2, ls='--', color=color2, marker='^', markersize=markersize, markerfacecolor='none', linewidth=linewidth1, label=r'Partial')
 
 
 ax1.set_ylabel(r'$\mathcal{E}$', fontsize=fontsize_s)
@@ -190,7 +183,7 @@ Ntau = 50
 taus, gtau = read_noninteracting_imag_analytic(beta, Ntau, mu, d, alpha)
 
 taus2, gtau2 = read_noninteracting_imag_tempo(beta, Ntau, mu, d, alpha, chi)
-# ts4, taus4, gt4, lt4, gtau4 = read_noninteracting_mixed_tempo(beta, Ntau, 0.1, 10, mu, d, alpha, chi)
+
 
 ax[0,1].plot(taus, gtau, ls='-', color=color, linewidth=linewidth1, label=r'Analytic')
 ax[0,1].plot(taus2, gtau2.real, ls='--', color=color, linewidth=linewidth2, label=r'GTEMPO')
@@ -229,7 +222,6 @@ mu = -5.
 taus, gtau = read_noninteracting_imag_analytic(beta, Ntau, mu, d, alpha)
 
 taus2, gtau2 = read_noninteracting_imag_tempo(beta, Ntau, mu, d, alpha, chi)
-# ts4, taus4, gt4, lt4, gtau4 = read_noninteracting_mixed_tempo(beta, Ntau, 0.1, 10, mu, d, alpha, chi)
 
 ax[1,0].plot(taus, gtau, ls='-', color=color, linewidth=linewidth1, label=r'Analytic')
 ax[1,0].plot(taus2, gtau2.real, ls='--', color=color, linewidth=linewidth2, label=r'GTEMPO')
@@ -269,7 +261,6 @@ d = 3
 taus, gtau = read_noninteracting_imag_analytic(beta, Ntau, mu, d, alpha)
 
 taus2, gtau2 = read_noninteracting_imag_tempo(beta, Ntau, mu, d, alpha, chi)
-# ts4, taus4, gt4, lt4, gtau4 = read_noninteracting_mixed_tempo(beta, Ntau, 0.1, 10, mu, d, alpha, chi)
 
 ax[1,1].plot(taus, gtau, ls='-', color=color, linewidth=linewidth1, label=r'Analytic')
 ax[1,1].plot(taus2, gtau2.real, ls='--', color=color, linewidth=linewidth2, label=r'GTEMPO')

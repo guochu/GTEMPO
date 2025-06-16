@@ -104,6 +104,19 @@ function main_imag(ϵ_d; β=1, Nτ=20, d=1, chi = 100, α=1)
 	return τs, gtau
 end
 
+function gAndersonIM(;μ::Real, U::Real)
+	if U != zero(U)
+		h = ImpurityHamiltonian(bands=2)
+		push!(h, interaction(1,2,2,1, coeff=U))
+	else
+		h = ImpurityHamiltonian(bands=1)
+	end
+	for band in 1:h.bands
+		push!(h, tunneling(band, band, coeff=μ))
+	end
+	return h
+end
+
 function main_imag_2(ϵ_d; β=1, Nτ=20, d=1, chi = 100, α=1)
 	# ϵ_d = 0.5
 	δτ = β / Nτ
@@ -134,12 +147,14 @@ function main_imag_2(ϵ_d; β=1, Nτ=20, d=1, chi = 100, α=1)
 
 	println("bond dimension of fmpsI is ", bond_dimension(fmpsI))
 
-	exact_model = AndersonIM(U=0., μ=-ϵ_d)
-
 	lattice, mpsI = focktograssmann(lattice.ordering, flattice, fmpsI, trunc=trunc)
 
-	mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
+	# exact_model = AndersonIM(U=0., μ=-ϵ_d)
+	# mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
 	
+	exact_model = gAndersonIM(U=0., μ=-ϵ_d)
+	mpsK = baresysdynamics(lattice, exact_model, trunc=trunc)
+
 	for band in 1:lattice.bands
 		mpsK = boundarycondition!(mpsK, lattice, band=band, trunc=trunc)
 		# adt = bulkconnection!(adt, lattice, band=band, trunc=trunc)
