@@ -38,8 +38,8 @@ function main_real(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1
 
 	fbath = fermionicbath(DiracDelta(ω=ω₁, α=α₁), β=β, μ=0)
 
-	# exact_model = model(U=U, μ=-ϵ_d, J=J)
-	exact_model = AndersonIM(U=U, μ=-ϵ_d)
+	exact_model = model(U=U, μ=-ϵ_d, J=J)
+	# exact_model = AndersonIM(U=U, μ=-ϵ_d)
 
 	# mpspath = "data/noninteracting_realgtempo_beta$(β)_t$(t)_dt$(δt)_omega0$(ω₀)_alpha0$(α₀)_omega1$(ω₁)_alpha1$(α₁)_chi$(chi).mps"
 	# if ispath(mpspath)
@@ -69,8 +69,8 @@ function main_real(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1
 	println("bond dimension of mpsI is ", bond_dimension(fmpsI1), " ", bond_dimension(mpsI2))
 
 
-	mpsK = accsysdynamics_fast(lattice, exact_model, trunc=trunc)
-	mpsK = systhermalstate!(mpsK, lattice, exact_model, β=β, δτ=0.001)
+	mpsK = accsysdynamics_fast(lattice, exact_model, trunc=trunc, scaling=1000)
+	# mpsK = systhermalstate!(mpsK, lattice, exact_model, β=β, δτ=0.001)
 	mpsI1 = reweighting!(lattice, mpsK, flattice, fmpsI1, trunc=trunc)
 
 	println("bond dimension of bosonic adt is ", bond_dimension(mpsI1))
@@ -117,5 +117,5 @@ function main_real(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1
 	# return g₁, g₂, g₃
 
 	g₁, g₂ = -im*g₁, -im*g₂
-	return g₁, g₂
+	return g₁[1:end-1], g₂[1:end-1]
 end

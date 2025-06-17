@@ -124,7 +124,10 @@ function interacting_operators(U, J, ϵ_d=U/2; ω₀=1, α₀=0.5, ω₁=1, α�
 	A, B = kron(kron(kron(σ₋, Is), Is), Ib), kron(kron(kron(σ₊, Is), Is), Ib)
 	# A, B = kron(kron(kron(JW, σ₋), Is), Ib), kron(kron(kron(JW, σ₊), Is), Ib)
 
-	return H, A, B, Himp + Hbath0 + Hbath1
+	# return H, A, B, Himp + Hbath0 + Hbath1
+
+	Hbathbare = ω₀ * kron(Is, n̂b) + ω₁ * kron(n̂, Ib)
+	return H, A, B, Hbathbare
 end
 
 
@@ -132,7 +135,10 @@ function main_neq(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1,
 	δt=t/N
 
 	H, a, adag, H0 = interacting_operators(U, J, ϵ_d, ω₀=ω₀, α₀=α₀, ω₁=ω₁, α₁=α₁, d=50)
-	ρ = exp(-β*H0)
+	ρimp = zeros(4, 4)
+	ρimp[1,1] = 1
+	ρ = kron(ρimp, exp(-β*H0))  
+	# ρ = exp(-β*H0)
 	cache = eigencache(H)
 	g1, g2 = gf_real(a, adag, β, t, N, cache, ρ)
 	# g3 = gf_real_nn(Nimp, β, t, N, cache, ρ)
@@ -146,6 +152,6 @@ function main_neq(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1,
 	# 	write(f, JSON.json(results))
 	# end
 
-	return g1, g2
+	return g1[2:end], g2[2:end]
 
 end
