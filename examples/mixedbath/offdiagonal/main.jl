@@ -49,7 +49,7 @@ function main_real(U, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, �
 			mpsI2 = boundarycondition!(mpsI2, lattice, band=band, trunc=trunc)
 		end
 
-		mpsI2 = systhermalstate!(mpsI2, lattice, exact_model, β=β, δτ=0.0001)
+		mpsI2 = systhermalstate!(mpsI2, lattice, exact_model, β=β, δτ=0.001)
 
 	# 	println("save MPS-IF to path ", mpspath)
 	# 	Serialization.serialize(mpspath, (fmpsI1, mpsI2))
@@ -106,5 +106,5 @@ function main_real(U, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, �
 	# return g₁, g₂, g₃
 
 	g₁, g₂ = -im*g₁, -im*g₂
-	return g₁, g₂
+	return g₁[1:end-1], g₂[1:end-1]
 end
