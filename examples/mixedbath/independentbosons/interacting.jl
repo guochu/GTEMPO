@@ -140,7 +140,7 @@ function main_mixed(U, ϵ_d=U/2; β=1, Nτ=20, t=1, Nt=100, d=1, chi = 100, α=1
 	for band in 1:lattice.bands
 		mpsK = boundarycondition!(mpsK, lattice, band=band, trunc=trunc)
 	end
-	adt = reweighting!(lattice, mpsK, flattice, fadt, trunc=trunc)
+	adt = reweighting!(lattice, mpsK, flattice, fmpsI, trunc=trunc)
 
 	println("bond dimension of bosonic adt is ", bond_dimension(adt))
 

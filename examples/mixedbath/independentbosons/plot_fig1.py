@@ -132,7 +132,7 @@ Ntau = 20
 d = 1
 alpha = 1
 
-mu = 0.
+mu = 0
 
 color = 'k'
 color2 = 'g'
@@ -216,81 +216,81 @@ ax1.set_xlabel(r'$\chi$', fontsize=fontsize_s)
 ax1.tick_params(axis='both', which='major', labelsize=labelsize_s)
 
 
-# 
-mu = -5.
+# # 
+# mu = -5
 
-taus, gtau = read_noninteracting_imag_analytic(beta, Ntau, mu, d, alpha)
+# taus, gtau = read_noninteracting_imag_analytic(beta, Ntau, mu, d, alpha)
 
-taus2, gtau2 = read_noninteracting_imag_tempo(beta, Ntau, mu, d, alpha, chi)
+# taus2, gtau2 = read_noninteracting_imag_tempo(beta, Ntau, mu, d, alpha, chi)
 
-ax[1,0].plot(taus, gtau, ls='-', color=color, linewidth=linewidth1, label=r'Analytic')
-ax[1,0].plot(taus2, gtau2.real, ls='--', color=color, linewidth=linewidth2, label=r'GTEMPO')
+# ax[1,0].plot(taus, gtau, ls='-', color=color, linewidth=linewidth1, label=r'Analytic')
+# ax[1,0].plot(taus2, gtau2.real, ls='--', color=color, linewidth=linewidth2, label=r'GTEMPO')
 
-ax[1,0].set_xlabel(r'$\tau$', fontsize=fontsize)
-ax[1,0].set_ylabel(r'$G(\tau)$', fontsize=fontsize)
-ax[1,0].tick_params(axis='both', which='major', labelsize=labelsize)
-ax[1,0].locator_params(axis='both', nbins=6)
-ax[1,0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[1,0].set_title(r'$\epsilon_d=%s, d=%s, \alpha=%s$'%( round(-mu), d, alpha), fontsize=labelsize_s)
+# ax[1,0].set_xlabel(r'$\tau$', fontsize=fontsize)
+# ax[1,0].set_ylabel(r'$G(\tau)$', fontsize=fontsize)
+# ax[1,0].tick_params(axis='both', which='major', labelsize=labelsize)
+# ax[1,0].locator_params(axis='both', nbins=6)
+# ax[1,0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+# ax[1,0].set_title(r'$\epsilon_d=%s, d=%s, \alpha=%s$'%( round(-mu), d, alpha), fontsize=labelsize_s)
 
-ax[1,0].annotate(r'(c)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
-
-
-gtau_errors = []
-# chis = [20, 40,60,80, 100, 120, 140]
-
-for i, chi in enumerate(chis):
-	taus2, gtau2 = read_noninteracting_imag_tempo(beta, Ntau, mu, d, alpha, chi)
-	gtau_errors.append(mse_error(gtau, gtau2.real))
+# ax[1,0].annotate(r'(c)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
 
 
+# gtau_errors = []
+# # chis = [20, 40,60,80, 100, 120, 140]
 
-ax1 = ax[1,0].inset_axes([0.3, 0.4, 0.5, 0.5])
-
-ax1.semilogy(chis, gtau_errors, ls='--', color=color, marker='o', markersize=markersize, markerfacecolor='none', linewidth=linewidth1, label=r'Partial')
-
-ax1.set_ylabel(r'$\mathcal{E}$', fontsize=fontsize_s)
-ax1.set_xlabel(r'$\chi$', fontsize=fontsize_s)
-ax1.tick_params(axis='both', which='major', labelsize=labelsize_s)
+# for i, chi in enumerate(chis):
+# 	taus2, gtau2 = read_noninteracting_imag_tempo(beta, Ntau, mu, d, alpha, chi)
+# 	gtau_errors.append(mse_error(gtau, gtau2.real))
 
 
 
-# 
-d = 3
+# ax1 = ax[1,0].inset_axes([0.3, 0.4, 0.5, 0.5])
 
-taus, gtau = read_noninteracting_imag_analytic(beta, Ntau, mu, d, alpha)
+# ax1.semilogy(chis, gtau_errors, ls='--', color=color, marker='o', markersize=markersize, markerfacecolor='none', linewidth=linewidth1, label=r'Partial')
 
-taus2, gtau2 = read_noninteracting_imag_tempo(beta, Ntau, mu, d, alpha, chi)
-
-ax[1,1].plot(taus, gtau, ls='-', color=color, linewidth=linewidth1, label=r'Analytic')
-ax[1,1].plot(taus2, gtau2.real, ls='--', color=color, linewidth=linewidth2, label=r'GTEMPO')
-
-ax[1,1].set_xlabel(r'$\tau$', fontsize=fontsize)
-ax[1,1].set_ylabel(r'$G(\tau)$', fontsize=fontsize)
-ax[1,1].tick_params(axis='both', which='major', labelsize=labelsize)
-ax[1,1].locator_params(axis='both', nbins=6)
-ax[1,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[1,1].set_title(r'$\epsilon_d=%s, d=%s, \alpha=%s$'%( round(-mu), d, alpha), fontsize=labelsize_s)
-
-ax[1,1].annotate(r'(d)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
-
-
-gtau_errors = []
-# chis = [20, 40,60,80, 100, 120, 140]
-
-for i, chi in enumerate(chis):
-	taus2, gtau2 = read_noninteracting_imag_tempo(beta, Ntau, mu, d, alpha, chi)
-	gtau_errors.append(mse_error(gtau, gtau2.real))
+# ax1.set_ylabel(r'$\mathcal{E}$', fontsize=fontsize_s)
+# ax1.set_xlabel(r'$\chi$', fontsize=fontsize_s)
+# ax1.tick_params(axis='both', which='major', labelsize=labelsize_s)
 
 
 
-ax1 = ax[1,1].inset_axes([0.3, 0.4, 0.5, 0.5])
+# # 
+# d = 3
 
-ax1.semilogy(chis, gtau_errors, ls='--', color=color, marker='o', markersize=markersize, markerfacecolor='none', linewidth=linewidth1, label=r'Partial')
+# taus, gtau = read_noninteracting_imag_analytic(beta, Ntau, mu, d, alpha)
 
-ax1.set_ylabel(r'$\mathcal{E}$', fontsize=fontsize_s)
-ax1.set_xlabel(r'$\chi$', fontsize=fontsize_s)
-ax1.tick_params(axis='both', which='major', labelsize=labelsize_s)
+# taus2, gtau2 = read_noninteracting_imag_tempo(beta, Ntau, mu, d, alpha, chi)
+
+# ax[1,1].plot(taus, gtau, ls='-', color=color, linewidth=linewidth1, label=r'Analytic')
+# ax[1,1].plot(taus2, gtau2.real, ls='--', color=color, linewidth=linewidth2, label=r'GTEMPO')
+
+# ax[1,1].set_xlabel(r'$\tau$', fontsize=fontsize)
+# ax[1,1].set_ylabel(r'$G(\tau)$', fontsize=fontsize)
+# ax[1,1].tick_params(axis='both', which='major', labelsize=labelsize)
+# ax[1,1].locator_params(axis='both', nbins=6)
+# ax[1,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+# ax[1,1].set_title(r'$\epsilon_d=%s, d=%s, \alpha=%s$'%( round(-mu), d, alpha), fontsize=labelsize_s)
+
+# ax[1,1].annotate(r'(d)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
+
+
+# gtau_errors = []
+# # chis = [20, 40,60,80, 100, 120, 140]
+
+# for i, chi in enumerate(chis):
+# 	taus2, gtau2 = read_noninteracting_imag_tempo(beta, Ntau, mu, d, alpha, chi)
+# 	gtau_errors.append(mse_error(gtau, gtau2.real))
+
+
+
+# ax1 = ax[1,1].inset_axes([0.3, 0.4, 0.5, 0.5])
+
+# ax1.semilogy(chis, gtau_errors, ls='--', color=color, marker='o', markersize=markersize, markerfacecolor='none', linewidth=linewidth1, label=r'Partial')
+
+# ax1.set_ylabel(r'$\mathcal{E}$', fontsize=fontsize_s)
+# ax1.set_xlabel(r'$\chi$', fontsize=fontsize_s)
+# ax1.tick_params(axis='both', which='major', labelsize=labelsize_s)
 
 
 
@@ -298,6 +298,6 @@ ax1.tick_params(axis='both', which='major', labelsize=labelsize_s)
 
 plt.tight_layout(pad=0.5)
 
-plt.savefig('independentbosons_noint_imag.pdf', bbox_inches='tight')
+# plt.savefig('independentbosons_noint_imag.pdf', bbox_inches='tight')
 
 plt.show()
