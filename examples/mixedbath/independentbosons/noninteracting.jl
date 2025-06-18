@@ -77,14 +77,12 @@ function main_imag(ϵ_d; β=1, Nτ=20, d=1, chi = 100, α=1)
 
 	exact_model = AndersonIM(U=0., μ=-ϵ_d)
 
-	fadt = sysdynamics!(fmpsI, flattice, exact_model, trunc=trunc)
-	lattice, adt = focktograssmann(lattice.ordering, flattice, fadt, trunc=trunc)
-
-	
+	mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
 	for band in 1:lattice.bands
-		adt = boundarycondition!(adt, lattice, band=band, trunc=trunc)
-		adt = bulkconnection!(adt, lattice, band=band, trunc=trunc)
+		mpsK = boundarycondition!(mpsK, lattice, band=band, trunc=trunc)
 	end
+	adt = reweighting!(lattice, mpsK, flattice, fmpsI, trunc=trunc)
+
 	println("bond dimension of bosonic adt is ", bond_dimension(adt))
 
 	cache = environments(lattice, adt)
@@ -94,80 +92,6 @@ function main_imag(ϵ_d; β=1, Nτ=20, d=1, chi = 100, α=1)
 	data_path = "result/noninteracting_imaggtempo_beta$(β)_dtau$(δτ)_mu$(ϵ_d)_d$(d)_alpha$(α)_chi$(chi).json"
 
 	results = Dict("taus"=>τs, "bd"=>bond_dimensions(adt), "gtau"=>gtau)
-
-	println("save results to ", data_path)
-
-	open(data_path, "w") do f
-		write(f, JSON.json(results))
-	end
-
-	return τs, gtau
-end
-
-function gAndersonIM(;μ::Real, U::Real)
-	if U != zero(U)
-		h = ImpurityHamiltonian(bands=2)
-		push!(h, interaction(1,2,2,1, coeff=U))
-	else
-		h = ImpurityHamiltonian(bands=1)
-	end
-	for band in 1:h.bands
-		push!(h, tunneling(band, band, coeff=μ))
-	end
-	return h
-end
-
-function main_imag_2(ϵ_d; β=1, Nτ=20, d=1, chi = 100, α=1)
-	# ϵ_d = 0.5
-	δτ = β / Nτ
-
-	println(" Nτ=", Nτ, " δτ=", δτ, " ϵ_d=", ϵ_d, " β=", β, " chi=", chi, " d=", d, " α=", α)
-
-	τs = [i*δτ for i in 1:Nτ+1]
-
-	trunc = truncdimcutoff(D=chi, ϵ=1.0e-14, add_back=0)
-
-	lattice = GrassmannLattice(N=Nτ, δτ=δτ, contour=:imag, order=1)
-	println("number of sites, ", length(lattice))
-	flattice = FockLattice(N=Nτ, δτ=δτ, contour=:imag, order=1)
-
-	mpspath = "data/noninteracting_imaggtempo_beta$(β)_dtau$(δτ)_d$(d)_alpha$(α)_chi$(chi).mps"
-	if ispath(mpspath)
-		println("load MPS-IF from path ", mpspath)
-		fmpsI = Serialization.deserialize(mpspath)
-	else
-		println("computing MPS-IF...")
-		bath = bosonicbath(spectrum_func(d=d, α=α), β=β)
-		corr = correlationfunction(bath, flattice)
-		@time fmpsI = hybriddynamics(flattice, corr, trunc=trunc)
-
-		println("save MPS-IF to path ", mpspath)
-		Serialization.serialize(mpspath, fmpsI)
-	end
-
-	println("bond dimension of fmpsI is ", bond_dimension(fmpsI))
-
-	lattice, mpsI = focktograssmann(lattice.ordering, flattice, fmpsI, trunc=trunc)
-
-	# exact_model = AndersonIM(U=0., μ=-ϵ_d)
-	# mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
-	
-	exact_model = gAndersonIM(U=0., μ=-ϵ_d)
-	mpsK = baresysdynamics(lattice, exact_model, trunc=trunc)
-
-	for band in 1:lattice.bands
-		mpsK = boundarycondition!(mpsK, lattice, band=band, trunc=trunc)
-		# adt = bulkconnection!(adt, lattice, band=band, trunc=trunc)
-	end
-	println("bond dimension of bosonic adt is ", bond_dimension(mpsI))
-
-	cache = environments(lattice, mpsK, mpsI)
-
-	@time gtau = [cached_Gτ(lattice, k, 1, mpsK, mpsI, c1=false, c2=true, band=1, cache=cache) for k in 1:Nτ+1]
-
-	data_path = "result/noninteracting_imaggtempo_beta$(β)_dtau$(δτ)_mu$(ϵ_d)_d$(d)_alpha$(α)_chi$(chi)_2.json"
-
-	results = Dict("taus"=>τs, "bd"=>bond_dimensions(mpsI), "gtau"=>gtau)
 
 	println("save results to ", data_path)
 
@@ -214,14 +138,13 @@ function main_mixed(ϵ_d; β=1, Nτ=20, t=1, Nt=100, d=1, chi = 100, α=1)
 
 	exact_model = AndersonIM(U=0., μ=-ϵ_d)
 
-	fadt = sysdynamics!(fmpsI, flattice, exact_model, trunc=trunc)
-	lattice, adt = focktograssmann(lattice.ordering, flattice, fadt, trunc=trunc)
-
-	
+	mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
 	for band in 1:lattice.bands
-		adt = boundarycondition!(adt, lattice, band=band, trunc=trunc)
-		adt = bulkconnection!(adt, lattice, band=band, trunc=trunc)
+		mpsK = boundarycondition!(mpsK, lattice, band=band, trunc=trunc)
 	end
+
+	adt = reweighting!(lattice, mpsK, flattice, fmpsI, trunc=trunc)
+
 	println("bond dimension of bosonic adt is ", bond_dimension(adt))
 
 	cache = environments(lattice, adt)

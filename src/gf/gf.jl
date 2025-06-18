@@ -6,5 +6,6 @@ include("bmps_gf.jl")
 include("negf.jl")
 
 # density-density correlations
+include("insertn.jl")
 include("bare_nn.jl")
 include("cached_nn.jl")

@@ -40,12 +40,12 @@ export retardedinteractdynamics, retardedinteractdynamics!, retardedinteractdyna
 
 # GF and other observables
 export gf, Gτ, parallel_Gτ, Gt, parallel_Gt, Gm, greater, lesser, contour_ordered_gf
-export occupation, electriccurrent, electriccurrent_fast
+export occupation, occupation2, electriccurrent, electriccurrent_fast
 export cached_gf, cached_Gτ, cached_Gt, cached_Gm, cached_greater, cached_lesser, cached_contour_ordered_gf
 export cached_occupation, cached_electriccurrent, cached_electriccurrent_fast
 export cached_gf_fast, cached_Gτ_fast, cached_Gt_fast, cached_Gm_fast
 export cached_greater_fast, cached_lesser_fast
-export nn, cached_nn
+export nn, cached_nn, insert_n!, insert_n, nn2
 
 # utilities for TEMPO
 # exact models
@@ -59,13 +59,13 @@ export bulkconnection!, bulkconnection, baresysdynamics!, baresysdynamics
 
 
 # electron-phonon interaction
-export AbstractNTerm, NTerm, ExpNTerm
-export FockMPS, partialdensempo
+export AbstractNTerm, ExpNTerm
+export FockMPS
 export FockOrdering, ImagFockOrdering, RealFockOrdering, MixedFockOrdering, similargrassmannordering
 export M1N1, MN, M1m1N1n1, MmNn, M1N1_M1m1N1n1M2m2N2n2, MN_MmNn
 export AbstractFockLattice, FockLattice, ImagFockLattice, similargrassmannlattice
 export RealFockLattice, MixedFockLattice
-export focktograssmann
+export reweighting!, reweighting
 
 using Base: @boundscheck, @propagate_inbounds
 using Logging: @warn

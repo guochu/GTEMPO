@@ -5,7 +5,7 @@ function sysdynamics_imaginary!(gmps::FockMPS, lattice::AbstractFockLattice, mod
 	for band in 1:lattice.bands
 		for i in 1:lattice.Nτ
             pos = index(lattice, i, branch=:τ, band=band)
-            apply!(exp(NTerm(pos, coeff=a)), gmps)
+            apply!(ExpNTerm(pos, coeff=a), gmps)
             canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))			
 		end
 	end
@@ -17,7 +17,7 @@ function sysdynamics_imaginary!(gmps::FockMPS, lattice::AbstractFockLattice, mod
 			for band in 1:2:lattice.bands
 				pos1 = index(lattice, i, branch=:τ, band=band)
 				pos2 = index(lattice, i, branch=:τ, band=band+1)
-				apply!(exp(NTerm(pos1, pos2, coeff=b)), gmps)
+				apply!(ExpNTerm(pos1, pos2, coeff=b), gmps)
 				canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))			
 			end
 		end
@@ -31,7 +31,7 @@ function sysdynamics_forward!(gmps::FockMPS, lattice::AbstractFockLattice, model
 	for band in 1:lattice.bands
 		for i in 1:lattice.Nt
             pos = index(lattice, i, branch=:+, band=band)
-            apply!(exp(NTerm(pos, coeff=a)), gmps)
+            apply!(ExpNTerm(pos, coeff=a), gmps)
             canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))			
 		end
 	end
@@ -43,7 +43,7 @@ function sysdynamics_forward!(gmps::FockMPS, lattice::AbstractFockLattice, model
 			for band in 1:2:lattice.bands
 				pos1 = index(lattice, i, branch=:+, band=band)
 				pos2 = index(lattice, i, branch=:+, band=band+1)
-				apply!(exp(NTerm(pos1, pos2, coeff=b)), gmps)
+				apply!(ExpNTerm(pos1, pos2, coeff=b), gmps)
 				canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))			
 			end
 		end
@@ -57,7 +57,7 @@ function sysdynamics_backward!(gmps::FockMPS, lattice::AbstractFockLattice, mode
 	for band in 1:lattice.bands
 		for i in 1:lattice.Nt
 			pos = index(lattice, i, branch=:-, band=band)
-			apply!(exp(NTerm(pos, coeff=a)), gmps)
+			apply!(ExpNTerm(pos, coeff=a), gmps)
 			canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))	
 		end
 	end
@@ -69,7 +69,7 @@ function sysdynamics_backward!(gmps::FockMPS, lattice::AbstractFockLattice, mode
 			for band in 1:2:lattice.bands
 				pos1 = index(lattice, i, branch=:-, band=band)
 				pos2 = index(lattice, i, branch=:-, band=band+1)
-				apply!(exp(NTerm(pos1, pos2, coeff=b)), gmps)
+				apply!(ExpNTerm(pos1, pos2, coeff=b), gmps)
 				canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))			
 			end
 		end	

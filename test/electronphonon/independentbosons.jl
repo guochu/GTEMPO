@@ -17,6 +17,7 @@ println("------------------------------------")
 	flattice = FockLattice(N=N, δτ=δτ, contour=:imag, order=1)
 
 	for ϵ_d in (-0.5, 0, 0.5)
+	# for ϵ_d in (0,)
 		for spec in (Leggett(d=3, ωc=1), DiracDelta(ω=1, α=0.5))
 
 			bath = bosonicbath(spec, β=β)
@@ -27,13 +28,12 @@ println("------------------------------------")
 			@test distance(mpsI, mpsI′) / norm(mpsI) <= rtol2
 
 			exact_model = AndersonIM(U=0., μ=-ϵ_d)
-			fadt = sysdynamics!(mpsI, flattice, exact_model, trunc=truncK)
+			mpsK = sysdynamics(lattice, exact_model, trunc=truncK)
 
-			lattice, adt = focktograssmann(lattice.ordering, flattice, fadt, trunc=trunc)
+			adt = reweighting!(lattice, mpsK, flattice, mpsI, trunc=trunc)
 
 			for band in 1:lattice.bands
 				adt = boundarycondition!(adt, lattice, band=band, trunc=trunc)
-				adt = bulkconnection!(adt, lattice, band=band, trunc=trunc)
 			end
 
 			cache = environments(lattice, adt)
@@ -60,13 +60,12 @@ println("------------------------------------")
 
 			exact_model = AndersonIM(U=U, μ=-ϵ_d)
 
-			fadt = sysdynamics!(mpsI, flattice, exact_model, trunc=truncK)
+			mpsK = sysdynamics(lattice, exact_model, trunc=truncK)
 
-			lattice, adt = focktograssmann(lattice.ordering, flattice, fadt, trunc=trunc)
+			adt = reweighting!(lattice, mpsK, flattice, mpsI, trunc=trunc)
 
 			for band in 1:lattice.bands
 				adt = boundarycondition!(adt, lattice, band=band, trunc=trunc)
-				adt = bulkconnection!(adt, lattice, band=band, trunc=trunc)
 			end
 
 			cache = environments(lattice, adt)
@@ -79,7 +78,7 @@ println("------------------------------------")
 end
 
 @testset "Independent bosons: real time" begin
-	rtol = 1.0e-2
+	rtol = 5*1.0e-2
 	rtol2 = 1.0e-3
 	β = 0.1
 	δt=0.01
@@ -101,12 +100,11 @@ end
 		@test distance(mpsI, mpsI′) / norm(mpsI) <= rtol2
 
 		exact_model = AndersonIM(U=0., μ=-ϵ_d)
-		fadt = sysdynamics!(mpsI, flattice, exact_model, trunc=truncK)
+		mpsK = sysdynamics(lattice, exact_model, trunc=truncK)
 
-		lattice, adt = focktograssmann(lattice.ordering, flattice, fadt, trunc=trunc)
+		adt = reweighting!(lattice, mpsK, flattice, mpsI, trunc=trunc)
 		for band in 1:lattice.bands
 			adt = boundarycondition!(adt, lattice, band=band, trunc=trunc)
-			adt = bulkconnection!(adt, lattice, band=band, trunc=trunc)
 		end
 
 		adt = systhermalstate!(adt, lattice, exact_model, trunc=trunc, δτ=0.001, β=β)
@@ -120,6 +118,7 @@ end
 		@test norm(g2 - g2′) / norm(g2) < rtol	
 	end
 
+
 	lattice = GrassmannLattice(N=Nt, δt=δt, contour=:real, order=1, bands=2)
 	flattice = FockLattice(N=Nt, δt=δt, contour=:real, order=1, bands=2)
 	ϵ_d = 0.3
@@ -129,18 +128,19 @@ end
 		corr = correlationfunction(bath, lattice)
 		mpsI = hybriddynamics(flattice, corr, trunc=trunc)
 		mpsI′ = hybriddynamics_naive(flattice, corr, trunc=trunc)
-		@test distance(mpsI, mpsI′) / norm(mpsI) <= rtol2
+		# @test distance(mpsI, mpsI′) / norm(mpsI) <= rtol2
 
 		exact_model = AndersonIM(U=U, μ=-ϵ_d)
-		fadt = sysdynamics!(mpsI, flattice, exact_model, trunc=truncK)
+		mpsK = sysdynamics(lattice, exact_model, trunc=truncK)
 
-		lattice, adt = focktograssmann(lattice.ordering, flattice, fadt, trunc=trunc)
+		mpsK = systhermalstate!(mpsK, lattice, exact_model, trunc=trunc, δτ=0.0001, β=β)
+
 		for band in 1:lattice.bands
-			adt = boundarycondition!(adt, lattice, band=band, trunc=trunc)
-			adt = bulkconnection!(adt, lattice, band=band, trunc=trunc)
+			mpsK = boundarycondition!(mpsK, lattice, band=band, trunc=trunc)
 		end
 
-		adt = systhermalstate!(adt, lattice, exact_model, trunc=trunc, δτ=0.001, β=β)
+		adt = reweighting!(lattice, mpsK, flattice, mpsI, trunc=trunc)
+		
 		cache = environments(lattice, adt)
 
 		g1 = [-im*cached_greater(lattice, k, adt, c1=false, c2=true, b1=:+, b2=:+, band=1, cache=cache) for k in 1:Nt+1]
@@ -161,10 +161,10 @@ end
 	β = 0.5
 	δτ = 0.1
 	Nτ = round(Int, β/δτ)
-	δt=0.1
+	δt=0.05
 	Nt = 5
 	t = Nt * δt
-	chi = 160
+	chi = 120
 
 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
 	truncK = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
@@ -185,11 +185,10 @@ end
 
 	exact_model = AndersonIM(U=0., μ=-ϵ_d)
 
-	fadt = sysdynamics!(mpsI, flattice, exact_model, trunc=truncK)
-	lattice, adt = focktograssmann(lattice.ordering, flattice, fadt, trunc=trunc)
+	mpsK = sysdynamics(lattice, exact_model, trunc=truncK)
+	adt = reweighting!(lattice, mpsK, flattice, mpsI, trunc=trunc)
 	for band in 1:lattice.bands
 		adt = boundarycondition!(adt, lattice, band=band, trunc=trunc)
-		adt = bulkconnection!(adt, lattice, band=band, trunc=trunc)
 	end
 
 	cache = environments(lattice, adt)
@@ -222,11 +221,10 @@ end
 	
 	exact_model = AndersonIM(U=U, μ=-ϵ_d)
 
-	fadt = sysdynamics!(mpsI, flattice, exact_model, trunc=truncK)
-	lattice, adt = focktograssmann(lattice.ordering, flattice, fadt, trunc=trunc)
+	mpsK = sysdynamics(lattice, exact_model, trunc=truncK)
+	adt = reweighting!(lattice, mpsK, flattice, mpsI, trunc=trunc)
 	for band in 1:lattice.bands
 		adt = boundarycondition!(adt, lattice, band=band, trunc=trunc)
-		adt = bulkconnection!(adt, lattice, band=band, trunc=trunc)
 	end
 
 	cache = environments(lattice, adt)

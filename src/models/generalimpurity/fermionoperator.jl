@@ -36,7 +36,7 @@ Base.:-(s::AbstractFTerm) = (-1) * s
 """
 	struct FourBodyTerm <: AbstractFTerm
 
-Fermionic fourbody term
+Fermionic fourbody term, ĉ₁†ĉ₂†ĉ₃ĉ₄
 """
 struct InteractionTerm{T<:Number} <: AbstractFTerm
 	positions::NTuple{4, Int}

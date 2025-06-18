@@ -33,8 +33,11 @@ function n_fuse(m::AbstractArray{<:Number, N}, i::Int) where {N}
 
 	m4 = reshape(m, s1, 2, 2, s2)
 	m3 = zeros(scalartype(m), s1, 2, s2)
+	# m3[:,1,:] = m4[:, 1, 1, :]
+	# m3[:,2,:] = m4[:, 1, 2, :] + m4[:, 2, 1, :] + m4[:, 2, 2, :] 
+
 	m3[:,1,:] = m4[:, 1, 1, :]
-	m3[:,2,:] = m4[:, 1, 2, :] + m4[:, 2, 1, :] + m4[:, 2, 2, :] 
+	m3[:,2,:] = m4[:, 2, 2, :] 
 
 	new_size = (s_front..., 2, s_tail...)
 	return reshape(m3, new_size)
