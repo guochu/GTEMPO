@@ -64,36 +64,21 @@ function main_imag(ϵ_d; β=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, chi 
 	# return gt, lt
 
 	@time g₁ = cached_Gτ(lattice, mpsI1, mpsI2, cache=cache)
-	@time g₃′ = [cached_nn(lattice, i, 1, mpsI1, mpsI2, cache=cache) for i in 1:N]
-	# @time g₃ = [nn(lattice, i, 1, mpsI1, mpsI2) for i in 2:N]
-
-	# g₃ = Float64[]
-	# pos2 = index(flattice, 1, branch=:τ, band=1)
-	# ftmp = apply!(NTerm(pos2, coeff=1), copy(fadt))
-	# lattice, mpsItmp = focktograssmann(lattice.ordering, flattice, ftmp, trunc=trunc)
-	# v = integrate(lattice, mpsItmp, mpsI2) / Zvalue(cache)
-	# push!(g₃, v)
-	# for i in 2:N
-	# 	pos1 = index(flattice, i, branch=:τ, band=1)
-	# 	ftmp = apply!(NTerm(pos1, pos2, coeff=1), copy(fadt))
-	# 	lattice, mpsItmp = focktograssmann(lattice.ordering, flattice, ftmp, trunc=trunc)
-	# 	v = integrate(lattice, mpsItmp, mpsI2) / Zvalue(cache)
-	# 	push!(g₃, v)
-	# end
-
-	# data_path = "result/noninteracting_imaggtempo_beta$(β)_dtau$(δτ)_omega0$(ω₀)_alpha0$(α₀)_omega1$(ω₁)_alpha1$(α₁)_mu$(ϵ_d)_chi$(chi).json"
-
-	# results = Dict("taus"=>τs, "bd1"=>bond_dimensions(mpsI1), "bd2"=>bond_dimensions(mpsI2), "gf"=>g₁, "nn"=>g₃, "nn2"=>g₃′)
-
-	# println("save results to ", data_path)
-
-	# open(data_path, "w") do f
-	# 	write(f, JSON.json(results))
-	# end
+	@time g₃ = [nn2(lattice, i, 1, mpsI1, mpsI2, Z=Zvalue(cache)) for i in 1:N]
 
 
-	# return g₁, g₃, g₃′
-	return g₁, g₃′
+	data_path = "result/noninteracting_imaggtempo_beta$(β)_dtau$(δτ)_omega0$(ω₀)_alpha0$(α₀)_omega1$(ω₁)_alpha1$(α₁)_mu$(ϵ_d)_chi$(chi).json"
+
+	results = Dict("taus"=>τs, "bd1"=>bond_dimensions(mpsI1), "bd2"=>bond_dimensions(mpsI2), "gf"=>g₁, "nn"=>g₃)
+
+	println("save results to ", data_path)
+
+	open(data_path, "w") do f
+		write(f, JSON.json(results))
+	end
+
+
+	return g₁, g₃
 end
 
 function main_real(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, chi = 100)
@@ -161,40 +146,23 @@ function main_real(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1,
 
 	@time g₁ = [cached_greater(lattice, k, mpsI1, mpsI2, c1=false, c2=true, b1=:+, b2=:+, band=1, cache=cache) for k in 1:N+1]
 	@time g₂ = [cached_lesser(lattice, k, mpsI1, mpsI2, c1=true, c2=false, b1=:-, b2=:+, band=1, cache=cache) for k in 1:N+1]
-	@time g₃′ = [cached_nn(lattice, i, 1, mpsI1, mpsI2, cache=cache, b1=:+, b2=:-) for i in 1:N]
-	# println("start calculating nn...")
-	# g₃ = ComplexF64[]
-	# pos2 = index(flattice, 1, branch=:-, band=1)
-	# ftmp = apply!(NTerm(pos2, coeff=1), copy(fadt))
-	# lattice, mpsItmp = focktograssmann(lattice.ordering, flattice, ftmp, trunc=trunc)
-	# v = integrate(lattice, mpsItmp, mpsI2) / Zvalue(cache)
-	# push!(g₃, v)
-	# for i in 2:N
-	# 	pos1 = index(flattice, i, branch=:+, band=1)
-	# 	ftmp = apply!(NTerm(pos1, pos2, coeff=1), copy(fadt))
-	# 	lattice, mpsItmp = focktograssmann(lattice.ordering, flattice, ftmp, trunc=trunc)
-	# 	v = integrate(lattice, mpsItmp, mpsI2) / Zvalue(cache)
-	# 	push!(g₃, v)
-	# end
-	# println("finish calculating nn...")
-
-	# g₁, g₂ = -im*g₁, -im*g₂
-
-	# data_path = "result/noninteracting_realgtempo_beta$(β)_t$(t)_dt$(δt)_omega0$(ω₀)_alpha0$(α₀)_omega1$(ω₁)_alpha1$(α₁)_mu$(ϵ_d)_chi$(chi).json"
-
-	# results = Dict("ts"=>ts, "bd1"=>bond_dimensions(mpsI1), "bd2"=>bond_dimensions(mpsI2), "gt"=>g₁, "lt"=>g₂, "nn"=>g₃, "nn2"=>g₃′)
-
-	# println("save results to ", data_path)
-
-	# open(data_path, "w") do f
-	# 	write(f, JSON.json(results))
-	# end
-
-
-	# return g₁, g₂, g₃
+	@time g₃ = [nn2(lattice, i, 1, mpsI1, mpsI2, Z=Zvalue(cache), b1=:+, b2=:+) for i in 1:N]
 
 	g₁, g₂ = -im*g₁, -im*g₂
-	return g₁, g₂, g₃′
+
+	data_path = "result/noninteracting_realgtempo_beta$(β)_t$(t)_dt$(δt)_omega0$(ω₀)_alpha0$(α₀)_omega1$(ω₁)_alpha1$(α₁)_mu$(ϵ_d)_chi$(chi).json"
+
+	results = Dict("ts"=>ts, "bd1"=>bond_dimensions(mpsI1), "bd2"=>bond_dimensions(mpsI2), "gt"=>g₁, "lt"=>g₂, "nn"=>g₃)
+
+	println("save results to ", data_path)
+
+	open(data_path, "w") do f
+		write(f, JSON.json(results))
+	end
+
+
+	return g₁, g₂, g₃
+
 end
 
 function main_mixed(ϵ_d; β=1, t=1, Nτ=20, Nt=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, chi = 100)

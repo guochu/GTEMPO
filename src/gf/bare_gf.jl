@@ -195,7 +195,9 @@ occupation(lattice::RealGrassmannLattice1Order, A::Union{GrassmannMPS, Vector}, 
             alg::IntegrationAlgorithm=ExactIntegrate(), 
             Z::Number = integrate(lattice, A, B..., alg=alg)) = [occupation(lattice, i, A, B...; alg=alg, Z=Z, band=band) for i in 1:lattice.N]
 
-
+function occupation(lattice::ImagGrassmannLattice1Order, i::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...) 
+    return 1 + Gτ(lattice, i, i, A, B...; c1=true, c2=false, kwargs...)
+end
 # real-time first order
 
 """

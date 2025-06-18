@@ -86,7 +86,7 @@ Convert the lattice into a "closest" adjacent ordering
 This function a simple wrapper of changeordering, by specifying a particular ordering 
 """
 toadjacentordering(lattice::AbstractGrassmannLattice, x::GrassmannMPS...; kwargs...) = error("toadjacentordering not implemented for lattice type $(typeof(lattice))")
-toadjacentordering(lattice::ImagGrassmannLattice{<:A1B1B̄1Ā1}, x::GrassmannMPS...; kwargs...) = changeordering(A1Ā1B1B̄1, lattice, x...; kwargs...)
+toadjacentordering(lattice::ImagGrassmannLattice, x::GrassmannMPS...; kwargs...) = changeordering(A1Ā1B1B̄1, lattice, x...; kwargs...)
 # toadjacentordering(lattice::RealGrassmannLattice{<:A1Ā1B1B̄1b̄1B̄1ā1Ā1}, x::GrassmannMPS...; kwargs...) = changeordering(A1Ā1a1ā1B1B̄1b1b̄1, lattice, x...; kwargs...)
 # toadjacentordering(lattice::RealGrassmannLattice{<:A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2}, x::GrassmannMPS...; kwargs...) = changeordering(
 #                     A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2, lattice, x...; kwargs...)

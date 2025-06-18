@@ -89,6 +89,16 @@ end
 			mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
 			g₃ = Gτ(lattice, mpsK, mpsI)
 			@test norm(g₁ - g₃) / norm(g₁) < rtol
+
+			Z = integrate(lattice, mpsK, mpsI)
+
+			n1 = [occupation(lattice, i, mpsK, mpsI, Z=Z) for i in 1:lattice.k-1]
+			n2 = [occupation2(lattice, i, mpsK, mpsI, Z=Z) for i in 1:lattice.k-1]
+			@test norm(n1 - n2) / norm(n1) < rtol
+
+			# n1 = [nn(lattice, i, 1, mpsK, mpsI, Z=Z) for i in 1:lattice.k-1]
+			# n2 = [nn2(lattice, i, 1, mpsK, mpsI, Z=Z) for i in 1:lattice.k-1]
+			# @test norm(n1 - n2) / norm(n1) < 5.0e-2
 		end
 
 		# delta spectrum 
@@ -141,6 +151,14 @@ end
 			g2 = [cached_Gt(lattice, 1, k, mpsK, mpsI, c1=true, c2=false, b1=:-, b2=:+, cache=cache) for k in 1:lattice.k]
 			@test norm(gt - g1) / norm(gt) < rtol
 			@test norm(g2) / length(g2) < rtol
+
+			n1 = [cached_occupation(lattice, i, mpsK, mpsI, cache=cache) for i in 1:lattice.k-1]
+			n2 = [occupation2(lattice, i, mpsK, mpsI, branch=:+, Z=Zvalue(cache)) for i in 1:lattice.k-1]
+			@test norm(n1 - n2) / norm(n1) < rtol
+
+			n1 = [real(cached_nn(lattice, i, 2, mpsK, mpsI, b1=:+, b2=:-, cache=cache)) for i in 1:lattice.k-1]
+			n2 = [real(nn2(lattice, i, 2, mpsK, mpsI, b1=:+, b2=:+, Z=Zvalue(cache))) for i in 1:lattice.k-1]
+			@test norm(n1 - n2) / norm(n1) < rtol
 		end
 
 	end
@@ -226,6 +244,10 @@ end
 		@test norm(gt1 - g1) / norm(gt1) < rtol
 		@test norm(gt2 - g2) / norm(gt2) < rtol
 		@test norm(gτ - g3) / norm(gτ) < rtol
+
+		n1 = [real(cached_nn(lattice, i, 2, mpsK, mpsI, b1=:+, b2=:-, cache=cache)) for i in 1:lattice.kt-1]
+		n2 = [real(nn2(lattice, i, 2, mpsK, mpsI, b1=:+, b2=:+, Z=Zvalue(cache))) for i in 1:lattice.kt-1]
+		@test norm(n1 - n2) / norm(n1) < rtol
 	end
 
 end
