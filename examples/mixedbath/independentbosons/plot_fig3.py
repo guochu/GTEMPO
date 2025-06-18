@@ -119,7 +119,7 @@ markers = ['o', '^', '+']
 fig, ax = plt.subplots(1,1, figsize=(6,5))
 
 
-chi = 160
+chi = 120
 
 U = 1
 mu = U/2
@@ -127,7 +127,7 @@ mu = U/2
 beta = 10
 Ntau = 50
 d = 1
-alpha = 0.1
+alpha = 1
 
 # noninteracting case
 taus, gtau = read_interacting_imag_analytic(beta, Ntau, U, mu, d, alpha)
@@ -147,7 +147,8 @@ ax.locator_params(axis='both', nbins=6)
 ax.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 gtau_errors = []
-chis = [40,80,120, 160, 200, 300, 400]
+# chis = [40,80,120, 160, 200, 300, 400]
+chis = [40,80,120]
 
 for i, chi in enumerate(chis):
 	taus2, gtau2 = read_interacting_imag_tempo(beta, Ntau, U, mu, d, alpha, chi)
@@ -172,6 +173,6 @@ ax.legend(fontsize=14)
 
 plt.tight_layout(pad=0.5)
 
-plt.savefig('independentbosons_int_imag.pdf', bbox_inches='tight')
+# plt.savefig('independentbosons_int_imag.pdf', bbox_inches='tight')
 
 plt.show()
