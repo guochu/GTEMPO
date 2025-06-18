@@ -107,9 +107,9 @@ markers = ['o', '^', '+']
 fig, ax = plt.subplots(2,2, figsize=(8,6.5))
 
 
-chi = 140
+chi = 60
 
-mu = 0.5
+mu = 0
 
 t = 5
 Nt = 100
@@ -180,36 +180,36 @@ ax2.tick_params(axis='both', which='major', labelsize=labelsize, colors=ax2color
 ax2.locator_params(axis='both', nbins=6)
 ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
-chis = [60,80,100,120,140]
+# chis = [60,80,100,120,140]
 
-gt_errs = []
-lt_errs = []
+# gt_errs = []
+# lt_errs = []
 
-for chi in chis:
-	ts2, taus2, gt2, lt2, gtau2 = read_noninteracting_mixed_tempo(beta, Ntau, t, Nt, mu, d, alpha, chi)
-	gt_errs.append(mse_error(gt, gt2))
-	lt_errs.append(mse_error(lt, lt2))
+# for chi in chis:
+# 	ts2, taus2, gt2, lt2, gtau2 = read_noninteracting_mixed_tempo(beta, Ntau, t, Nt, mu, d, alpha, chi)
+# 	gt_errs.append(mse_error(gt, gt2))
+# 	lt_errs.append(mse_error(lt, lt2))
 
 
-ax[0,1].plot(chis, gt_errs, ls='--', color='k', linewidth=linewidth2, marker='o', markersize=markersize, markerfacecolor='none')
-ax[0,1].set_xlabel(r'$\chi$', fontsize=fontsize)
-ax[0,1].set_ylabel(r'$\mathcal{E}[G^{>}(t)]$', fontsize=fontsize)
-ax[0,1].tick_params(axis='both', which='major', labelsize=labelsize)
-ax[0,1].locator_params(axis='both', nbins=6)
-ax[0,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[0,1].annotate(r'(b)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
+# ax[0,1].plot(chis, gt_errs, ls='--', color='k', linewidth=linewidth2, marker='o', markersize=markersize, markerfacecolor='none')
+# ax[0,1].set_xlabel(r'$\chi$', fontsize=fontsize)
+# ax[0,1].set_ylabel(r'$\mathcal{E}[G^{>}(t)]$', fontsize=fontsize)
+# ax[0,1].tick_params(axis='both', which='major', labelsize=labelsize)
+# ax[0,1].locator_params(axis='both', nbins=6)
+# ax[0,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+# ax[0,1].annotate(r'(b)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
 
-ax[1,1].plot(chis, lt_errs, ls='--', color='k', linewidth=linewidth2, marker='o', markersize=markersize, markerfacecolor='none')
-ax[1,1].set_xlabel(r'$\chi$', fontsize=fontsize)
-ax[1,1].set_ylabel(r'$\mathcal{E}[G^{<}(t)]$', fontsize=fontsize)
-ax[1,1].tick_params(axis='both', which='major', labelsize=labelsize)
-ax[1,1].locator_params(axis='both', nbins=6)
-ax[1,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[1,1].annotate(r'(d)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
+# ax[1,1].plot(chis, lt_errs, ls='--', color='k', linewidth=linewidth2, marker='o', markersize=markersize, markerfacecolor='none')
+# ax[1,1].set_xlabel(r'$\chi$', fontsize=fontsize)
+# ax[1,1].set_ylabel(r'$\mathcal{E}[G^{<}(t)]$', fontsize=fontsize)
+# ax[1,1].tick_params(axis='both', which='major', labelsize=labelsize)
+# ax[1,1].locator_params(axis='both', nbins=6)
+# ax[1,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+# ax[1,1].annotate(r'(d)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
 
 
 plt.tight_layout(pad=0.5)
 
-plt.savefig('independentbosons_noint_mixed.pdf', bbox_inches='tight')
+# plt.savefig('independentbosons_noint_mixed.pdf', bbox_inches='tight')
 
 plt.show()

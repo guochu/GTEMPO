@@ -61,14 +61,28 @@ function boson(;d::Int=5)
 	return Dict("a"=>Aop(d),"adag"=>ADAGop(d), "n"=>_N, "n2"=>_N2)
 end
 
+# # <e^τH A e^-τH B>
+# function gf_imag(A, B, β::Real, n::Int, cache::EigenCache)
+# 	δτ = β / n
+# 	τs = 0:δτ:β
+# 	λs, U = cache.λs, cache.U
+# 	# println(exp.(β .* λs))
+# 	ρ = U * Diagonal(exp.(-β .* λs)) * U'
+# 	tr_ρ = tr(ρ)
+# 	g(τ) = tr(U * Diagonal(exp.(τ .* λs)) * U' * A * U * Diagonal(exp.(-τ .* λs)) * U' * B * ρ) / tr_ρ
+# 	return g.(τs)
+# end
+
 # <e^τH A e^-τH B>
 function gf_imag(A, B, β::Real, n::Int, cache::EigenCache)
 	δτ = β / n
 	τs = 0:δτ:β
 	λs, U = cache.λs, cache.U
-	ρ = U * Diagonal(exp.(-β .* λs)) * U'
-	tr_ρ = tr(ρ)
-	g(τ) = tr(U * Diagonal(exp.(τ .* λs)) * U' * A * U * Diagonal(exp.(-τ .* λs)) * U' * B * ρ) / tr_ρ
+	# println(exp.(β .* λs))
+	ρ_diag = Diagonal(exp.(-β .* λs))
+	# ρ = U * ρ_diag * U'
+	tr_ρ = tr(ρ_diag)
+	g(τ) = tr(Diagonal(exp.((τ -β) .* λs)) * U' * A * U * Diagonal(exp.(-τ .* λs)) * U' * B * U ) / tr_ρ
 	return g.(τs)
 end
 
@@ -152,7 +166,7 @@ function interacting_operators(U, J, ϵ_d=U/2; ω₀=1, α₀=0.5, ω₁=1, α�
 	# return H, A, B, Hbathbare
 end
 
-function noninteracting_imag(ϵ_d; β=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, d=10)
+function noninteracting_imag(ϵ_d; β=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, d=50)
 	δτ=β/N
 
 	H, a, adag, Nimp, H0 = noninteracting_operators(ϵ_d, ω₀=ω₀, α₀=α₀, ω₁=ω₁, α₁=α₁, d=d)
@@ -174,7 +188,7 @@ function noninteracting_imag(ϵ_d; β=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α�
 
 end
 
-function interacting_imag(U, J, ϵ_d=U/2; β=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, d=10)
+function interacting_imag(U, J, ϵ_d=U/2; β=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, d=50)
 	δτ=β/N
 
 	H, a, adag, Nimp, H0 = interacting_operators(U, J, ϵ_d, ω₀=ω₀, α₀=α₀, ω₁=ω₁, α₁=α₁, d=d)
@@ -196,7 +210,7 @@ function interacting_imag(U, J, ϵ_d=U/2; β=1, N=100, ω₀=1, α₀=0.5, ω₁
 
 end
 
-function noninteracting_neq(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, d=10)
+function noninteracting_neq(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, d=50)
 	δt=t/N
 
 	H, a, adag, Nimp, H0 = noninteracting_operators(ϵ_d, ω₀=ω₀, α₀=α₀, ω₁=ω₁, α₁=α₁, d=d)
@@ -217,7 +231,7 @@ function noninteracting_neq(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1,
 	return g1, g2, g3
 end
 
-function interacting_neq(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, d=10)
+function interacting_neq(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, d=50)
 	δt=t/N
 
 	H, a, adag, Nimp, H0 = interacting_operators(U, J, ϵ_d, ω₀=ω₀, α₀=α₀, ω₁=ω₁, α₁=α₁, d=d)
@@ -238,7 +252,7 @@ function interacting_neq(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, �
 	return g1, g2, g3
 end
 
-function noninteracting_eq(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, d=10)
+function noninteracting_eq(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, d=50)
 	δt=t/N
 
 	H, a, adag, Nimp, H0 = noninteracting_operators(ϵ_d, ω₀=ω₀, α₀=α₀, ω₁=ω₁, α₁=α₁, d=d)
@@ -259,7 +273,7 @@ function noninteracting_eq(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, 
 	return g1, g2, g3
 end
 
-function interacting_eq(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, d=10)
+function interacting_eq(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, d=50)
 	δt=t/N
 
 	H, a, adag, Nimp, H0 = interacting_operators(U, J, ϵ_d, ω₀=ω₀, α₀=α₀, ω₁=ω₁, α₁=α₁, d=d)

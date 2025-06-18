@@ -121,11 +121,11 @@ fig, ax = plt.subplots(1,1, figsize=(6,5))
 
 chi = 120
 
-U = 1
+U = 10
 mu = U/2
 
 beta = 10
-Ntau = 50
+Ntau = 200
 d = 1
 alpha = 1
 

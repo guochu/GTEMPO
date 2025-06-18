@@ -128,7 +128,7 @@ chi = 140
 
 
 beta = 1
-Ntau = 20
+Ntau = 80
 d = 1
 alpha = 1
 
@@ -178,7 +178,7 @@ ax1.tick_params(axis='both', which='major', labelsize=labelsize_s)
 
 # 
 beta = 10
-Ntau = 50
+Ntau = 200
 
 taus, gtau = read_noninteracting_imag_analytic(beta, Ntau, mu, d, alpha)
 
