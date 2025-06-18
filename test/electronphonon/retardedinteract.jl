@@ -16,7 +16,7 @@ println("------------------------------------")
 		for i in 1:lattice.N
 			mps1 = vacuumstate(lattice)
 			for j in 1:lattice.N
-				coef = exp(η[i, j]) - 1
+				coef = exp(η[i, j]) 
 				if (i == j) 
 					pos1 = index(lattice, i, band=band)
 					t = ExpNTerm(pos1, coeff=coef)
@@ -50,7 +50,7 @@ println("------------------------------------")
 		for i in 1:k, j in 1:k
 			for band in 1:lattice.bands
 				pos1, pos2 = index(lattice, i, band=band), index(lattice, j, band=band)
-				coef = exp(η[i, j]) - 1
+				coef = exp(η[i, j]) 
 				if pos1 == pos2
 					t = ExpNTerm(pos1, coeff=coef)
 				else
@@ -63,7 +63,7 @@ println("------------------------------------")
 
 		for i in 1:k, j in 1:k
 			pos1, pos2 = index(lattice, i, band=1), index(lattice, j, band=2)
-			coef = exp(η[i, j] + η[j, i]) - 1
+			coef = exp(η[i, j] + η[j, i]) 
 			t = ExpNTerm(pos1, pos2, coeff=coef)
 			apply!(t, mpsa)
 			canonicalize!(mpsa, alg=Orthogonalize(TK.SVD(), trunc))

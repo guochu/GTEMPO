@@ -22,7 +22,7 @@ function _hybriddynamics_1band!(gmps::FockMPS, lattice::RealFockLattice, corr::R
 		tmp = vacuumstate(lattice)
 		for j in 1:lattice.Nt, b2 in branches(lattice)
 			pos2 = index(lattice, j, band=band, branch=b2)
-			c = exp(index(corr, i, j, b1=b1, b2=b2)) - 1
+			c = exp(index(corr, i, j, b1=b1, b2=b2)) 
 			if pos1 == pos2
 				t = ExpNTerm(pos1, coeff=c)
 			else
@@ -46,7 +46,7 @@ function hybriddynamics_2band!(gmps::FockMPS, lattice::RealFockLattice, corr::Re
 		for j in 1:lattice.Nt, b2 in branches(lattice), band2 in 1:lattice.bands
 			pos2 = index(lattice, j, band=band2, branch=b2)
 			c = index(corr, i, j, b1=b1, b2=b2)
-			coef = ifelse(band2==1, exp(c) - 1, exp(2*c) - 1)
+			coef = ifelse(band2==1, exp(c) , exp(2*c) )
 			if pos1 == pos2
 				t = ExpNTerm(pos1, coeff=coef)
 			else
@@ -84,7 +84,7 @@ function _hybriddynamics_1band_naive!(gmps::FockMPS, lattice::RealFockLattice, c
 	for b1 in branches(lattice), b2 in branches(lattice)
 		for i in 1:lattice.Nt, j in 1:lattice.Nt
 			pos1, pos2 = index(lattice, i, band=band, branch=b1), index(lattice, j, band=band, branch=b2)
-			c = exp(index(corr, i, j, b1=b1, b2=b2)) - 1
+			c = exp(index(corr, i, j, b1=b1, b2=b2)) 
 			if pos1 == pos2
 				t = ExpNTerm(pos1, coeff=c)
 			else
@@ -108,7 +108,7 @@ function hybriddynamics_2band_naive!(gmps::FockMPS, lattice::RealFockLattice, co
 		pos1 = index(lattice, i, band=1, branch=b1)
 		for j in 1:lattice.Nt, b2 in branches(lattice)
 			pos2 = index(lattice, j, band=2, branch=b2)
-			c = exp(2 * index(corr, i, j, b1=b1, b2=b2)) - 1
+			c = exp(2 * index(corr, i, j, b1=b1, b2=b2)) 
 			t = ExpNTerm(pos1, pos2, coeff=c)
 			apply!(t, gmps)
 			canonicalize!(gmps, alg=alg)
