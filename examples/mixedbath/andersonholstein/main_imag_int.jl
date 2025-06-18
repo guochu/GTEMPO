@@ -42,7 +42,7 @@ function main_imag(U, ϵ_d=U/2; β=1, N=10, d=3, α=1, chi = 200)
 
 		fcorr = correlationfunction(fbath, lattice)
 		@time mpsI2 = hybriddynamics(lattice, fcorr, trunc=trunc, band=1)
-		mpsI2 = boundarycondition!(mpsI2, lattice, band=band, trunc=trunc)
+		mpsI2 = boundarycondition!(mpsI2, lattice, band=1, trunc=trunc)
 		mpsI3 = swapband(mpsI2, lattice, 1, 2, trunc=trunc)
 
 		println("save MPS-IF to path ", mpspath)
