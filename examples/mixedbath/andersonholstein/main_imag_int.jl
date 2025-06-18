@@ -42,9 +42,7 @@ function main_imag(U, ϵ_d=U/2; β=1, N=10, d=3, α=1, chi = 200)
 
 		fcorr = correlationfunction(fbath, lattice)
 		@time mpsI2 = hybriddynamics(lattice, fcorr, trunc=trunc, band=1)
-		mpsI2 = boundarycondition!(mpsI2, lattice, band=1, trunc=trunc)
-		mpsI2 = bulkconnection!(mpsI2, lattice, band=1, trunc=trunc)
-
+		mpsI2 = boundarycondition!(mpsI2, lattice, band=band, trunc=trunc)
 		mpsI3 = swapband(mpsI2, lattice, 1, 2, trunc=trunc)
 
 		println("save MPS-IF to path ", mpspath)
@@ -55,8 +53,8 @@ function main_imag(U, ϵ_d=U/2; β=1, N=10, d=3, α=1, chi = 200)
 
 	exact_model = AndersonIM(U=U, μ=-ϵ_d)
 
-	fadt = sysdynamics!(fmpsI1, flattice, exact_model, trunc=trunc)
-	lattice, mpsI1 = focktograssmann(lattice.ordering, flattice, fadt, trunc=trunc)
+	mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
+	mpsI1 = reweighting!(lattice, mpsK, flattice, fmpsI1, trunc=trunc)
 
 	println("bond dimension of bosonic adt is ", bond_dimension(mpsI1))
 
@@ -67,25 +65,11 @@ function main_imag(U, ϵ_d=U/2; β=1, N=10, d=3, α=1, chi = 200)
 	# return gt, lt
 
 	@time gtau = cached_Gτ_fast(lattice, mpsI1, mpsI2, mpsI3, cache=cache) 
-	@time gnn = [cached_nn(lattice, i, 1, mpsI1, mpsI2, mpsI3, cache=cache) for i in 1:N]
-
-	g₃ = Float64[]
-	pos2 = index(flattice, 1, branch=:τ, band=1)
-	ftmp = apply!(NTerm(pos2, coeff=1), copy(fadt))
-	lattice, mpsItmp = focktograssmann(lattice.ordering, flattice, ftmp, trunc=trunc)
-	v = integrate(lattice, mpsItmp, mpsI2, mpsI3) / Zvalue(cache)
-	push!(g₃, v)
-	@time for i in 2:N
-		pos1 = index(flattice, i, branch=:τ, band=1)
-		ftmp = apply!(NTerm(pos1, pos2, coeff=1), copy(fadt))
-		lattice, mpsItmp = focktograssmann(lattice.ordering, flattice, ftmp, trunc=trunc)
-		v = integrate(lattice, mpsItmp, mpsI2, mpsI3) / Zvalue(cache)
-		push!(g₃, v)
-	end
+	@time g₃ = [nn2(lattice, i, 1, mpsI1, mpsI2, mpsI3, Z=Zvalue(cache)) for i in 1:N]
 
 	data_path = "result/andersonholstein_int_imaggtempo_beta$(β)_dtau$(δτ)_d$(d)_alpha$(α)_U$(U)_mu$(ϵ_d)_chi$(chi).json"
 
-	results = Dict("taus"=>τs, "bd1"=>bond_dimensions(mpsI1), "bd2"=>bond_dimensions(mpsI2), "gtau"=>gtau, "nn"=>g₃, "nn2"=>gnn)
+	results = Dict("taus"=>τs, "bd1"=>bond_dimensions(mpsI1), "bd2"=>bond_dimensions(mpsI2), "gtau"=>gtau, "nn"=>g₃)
 
 	println("save results to ", data_path)
 

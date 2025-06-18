@@ -105,11 +105,11 @@ function main_real(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1,
 
 	exact_model = AndersonIM(U=0., μ=-ϵ_d)
 
-	# mpspath = "data/noninteracting_realgtempo_beta$(β)_t$(t)_dt$(δt)_omega0$(ω₀)_alpha0$(α₀)_omega1$(ω₁)_alpha1$(α₁)_chi$(chi).mps"
-	# if ispath(mpspath)
-	# 	println("load MPS-IF from path ", mpspath)
-	# 	fmpsI1, mpsI2 = Serialization.deserialize(mpspath)
-	# else
+	mpspath = "data/noninteracting_realgtempo_beta$(β)_t$(t)_dt$(δt)_omega0$(ω₀)_alpha0$(α₀)_omega1$(ω₁)_alpha1$(α₁)_chi$(chi).mps"
+	if ispath(mpspath)
+		println("load MPS-IF from path ", mpspath)
+		fmpsI1, mpsI2 = Serialization.deserialize(mpspath)
+	else
 		println("computing MPS-IF...")
 		bath = bosonicbath(DiracDelta(ω=ω₀, α=α₀), β=β)
 		corr = correlationfunction(bath, flattice)
@@ -123,11 +123,11 @@ function main_real(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1,
 			mpsI2 = boundarycondition!(mpsI2, lattice, band=band, trunc=trunc)
 			# mpsI2 = bulkconnection!(mpsI2, lattice, band=band, trunc=trunc)
 		end
-		# mpsI2 = systhermalstate!(mpsI2, lattice, exact_model, β=β)
+		mpsI2 = systhermalstate!(mpsI2, lattice, exact_model, β=β)
 
-	# 	println("save MPS-IF to path ", mpspath)
-	# 	Serialization.serialize(mpspath, (fmpsI1, mpsI2))
-	# end
+		println("save MPS-IF to path ", mpspath)
+		Serialization.serialize(mpspath, (fmpsI1, mpsI2))
+	end
 
 	println("bond dimension of mpsI is ", bond_dimension(fmpsI1), " ", bond_dimension(mpsI2))
 
@@ -198,11 +198,6 @@ function main_mixed(ϵ_d; β=1, t=1, Nτ=20, Nt=100, ω₀=1, α₀=0.5, ω₁=1
 		fcorr = correlationfunction(fbath, lattice)
 		@time mpsI2 = hybriddynamics(lattice, fcorr, trunc=trunc)
 
-		for band in 1:lattice.bands
-			mpsI2 = boundarycondition!(mpsI2, lattice, band=band, trunc=trunc)
-			mpsI2 = bulkconnection!(mpsI2, lattice, band=band, trunc=trunc)
-		end
-
 		println("save MPS-IF to path ", mpspath)
 		Serialization.serialize(mpspath, (fmpsI1, mpsI2))
 	end
@@ -211,8 +206,13 @@ function main_mixed(ϵ_d; β=1, t=1, Nτ=20, Nt=100, ω₀=1, α₀=0.5, ω₁=1
 
 	exact_model = AndersonIM(U=0., μ=-ϵ_d)
 
-	fadt = sysdynamics!(fmpsI1, flattice, exact_model, trunc=trunc)
-	lattice, mpsI1 = focktograssmann(lattice.ordering, flattice, fadt, trunc=trunc)
+	mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
+
+	for band in 1:lattice.bands
+		mpsK = boundarycondition!(mpsK, lattice, band=band, trunc=trunc)
+	end
+
+	mpsI1 = reweighting!(lattice, mpsK, flattice, fmpsI1, trunc=trunc)
 
 	println("bond dimension of bosonic adt is ", bond_dimension(mpsI1))
 
@@ -221,31 +221,15 @@ function main_mixed(ϵ_d; β=1, t=1, Nτ=20, Nt=100, ω₀=1, α₀=0.5, ω₁=1
 	@time g₁ = [cached_Gm(lattice, k, 1, mpsI1, mpsI2, c1=false, c2=true, b1=:+, b2=:+, band=1, cache=cache) for k in 1:Nt+1]
 	@time g₂ = [cached_Gm(lattice, 1, k, mpsI1, mpsI2, c1=true, c2=false, b1=:-, b2=:+, band=1, cache=cache) for k in 1:Nt+1]
 	@time g₃ = [cached_Gm(lattice, k, 1, mpsI1, mpsI2, c1=false, c2=true, b1=:τ, b2=:τ, band=1, cache=cache) for k in 1:Nτ+1]
-	@time g₄′ = [cached_nn(lattice, i, 1, mpsI1, mpsI2, cache=cache, b1=:+, b2=:-) for i in 1:Nt]
+	@time g₄ = [nn2(lattice, i, 1, mpsI1, mpsI2, Z=Zvalue(cache), b1=:+, b2=:+) for i in 1:Nt]
 	@time ns = cached_occupation(lattice, mpsI1, mpsI2, cache=cache)
-
-	println("start calculating nn...")
-	g₄ = ComplexF64[]
-	pos2 = index(flattice, 1, branch=:-, band=1)
-	ftmp = apply!(NTerm(pos2, coeff=1), copy(fadt))
-	lattice, mpsItmp = focktograssmann(lattice.ordering, flattice, ftmp, trunc=trunc)
-	v = integrate(lattice, mpsItmp, mpsI2) / Zvalue(cache)
-	push!(g₃, v)
-	for i in 2:Nt
-		pos1 = index(flattice, i, branch=:+, band=1)
-		ftmp = apply!(NTerm(pos1, pos2, coeff=1), copy(fadt))
-		lattice, mpsItmp = focktograssmann(lattice.ordering, flattice, ftmp, trunc=trunc)
-		v = integrate(lattice, mpsItmp, mpsI2) / Zvalue(cache)
-		push!(g₄, v)
-	end
-	println("finish calculating nn...")
 
 
 	g₁, g₂ = -im*g₁, im*g₂
 
 	data_path = "result/noninteracting_mixedgtempo_beta$(β)_dtau$(δτ)_t$(t)_dt$(δt)_omega0$(ω₀)_alpha0$(α₀)_omega1$(ω₁)_alpha1$(α₁)_mu$(ϵ_d)_chi$(chi).json"
 
-	results = Dict("ts"=>ts, "taus"=>τs, "bd1"=>bond_dimensions(mpsI1), "bd2"=>bond_dimensions(mpsI2), "gt"=>g₁, "lt"=>g₂, "gtau"=>g₃, "ns" => ns, "nn"=>g₄, "nn2"=>g₄′)
+	results = Dict("ts"=>ts, "taus"=>τs, "bd1"=>bond_dimensions(mpsI1), "bd2"=>bond_dimensions(mpsI2), "gt"=>g₁, "lt"=>g₂, "gtau"=>g₃, "ns" => ns, "nn"=>g₄)
 
 	println("save results to ", data_path)
 

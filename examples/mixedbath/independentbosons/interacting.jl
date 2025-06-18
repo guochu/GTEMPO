@@ -79,14 +79,12 @@ function main_imag(U, ϵ_d=U/2; β=1, Nτ=20, d=1, chi = 100, α=1)
 
 	exact_model = AndersonIM(U=U, μ=-ϵ_d)
 
-	fadt = sysdynamics!(fmpsI, flattice, exact_model, trunc=trunc)
-	lattice, adt = focktograssmann(lattice.ordering, flattice, fadt, trunc=trunc)
-
-	
+	mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
 	for band in 1:lattice.bands
-		adt = boundarycondition!(adt, lattice, band=band, trunc=trunc)
-		adt = bulkconnection!(adt, lattice, band=band, trunc=trunc)
+		mpsK = boundarycondition!(mpsK, lattice, band=band, trunc=trunc)
 	end
+	adt = reweighting!(lattice, mpsK, flattice, fmpsI, trunc=trunc)
+
 	println("bond dimension of bosonic adt is ", bond_dimension(adt))
 
 	cache = environments(lattice, adt)
@@ -138,13 +136,12 @@ function main_mixed(U, ϵ_d=U/2; β=1, Nτ=20, t=1, Nt=100, d=1, chi = 100, α=1
 
 	exact_model = AndersonIM(U=U, μ=-ϵ_d)
 
-	fadt = sysdynamics!(fmpsI, flattice, exact_model, trunc=trunc)
-	lattice, adt = focktograssmann(lattice.ordering, flattice, fadt, trunc=trunc)
-
+	mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
 	for band in 1:lattice.bands
-		adt = boundarycondition!(adt, lattice, band=band, trunc=trunc)
-		adt = bulkconnection!(adt, lattice, band=band, trunc=trunc)
+		mpsK = boundarycondition!(mpsK, lattice, band=band, trunc=trunc)
 	end
+	adt = reweighting!(lattice, mpsK, flattice, fadt, trunc=trunc)
+
 	println("bond dimension of bosonic adt is ", bond_dimension(adt))
 
 

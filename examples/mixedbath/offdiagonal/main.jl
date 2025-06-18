@@ -41,11 +41,11 @@ function main_real(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1
 	exact_model = model(U=U, μ=-ϵ_d, J=J)
 	# exact_model = AndersonIM(U=U, μ=-ϵ_d)
 
-	# mpspath = "data/noninteracting_realgtempo_beta$(β)_t$(t)_dt$(δt)_omega0$(ω₀)_alpha0$(α₀)_omega1$(ω₁)_alpha1$(α₁)_chi$(chi).mps"
-	# if ispath(mpspath)
-	# 	println("load MPS-IF from path ", mpspath)
-	# 	fmpsI1, mpsI2 = Serialization.deserialize(mpspath)
-	# else
+	mpspath = "data/noninteracting_realgtempo_beta$(β)_t$(t)_dt$(δt)_omega0$(ω₀)_alpha0$(α₀)_omega1$(ω₁)_alpha1$(α₁)_chi$(chi).mps"
+	if ispath(mpspath)
+		println("load MPS-IF from path ", mpspath)
+		fmpsI1, mpsI2 = Serialization.deserialize(mpspath)
+	else
 		println("computing MPS-IF...")
 		bath = bosonicbath(DiracDelta(ω=ω₀, α=α₀), β=β)
 		corr = correlationfunction(bath, flattice)
@@ -58,13 +58,9 @@ function main_real(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1
 			# mpsI2 = bulkconnection!(mpsI2, lattice, band=band, trunc=trunc)
 		end
 
-		
-
-		# mpsI2 = systhermalstate!(mpsI2, lattice, exact_model, β=β)
-
-	# 	println("save MPS-IF to path ", mpspath)
-	# 	Serialization.serialize(mpspath, (fmpsI1, mpsI2))
-	# end
+		println("save MPS-IF to path ", mpspath)
+		Serialization.serialize(mpspath, (fmpsI1, mpsI2))
+	end
 
 	println("bond dimension of mpsI is ", bond_dimension(fmpsI1), " ", bond_dimension(mpsI2))
 
@@ -84,38 +80,8 @@ function main_real(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1
 	band = 1
 	@time g₁ = [cached_greater(lattice, k, mpsI1, mpsI2, c1=false, c2=true, b1=:+, b2=:+, band=band, cache=cache) for k in 1:N+1]
 	@time g₂ = [cached_lesser(lattice, k, mpsI1, mpsI2, c1=true, c2=false, b1=:-, b2=:+, band=band, cache=cache) for k in 1:N+1]
-	# @time g₃′ = [cached_nn(lattice, i, 1, mpsI1, mpsI2, cache=cache, b1=:+, b2=:-) for i in 1:N]
-	# println("start calculating nn...")
-	# g₃ = ComplexF64[]
-	# pos2 = index(flattice, 1, branch=:-, band=1)
-	# ftmp = apply!(NTerm(pos2, coeff=1), copy(fadt))
-	# lattice, mpsItmp = focktograssmann(lattice.ordering, flattice, ftmp, trunc=trunc)
-	# v = integrate(lattice, mpsItmp, mpsI2) / Zvalue(cache)
-	# push!(g₃, v)
-	# for i in 2:N
-	# 	pos1 = index(flattice, i, branch=:+, band=1)
-	# 	ftmp = apply!(NTerm(pos1, pos2, coeff=1), copy(fadt))
-	# 	lattice, mpsItmp = focktograssmann(lattice.ordering, flattice, ftmp, trunc=trunc)
-	# 	v = integrate(lattice, mpsItmp, mpsI2) / Zvalue(cache)
-	# 	push!(g₃, v)
-	# end
-	# println("finish calculating nn...")
-
-	# g₁, g₂ = -im*g₁, -im*g₂
-
-	# data_path = "result/noninteracting_realgtempo_beta$(β)_t$(t)_dt$(δt)_omega0$(ω₀)_alpha0$(α₀)_omega1$(ω₁)_alpha1$(α₁)_mu$(ϵ_d)_chi$(chi).json"
-
-	# results = Dict("ts"=>ts, "bd1"=>bond_dimensions(mpsI1), "bd2"=>bond_dimensions(mpsI2), "gt"=>g₁, "lt"=>g₂, "nn"=>g₃, "nn2"=>g₃′)
-
-	# println("save results to ", data_path)
-
-	# open(data_path, "w") do f
-	# 	write(f, JSON.json(results))
-	# end
-
-
-	# return g₁, g₂, g₃
+	@time g₃ = [nn2(lattice, i, 1, mpsI1, mpsI2, Z=Zvalue(cache), b1=:+, b2=:+) for i in 1:N]
 
 	g₁, g₂ = -im*g₁, -im*g₂
-	return g₁[1:end-1], g₂[1:end-1]
+	return g₁, g₂, g₃
 end

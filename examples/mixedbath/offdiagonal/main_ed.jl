@@ -111,6 +111,8 @@ function interacting_operators(U, J, ϵ_d=U/2; ω₀=1, α₀=0.5, ω₁=1, α�
 	Himpbare = -ϵ_d*n_ud + U * nn + J * kron(JW*σ₊, σ₋) - J * kron(JW*σ₋, σ₊)
 	Himp = kron(kron(Himpbare, Is), Ib)
 
+	Nimp = kron(kron(n̂, Is), kron(Is, Ib))
+
 	Hbath0 = ω₀ * kron(Is4, kron(Is, n̂b))
 	Hbath1 = ω₁ * kron(Is4, kron(n̂, Ib))
 
@@ -124,7 +126,7 @@ function interacting_operators(U, J, ϵ_d=U/2; ω₀=1, α₀=0.5, ω₁=1, α�
 	A, B = kron(kron(kron(σ₋, Is), Is), Ib), kron(kron(kron(σ₊, Is), Is), Ib)
 	# A, B = kron(kron(kron(JW, σ₋), Is), Ib), kron(kron(kron(JW, σ₊), Is), Ib)
 
-	return H, A, B, Himp + Hbath0 + Hbath1
+	return H, A, B, Nimp, Himp + Hbath0 + Hbath1
 
 	# Hbathbare = ω₀ * kron(Is, n̂b) + ω₁ * kron(n̂, Ib)
 	# return H, A, B, Hbathbare
@@ -134,14 +136,14 @@ end
 function main_neq(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1)
 	δt=t/N
 
-	H, a, adag, H0 = interacting_operators(U, J, ϵ_d, ω₀=ω₀, α₀=α₀, ω₁=ω₁, α₁=α₁, d=50)
+	H, a, adag, Nimp, H0 = interacting_operators(U, J, ϵ_d, ω₀=ω₀, α₀=α₀, ω₁=ω₁, α₁=α₁, d=20)
 	# ρimp = zeros(4, 4)
 	# ρimp[1,1] = 1
 	# ρ = kron(ρimp, exp(-β*H0))  
 	ρ = exp(-β*H0)
 	cache = eigencache(H)
 	g1, g2 = gf_real(a, adag, β, t, N, cache, ρ)
-	# g3 = gf_real_nn(Nimp, β, t, N, cache, ρ)
+	g3 = gf_real_nn(Nimp, β, t, N, cache, ρ)
 
 	# data_path = "result/noninteracting_neq_ED_real_beta$(β)_mu$(ϵ_d)_t$(t)_N$(N)_omega0$(ω₀)_alpha0$(α₀)_omega1$(ω₁)_alpha1$(α₁).json"
 
@@ -152,6 +154,6 @@ function main_neq(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1,
 	# 	write(f, JSON.json(results))
 	# end
 
-	return g1[2:end], g2[2:end]
+	return g1, g2, g3
 
 end
