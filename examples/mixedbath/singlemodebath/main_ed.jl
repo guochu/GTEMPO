@@ -117,10 +117,45 @@ function noninteracting_operators(ϵ_d; ω₀=1, α₀=0.5, ω₁=1, α₁=1, d=
 	return H, A, B, Nimp, Himp + Hbath0 + Hbath1
 end
 
-function noninteracting_imag(ϵ_d; β=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1)
+function interacting_operators(U, J, ϵ_d=U/2; ω₀=1, α₀=0.5, ω₁=1, α₁=1, d=100)
+	p1 = spin_half_matrices()
+	n̂, σ₊, σ₋, JW = p1["n"], p1["+"], p1["-"], -p1["z"]
+	Is = one(n̂)
+	Is4 = kron(Is, Is)
+	n_ud = kron(n̂, Is) + kron(Is, n̂)
+	nn = kron(n̂,n̂)
+	p2 = boson(d=d)
+	b̂, b̂′, n̂b = p2["a"], p2["adag"], p2["n"]
+	Ib = one(b̂)
+	# total Hamiltonian
+	Himpbare = -ϵ_d*n_ud + U * nn + J * kron(JW*σ₊, σ₋) - J * kron(JW*σ₋, σ₊)
+	Himp = kron(kron(Himpbare, Is), Ib)
+
+	Nimp = kron(kron(n̂, Is), kron(Is, Ib))
+
+	Hbath0 = ω₀ * kron(Is4, kron(Is, n̂b))
+	Hbath1 = ω₁ * kron(Is4, kron(n̂, Ib))
+
+	Hhyb0 = sqrt(α₀) * kron(n_ud, kron(Is, b̂′ + b̂))
+	# Hhyb0 = sqrt(α₀) * kron(kron(n̂, Is), kron(Is, b̂′ + b̂))
+
+	tmp = kron(JW*σ₊, kron(JW, kron(σ₋, Ib)))
+	Hhyb1 = sqrt(α₁) * (tmp + tmp')
+	H = Himp + Hhyb0 + Hhyb1 + Hbath0 + Hbath1
+
+	A, B = kron(kron(kron(σ₋, Is), Is), Ib), kron(kron(kron(σ₊, Is), Is), Ib)
+	# A, B = kron(kron(kron(JW, σ₋), Is), Ib), kron(kron(kron(JW, σ₊), Is), Ib)
+
+	return H, A, B, Nimp, Himp + Hbath0 + Hbath1
+
+	# Hbathbare = ω₀ * kron(Is, n̂b) + ω₁ * kron(n̂, Ib)
+	# return H, A, B, Hbathbare
+end
+
+function noninteracting_imag(ϵ_d; β=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, d=10)
 	δτ=β/N
 
-	H, a, adag, Nimp, H0 = noninteracting_operators(ϵ_d, ω₀=ω₀, α₀=α₀, ω₁=ω₁, α₁=α₁, d=10)
+	H, a, adag, Nimp, H0 = noninteracting_operators(ϵ_d, ω₀=ω₀, α₀=α₀, ω₁=ω₁, α₁=α₁, d=d)
 
 	cache = eigencache(H)
 	g1 = gf_imag(a, adag, β, N, cache)
@@ -139,10 +174,32 @@ function noninteracting_imag(ϵ_d; β=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α�
 
 end
 
-function noninteracting_neq(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1)
+function interacting_imag(U, J, ϵ_d=U/2; β=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, d=10)
+	δτ=β/N
+
+	H, a, adag, Nimp, H0 = interacting_operators(U, J, ϵ_d, ω₀=ω₀, α₀=α₀, ω₁=ω₁, α₁=α₁, d=d)
+
+	cache = eigencache(H)
+	g1 = gf_imag(a, adag, β, N, cache)
+	g3 = gf_imag(Nimp, Nimp, β, N, cache)
+
+	data_path = "result/interacting_eq_ED_imag_beta$(β)_U$(U)_J$(J)_mu$(ϵ_d)_dtau$(δτ)_omega0$(ω₀)_alpha0$(α₀)_omega1$(ω₁)_alpha1$(α₁).json"
+
+	τs = collect(0:δτ:β)
+	results = Dict("taus"=>τs, "gt" => g1, "nn"=>g3)
+
+	open(data_path, "w") do f
+		write(f, JSON.json(results))
+	end
+
+	return g1, g3
+
+end
+
+function noninteracting_neq(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, d=10)
 	δt=t/N
 
-	H, a, adag, Nimp, H0 = noninteracting_operators(ϵ_d, ω₀=ω₀, α₀=α₀, ω₁=ω₁, α₁=α₁, d=10)
+	H, a, adag, Nimp, H0 = noninteracting_operators(ϵ_d, ω₀=ω₀, α₀=α₀, ω₁=ω₁, α₁=α₁, d=d)
 	ρ = exp(-β*H0)
 	cache = eigencache(H)
 	g1, g2 = gf_real(a, adag, β, t, N, cache, ρ)
@@ -158,19 +215,60 @@ function noninteracting_neq(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1,
 	end
 
 	return g1, g2, g3
-
 end
 
-function noninteracting_eq(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1)
+function interacting_neq(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, d=10)
 	δt=t/N
 
-	H, a, adag, Nimp, H0 = noninteracting_operators(ϵ_d, ω₀=ω₀, α₀=α₀, ω₁=ω₁, α₁=α₁, d=100)
+	H, a, adag, Nimp, H0 = interacting_operators(U, J, ϵ_d, ω₀=ω₀, α₀=α₀, ω₁=ω₁, α₁=α₁, d=d)
+	ρ = exp(-β*H0)
+	cache = eigencache(H)
+	g1, g2 = gf_real(a, adag, β, t, N, cache, ρ)
+	g3 = gf_real_nn(Nimp, β, t, N, cache, ρ)
+
+	data_path = "result/interacting_neq_ED_real_beta$(β)_U$(U)_J$(J)_mu$(ϵ_d)_t$(t)_N$(N)_omega0$(ω₀)_alpha0$(α₀)_omega1$(ω₁)_alpha1$(α₁).json"
+
+	ts = collect(0:δt:t)
+	results = Dict("ts"=>ts, "gt" => g1, "lt"=>g2, "nn"=>g3)
+
+	open(data_path, "w") do f
+		write(f, JSON.json(results))
+	end
+
+	return g1, g2, g3
+end
+
+function noninteracting_eq(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, d=10)
+	δt=t/N
+
+	H, a, adag, Nimp, H0 = noninteracting_operators(ϵ_d, ω₀=ω₀, α₀=α₀, ω₁=ω₁, α₁=α₁, d=d)
 	cache = eigencache(H)
 	ρ = exp(-β*cache.h)
 	g1, g2 = gf_real(a, adag, β, t, N, cache, ρ)
 	g3 = gf_real_nn(Nimp, β, t, N, cache, ρ)
 
 	data_path = "result/noninteracting_eq_ED_real_beta$(β)_mu$(ϵ_d)_t$(t)_N$(N)_omega0$(ω₀)_alpha0$(α₀)_omega1$(ω₁)_alpha1$(α₁).json"
+
+	ts = collect(0:δt:t)
+	results = Dict("ts"=>ts, "gt" => g1, "lt"=>g2, "nn"=>g3)
+
+	open(data_path, "w") do f
+		write(f, JSON.json(results))
+	end
+
+	return g1, g2, g3
+end
+
+function interacting_eq(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, d=10)
+	δt=t/N
+
+	H, a, adag, Nimp, H0 = interacting_operators(U, J, ϵ_d, ω₀=ω₀, α₀=α₀, ω₁=ω₁, α₁=α₁, d=d)
+	cache = eigencache(H)
+	ρ = exp(-β*cache.h)
+	g1, g2 = gf_real(a, adag, β, t, N, cache, ρ)
+	g3 = gf_real_nn(Nimp, β, t, N, cache, ρ)
+
+	data_path = "result/interacting_eq_ED_real_beta$(β)_U$(U)_J$(J)_mu$(ϵ_d)_t$(t)_N$(N)_omega0$(ω₀)_alpha0$(α₀)_omega1$(ω₁)_alpha1$(α₁).json"
 
 	ts = collect(0:δt:t)
 	results = Dict("ts"=>ts, "gt" => g1, "lt"=>g2, "nn"=>g3)
