@@ -1,4 +1,5 @@
 using LinearAlgebra: Diagonal, eigen, Hermitian, tr
+using JSON
 
 function spin_half_matrices()
 	s_SP = Array{Float64, 2}([0 0; 1 0])
@@ -107,6 +108,18 @@ function noninteracting_real(ϵ_d; β=1, t=1, N=5, ω₀=1, α₀=0.5, d=50)
 	ρ = exp(-β*H0)
 	g1, g2 = gf_real(H, a, adag, β, t, N, ρ)
 
+
+	data_path = "result/noninteracting_ed_real_beta$(β)_t$(t)_mu$(ϵ_d)_N$(N)_omega$(ω₀)_alpha$(α₀).json"
+
+	δt=t/N
+	ts = collect(0:δt:t)
+
+	results = Dict("ts"=>ts, "gt" => g1, "lt"=>g2)
+
+	open(data_path, "w") do f
+		write(f, JSON.json(results))
+	end
+
 	return g1, g2
 end
 
@@ -117,6 +130,17 @@ function interacting_real(U, ϵ_d=U/2; β=1, t=1, N=5, ω₀=1, α₀=0.5, d=50)
 	ρimp[1,1] = 1
 	ρ = kron(ρimp, exp(-β*H0)) 
 	g1, g2 = gf_real(H, a, adag, β, t, N, ρ)
+
+	data_path = "result/interacting_ed_real_beta$(β)_t$(t)_U$(U)_mu$(ϵ_d)_N$(N)_omega$(ω₀)_alpha$(α₀).json"
+
+	δt=t/N
+	ts = collect(0:δt:t)
+
+	results = Dict("ts"=>ts, "gt" => g1, "lt"=>g2)
+
+	open(data_path, "w") do f
+		write(f, JSON.json(results))
+	end
 
 	return g1, g2
 end
