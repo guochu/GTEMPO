@@ -41,11 +41,11 @@ function main_real(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1
 	exact_model = model(U=U, μ=-ϵ_d, J=J)
 	# exact_model = AndersonIM(U=U, μ=-ϵ_d)
 
-	mpspath = "data/noninteracting_realgtempo_beta$(β)_t$(t)_dt$(δt)_omega0$(ω₀)_alpha0$(α₀)_omega1$(ω₁)_alpha1$(α₁)_chi$(chi).mps"
-	if ispath(mpspath)
-		println("load MPS-IF from path ", mpspath)
-		fmpsI1, mpsI2 = Serialization.deserialize(mpspath)
-	else
+	# mpspath = "data/noninteracting_realgtempo_beta$(β)_t$(t)_dt$(δt)_omega0$(ω₀)_alpha0$(α₀)_omega1$(ω₁)_alpha1$(α₁)_chi$(chi).mps"
+	# if ispath(mpspath)
+	# 	println("load MPS-IF from path ", mpspath)
+	# 	fmpsI1, mpsI2 = Serialization.deserialize(mpspath)
+	# else
 		println("computing MPS-IF...")
 		bath = bosonicbath(DiracDelta(ω=ω₀, α=α₀), β=β)
 		corr = correlationfunction(bath, flattice)
@@ -58,9 +58,9 @@ function main_real(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1
 			# mpsI2 = bulkconnection!(mpsI2, lattice, band=band, trunc=trunc)
 		end
 
-		println("save MPS-IF to path ", mpspath)
-		Serialization.serialize(mpspath, (fmpsI1, mpsI2))
-	end
+	# 	println("save MPS-IF to path ", mpspath)
+	# 	Serialization.serialize(mpspath, (fmpsI1, mpsI2))
+	# end
 
 	println("bond dimension of mpsI is ", bond_dimension(fmpsI1), " ", bond_dimension(mpsI2))
 
