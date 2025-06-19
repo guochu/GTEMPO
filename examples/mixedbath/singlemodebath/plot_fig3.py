@@ -61,7 +61,7 @@ omega0 = 1
 alpha0 = 0.5
 omega1 = 1
 alpha1 = 1
-chi = 150
+chi = 100
 
 U = 2
 J = 1

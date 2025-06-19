@@ -84,7 +84,7 @@ omega0 = 1
 alpha0 = 0.5
 omega1 = 1
 alpha1 = 1
-chi = 300
+chi = 200
 
 mu = 0
 
@@ -168,7 +168,7 @@ ax[2,0].annotate(r'(g)', xy=annotate_xy,xycoords='axes fraction', fontsize=fonts
 
 
 
-chis = [50, 100, 150, 200, 300]
+chis = [50, 100, 150, 200]
 gt_errs = []
 lt_errs = []
 nn_errs = []
@@ -206,7 +206,7 @@ ax[2,1].annotate(r'(h)', xy=annotate_xy,xycoords='axes fraction', fontsize=fonts
 
 Nts = [25, 50, 100, 200]
 dts = [t / Nt for Nt in Nts]
-chi = 300
+chi = 200
 gt_errs = []
 lt_errs = []
 nn_errs = []

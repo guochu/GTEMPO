@@ -128,7 +128,7 @@ chi = 140
 
 
 beta = 1
-Ntau = 80
+Ntau = 20
 d = 1
 alpha = 1
 
@@ -178,7 +178,7 @@ ax1.tick_params(axis='both', which='major', labelsize=labelsize_s)
 
 # 
 beta = 10
-Ntau = 200
+Ntau = 50
 
 taus, gtau = read_noninteracting_imag_analytic(beta, Ntau, mu, d, alpha)
 
@@ -298,6 +298,6 @@ ax1.tick_params(axis='both', which='major', labelsize=labelsize_s)
 
 plt.tight_layout(pad=0.5)
 
-# plt.savefig('independentbosons_noint_imag.pdf', bbox_inches='tight')
+plt.savefig('independentbosons_noint_imag.pdf', bbox_inches='tight')
 
 plt.show()

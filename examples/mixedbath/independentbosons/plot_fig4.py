@@ -108,10 +108,6 @@ markers = ['o', '^', '+']
 fig, ax = plt.subplots(2,2, figsize=(8,6.5))
 
 
-chi = 80
-
-mu = 0.
-
 d = 1
 alpha = 1
 
@@ -126,9 +122,9 @@ Nt = 10
 U = 1
 mu = U / 2
 
-chi = 1000
+chi = 500
 
-taus, gtau = read_interacting_imag_analytic(beta, Ntau, U, mu, d, alpha)
+# taus, gtau = read_interacting_imag_analytic(beta, Ntau, U, mu, d, alpha)
 ts, gt, lt = read_interacting_real_analytic(beta, t, Nt, U, mu, d, alpha)
 
 
@@ -188,7 +184,8 @@ ax2.locator_params(axis='both', nbins=6)
 ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 
-chis = [400, 500, 600, 700, 800, 900, 1000]
+# chis = [400, 500, 600, 700, 800, 900, 1000]
+chis = [400, 500]
 
 gt_errs = []
 lt_errs = []
