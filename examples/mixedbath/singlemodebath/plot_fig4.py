@@ -24,7 +24,6 @@ def read_real_tempo(beta, t, N, mu, omega0, alpha0, omega1, alpha1, chi=80):
 	gt = parse_complex_array(data['gt'])
 	lt = parse_complex_array(data['lt'])
 	nn = data['nn']
-	nn.append(nn[0])
 	nn = parse_complex_array(nn)
 	ts = asarray(data['ts'])
 	return ts-ts[0], gt, lt, nn
@@ -39,7 +38,6 @@ def read_mixed_tempo(beta, Ntau, t, N, mu, omega0, alpha0, omega1, alpha1, chi=8
 	gt = parse_complex_array(data['gt'])
 	lt = parse_complex_array(data['lt'])
 	nn = data['nn']
-	nn.append(nn[0])
 	nn = parse_complex_array(nn)
 	ts = asarray(data['ts'])
 	return ts-ts[0], gt, lt, nn
@@ -88,12 +86,12 @@ omega0 = 1
 alpha0 = 0.5
 omega1 = 1
 alpha1 = 1
-chi = 200
+chi = 400
 
 mu = 0
 
 t = 5
-Nt = 200
+Nt = 100
 beta = 5
 Ntau = 100
 
@@ -159,7 +157,7 @@ ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 ax3color = 'b'
 
 ax[2,0].plot(ts, nn.real, ls='-', color=ax3color, linewidth=linewidth1, label=r'ED')
-ax[2,0].plot(ts2, nn2.real, ls='--', color=ax3color, linewidth=linewidth2, markersize=markersize, markerfacecolor='none', label=r'GTEMPO, $\chi=%s$'%(chi))
+ax[2,0].plot(ts2[:-1], nn2.real, ls='--', color=ax3color, linewidth=linewidth2, markersize=markersize, markerfacecolor='none', label=r'GTEMPO, $\chi=%s$'%(chi))
 
 ax[2,0].set_xlabel(r'$t$', fontsize=fontsize)
 ax[2,0].set_ylabel(r'$X(t)$', fontsize=fontsize)
@@ -170,7 +168,7 @@ ax[2,0].annotate(r'(g)', xy=annotate_xy,xycoords='axes fraction', fontsize=fonts
 
 
 # chis = [100, 200, 300, 400, 500]
-chis = [100, 200]
+chis = [100, 200, 300, 400, 500]
 nn_errs = []
 gt_errs = []
 lt_errs = []
@@ -179,7 +177,7 @@ for chi in chis:
 	ts2, gt2, lt2, nn2 = read_mixed_tempo(beta, Ntau, t, Nt, mu, omega0, alpha0, omega1, alpha1, chi)
 	gt_errs.append(mse_error(gt, gt2))
 	lt_errs.append(mse_error(lt, lt2))
-	nn_errs.append(mse_error(nn.real, nn2.real))
+	nn_errs.append(mse_error(nn.real[:-1], nn2.real))
 
 ax[0,1].plot(chis, gt_errs, ls='--', color='k', linewidth=linewidth2, marker='o', markersize=markersize, markerfacecolor='none')
 ax[0,1].set_xlabel(r'$\chi$', fontsize=fontsize)
@@ -207,9 +205,9 @@ ax[2,1].annotate(r'(h)', xy=annotate_xy,xycoords='axes fraction', fontsize=fonts
 
 
 
-Nts = [25, 50, 100, 200]
+Nts = [25, 50, 100]
 dts = [t / Nt for Nt in Nts]
-chi = 200
+chi = 400
 gt_errs = []
 lt_errs = []
 nn_errs = []
@@ -219,7 +217,7 @@ for Nt in Nts:
 	ts2, gt2, lt2, nn2 = read_mixed_tempo(beta, Ntau, t, Nt, mu, omega0, alpha0, omega1, alpha1, chi)
 	gt_errs.append(mse_error(gt, gt2))
 	lt_errs.append(mse_error(lt, lt2))
-	nn_errs.append(mse_error(nn.real, nn2.real))
+	nn_errs.append(mse_error(nn.real[:-1], nn2.real))
 
 
 ax[0,2].plot(dts, gt_errs, ls='--', color='k', linewidth=linewidth2, marker='o', markersize=markersize, markerfacecolor='none')

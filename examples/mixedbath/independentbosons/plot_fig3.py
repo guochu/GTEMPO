@@ -155,7 +155,7 @@ ax[0,0].annotate(r'(a)', xy=annotate_xy,xycoords='axes fraction', fontsize=fonts
 
 
 gtau_errors = []
-chis = [40,80,120, 160, 200, 300, 400]
+chis = [40,80,120, 160, 200, 300, 400, 600, 800]
 
 for i, chi in enumerate(chis):
 	taus2, gtau2 = read_interacting_imag_tempo(beta, Ntau, U, mu, d, alpha, chi)

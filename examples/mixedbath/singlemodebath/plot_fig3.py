@@ -61,7 +61,7 @@ omega0 = 1
 alpha0 = 0.5
 omega1 = 1
 alpha1 = 1
-chi = 100
+chi = 400
 
 U = 2
 J = 1
@@ -148,44 +148,46 @@ ax[2,0].annotate(r'(g)', xy=annotate_xy,xycoords='axes fraction', fontsize=fonts
 
 
 # chis = [50, 100, 150, 200, 300]
-# gt_errs = []
-# lt_errs = []
-# nn_errs = []
+chis = [50, 100, 150]
 
-# for chi in chis:
-# 	ts2, gt2, lt2, nn2 = read_real_tempo_int(beta, t, Nt, U, J, mu, omega0, alpha0, omega1, alpha1, chi)
-# 	gt_errs.append(mse_error(gt, gt2))
-# 	lt_errs.append(mse_error(lt, lt2))
-# 	nn_errs.append(mse_error(nn.real[:-1], nn2.real))
+gt_errs = []
+lt_errs = []
+nn_errs = []
 
-# ax[0,1].plot(chis, gt_errs, ls='--', color='k', linewidth=linewidth2, marker='o', markersize=markersize, markerfacecolor='none')
-# ax[0,1].set_xlabel(r'$\chi$', fontsize=fontsize)
-# ax[0,1].set_ylabel(r'$\mathcal{E}[G^{>}(t)]$', fontsize=fontsize)
-# ax[0,1].tick_params(axis='both', which='major', labelsize=labelsize)
-# ax[0,1].locator_params(axis='both', nbins=6)
-# ax[0,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-# ax[0,1].annotate(r'(b)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
+for chi in chis:
+	ts2, gt2, lt2, nn2 = read_real_tempo_int(beta, t, Nt, U, J, mu, omega0, alpha0, omega1, alpha1, chi)
+	gt_errs.append(mse_error(gt, gt2))
+	lt_errs.append(mse_error(lt, lt2))
+	nn_errs.append(mse_error(nn.real[:-1], nn2.real))
 
-# ax[1,1].plot(chis, lt_errs, ls='--', color='k', linewidth=linewidth2, marker='o', markersize=markersize, markerfacecolor='none')
-# ax[1,1].set_xlabel(r'$\chi$', fontsize=fontsize)
-# ax[1,1].set_ylabel(r'$\mathcal{E}[G^{<}(t)]$', fontsize=fontsize)
-# ax[1,1].tick_params(axis='both', which='major', labelsize=labelsize)
-# ax[1,1].locator_params(axis='both', nbins=6)
-# ax[1,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-# ax[1,1].annotate(r'(e)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
+ax[0,1].plot(chis, gt_errs, ls='--', color='k', linewidth=linewidth2, marker='o', markersize=markersize, markerfacecolor='none')
+ax[0,1].set_xlabel(r'$\chi$', fontsize=fontsize)
+ax[0,1].set_ylabel(r'$\mathcal{E}[G^{>}(t)]$', fontsize=fontsize)
+ax[0,1].tick_params(axis='both', which='major', labelsize=labelsize)
+ax[0,1].locator_params(axis='both', nbins=6)
+ax[0,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+ax[0,1].annotate(r'(b)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
 
-# ax[2,1].plot(chis, nn_errs, ls='--', color='k', linewidth=linewidth2, marker='o', markersize=markersize, markerfacecolor='none')
-# ax[2,1].set_xlabel(r'$\chi$', fontsize=fontsize)
-# ax[2,1].set_ylabel(r'$\mathcal{E}[X(t)]$', fontsize=fontsize)
-# ax[2,1].tick_params(axis='both', which='major', labelsize=labelsize)
-# ax[2,1].locator_params(axis='both', nbins=6)
-# ax[2,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-# ax[2,1].annotate(r'(h)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
+ax[1,1].plot(chis, lt_errs, ls='--', color='k', linewidth=linewidth2, marker='o', markersize=markersize, markerfacecolor='none')
+ax[1,1].set_xlabel(r'$\chi$', fontsize=fontsize)
+ax[1,1].set_ylabel(r'$\mathcal{E}[G^{<}(t)]$', fontsize=fontsize)
+ax[1,1].tick_params(axis='both', which='major', labelsize=labelsize)
+ax[1,1].locator_params(axis='both', nbins=6)
+ax[1,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+ax[1,1].annotate(r'(e)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
+
+ax[2,1].plot(chis, nn_errs, ls='--', color='k', linewidth=linewidth2, marker='o', markersize=markersize, markerfacecolor='none')
+ax[2,1].set_xlabel(r'$\chi$', fontsize=fontsize)
+ax[2,1].set_ylabel(r'$\mathcal{E}[X(t)]$', fontsize=fontsize)
+ax[2,1].tick_params(axis='both', which='major', labelsize=labelsize)
+ax[2,1].locator_params(axis='both', nbins=6)
+ax[2,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+ax[2,1].annotate(r'(h)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
 
 
 # Nts = [25, 50, 100, 200]
 # dts = [t / Nt for Nt in Nts]
-# chi = 300
+# chi = 150
 # gt_errs = []
 # lt_errs = []
 # nn_errs = []

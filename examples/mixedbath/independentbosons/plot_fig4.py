@@ -185,7 +185,7 @@ ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 
 # chis = [400, 500, 600, 700, 800, 900, 1000]
-chis = [400, 500]
+chis = [400, 500, 600, 700, 800]
 
 gt_errs = []
 lt_errs = []

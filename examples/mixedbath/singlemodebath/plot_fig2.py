@@ -168,7 +168,7 @@ ax[2,0].annotate(r'(g)', xy=annotate_xy,xycoords='axes fraction', fontsize=fonts
 
 
 
-chis = [50, 100, 150, 200]
+chis = [50, 100, 150, 200, 300]
 gt_errs = []
 lt_errs = []
 nn_errs = []
@@ -206,7 +206,7 @@ ax[2,1].annotate(r'(h)', xy=annotate_xy,xycoords='axes fraction', fontsize=fonts
 
 Nts = [25, 50, 100, 200]
 dts = [t / Nt for Nt in Nts]
-chi = 200
+chi = 100
 gt_errs = []
 lt_errs = []
 nn_errs = []

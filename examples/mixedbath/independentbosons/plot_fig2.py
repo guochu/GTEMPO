@@ -107,7 +107,7 @@ markers = ['o', '^', '+']
 fig, ax = plt.subplots(2,2, figsize=(8,6.5))
 
 
-chi = 120
+chi = 140
 
 mu = 0
 
@@ -180,7 +180,7 @@ ax2.tick_params(axis='both', which='major', labelsize=labelsize, colors=ax2color
 ax2.locator_params(axis='both', nbins=6)
 ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
-chis = [60,80,100,120]
+chis = [60,80,100,120,140]
 
 gt_errs = []
 lt_errs = []
@@ -210,6 +210,6 @@ ax[1,1].annotate(r'(d)', xy=annotate_xy,xycoords='axes fraction', fontsize=fonts
 
 plt.tight_layout(pad=0.5)
 
-# plt.savefig('independentbosons_noint_mixed.pdf', bbox_inches='tight')
+plt.savefig('independentbosons_noint_mixed.pdf', bbox_inches='tight')
 
 plt.show()
