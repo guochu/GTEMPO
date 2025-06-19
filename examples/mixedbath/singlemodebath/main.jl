@@ -371,7 +371,7 @@ function main_real_int(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω�
 	println("bond dimension of mpsI is ", bond_dimension(fmpsI1), " ", bond_dimension(mpsI2))
 
 
-	mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
+	mpsK = accsysdynamics_fast(lattice, exact_model, trunc=trunc, scaling=1000)
 	mpsK = systhermalstate!(mpsK, lattice, exact_model, β=β)
 	mpsI1 = reweighting!(lattice, mpsK, flattice, fmpsI1, trunc=trunc)
 
