@@ -134,11 +134,18 @@ function DMRG.leftsweep!(m::GMPSIterativeMultCache, alg::DMRGMult1)
     kvals = Float64[]
     for site in 1:L-1
         (alg.verbosity > 3) && println("Sweeping from left to right at site: $site")
-        mpsj = g_ac_prime(x[site], y[site], hstorage[site], hstorage[site+1])
+        
+        # mpsj = g_ac_prime(x[site], y[site], hstorage[site], hstorage[site+1])
+        left_xy = get_left_xy(hstorage[site], x[site], y[site])
+        @tensor mpsj[1,2;5] := left_xy[1,2,3,4] * hstorage[site+1][4,3,5]
+        
         push!(kvals, norm(mpsj))
         (alg.verbosity > 1) && println("residual is $(kvals[end])...")
         z[site], r = leftorth!(mpsj, alg = QR())
-        hstorage[site+1] = updatemultleft(hstorage[site], z[site], x[site], y[site])
+        
+        # hstorage[site+1] = updatemultleft(hstorage[site], z[site], x[site], y[site])
+        @tensor tmp[5,3;4] := left_xy[1,2,3,4] * conj(z[site][1,2,5])
+        hstorage[site+1] = tmp 
     end
     return kvals    
 end
@@ -151,13 +158,20 @@ function DMRG.rightsweep!(m::GMPSIterativeMultCache, alg::DMRGMult1)
     local r
     for site in L:-1:2
         (alg.verbosity > 3) && println("Sweeping from right to left at site: $site")
-        mpsj = g_ac_prime(x[site], y[site], hstorage[site], hstorage[site+1])
+        
+        # mpsj = g_ac_prime(x[site], y[site], hstorage[site], hstorage[site+1])
+        xy_right = get_xy_right(hstorage[site+1], x[site], y[site])
+        @tensor mpsj[1,4;5] := hstorage[site][1,2,3] * xy_right[3,2,4,5]
+
         push!(kvals, norm(mpsj))
         (alg.verbosity > 1) && println("residual is $(kvals[end])...")
 
         r, zj = rightorth(mpsj, (1,), (2,3), alg=LQ())
         z[site] = permute(zj, (1,2), (3,))
-        hstorage[site] = updatemultright(hstorage[site+1], z[site], x[site], y[site])
+        
+        # hstorage[site] = updatemultright(hstorage[site+1], z[site], x[site], y[site])
+        @tensor tmp[4,5;1] := conj(z[site][1,2,3]) * xy_right[4,5,2,3]
+        hstorage[site] = tmp
     end
     # println("norm of r is $(norm(r))")
     z[1] = @tensor tmp[1,2;4] := z[1][1,2,3] * r[3,4]
@@ -172,7 +186,11 @@ function rightsweep_final!(m::GMPSIterativeMultCache, alg::DMRGMult1)
     trunc = alg.trunc
     for site in L:-1:2
         (alg.verbosity > 3) && println("Sweeping from right to left at site: $site")
-        mpsj = g_ac_prime(x[site], y[site], hstorage[site], hstorage[site+1])
+        
+        # mpsj = g_ac_prime(x[site], y[site], hstorage[site], hstorage[site+1])
+        xy_right = get_xy_right(hstorage[site+1], x[site], y[site])
+        @tensor mpsj[1,4;5] := hstorage[site][1,2,3] * xy_right[3,2,4,5]
+
         push!(kvals, norm(mpsj))
         (alg.verbosity > 1) && println("residual is $(kvals[end])...")
 
@@ -183,7 +201,10 @@ function rightsweep_final!(m::GMPSIterativeMultCache, alg::DMRGMult1)
             z[1] = @tensor tmp[1,2;4] := z[1][1,2,3] * r[3,4]
         end
         z.s[site] = normalize!(s)
-        hstorage[site] = updatemultright(hstorage[site+1], z[site], x[site], y[site])
+        
+        # hstorage[site] = updatemultright(hstorage[site+1], z[site], x[site], y[site])
+        @tensor tmp[4,5;1] := conj(z[site][1,2,3]) * xy_right[4,5,2,3]
+        hstorage[site] = tmp
     end
     # println("norm of r is $(norm(r))")
     return kvals    

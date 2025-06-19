@@ -1,4 +1,5 @@
 include("svdmult.jl")
+include("util.jl")
 include("iterativemult.jl")
 
 # wrapper
