@@ -11,14 +11,15 @@ struct DMRGMult1 <: DMRGMultAlgorithm
     tol::Float64 
     initguess::Symbol
     verbosity::Int 
+    callback::Function
 end
-function DMRGMult1(trunc::TruncationDimCutoff; maxiter::Int=5, tol::Float64=1.0e-12, initguess::Symbol=:svd, verbosity::Int=0)
+function DMRGMult1(trunc::TruncationDimCutoff; maxiter::Int=5, tol::Float64=1.0e-12, initguess::Symbol=:svd, verbosity::Int=0, callback::Function=Returns(nothing))
     (initguess in AllowedInitGuesses) || throw(ArgumentError("initguess must be one of $(AllowedInitGuesses)"))
-    return DMRGMult1(trunc, maxiter, tol, initguess, verbosity)
+    return DMRGMult1(trunc, maxiter, tol, initguess, verbosity, callback)
 end 
 DMRGMult1(; trunc::TruncationDimCutoff=DefaultITruncation, kwargs...) = DMRGMult1(trunc; kwargs...)
-Base.similar(x::DMRGMult1; trunc::TruncationDimCutoff=x.trunc, maxiter::Int=x.maxiter, tol::Float64=x.tol, initguess::Symbol=x.initguess, verbosity::Int=x.verbosity) = DMRGMult1(
-            trunc=trunc, maxiter=maxiter, tol=tol, initguess=initguess, verbosity=verbosity)
+Base.similar(x::DMRGMult1; trunc::TruncationDimCutoff=x.trunc, maxiter::Int=x.maxiter, tol::Float64=x.tol, initguess::Symbol=x.initguess, verbosity::Int=x.verbosity, callback=x.callback) = DMRGMult1(
+            trunc=trunc, maxiter=maxiter, tol=tol, initguess=initguess, verbosity=verbosity, callback=callback)
 
 
 struct DMRGMult2 <: DMRGMultAlgorithm
