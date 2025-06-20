@@ -54,7 +54,7 @@ function main_real(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, chi = 100)
 		# mpsI2 = bulkconnection!(mpsI2, lattice, band=band, trunc=trunc)
 	end
 
-	mpsK = systhermalstate!(mpsK, lattice, exact_model, β=β)
+	mpsK = systhermalstate!(mpsK, lattice, exact_model, β=β, δτ=0.001)
 	mpsI1 = reweighting!(lattice, mpsK, flattice, fmpsI, trunc=trunc)
 
 	println("bond dimension of bosonic adt is ", bond_dimension(mpsI1))
@@ -130,8 +130,10 @@ function main_real_int(U, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, chi = 
 		mpsK = boundarycondition!(mpsK, lattice, band=band, trunc=trunc)
 	end
 
-	# mpsK = systhermalstate!(mpsK, lattice, exact_model, β=β)
+	# mpsK = systhermalstate!(mpsK, lattice, exact_model, β=β, δτ=0.001)
 	mpsI1 = reweighting!(lattice, mpsK, flattice, fmpsI, trunc=trunc)
+
+
 
 	println("bond dimension of bosonic adt is ", bond_dimension(mpsI1))
 

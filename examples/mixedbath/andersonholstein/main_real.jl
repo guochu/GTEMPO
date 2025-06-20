@@ -56,7 +56,7 @@ function main_real(ϵ_d; β=5, t=5, N=50, d=3, α=1, chi = 100)
 
 
 	mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
-	mpsK = systhermalstate!(mpsK, lattice, exact_model, β=β)
+	# mpsK = systhermalstate!(mpsK, lattice, exact_model, β=β)
 	mpsI1 = reweighting!(lattice, mpsK, flattice, fmpsI1, trunc=trunc)
 
 	println("bond dimension of bosonic adt is ", bond_dimension(mpsI1))
@@ -69,7 +69,8 @@ function main_real(ϵ_d; β=5, t=5, N=50, d=3, α=1, chi = 100)
 
 	@time gt = cached_greater_fast(lattice, mpsI1, mpsI2, b1=:+, b2=:+, cache=cache) 
 	@time lt = cached_lesser_fast(lattice, mpsI1, mpsI2, b1=:-, b2=:+, cache=cache) 
-	@time g₃ = [nn2(lattice, i, 1, mpsI1, mpsI2, b1=:+, b2=:+, Z=Zvalue(cache)) for i in 1:N]
+	start_pos = 1
+	@time g₃ = [nn2(lattice, i, start_pos, mpsI1, mpsI2, b1=:+, b2=:+, Z=Zvalue(cache)) for i in start_pos:N]
 
 	data_path = "result/andersonholstein_realgtempo_beta$(β)_t$(t)_dt$(δt)_d$(d)_alpha$(α)_mu$(ϵ_d)_chi$(chi).json"
 

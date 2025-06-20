@@ -55,7 +55,7 @@ function main_real(U, ϵ_d=U/2; β=1, t=1, N=10, d=3, α=1, chi = 200)
 
 
 	mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
-	mpsK = systhermalstate!(mpsK, lattice, exact_model, β=β)
+	# mpsK = systhermalstate!(mpsK, lattice, exact_model, β=β)
 
 	mpsI1 = reweighting!(lattice, mpsK, flattice, fmpsI1, trunc=trunc)
 
@@ -69,7 +69,8 @@ function main_real(U, ϵ_d=U/2; β=1, t=1, N=10, d=3, α=1, chi = 200)
 
 	@time gt = cached_greater_fast(lattice, mpsI1, mpsI2, mpsI3, b1=:+, b2=:+, cache=cache) 
 	@time lt = cached_lesser_fast(lattice, mpsI1, mpsI2, mpsI3, b1=:-, b2=:+, cache=cache) 
-	@time g₃ = [nn2(lattice, i, 1, mpsI1, mpsI2, mpsI3, b1=:+, b2=:+, Z=Zvalue(cache)) for i in 1:N]
+	start_pos = 1
+	@time g₃ = [nn2(lattice, i, start_pos, mpsI1, mpsI2, mpsI3, b1=:+, b2=:+, Z=Zvalue(cache)) for i in start_pos:N]
 
 	data_path = "result/andersonholstein_int_realgtempo_beta$(β)_t$(t)_dt$(δt)_d$(d)_alpha$(α)_U$(U)_mu$(ϵ_d)_chi$(chi).json"
 

@@ -63,8 +63,8 @@ omega1 = 1
 alpha1 = 1
 chi = 400
 
-U = 1
-J = 0
+U = 2
+J = 1
 mu = U/2
 
 t = 1
@@ -147,8 +147,8 @@ ax[2,0].annotate(r'(g)', xy=annotate_xy,xycoords='axes fraction', fontsize=fonts
 
 
 
-# chis = [100, 200, 300, 400, 600, 800]
-chis = [100, 200, 300, 400]
+chis = [100, 200, 300, 400, 600, 800]
+# chis = [100, 200, 300, 400]
 
 
 gt_errs = []

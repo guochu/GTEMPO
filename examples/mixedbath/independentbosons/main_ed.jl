@@ -71,8 +71,10 @@ function noninteracting_operators(ϵ_d; ω₀=1, α=0.5, d=100)
 	H = Himp + Hhyb + Hbath
 	A, B = kron(σ₋, Ib), kron(σ₊, Ib)
 
-	Hbathbare = ω₀ * n̂b
 	return H, A, B, Himp + Hbath
+
+	# Hbathbare = ω₀ * n̂b
+	# return H, A, B, Hbathbare
 end
 
 # ϵ_d(n̂↑ + n̂↓) + U n̂↑n̂↓ + α (n̂↑ + n̂↓)(b̂ + b̂†) + ω₀b̂†b̂ 
@@ -129,6 +131,7 @@ function interacting_real(U, ϵ_d=U/2; β=1, t=1, N=5, ω₀=1, α₀=0.5, d=50)
 	ρimp = zeros(4, 4)
 	ρimp[1,1] = 1
 	ρ = kron(ρimp, exp(-β*H0)) 
+	# ρ = exp(-β*H0)
 	g1, g2 = gf_real(H, a, adag, β, t, N, ρ)
 
 	data_path = "result/interacting_ed_real_beta$(β)_t$(t)_U$(U)_mu$(ϵ_d)_N$(N)_omega$(ω₀)_alpha$(α₀).json"

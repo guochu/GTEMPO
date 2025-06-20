@@ -53,10 +53,6 @@ function main_real(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1
 
 		fcorr = correlationfunction(fbath, lattice)
 		@time mpsI2 = hybriddynamics(lattice, fcorr, band=1, trunc=trunc)
-		for band in 1:lattice.bands
-			mpsI2 = boundarycondition!(mpsI2, lattice, band=band, trunc=trunc)
-			# mpsI2 = bulkconnection!(mpsI2, lattice, band=band, trunc=trunc)
-		end
 
 	# 	println("save MPS-IF to path ", mpspath)
 	# 	Serialization.serialize(mpspath, (fmpsI1, mpsI2))
@@ -66,21 +62,25 @@ function main_real(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1
 
 
 	mpsK = accsysdynamics_fast(lattice, exact_model, trunc=trunc, scaling=1000)
+	for band in 1:lattice.bands
+		mpsK = boundarycondition!(mpsK, lattice, band=band, trunc=trunc)
+		# mpsI2 = bulkconnection!(mpsI2, lattice, band=band, trunc=trunc)
+	end
 	mpsK = systhermalstate!(mpsK, lattice, exact_model, β=β, δτ=0.001)
 	mpsI1 = reweighting!(lattice, mpsK, flattice, fmpsI1, trunc=trunc)
 
 	println("bond dimension of bosonic adt is ", bond_dimension(mpsI1))
 
 
-	cache = environments(lattice, mpsI1, mpsI2)
+	cache = environments(lattice, mpsI1)
 	# @time gt = [cached_greater(lattice, j, mpsK, mpsI, cache=cache) for j in 1:lattice.kt]
 	# @time lt = [cached_lesser(lattice, j, mpsK, mpsI, cache=cache) for j in 1:lattice.kt]
 	# return gt, lt
 
 	band = 1
-	@time g₁ = [cached_greater(lattice, k, mpsI1, mpsI2, c1=false, c2=true, b1=:+, b2=:+, band=band, cache=cache) for k in 1:N+1]
-	@time g₂ = [cached_lesser(lattice, k, mpsI1, mpsI2, c1=true, c2=false, b1=:-, b2=:+, band=band, cache=cache) for k in 1:N+1]
-	@time g₃ = [nn2(lattice, i, 1, mpsI1, mpsI2, Z=Zvalue(cache), b1=:+, b2=:+) for i in 1:N]
+	@time g₁ = [cached_greater(lattice, k, mpsI1, c1=false, c2=true, b1=:+, b2=:+, band=band, cache=cache) for k in 1:N+1]
+	@time g₂ = [cached_lesser(lattice, k, mpsI1, c1=true, c2=false, b1=:-, b2=:+, band=band, cache=cache) for k in 1:N+1]
+	@time g₃ = [nn2(lattice, i, 1, mpsI1, Z=Zvalue(cache), b1=:+, b2=:+) for i in 1:N]
 
 	g₁, g₂ = -im*g₁, -im*g₂
 	return g₁, g₂, g₃

@@ -113,7 +113,17 @@ end
 		g1 = [-im*cached_greater(lattice, k, adt, c1=false, c2=true, b1=:+, b2=:+, band=1, cache=cache) for k in 1:Nt+1]
 		g2 = [-im*cached_lesser(lattice, k, adt, c1=true, c2=false, b1=:-, b2=:+, band=1, cache=cache) for k in 1:Nt+1]
 
-		g1′, g2′ = noninteracting_real(ϵ_d)
+		# g1′, g2′ = noninteracting_real(ϵ_d)
+
+		H, a, adag, H0 = noninteracting_operators(ϵ_d, ω₀=1, α=0.5, d=100)
+		# ρimp = zeros(2,2)
+		# ρimp[1,1] = 1
+		# ρ = kron(ρimp, exp(-β*H0))
+		ρ = exp(-β*H0)
+		cache = eigencache(H)
+		g1′ = -im .* correlation_2op_1t(H, a, adag, ρ, 0:δt:t, cache, reverse = false)
+		g2′ = im .* correlation_2op_1t(H, adag, a, ρ, 0:δt:t, cache, reverse = true)
+
 		@test norm(g1 - g1′) / norm(g1) < rtol	
 		@test norm(g2 - g2′) / norm(g2) < rtol	
 	end
@@ -146,7 +156,14 @@ end
 		g1 = [-im*cached_greater(lattice, k, adt, c1=false, c2=true, b1=:+, b2=:+, band=1, cache=cache) for k in 1:Nt+1]
 		g2 = [-im*cached_lesser(lattice, k, adt, c1=true, c2=false, b1=:-, b2=:+, band=1, cache=cache) for k in 1:Nt+1]
 
-		g1′, g2′ = interacting_real(U, ϵ_d)
+		# g1′, g2′ = interacting_real(U, ϵ_d)
+		H, a, adag, H0 = interacting_operators(U, ϵ_d, ω₀=1, α=0.5, d=100)
+		ρ = exp(-β*H0)
+		cache = eigencache(H)
+		g1′ = -im .* correlation_2op_1t(H, a, adag, ρ, 0:δt:t, cache, reverse = false)
+		g2′ = im .* correlation_2op_1t(H, adag, a, ρ, 0:δt:t, cache, reverse = true)
+
+
 		@test norm(g1 - g1′) / norm(g1) < rtol	
 		@test norm(g2 - g2′) / norm(g2) < rtol	
 

@@ -87,6 +87,8 @@ function noninteracting_operators(ϵ_d; ω₀=1, α=0.5, d=100)
 	A, B = kron(σ₋, Ib), kron(σ₊, Ib)
 
 	return H, A, B, Himp + Hbath
+	# Hbathbare = ω₀ * n̂b
+	# return H, A, B, Hbathbare
 end
 
 # ϵ_d(n̂↑ + n̂↓) + U n̂↑n̂↓ + α (n̂↑ + n̂↓)(b̂ + b̂†) + ω₀b̂†b̂ 
@@ -108,31 +110,33 @@ function interacting_operators(U, ϵ_d=U/2; ω₀=1, α=0.5, d=100)
 	A, B = kron(kron(σ₋, Is), Ib), kron(kron(σ₊, Is), Ib)
 
 	return H, A, B, Himp + Hbath
+	# Hbathbare = ω₀ * n̂b
+	# return H, A, B, Hbathbare
 end
 
 
-function noninteracting_real(ϵ_d)
-	β = 0.1
-	δt=0.01
-	N = 10
-	t = N * δt
+# function noninteracting_real(ϵ_d)
+# 	β = 0.1
+# 	δt=0.01
+# 	N = 10
+# 	t = N * δt
 
-	H, a, adag, H0 = noninteracting_operators(ϵ_d, ω₀=1, α=0.5, d=100)
-	ρ = exp(-β*H0)
-	g1, g2 = gf_real(H, a, adag, β, t, N, ρ)
+# 	H, a, adag, H0 = noninteracting_operators(ϵ_d, ω₀=1, α=0.5, d=100)
+# 	ρ = exp(-β*H0)
+# 	g1, g2 = gf_real(H, a, adag, β, t, N, ρ)
 
-	return g1, g2
-end
+# 	return g1, g2
+# end
 
-function interacting_real(U, ϵ_d=U/2)
-	β = 0.1
-	δt=0.01
-	N = 10
-	t = N * δt
+# function interacting_real(U, ϵ_d=U/2)
+# 	β = 0.1
+# 	δt=0.01
+# 	N = 10
+# 	t = N * δt
 
-	H, a, adag, H0 = interacting_operators(U, ϵ_d, ω₀=1, α=0.5, d=100)
-	ρ = exp(-β*H0)
-	g1, g2 = gf_real(H, a, adag, β, t, N, ρ)
+# 	H, a, adag, H0 = interacting_operators(U, ϵ_d, ω₀=1, α=0.5, d=100)
+# 	ρ = exp(-β*H0)
+# 	g1, g2 = gf_real(H, a, adag, β, t, N, ρ)
 
-	return g1, g2
-end
+# 	return g1, g2
+# end

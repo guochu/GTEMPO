@@ -163,7 +163,7 @@ function interacting_operators(U, J, ϵ_d=U/2; ω₀=1, α₀=0.5, ω₁=1, α�
 	return H, A, B, Nimp, Himp + Hbath0 + Hbath1
 
 	# Hbathbare = ω₀ * kron(Is, n̂b) + ω₁ * kron(n̂, Ib)
-	# return H, A, B, Hbathbare
+	# return H, A, B, Nimp, Hbathbare
 end
 
 function noninteracting_imag(ϵ_d; β=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1, d=50)
@@ -235,6 +235,9 @@ function interacting_neq(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, �
 	δt=t/N
 
 	H, a, adag, Nimp, H0 = interacting_operators(U, J, ϵ_d, ω₀=ω₀, α₀=α₀, ω₁=ω₁, α₁=α₁, d=d)
+	# ρimp = zeros(4, 4)
+	# ρimp[1,1] = 1
+	# ρ = kron(ρimp, exp(-β*H0)) 
 	ρ = exp(-β*H0)
 	cache = eigencache(H)
 	g1, g2 = gf_real(a, adag, β, t, N, cache, ρ)
