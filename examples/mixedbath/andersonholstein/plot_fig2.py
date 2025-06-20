@@ -61,7 +61,7 @@ d = 3
 alpha = 1
 
 
-chis = [50, 100, 150]
+chis = [50, 100, 150, 200]
 
 
 for i, chi in enumerate(chis):
@@ -141,7 +141,7 @@ ax[1,1].legend( fontsize=12)
 
 
 
-Ns = [50, 100, 200]
+Ns = [50, 100, 200, 400]
 
 chi = 100
 for i, N in enumerate(Ns):

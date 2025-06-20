@@ -372,7 +372,7 @@ function main_real_int(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω�
 
 
 	mpsK = accsysdynamics_fast(lattice, exact_model, trunc=trunc, scaling=1000)
-	mpsK = systhermalstate!(mpsK, lattice, exact_model, β=β)
+	mpsK = systhermalstate!(mpsK, lattice, exact_model, β=β, δτ=0.001)
 	mpsI1 = reweighting!(lattice, mpsK, flattice, fmpsI1, trunc=trunc)
 
 	println("bond dimension of bosonic adt is ", bond_dimension(mpsI1))
@@ -383,8 +383,9 @@ function main_real_int(U, J, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω�
 	# @time lt = [cached_lesser(lattice, j, mpsK, mpsI, cache=cache) for j in 1:lattice.kt]
 	# return gt, lt
 
-	@time g₁ = [cached_greater(lattice, k, mpsI1, mpsI2, c1=false, c2=true, b1=:+, b2=:+, band=1, cache=cache) for k in 1:N+1]
-	@time g₂ = [cached_lesser(lattice, k, mpsI1, mpsI2, c1=true, c2=false, b1=:-, b2=:+, band=1, cache=cache) for k in 1:N+1]
+	band = 1
+	@time g₁ = [cached_greater(lattice, k, mpsI1, mpsI2, c1=false, c2=true, b1=:+, b2=:+, band=band, cache=cache) for k in 1:N+1]
+	@time g₂ = [cached_lesser(lattice, k, mpsI1, mpsI2, c1=true, c2=false, b1=:-, b2=:+, band=band, cache=cache) for k in 1:N+1]
 	@time g₃ = [nn2(lattice, i, 1, mpsI1, mpsI2, Z=Zvalue(cache), b1=:+, b2=:+) for i in 1:N]
 
 	g₁, g₂ = -im*g₁, -im*g₂

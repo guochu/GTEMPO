@@ -25,9 +25,8 @@ def read_real_tempo(beta, t, N, U, mu, d, alpha, chi=80):
 	gt = parse_complex_array(data['gt'])
 	lt = parse_complex_array(data['lt'])
 	gnn = parse_complex_array(data['nn'])
-	gnn2 = parse_complex_array(data['nn2'])
 	ts = asarray(data['ts'])
-	return ts-ts[0], gt, lt, gnn, gnn2
+	return ts-ts[0], gt, lt, gnn
 
 
 
@@ -72,7 +71,7 @@ chis = [100, 200, 300, 400]
 alphas = [0.2, 0.5, 0.7, 1]
 
 for i, chi in enumerate(chis):
-	ts, gt, lt, gnn, gnn2 = read_real_tempo(beta, t, N, U, mu, d, alpha, chi)
+	ts, gt, lt, gnn = read_real_tempo(beta, t, N, U, mu, d, alpha, chi)
 	ax[0,0].plot(ts, gt.real, ls='--', color=ax1color, alpha=alphas[i], markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
 	ax[0,1].plot(ts, lt.real, ls='--', color=ax1color, alpha=alphas[i], markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
 	ax[0,2].plot(ts[:-1], gnn.real, ls='--', color=ax3color, alpha=alphas[i], markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
@@ -105,7 +104,7 @@ ax[0,2].annotate(r'(c)', xy=annotate_xy,xycoords='axes fraction', fontsize=fonts
 
 ax2 = ax[0,0].twinx()
 for i, chi in enumerate(chis):
-	ts, gt, lt, gnn, gnn2 = read_real_tempo(beta, t, N, U, mu, d, alpha, chi)
+	ts, gt, lt, gnn = read_real_tempo(beta, t, N, U, mu, d, alpha, chi)
 	ax2.plot(ts, gt.imag, ls='--', color=ax2color, alpha=alphas[i], linewidth=linewidth, label=r'ED')
 
 
@@ -117,7 +116,7 @@ ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 ax2 = ax[0,1].twinx()
 for i, chi in enumerate(chis):
-	ts, gt, lt, gnn, gnn2 = read_real_tempo(beta, t, N, U, mu, d, alpha, chi)
+	ts, gt, lt, gnn = read_real_tempo(beta, t, N, U, mu, d, alpha, chi)
 	ax2.plot(ts, gt.imag, ls='--', color=ax2color, alpha=alphas[i], linewidth=linewidth, label=r'ED')
 
 
@@ -129,11 +128,11 @@ ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 Nts = [5, 10, 20, 40]
 dts = [t / Nt for Nt in Nts]
-chi = 400
+chi = 200
 
 
 for i, Nt in enumerate(Nts):
-	ts, gt, lt, gnn, gnn2 = read_real_tempo(beta, t, Nt, U, mu, d, alpha, chi)
+	ts, gt, lt, gnn = read_real_tempo(beta, t, Nt, U, mu, d, alpha, chi)
 	ax[1,0].plot(ts, gt.real, ls='--', color=ax1color, alpha=alphas[i], linewidth=linewidth, label=r'$\chi=%s$'%(chi))
 	ax[1,1].plot(ts, lt.real, ls='--', color=ax1color, alpha=alphas[i], linewidth=linewidth, label=r'$\chi=%s$'%(chi))
 	ax[1,2].plot(ts[:-1], gnn.real, ls='--', color=ax3color, alpha=alphas[i], markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
@@ -167,7 +166,7 @@ ax[1,2].annotate(r'(f)', xy=annotate_xy,xycoords='axes fraction', fontsize=fonts
 
 ax2 = ax[1,0].twinx()
 for i, Nt in enumerate(Nts):
-	ts, gt, lt, gnn, gnn2 = read_real_tempo(beta, t, Nt, U, mu, d, alpha, chi)
+	ts, gt, lt, gnn = read_real_tempo(beta, t, Nt, U, mu, d, alpha, chi)
 	ax2.plot(ts, gt.imag, ls='--', color=ax2color, alpha=alphas[i], linewidth=linewidth, label=r'ED')
 
 
@@ -179,7 +178,7 @@ ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 ax2 = ax[1,1].twinx()
 for i, Nt in enumerate(Nts):
-	ts, gt, lt, gnn, gnn2 = read_real_tempo(beta, t, Nt, U, mu, d, alpha, chi)
+	ts, gt, lt, gnn = read_real_tempo(beta, t, Nt, U, mu, d, alpha, chi)
 	ax2.plot(ts, gt.imag, ls='--', color=ax2color, alpha=alphas[i], linewidth=linewidth, label=r'ED')
 
 
