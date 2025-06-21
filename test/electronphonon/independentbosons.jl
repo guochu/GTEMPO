@@ -107,7 +107,7 @@ end
 			adt = boundarycondition!(adt, lattice, band=band, trunc=trunc)
 		end
 
-		adt = systhermalstate!(adt, lattice, exact_model, trunc=trunc, δτ=0.001, β=β)
+		adt = systhermalstate!(adt, lattice, exact_model, trunc=trunc, β=β)
 		cache = environments(lattice, adt)
 
 		g1 = [-im*cached_greater(lattice, k, adt, c1=false, c2=true, b1=:+, b2=:+, band=1, cache=cache) for k in 1:Nt+1]
@@ -143,7 +143,7 @@ end
 		exact_model = AndersonIM(U=U, μ=-ϵ_d)
 		mpsK = sysdynamics(lattice, exact_model, trunc=truncK)
 
-		mpsK = systhermalstate!(mpsK, lattice, exact_model, trunc=trunc, δτ=0.0001, β=β)
+		mpsK = systhermalstate!(mpsK, lattice, exact_model, trunc=trunc, β=β)
 
 		for band in 1:lattice.bands
 			mpsK = boundarycondition!(mpsK, lattice, band=band, trunc=trunc)

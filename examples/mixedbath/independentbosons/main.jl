@@ -1,5 +1,6 @@
-push!(LOAD_PATH, "../../../src")
-using GTEMPO
+# push!(LOAD_PATH, "../../../src")
+# using GTEMPO
+include("../../../src/includes.jl")
 
 
 # include("../../../src/includes.jl")
@@ -87,7 +88,7 @@ end
 function main_real_int(U, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, chi = 100)
 	# ϵ_d = 0.5
 	δt=t / N
-	println("N=", N, " t=", t, " U=", U, " ϵ_d=", ϵ_d, " β=", β, " ω₀=", ω₀, " α₀=", α₀, " ω₁=", " chi=", chi)
+	println("N=", N, " t=", t, " U=", U, " ϵ_d=", ϵ_d, " β=", β, " ω₀=", ω₀, " α₀=", α₀, " chi=", chi)
 
 	ts = [i*δt for i in 1:N+1]
 
@@ -97,13 +98,6 @@ function main_real_int(U, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, chi = 
 	lattice = GrassmannLattice(N=N, δt=δt, contour=:real, order=1, bands=2)
 	println("number of sites, ", length(lattice))
 	flattice = FockLattice(N=N, δt=δt, contour=:real, order=1, bands=2)
-
-	# bath = bosonicbath(spectrum_func(), β=β)
-	# corr = correlationfunction(bath, lattice)
-
-	# println("computing MPS-IF...")
-	# @time mpsI = retardedinteractdynamics(lattice, corr, trunc=trunc)
-
 
 	exact_model = AndersonIM(U=U, μ=-ϵ_d)
 
@@ -130,12 +124,19 @@ function main_real_int(U, ϵ_d=U/2; β=1, t=1, N=100, ω₀=1, α₀=0.5, chi = 
 		mpsK = boundarycondition!(mpsK, lattice, band=band, trunc=trunc)
 	end
 
-	# mpsK = systhermalstate!(mpsK, lattice, exact_model, β=β, δτ=0.001)
+	mpsK = systhermalstate!(mpsK, lattice, exact_model, β=β)
+
+
+	# println("Z= ", integrate(fmpsI))
+	# println("Z= ", integrate(lattice, mpsK))
+
 	mpsI1 = reweighting!(lattice, mpsK, flattice, fmpsI, trunc=trunc)
 
 
 
 	println("bond dimension of bosonic adt is ", bond_dimension(mpsI1))
+
+	println("Z= ", integrate(lattice, mpsI1))
 
 
 	cache = environments(lattice, mpsI1)

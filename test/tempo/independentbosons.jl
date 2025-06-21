@@ -96,7 +96,7 @@ end
 		for band in 1:lattice.bands
 			mpsK = boundarycondition!(mpsK, lattice, band=band)
 		end
-		mpsK = systhermalstate!(mpsK, lattice, exact_model, trunc=trunc, δτ=0.001, β=β)
+		mpsK = systhermalstate!(mpsK, lattice, exact_model, trunc=trunc, β=β)
 		cache = environments(lattice, mpsK, mpsI)
 
 		g1 = [-im*cached_greater(lattice, k, mpsK, mpsI, c1=false, c2=true, b1=:+, b2=:+, band=1, cache=cache) for k in 1:Nt+1]
@@ -133,7 +133,7 @@ end
 		for band in 1:lattice.bands
 			mpsK = boundarycondition!(mpsK, lattice, band=band)
 		end
-		mpsK = systhermalstate!(mpsK, lattice, exact_model, trunc=trunc, δτ=0.001, β=β)
+		mpsK = systhermalstate!(mpsK, lattice, exact_model, trunc=trunc, β=β)
 		cache = environments(lattice, mpsK, mpsI)
 
 		g1 = [-im*cached_greater(lattice, k, mpsK, mpsI, c1=false, c2=true, b1=:+, b2=:+, band=1, cache=cache) for k in 1:Nt+1]

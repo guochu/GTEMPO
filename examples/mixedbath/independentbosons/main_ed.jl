@@ -95,10 +95,10 @@ function interacting_operators(U, ϵ_d=U/2; ω₀=1, α=0.5, d=100)
 
 	A, B = kron(kron(σ₋, Is), Ib), kron(kron(σ₊, Is), Ib)
 
-	# return H, A, B, Himp + Hbath
+	return H, A, B, Himp + Hbath, Hbath
 
-	Hbathbare = ω₀ * n̂b
-	return H, A, B, Hbathbare
+	# Hbathbare = ω₀ * n̂b
+	# return H, A, B, Hbathbare
 end
 
 function noninteracting_real(ϵ_d; β=1, t=1, N=5, ω₀=1, α₀=0.5, d=50)
@@ -127,11 +127,12 @@ end
 
 function interacting_real(U, ϵ_d=U/2; β=1, t=1, N=5, ω₀=1, α₀=0.5, d=50)
 
-	H, a, adag, H0 = interacting_operators(U, ϵ_d, ω₀=ω₀, α=α₀, d=d)
-	ρimp = zeros(4, 4)
-	ρimp[1,1] = 1
-	ρ = kron(ρimp, exp(-β*H0)) 
-	# ρ = exp(-β*H0)
+	H, a, adag, H0, Hbath = interacting_operators(U, ϵ_d, ω₀=ω₀, α=α₀, d=d)
+	# ρimp = zeros(4, 4)
+	# ρimp[1,1] = 1
+	# ρ = kron(ρimp, exp(-β*H0)) 
+	ρ = exp(-β*H0)
+	# println("Z= ", tr(ρ) / tr(exp(-β*Hbath)))
 	g1, g2 = gf_real(H, a, adag, β, t, N, ρ)
 
 	data_path = "result/interacting_ed_real_beta$(β)_t$(t)_U$(U)_mu$(ϵ_d)_N$(N)_omega$(ω₀)_alpha$(α₀).json"

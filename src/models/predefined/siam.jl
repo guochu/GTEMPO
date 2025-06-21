@@ -293,3 +293,22 @@ function siam_coeffs(μ, U, dt)
 	b = a^2 * (exp(dt*U) - 1)
 	return a, b
 end
+
+function systhermalstate!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::AndersonIM; β::Real, trunc::TruncationScheme=DefaultKTruncation)
+	μ, U = model.μ, model.U
+	a, b = siam_coeffs(μ, U, -β)
+	for band in 1:lattice.bands
+		pos1, pos2 = index(lattice, 1, conj=true, branch=:+, band=band), index(lattice, 1, conj=false, branch=:-, band=band)
+		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
+	end
+	if U != zero(U)
+		(lattice.bands == 2) || throw(ArgumentError("lattice should have two bands"))
+		pos1 = index(lattice, 1, conj=true, branch=:+, band=1)
+		pos2 = index(lattice, 1, conj=true, branch=:+, band=2)
+		pos3 = index(lattice, 1, conj=false, branch=:-, band=2)
+		pos4 = index(lattice, 1, conj=false, branch=:-, band=1)
+		apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=b)), gmps)			
+	end
+	canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
+	return gmps
+end 

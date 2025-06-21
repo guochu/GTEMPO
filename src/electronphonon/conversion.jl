@@ -75,6 +75,7 @@ end
 
 function _reweighting!(lattice2::AbstractGrassmannLattice{O}, mps2::GrassmannMPS, lattice::AbstractFockLattice, mps::FockMPS) where O
 	(similargrassmannordering(OrderingStyle(lattice)) isa O) || throw(ArgumentError("reweighting requires ordering matching"))
+	# println("scaling ", scaling(mps2), " ", scaling(mps))
 	for band in 1:lattice.bands, b in branches(lattice)
 		if b == :τ
 			k = lattice.Nτ
@@ -85,8 +86,8 @@ function _reweighting!(lattice2::AbstractGrassmannLattice{O}, mps2::GrassmannMPS
 			reweighting_one_step!(lattice2, mps2, lattice, mps, j, band, b)
 		end
 	end
-	new_scale = scaling(mps)^(length(mps) / length(mps2))
-	setscaling!(mps2, new_scale)
+	# new_scale = scaling(mps)^(length(mps) / length(mps2))
+	# setscaling!(mps2, new_scale * scaling(mps2))
 	unset_svectors!(mps2)
 	return mps2	
 end
@@ -95,7 +96,7 @@ end
 function reweighting_one_step!(lattice2::AbstractGrassmannLattice, mps2::GrassmannMPS, lattice::AbstractFockLattice, mps::FockMPS, j::Int, band::Int, b::Symbol)
 	# (lattice.N == lattice2.N) || throw(ArgumentError("lattice size mismatch"))
 	pos = index(lattice, j, band=band, branch=b)
-	t = mps[pos]
+	t = mps[pos] * scaling(mps)
 	if b == :-
 		pos1, pos2 = index(lattice2, j, band=band, branch=b, conj=true), index(lattice2, j+1, band=band, branch=b, conj=false)
 	else

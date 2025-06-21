@@ -1,7 +1,7 @@
 
 
 function systhermalstate_iterative!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::AbstractImpurityHamiltonian; 
-									β::Real, trunc::TruncationScheme=DefaultKTruncation, δτ::Real=0.01)
+									β::Real, trunc::TruncationScheme=DefaultKTruncation, δτ::Real=β/1000)
 	δτ = convert(Float64, δτ)
 	# β = lattice.β
 	n = round(Int, β/δτ)
