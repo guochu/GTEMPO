@@ -79,7 +79,7 @@ function retardedinteractdynamics_2band!(gmps::GrassmannMPS, lattice::MixedGrass
 		pos1a, pos1b, c1 = get_pair_pos(lattice, i, 1, b1)
 		for j in 1:lattice.kt-1, b2 in (:+, :-)
 			pos2a, pos2b, c2 = get_pair_pos(lattice, j, 2, b2)
-			c = 2 * index(corr, i, j, b1=b1, b2=b2) * c1 * c2
+			c = (index(corr, i, j, b1=b1, b2=b2) + index(corr, j, i, b1=b2, b2=b1)) * c1 * c2
 			t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=c))
 			apply!(t, tmp)
 			canonicalize!(tmp, alg=alg)
@@ -87,7 +87,7 @@ function retardedinteractdynamics_2band!(gmps::GrassmannMPS, lattice::MixedGrass
 		for j in 1:lattice.kτ-1
 			b2 = :τ
 			pos2a, pos2b, c2 = get_pair_pos(lattice, j, 2, b2)
-			c = 2 * index(corr, i, j, b1=b1, b2=b2) * c1 * c2
+			c = (index(corr, i, j, b1=b1, b2=b2)+index(corr, j, i, b1=b2, b2=b1)) * c1 * c2
 			t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=c))
 			apply!(t, tmp)
 			canonicalize!(tmp, alg=alg)
@@ -121,7 +121,7 @@ function retardedinteractdynamics_2band!(gmps::GrassmannMPS, lattice::MixedGrass
 		pos1a, pos1b, c1 = get_pair_pos(lattice, i, 1, b1)
 		for j in 1:lattice.kt-1, b2 in (:+, :-)
 			pos2a, pos2b, c2 = get_pair_pos(lattice, j, 2, b2)
-			c = 2 * index(corr, i, j, b1=b1, b2=b2) * c1 *c2
+			c = (index(corr, i, j, b1=b1, b2=b2)+index(corr, j, i, b1=b2, b2=b1)) * c1 *c2
 			t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=c))
 			apply!(t, tmp)
 			canonicalize!(tmp, alg=alg)
@@ -129,7 +129,7 @@ function retardedinteractdynamics_2band!(gmps::GrassmannMPS, lattice::MixedGrass
 		for j in 1:lattice.kτ-1
 			b2 = :τ
 			pos2a, pos2b, c2 = get_pair_pos(lattice, j, 2, b2)
-			c = 2 * index(corr, i, j, b1=b1, b2=b2) * c1 * c2
+			c = (index(corr, i, j, b1=b1, b2=b2)+index(corr, j, i, b1=b2, b2=b1)) * c1 * c2
 			t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=c))
 			apply!(t, tmp)
 			canonicalize!(tmp, alg=alg)
@@ -238,7 +238,7 @@ function retardedinteractdynamics_2band_naive!(gmps::GrassmannMPS, lattice::Mixe
 		pos1a, pos1b, c1 = get_pair_pos(lattice, i, 1, b1)
 		for j in 1:lattice.kt-1, b2 in (:+, :-)
 			pos2a, pos2b, c2 = get_pair_pos(lattice, j, 2, b2)
-			c = 2 * index(corr, i, j, b1=b1, b2=b2) * c1 * c2
+			c = (index(corr, i, j, b1=b1, b2=b2) + index(corr, j, i, b1=b2, b2=b1)) * c1 * c2
 			t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=c))
 			apply!(t, gmps)
 			canonicalize!(gmps, alg=alg)
@@ -246,7 +246,7 @@ function retardedinteractdynamics_2band_naive!(gmps::GrassmannMPS, lattice::Mixe
 		for j in 1:lattice.kτ-1
 			b2 = :τ
 			pos2a, pos2b, c2 = get_pair_pos(lattice, j, 2, b2)
-			c = 2 * index(corr, i, j, b1=b1, b2=b2) * c1 * c2
+			c = (index(corr, i, j, b1=b1, b2=b2) + index(corr, j, i, b1=b2, b2=b1)) * c1 * c2
 			t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=c))
 			apply!(t, gmps)
 			canonicalize!(gmps, alg=alg)
@@ -257,7 +257,7 @@ function retardedinteractdynamics_2band_naive!(gmps::GrassmannMPS, lattice::Mixe
 		pos1a, pos1b, c1 = get_pair_pos(lattice, i, 1, b1)
 		for j in 1:lattice.kt-1, b2 in (:+, :-)
 			pos2a, pos2b, c2 = get_pair_pos(lattice, j, 2, b2)
-			c = 2 * index(corr, i, j, b1=b1, b2=b2) * c1 *c2
+			c = (index(corr, i, j, b1=b1, b2=b2)+index(corr, j, i, b1=b2, b2=b1))  * c1 *c2
 			t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=c))
 			apply!(t, gmps)
 			canonicalize!(gmps, alg=alg)
@@ -265,7 +265,7 @@ function retardedinteractdynamics_2band_naive!(gmps::GrassmannMPS, lattice::Mixe
 		for j in 1:lattice.kτ-1
 			b2 = :τ
 			pos2a, pos2b, c2 = get_pair_pos(lattice, j, 2, b2)
-			c = 2 * index(corr, i, j, b1=b1, b2=b2) * c1 * c2
+			c = (index(corr, i, j, b1=b1, b2=b2) + index(corr, j, i, b1=b2, b2=b1)) * c1 * c2
 			t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=c))
 			apply!(t, gmps)
 			canonicalize!(gmps, alg=alg)
