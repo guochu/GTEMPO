@@ -61,15 +61,15 @@ omega0 = 1
 alpha0 = 0.5
 omega1 = 1
 alpha1 = 1
-chi = 200
+chi = 600
 
 U = 2
 J = 1
 mu = U/2
 
-t = 1
-Nt = 80
-beta = 1
+t = 5
+Nt = 100
+beta = 5
 # Ntau = 20
 
 # real time data
@@ -148,8 +148,10 @@ ax[2,0].annotate(r'(e)', xy=annotate_xy,xycoords='axes fraction', fontsize=fonts
 
 
 
-# Nts = [25, 50, 100, 200]
-Nts = [5, 10, 20, 40, 80]
+
+# Nts = [5, 10, 20, 40, 80]
+Nts = [50, 100, 200]
+
 dts = [t / Nt for Nt in Nts]
 gt_errs = []
 lt_errs = []
@@ -190,6 +192,6 @@ ax[2,1].annotate(r'(f)', xy=annotate_xy,xycoords='axes fraction', fontsize=fonts
 
 plt.tight_layout(pad=0.5)
 
-plt.savefig('toy_real_int.pdf', bbox_inches='tight')
+# plt.savefig('toy_real_int.pdf', bbox_inches='tight')
 
 plt.show()

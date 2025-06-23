@@ -122,7 +122,7 @@ Nt = 20
 U = 1
 mu = U / 2
 
-chi = 400
+chi = 800
 
 # taus, gtau = read_interacting_imag_analytic(beta, Ntau, U, mu, d, alpha)
 ts, gt, lt = read_interacting_real_analytic(beta, t, Nt, U, mu, d, alpha)
@@ -185,7 +185,7 @@ ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 
 # chis = [400, 500, 600, 700, 800, 900, 1000]
-chis = [400, 500, ]
+chis = [400, 500, 600, 700, 800]
 
 gt_errs = []
 lt_errs = []
