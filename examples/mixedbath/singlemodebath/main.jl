@@ -132,7 +132,7 @@ function main_real(ϵ_d; β=1, t=1, N=100, ω₀=1, α₀=0.5, ω₁=1, α₁=1,
 
 
 	mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
-	# mpsK = systhermalstate!(mpsK, lattice, exact_model, β=β)
+	mpsK = systhermalstate!(mpsK, lattice, exact_model, β=β)
 	mpsI1 = reweighting!(lattice, mpsK, flattice, fmpsI1, trunc=trunc)
 
 	println("bond dimension of bosonic adt is ", bond_dimension(mpsI1))
