@@ -67,8 +67,8 @@ function main_real(U, ϵ_d=U/2; β=1, t=1, N=10, d=3, α=1, chi = 200)
 	# @time lt = [cached_lesser(lattice, j, mpsK, mpsI, cache=cache) for j in 1:lattice.kt]
 	# return gt, lt
 
-	@time gt = cached_greater_fast(lattice, mpsI1, mpsI2, mpsI3, b1=:+, b2=:+, cache=cache) 
-	@time lt = cached_lesser_fast(lattice, mpsI1, mpsI2, mpsI3, b1=:-, b2=:+, cache=cache) 
+	@time gt = cached_greater_fast(lattice, mpsI1, mpsI2, mpsI3, cache=cache) 
+	@time lt = cached_lesser_fast(lattice, mpsI1, mpsI2, mpsI3, cache=cache) 
 	start_pos = 1
 	@time g₃ = [nn2(lattice, i, start_pos, mpsI1, mpsI2, mpsI3, b1=:+, b2=:+, Z=Zvalue(cache)) for i in start_pos:N]
 

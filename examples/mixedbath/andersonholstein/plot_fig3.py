@@ -60,18 +60,28 @@ mu = 0
 
 beta = 10
 t = 5
-d = 3
-alpha = 1
 
 chi_max = 200
 N_max = 400
 
 
-ts, gt, lt, gnn = read_real_tempo(beta, t, N_max, mu, d, alpha, chi_max)
+d = 1
+alpha = 0.1
+ts_a, gt_a, lt_a, gnn_a = read_real_tempo(beta, t, N_max, mu, d, alpha, chi_max)
 
-ax[0,0].plot(ts, gt.real, ls='--', color=ax1color, linewidth=linewidth)
-ax[1,0].plot(ts, lt.real, ls='--', color=ax1color, linewidth=linewidth)
-ax[2,0].plot(ts[:-1], gnn.real, ls='--', color=ax3color,  markerfacecolor='none', linewidth=linewidth)
+ax[0,0].plot(ts_a, gt_a.real, ls='--', color=ax1color, linewidth=linewidth)
+ax[1,0].plot(ts_a, lt_a.real, ls='--', color=ax1color, linewidth=linewidth)
+ax[2,0].plot(ts_a[:-1], gnn_a.real, ls='--', color=ax3color,  markerfacecolor='none', linewidth=linewidth)
+
+
+# d = 1
+# alpha = 0.1
+# ts_b, gt_b, lt_b, gnn_b = read_real_tempo(beta, t, N_max, mu, d, alpha, chi_max)
+
+# ax[0,0].plot(ts_b, gt_b.real, ls='-', color=ax1color, linewidth=linewidth)
+# ax[1,0].plot(ts_b, lt_b.real, ls='-', color=ax1color, linewidth=linewidth)
+# ax[2,0].plot(ts_b[:-1], gnn_b.real, ls='-', color=ax3color,  markerfacecolor='none', linewidth=linewidth)
+
 
 ax[0,0].set_xlabel(r'$t$', fontsize=fontsize)
 ax[0,0].set_ylabel(r'${\rm Re}[G^{>}(t)]$', fontsize=fontsize, color=ax1color)
@@ -100,7 +110,7 @@ ax[2,0].annotate(r'(g)', xy=annotate_xy,xycoords='axes fraction', fontsize=fonts
 
 
 ax2 = ax[0,0].twinx()
-ax2.plot(ts, gt.imag, ls='--', color=ax2color, linewidth=linewidth, label=r'ED')
+ax2.plot(ts_a, gt_a.imag, ls='--', color=ax2color, linewidth=linewidth, label=r'ED')
 
 
 ax2.set_ylabel(r'${\rm Im}[G^{>}(t)]$', fontsize=fontsize, color=ax2color)
@@ -110,7 +120,7 @@ ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 
 ax2 = ax[1,0].twinx()
-ax2.plot(ts, gt.imag, ls='--', color=ax2color, linewidth=linewidth, label=r'ED')
+ax2.plot(ts_a, lt_a.imag, ls='--', color=ax2color, linewidth=linewidth, label=r'ED')
 
 
 ax2.set_ylabel(r'${\rm Im}[G^{<}(t)]$', fontsize=fontsize, color=ax2color)
@@ -119,7 +129,7 @@ ax2.locator_params(axis='both', nbins=6)
 ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 
-chis = [40,80,120, 160, 200]
+chis = [40,80,120, 160]
 
 gt_errs = []
 lt_errs = []
@@ -127,9 +137,9 @@ nn_errs = []
 
 for i, chi in enumerate(chis):
 	ts1, gt1, lt1, gnn1 = read_real_tempo(beta, t, N_max, mu, d, alpha, chi)
-	gt_errs.append(mse_error(gt, gt1))
-	lt_errs.append(mse_error(lt, lt1))
-	nn_errs.append(mse_error(gnn, gnn1))
+	gt_errs.append(mse_error(gt_a, gt1))
+	lt_errs.append(mse_error(lt_a, lt1))
+	nn_errs.append(mse_error(gnn_a, gnn1))
 
 
 ax[0,1].plot(chis, gt_errs, ls='--', color='k', linewidth=linewidth, marker='o', markersize=markersize, markerfacecolor='none')
@@ -170,9 +180,9 @@ nn_errs = []
 for i, Nt in enumerate(Nts):
 	ts1, gt1, lt1, gnn1 = read_real_tempo(beta, t, Nt, mu, d, alpha, chi_max)
 	step = N_max // Nt
-	gt_scaled = gt[0:step:len(gt)]
-	lt_scaled = gt[0:step:len(lt)]
-	gnn_scaled = gnn[0:step:len(gnn)]
+	gt_scaled = gt_a[0:step:len(gt_a)]
+	lt_scaled = lt_a[0:step:len(lt_a)]
+	gnn_scaled = gnn_a[0:step:len(gnn_a)]
 	gt_errs.append(mse_error(gt_scaled, gt1[:len(gt_scaled)]))
 	lt_errs.append(mse_error(lt_scaled, lt1[:len(lt_scaled)]))
 	nn_errs.append(mse_error(gnn_scaled, gnn1[:len(gnn_scaled)]))

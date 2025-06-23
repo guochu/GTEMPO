@@ -117,7 +117,7 @@ ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 ax2 = ax[0,1].twinx()
 for i, chi in enumerate(chis):
 	ts, gt, lt, gnn = read_real_tempo(beta, t, N, U, mu, d, alpha, chi)
-	ax2.plot(ts, gt.imag, ls='--', color=ax2color, alpha=alphas[i], linewidth=linewidth, label=r'ED')
+	ax2.plot(ts, lt.imag, ls='--', color=ax2color, alpha=alphas[i], linewidth=linewidth, label=r'ED')
 
 
 ax2.set_ylabel(r'${\rm Im}[G^{<}(t)]$', fontsize=fontsize, color=ax2color)
