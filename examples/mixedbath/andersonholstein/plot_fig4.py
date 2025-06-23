@@ -59,7 +59,7 @@ ax3color = 'b'
 U = 1
 mu = U / 2
 
-beta = 10
+beta = 1
 t = 1
 N = 20
 d = 1

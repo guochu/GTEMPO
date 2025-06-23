@@ -206,7 +206,7 @@ ax[2,1].annotate(r'(h)', xy=annotate_xy,xycoords='axes fraction', fontsize=fonts
 
 Nts = [25, 50, 100, 200]
 dts = [t / Nt for Nt in Nts]
-chi = 100
+chi = 200
 gt_errs = []
 lt_errs = []
 nn_errs = []
