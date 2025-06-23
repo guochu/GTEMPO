@@ -94,7 +94,7 @@ omega0 = 1
 alpha0 = 0.5
 omega1 = 1
 alpha1 = 1
-chi = 50
+chi = 100
 
 annotate_xy = (-0.15, 1.05)
 

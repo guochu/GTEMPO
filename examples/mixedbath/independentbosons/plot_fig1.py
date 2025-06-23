@@ -152,7 +152,7 @@ ax[0,0].set_ylabel(r'$G(\tau)$', fontsize=fontsize)
 ax[0,0].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[0,0].locator_params(axis='both', nbins=6)
 ax[0,0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[0,0].set_title(r'$\epsilon_d=%s, d=%s, \alpha=%s$'%(round(-mu), d, alpha), fontsize=labelsize_s)
+ax[0,0].set_title(r'$\epsilon_d=%s, d=%s, \alpha=%s$'%(round(-mu), d, alpha), fontsize=fontsize_s)
 ax[0,0].annotate(r'(a)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
 
 
@@ -193,7 +193,7 @@ ax[0,1].set_ylabel(r'$G(\tau)$', fontsize=fontsize)
 ax[0,1].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[0,1].locator_params(axis='both', nbins=6)
 ax[0,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[0,1].set_title(r'$\epsilon_d=%s, d=%s, \alpha=%s$'%( round(-mu), d, alpha), fontsize=labelsize_s)
+ax[0,1].set_title(r'$\epsilon_d=%s, d=%s, \alpha=%s$'%( round(-mu), d, alpha), fontsize=fontsize_s)
 
 ax[0,1].annotate(r'(b)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
 
@@ -231,7 +231,7 @@ ax[1,0].set_ylabel(r'$G(\tau)$', fontsize=fontsize)
 ax[1,0].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[1,0].locator_params(axis='both', nbins=6)
 ax[1,0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[1,0].set_title(r'$\epsilon_d=%s, d=%s, \alpha=%s$'%( round(-mu), d, alpha), fontsize=labelsize_s)
+ax[1,0].set_title(r'$\epsilon_d=%s, d=%s, \alpha=%s$'%( round(-mu), d, alpha), fontsize=fontsize_s)
 
 ax[1,0].annotate(r'(c)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
 
@@ -270,7 +270,7 @@ ax[1,1].set_ylabel(r'$G(\tau)$', fontsize=fontsize)
 ax[1,1].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[1,1].locator_params(axis='both', nbins=6)
 ax[1,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[1,1].set_title(r'$\epsilon_d=%s, d=%s, \alpha=%s$'%( round(-mu), d, alpha), fontsize=labelsize_s)
+ax[1,1].set_title(r'$\epsilon_d=%s, d=%s, \alpha=%s$'%( round(-mu), d, alpha), fontsize=fontsize_s)
 
 ax[1,1].annotate(r'(d)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
 

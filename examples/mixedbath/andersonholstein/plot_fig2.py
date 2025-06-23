@@ -57,11 +57,11 @@ mu = U / 2
 
 beta = 1
 N = 20
-d = 1
-alpha = 0.1
+d = 3
+alpha = 1
 
 
-chis = [50, 100, 150, 200]
+chis = [50, 100, 200, 300]
 
 
 for i, chi in enumerate(chis):
@@ -143,7 +143,7 @@ ax[1,1].legend( fontsize=12)
 
 Ns = [50, 100, 200, 400]
 
-chi = 100
+chi = 150
 for i, N in enumerate(Ns):
 	taus, gtau, gnn = read_imag_tempo(beta, N, U, mu, d, alpha, chi)
 	ax[1,2].plot(taus, gtau, ls='--', color=colors[i], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'$\delta t=%s$'%(beta/N))

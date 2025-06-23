@@ -122,7 +122,7 @@ Nt = 10
 U = 1
 mu = U / 2
 
-chi = 500
+chi = 800
 
 # taus, gtau = read_interacting_imag_analytic(beta, Ntau, U, mu, d, alpha)
 ts, gt, lt = read_interacting_real_analytic(beta, t, Nt, U, mu, d, alpha)

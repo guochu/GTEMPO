@@ -62,8 +62,8 @@ mu = U / 2
 beta = 1
 t = 1
 N = 20
-d = 1
-alpha = 0.1
+d = 3
+alpha = 1
 
 
 chis = [100, 200, 300, 400]
