@@ -24,6 +24,7 @@ def read_imag_tempo(beta, N, U, mu, d, alpha, chi=80):
 		data = json.loads(data)
 	gt = data['gtau']
 	gnn = data['nn']
+	gnn.append(gnn[0])
 	ts = asarray(data['taus'])
 	return ts-ts[0], gt, gnn
 
@@ -68,7 +69,7 @@ for i, chi in enumerate(chis):
 	taus, gtau, gnn = read_imag_tempo(beta, N, U, mu, d, alpha, chi)
 	print('chi=', chi, ' ', gtau[-1], ' ', gnn[0])
 	ax[0,0].plot(taus, gtau, ls='--', color=colors[i],  markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
-	ax[0,1].plot(taus[:-1], gnn, ls='--', color=colors[i], markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
+	ax[0,1].plot(taus, gnn, ls='--', color=colors[i], markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
 
 
 ax[0,0].set_xlabel(r'$\tau$', fontsize=fontsize)
@@ -94,7 +95,7 @@ chi = 100
 for i, N in enumerate(Ns):
 	taus, gtau, gnn = read_imag_tempo(beta, N, U, mu, d, alpha, chi)
 	ax[0,2].plot(taus, gtau, ls='--', color=colors[i], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'$\delta t=%s$'%(beta/N))
-	ax[0,3].plot(taus[:-1], gnn, ls='--', color=colors[i], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'$\delta t=%s$'%(beta/N))
+	ax[0,3].plot(taus, gnn, ls='--', color=colors[i], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'$\delta t=%s$'%(beta/N))
 
 ax[0,2].set_xlabel(r'$\tau$', fontsize=fontsize)
 ax[0,2].set_ylabel(r'$G(\tau)$', fontsize=fontsize)
@@ -120,7 +121,7 @@ for i, chi in enumerate(chis):
 	taus, gtau, gnn = read_imag_tempo(beta, N, U, mu, d, alpha, chi)
 	print('chi=', chi, ' ', gtau[-1], ' ', gnn[0])
 	ax[1,0].plot(taus, gtau, ls='--', color=colors[i], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
-	ax[1,1].plot(taus[:-1], gnn, ls='--', color=colors[i], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
+	ax[1,1].plot(taus, gnn, ls='--', color=colors[i], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
 
 
 ax[1,0].set_xlabel(r'$\tau$', fontsize=fontsize)
@@ -147,7 +148,7 @@ chi = 150
 for i, N in enumerate(Ns):
 	taus, gtau, gnn = read_imag_tempo(beta, N, U, mu, d, alpha, chi)
 	ax[1,2].plot(taus, gtau, ls='--', color=colors[i], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'$\delta t=%s$'%(beta/N))
-	ax[1,3].plot(taus[:-1], gnn, ls='--', color=colors[i], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'$\delta t=%s$'%(beta/N))
+	ax[1,3].plot(taus, gnn, ls='--', color=colors[i], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'$\delta t=%s$'%(beta/N))
 
 ax[1,2].set_xlabel(r'$\tau$', fontsize=fontsize)
 ax[1,2].set_ylabel(r'$G(\tau)$', fontsize=fontsize)
