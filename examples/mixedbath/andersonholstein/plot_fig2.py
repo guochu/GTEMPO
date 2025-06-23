@@ -43,11 +43,16 @@ linewidth = 2
 markersize = 8
 
 
+linewidth_s = 2
+markersize_s = 4
+fontsize_s = 16
+labelsize_s = 14
+
 colors = ['b', 'g', 'c', 'r', 'y']
 markers = ['o', '^', '+', 'x', '*']
 
 
-fig, ax = plt.subplots(2,4, figsize=(12,6))
+fig, ax = plt.subplots(2,2, figsize=(8,7))
 
 annotate_xy = (-0.15, 1.07)
 
@@ -57,19 +62,18 @@ U = 1
 mu = U / 2
 
 beta = 1
-N = 20
+N_max = 40
+
 d = 3
 alpha = 1
 
+chi = 300
 
-chis = [50, 100, 200, 300]
+taus, gtau, gnn = read_imag_tempo(beta, N_max, U, mu, d, alpha, chi)
 
+ax[0,0].plot(taus, gtau, ls='--', color='k',  markerfacecolor='none', linewidth=linewidth)
+ax[1,0].plot(taus, gnn, ls='--', color='b', markerfacecolor='none', linewidth=linewidth)
 
-for i, chi in enumerate(chis):
-	taus, gtau, gnn = read_imag_tempo(beta, N, U, mu, d, alpha, chi)
-	print('chi=', chi, ' ', gtau[-1], ' ', gnn[0])
-	ax[0,0].plot(taus, gtau, ls='--', color=colors[i],  markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
-	ax[0,1].plot(taus, gnn, ls='--', color=colors[i], markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
 
 
 ax[0,0].set_xlabel(r'$\tau$', fontsize=fontsize)
@@ -77,98 +81,124 @@ ax[0,0].set_ylabel(r'$G(\tau)$', fontsize=fontsize)
 ax[0,0].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[0,0].locator_params(axis='both', nbins=6)
 ax[0,0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[0,0].annotate(r'(a1)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
-ax[0,0].legend(fontsize=12)
-
-ax[0,1].set_xlabel(r'$\tau$', fontsize=fontsize)
-ax[0,1].set_ylabel(r'$X(\tau)$', fontsize=fontsize)
-ax[0,1].tick_params(axis='both', which='major', labelsize=labelsize)
-ax[0,1].locator_params(axis='both', nbins=6)
-ax[0,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[0,1].annotate(r'(b1)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
-ax[0,1].legend(fontsize=12)
-
-Ns = [5, 10, 20, 40]
-
-
-chi = 100
-for i, N in enumerate(Ns):
-	taus, gtau, gnn = read_imag_tempo(beta, N, U, mu, d, alpha, chi)
-	ax[0,2].plot(taus, gtau, ls='--', color=colors[i], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'$\delta t=%s$'%(beta/N))
-	ax[0,3].plot(taus, gnn, ls='--', color=colors[i], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'$\delta t=%s$'%(beta/N))
-
-ax[0,2].set_xlabel(r'$\tau$', fontsize=fontsize)
-ax[0,2].set_ylabel(r'$G(\tau)$', fontsize=fontsize)
-ax[0,2].tick_params(axis='both', which='major', labelsize=labelsize)
-ax[0,2].locator_params(axis='both', nbins=6)
-ax[0,2].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[0,2].annotate(r'(c1)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
-ax[0,2].legend(fontsize=12)
-
-ax[0,3].set_xlabel(r'$\tau$', fontsize=fontsize)
-ax[0,3].set_ylabel(r'$X(\tau)$', fontsize=fontsize)
-ax[0,3].tick_params(axis='both', which='major', labelsize=labelsize)
-ax[0,3].locator_params(axis='both', nbins=6)
-ax[0,3].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[0,3].annotate(r'(d1)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
-ax[0,3].legend(fontsize=12)
-
-
-beta = 10
-N = 100
-
-for i, chi in enumerate(chis):
-	taus, gtau, gnn = read_imag_tempo(beta, N, U, mu, d, alpha, chi)
-	print('chi=', chi, ' ', gtau[-1], ' ', gnn[0])
-	ax[1,0].plot(taus, gtau, ls='--', color=colors[i], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
-	ax[1,1].plot(taus, gnn, ls='--', color=colors[i], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'$\chi=%s$'%(chi))
-
+ax[0,0].annotate(r'(a)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
+ax[0,0].set_title(r'$\beta=%s$'%(beta), fontsize=labelsize)
 
 ax[1,0].set_xlabel(r'$\tau$', fontsize=fontsize)
-ax[1,0].set_ylabel(r'$G(\tau)$', fontsize=fontsize)
+ax[1,0].set_ylabel(r'$X(\tau)$', fontsize=fontsize)
 ax[1,0].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[1,0].locator_params(axis='both', nbins=6)
 ax[1,0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[1,0].annotate(r'(a2)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
-ax[1,0].legend( fontsize=12)
+ax[1,0].annotate(r'(c)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
+
+
+Ns = [5, 10, 20]
+
+dtaus = [beta / N for N in Ns]
+
+
+gtau_errs = []
+nn_errs = []
+
+
+for i, N in enumerate(Ns):
+	taus1, gtau1, gnn1 = read_imag_tempo(beta, N, U, mu, d, alpha, chi)
+
+	step = N_max // N
+	gtau_scaled = gtau[0:step:len(gtau)]
+	gnn_scaled = gnn[0:step:len(gnn)]
+
+	gtau_errs.append(mse_error(gtau_scaled, gtau1[:len(gtau_scaled)]))
+	nn_errs.append(mse_error(gnn_scaled, gnn1[:len(gnn_scaled)]))
+
+
+ax1 = ax[0,0].inset_axes([0.25, 0.4, 0.5, 0.5])
+
+ax1.semilogy(dtaus, gtau_errs, ls='--', color='k', marker='o', markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'Partial')
+
+ax1.set_ylabel(r'$\mathcal{E}$', fontsize=fontsize_s)
+ax1.set_xlabel(r'$\delta\tau$', fontsize=fontsize_s)
+ax1.tick_params(axis='both', which='major', labelsize=labelsize_s)
+
+
+ax1 = ax[1,0].inset_axes([0.25, 0.4, 0.5, 0.5])
+
+ax1.semilogy(dtaus, nn_errs, ls='--', color='b', marker='o', markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'Partial')
+
+ax1.set_ylabel(r'$\mathcal{E}$', fontsize=fontsize_s)
+ax1.set_xlabel(r'$\delta\tau$', fontsize=fontsize_s)
+ax1.tick_params(axis='both', which='major', labelsize=labelsize_s)
+
+
+# beta = 10
+chi = 150
+beta = 10
+N_max = 400
+
+
+taus, gtau, gnn = read_imag_tempo(beta, N_max, U, mu, d, alpha, chi)
+
+ax[0,1].plot(taus, gtau, ls='--', color='k',  markerfacecolor='none', linewidth=linewidth)
+ax[1,1].plot(taus, gnn, ls='--', color='b', markerfacecolor='none', linewidth=linewidth)
+
+
+
+ax[0,1].set_xlabel(r'$\tau$', fontsize=fontsize)
+ax[0,1].set_ylabel(r'$G(\tau)$', fontsize=fontsize)
+ax[0,1].tick_params(axis='both', which='major', labelsize=labelsize)
+ax[0,1].locator_params(axis='both', nbins=6)
+ax[0,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+ax[0,1].annotate(r'(b)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
+ax[0,1].set_title(r'$\beta=%s$'%(beta), fontsize=labelsize)
 
 ax[1,1].set_xlabel(r'$\tau$', fontsize=fontsize)
 ax[1,1].set_ylabel(r'$X(\tau)$', fontsize=fontsize)
 ax[1,1].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[1,1].locator_params(axis='both', nbins=6)
 ax[1,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[1,1].annotate(r'(b2)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
-ax[1,1].legend( fontsize=12)
+ax[1,1].annotate(r'(d)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
 
 
+Ns = [50, 100, 200]
 
-Ns = [50, 100, 200, 400]
+dtaus = [beta / N for N in Ns]
 
-chi = 150
+
+gtau_errs = []
+nn_errs = []
+
+
 for i, N in enumerate(Ns):
-	taus, gtau, gnn = read_imag_tempo(beta, N, U, mu, d, alpha, chi)
-	ax[1,2].plot(taus, gtau, ls='--', color=colors[i], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'$\delta t=%s$'%(beta/N))
-	ax[1,3].plot(taus, gnn, ls='--', color=colors[i], markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'$\delta t=%s$'%(beta/N))
+	taus1, gtau1, gnn1 = read_imag_tempo(beta, N, U, mu, d, alpha, chi)
 
-ax[1,2].set_xlabel(r'$\tau$', fontsize=fontsize)
-ax[1,2].set_ylabel(r'$G(\tau)$', fontsize=fontsize)
-ax[1,2].tick_params(axis='both', which='major', labelsize=labelsize)
-ax[1,2].locator_params(axis='both', nbins=6)
-ax[1,2].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[1,2].annotate(r'(c2)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
-ax[1,2].legend(fontsize=12)
+	step = N_max // N
+	gtau_scaled = gtau[0:step:len(gtau)]
+	gnn_scaled = gnn[0:step:len(gnn)]
 
-ax[1,3].set_xlabel(r'$\tau$', fontsize=fontsize)
-ax[1,3].set_ylabel(r'$X(\tau)$', fontsize=fontsize)
-ax[1,3].tick_params(axis='both', which='major', labelsize=labelsize)
-ax[1,3].locator_params(axis='both', nbins=6)
-ax[1,3].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-ax[1,3].annotate(r'(d2)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
-ax[1,3].legend(fontsize=12)
+	gtau_errs.append(mse_error(gtau_scaled, gtau1[:len(gtau_scaled)]))
+	nn_errs.append(mse_error(gnn_scaled, gnn1[:len(gnn_scaled)]))
+
+
+ax1 = ax[0,1].inset_axes([0.35, 0.4, 0.5, 0.5])
+
+ax1.semilogy(dtaus, gtau_errs, ls='--', color='k', marker='o', markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'Partial')
+
+ax1.set_ylabel(r'$\mathcal{E}$', fontsize=fontsize_s)
+ax1.set_xlabel(r'$\delta\tau$', fontsize=fontsize_s)
+ax1.tick_params(axis='both', which='major', labelsize=labelsize_s)
+
+
+ax1 = ax[1,1].inset_axes([0.35, 0.4, 0.5, 0.5])
+
+ax1.semilogy(dtaus, nn_errs, ls='--', color='b', marker='o', markersize=markersize, markerfacecolor='none', linewidth=linewidth, label=r'Partial')
+
+ax1.set_ylabel(r'$\mathcal{E}$', fontsize=fontsize_s)
+ax1.set_xlabel(r'$\delta\tau$', fontsize=fontsize_s)
+ax1.tick_params(axis='both', which='major', labelsize=labelsize_s)
 
 
 plt.tight_layout(pad=0.5)
 
-# plt.savefig('full_int_imag.pdf', bbox_inches='tight')
+plt.savefig('full_imag_int.pdf', bbox_inches='tight')
 
 plt.show()
