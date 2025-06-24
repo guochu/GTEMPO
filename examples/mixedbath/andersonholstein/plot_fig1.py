@@ -39,7 +39,7 @@ def mse_error(a, b):
 
 fontsize = 20
 labelsize = 16
-linewidth = 2
+linewidth = 3
 markersize = 8
 
 

@@ -61,7 +61,7 @@ omega0 = 1
 alpha0 = 0.5
 omega1 = 1
 alpha1 = 1
-chi = 600
+chi = 800
 
 U = 2
 J = 1
@@ -150,7 +150,7 @@ ax[2,0].annotate(r'(e)', xy=annotate_xy,xycoords='axes fraction', fontsize=fonts
 
 
 # Nts = [5, 10, 20, 40, 80]
-Nts = [50, 100, 200]
+Nts = [25, 50, 100]
 
 dts = [t / Nt for Nt in Nts]
 gt_errs = []
