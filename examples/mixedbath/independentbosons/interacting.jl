@@ -186,11 +186,7 @@ function main_mixed_vs_chi_Nt(U, ϵ_d=U/2; β=5, Nτ=50, t=5, d=1, α=1)
 end
 
 function main_mixed_vs_chi(U, ϵ_d=U/2; β=5, Nτ=50, t=5, Nt=50, d=1, α=1)
-	# for chi in [400, 500, 600, 700, 800, 900, 1000]
-	# 	main_mixed(U, ϵ_d, β=β, Nτ=Nτ, t=t, Nt=Nt, d=d, α=α, chi=chi)
-	# end
-
-	for chi in [100, 200, 300]
+	for chi in [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
 		main_mixed(U, ϵ_d, β=β, Nτ=Nτ, t=t, Nt=Nt, d=d, α=α, chi=chi)
 	end
 end
