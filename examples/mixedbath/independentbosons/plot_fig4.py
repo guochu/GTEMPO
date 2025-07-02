@@ -98,8 +98,8 @@ def mse_error(a, b):
 
 fontsize = 22
 labelsize = 18
-linewidth1 = 1.5
-linewidth2 = 3
+linewidth1 = 2
+linewidth2 = 3.5
 markersize = 10
 
 colors = ['b', 'g', 'c', 'y', 'r']
@@ -122,7 +122,7 @@ Nt = 20
 U = 1
 mu = U / 2
 
-chi = 800
+chi = 400
 
 # taus, gtau = read_interacting_imag_analytic(beta, Ntau, U, mu, d, alpha)
 ts, gt, lt = read_interacting_real_analytic(beta, t, Nt, U, mu, d, alpha)
@@ -138,7 +138,7 @@ ax[0,0].plot(ts, gt.real, ls='-', color=ax1color, linewidth=linewidth1, label=r'
 ax[0,0].plot(ts2, gt2.real, ls='--', color=ax1color, linewidth=linewidth2, label=r'GTEMPO')
 
 ax[0,0].set_xlabel(r'$t$', fontsize=fontsize)
-ax[0,0].set_ylabel(r'${\rm Re}[G^{>}(t)]$', fontsize=fontsize, color=ax1color)
+ax[0,0].set_ylabel(r'${\rm Re}[G^{{\rm eq},>}(t)]$', fontsize=fontsize, color=ax1color)
 ax[0,0].tick_params(axis='both', which='major', labelsize=labelsize, colors=ax1color)
 ax[0,0].locator_params(axis='both', nbins=6)
 ax[0,0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
@@ -155,7 +155,7 @@ ax2.plot(ts, gt.imag, ls='-', color=ax2color, linewidth=linewidth1, label=r'GTEM
 ax2.plot(ts2, gt2.imag, ls='--', color=ax2color, linewidth=linewidth2, label=r'GTEMPO')
 
 ax2.set_xlabel(r'$t$', fontsize=fontsize)
-ax2.set_ylabel(r'${\rm Im}[G^{>}(t)]$', fontsize=fontsize, color=ax2color)
+ax2.set_ylabel(r'${\rm Im}[G^{{\rm eq},>}(t)]$', fontsize=fontsize, color=ax2color)
 ax2.tick_params(axis='both', which='major', labelsize=labelsize, colors=ax2color)
 ax2.locator_params(axis='both', nbins=6)
 ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
@@ -166,7 +166,7 @@ ax[1,0].plot(ts, lt.real, ls='-', color=ax1color, linewidth=linewidth1, label=r'
 ax[1,0].plot(ts2, lt2.real, ls='--', color=ax1color, linewidth=linewidth2, label=r'GTEMPO')
 
 ax[1,0].set_xlabel(r'$t$', fontsize=fontsize)
-ax[1,0].set_ylabel(r'${\rm Re}[G^{<}(t)]$', fontsize=fontsize, color=ax1color)
+ax[1,0].set_ylabel(r'${\rm Re}[G^{{\rm eq},<}(t)]$', fontsize=fontsize, color=ax1color)
 ax[1,0].tick_params(axis='both', which='major', labelsize=labelsize, colors=ax1color)
 ax[1,0].locator_params(axis='both', nbins=6)
 ax[1,0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
@@ -178,14 +178,14 @@ ax2.plot(ts, lt.imag, ls='-', color=ax2color, linewidth=linewidth1, label=r'GTEM
 ax2.plot(ts2, lt2.imag, ls='--', color=ax2color, linewidth=linewidth2, label=r'GTEMPO')
 
 ax2.set_xlabel(r'$t$', fontsize=fontsize)
-ax2.set_ylabel(r'${\rm Im}[G^{<}(t)]$', fontsize=fontsize,color=ax2color)
+ax2.set_ylabel(r'${\rm Im}[G^{{\rm eq},<}(t)]$', fontsize=fontsize,color=ax2color)
 ax2.tick_params(axis='both', which='major', labelsize=labelsize,colors=ax2color)
 ax2.locator_params(axis='both', nbins=6)
 ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 
 # chis = [400, 500, 600, 700, 800, 900, 1000]
-chis = [400, 500, 600, 700, 800, 900, 1000]
+chis = [100, 200, 300, 400, 500, 600, 700, 800]
 
 gt_errs = []
 lt_errs = []
@@ -198,7 +198,7 @@ for chi in chis:
 
 ax[0,1].plot(chis, gt_errs, ls='--', color='k', linewidth=linewidth2, marker='o', markersize=markersize, markerfacecolor='none')
 ax[0,1].set_xlabel(r'$\chi$', fontsize=fontsize)
-ax[0,1].set_ylabel(r'$\mathcal{E}[G^{>}(t)]$', fontsize=fontsize)
+ax[0,1].set_ylabel(r'$\mathcal{E}[G^{{\rm eq},>}(t)]$', fontsize=fontsize)
 ax[0,1].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[0,1].locator_params(axis='both', nbins=6)
 ax[0,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
@@ -206,7 +206,7 @@ ax[0,1].annotate(r'(b)', xy=annotate_xy,xycoords='axes fraction', fontsize=fonts
 
 ax[1,1].plot(chis, lt_errs, ls='--', color='k', linewidth=linewidth2, marker='o', markersize=markersize, markerfacecolor='none')
 ax[1,1].set_xlabel(r'$\chi$', fontsize=fontsize)
-ax[1,1].set_ylabel(r'$\mathcal{E}[G^{<}(t)]$', fontsize=fontsize)
+ax[1,1].set_ylabel(r'$\mathcal{E}[G^{{\rm eq},<}(t)]$', fontsize=fontsize)
 ax[1,1].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[1,1].locator_params(axis='both', nbins=6)
 ax[1,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))

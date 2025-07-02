@@ -109,8 +109,8 @@ def mse_error(a, b):
 
 fontsize = 22
 labelsize = 18
-linewidth1 = 1.5
-linewidth2 = 3.
+linewidth1 = 2
+linewidth2 = 3.5
 markersize = 10
 
 linewidth_s = 2
@@ -121,7 +121,7 @@ labelsize_s = 14
 colors = ['b', 'g', 'c', 'y', 'r']
 markers = ['o', '^', '+']
 
-fig, ax = plt.subplots(2,2, figsize=(8,7), sharex=True, sharey=True)
+fig, ax = plt.subplots(2,2, figsize=(8,7.5), sharex=True, sharey=True)
 
 annotate_xy = (-0.15, 1.05)
 

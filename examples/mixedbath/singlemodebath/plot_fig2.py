@@ -89,7 +89,7 @@ chi = 300
 mu = 0
 
 t = 5
-Nt = 100
+Nt = 400
 beta = 5
 # Ntau = 20
 
@@ -105,7 +105,7 @@ ax[0,0].plot(ts, gt.real, ls='-', color=ax1color, linewidth=linewidth1, label=r'
 ax[0,0].plot(ts2, gt2.real, ls='--', color=ax1color, linewidth=linewidth2, markersize=markersize, markerfacecolor='none', label=r'$\chi=%s$'%(chi))
 
 ax[0,0].set_xlabel(r'$t$', fontsize=fontsize)
-ax[0,0].set_ylabel(r'${\rm Re}[G^{>}(t)]$', fontsize=fontsize, color=ax1color)
+ax[0,0].set_ylabel(r'${\rm Re}[G^{{\rm neq},>}(t)]$', fontsize=fontsize, color=ax1color)
 ax[0,0].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[0,0].tick_params(axis='y', colors=ax1color)
 ax[0,0].locator_params(axis='both', nbins=6)
@@ -123,7 +123,7 @@ ax2.plot(ts, gt.imag, ls='-', color=ax2color, linewidth=linewidth1, label=r'ED')
 ax2.plot(ts2, gt2.imag, ls='--', color=ax2color, linewidth=linewidth2, label=r'GTEMPO')
 
 
-ax2.set_ylabel(r'${\rm Im}[G^{>}(t)]$', fontsize=fontsize, color=ax2color)
+ax2.set_ylabel(r'${\rm Im}[G^{{\rm neq},>}(t)]$', fontsize=fontsize, color=ax2color)
 ax2.tick_params(axis='both', which='major', labelsize=labelsize, colors=ax2color)
 ax2.locator_params(axis='both', nbins=6)
 ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
@@ -134,7 +134,7 @@ ax[1,0].plot(ts, lt.real, ls='-', color=ax1color, linewidth=linewidth1, label=r'
 ax[1,0].plot(ts2, lt2.real, ls='--', color=ax1color, linewidth=linewidth2, label=r'GTEMPO')
 
 ax[1,0].set_xlabel(r'$t$', fontsize=fontsize)
-ax[1,0].set_ylabel(r'${\rm Re}[G^{<}(t)]$', fontsize=fontsize, color=ax1color)
+ax[1,0].set_ylabel(r'${\rm Re}[G^{{\rm neq},<}(t)]$', fontsize=fontsize, color=ax1color)
 ax[1,0].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[1,0].tick_params(axis='y', colors=ax1color)
 ax[1,0].locator_params(axis='both', nbins=6)
@@ -148,7 +148,7 @@ ax2.plot(ts, lt.imag, ls='-', color=ax2color, linewidth=linewidth1, label=r'ED')
 ax2.plot(ts2, lt2.imag, ls='--', color=ax2color, linewidth=linewidth2, label=r'GTEMPO')
 
 
-ax2.set_ylabel(r'${\rm Im}[G^{<}(t)]$', fontsize=fontsize, color=ax2color)
+ax2.set_ylabel(r'${\rm Im}[G^{{\rm neq},<}(t)]$', fontsize=fontsize, color=ax2color)
 ax2.tick_params(axis='both', which='major', labelsize=labelsize, colors=ax2color)
 ax2.locator_params(axis='both', nbins=6)
 ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
@@ -161,7 +161,7 @@ ax[2,0].plot(ts2[:-1], nn2.real, ls='--', color=ax3color, linewidth=linewidth2, 
 
 
 ax[2,0].set_xlabel(r'$t$', fontsize=fontsize)
-ax[2,0].set_ylabel(r'$X(t)$', fontsize=fontsize)
+ax[2,0].set_ylabel(r'$X^{\rm neq}(t)$', fontsize=fontsize)
 ax[2,0].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[2,0].locator_params(axis='both', nbins=6)
 ax[2,0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
@@ -181,7 +181,7 @@ ax[0,1].plot(ts2, gt2.real, ls='--', color=ax1color, linewidth=linewidth2, label
 
 
 ax[0,1].set_xlabel(r'$t$', fontsize=fontsize)
-ax[0,1].set_ylabel(r'${\rm Re}[G^{>}(t)]$', fontsize=fontsize, color=ax1color)
+ax[0,1].set_ylabel(r'${\rm Re}[G^{{\rm eq},>}(t)]$', fontsize=fontsize, color=ax1color)
 ax[0,1].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[0,1].tick_params(axis='y', colors=ax1color)
 ax[0,1].locator_params(axis='both', nbins=6)
@@ -194,7 +194,7 @@ ax2 = ax[0,1].twinx()
 ax2.plot(ts, gt.imag, ls='-', color=ax2color, linewidth=linewidth1, label=r'ED')
 ax2.plot(ts2, gt2.imag, ls='--', color=ax2color, linewidth=linewidth2, label=r'GTEMPO')
 
-ax2.set_ylabel(r'${\rm Im}[G^{>}(t)]$', fontsize=fontsize, color=ax2color)
+ax2.set_ylabel(r'${\rm Im}[G^{{\rm eq},>}(t)]$', fontsize=fontsize, color=ax2color)
 ax2.tick_params(axis='both', which='major', labelsize=labelsize, colors=ax2color)
 ax2.locator_params(axis='both', nbins=6)
 ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
@@ -205,7 +205,7 @@ ax[1,1].plot(ts, lt.real, ls='-', color=ax1color, linewidth=linewidth1, label=r'
 ax[1,1].plot(ts2, lt2.real, ls='--', color=ax1color, linewidth=linewidth2, label=r'GTEMPO')
 
 ax[1,1].set_xlabel(r'$t$', fontsize=fontsize)
-ax[1,1].set_ylabel(r'${\rm Re}[G^{<}(t)]$', fontsize=fontsize, color=ax1color)
+ax[1,1].set_ylabel(r'${\rm Re}[G^{{\rm eq},<}(t)]$', fontsize=fontsize, color=ax1color)
 ax[1,1].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[1,1].tick_params(axis='y', colors=ax1color)
 ax[1,1].locator_params(axis='both', nbins=6)
@@ -218,7 +218,7 @@ ax2.plot(ts, lt.imag, ls='-', color=ax2color, linewidth=linewidth1, label=r'ED')
 ax2.plot(ts2, lt2.imag, ls='--', color=ax2color, linewidth=linewidth2, label=r'GTEMPO')
 
 
-ax2.set_ylabel(r'${\rm Im}[G^{<}(t)]$', fontsize=fontsize, color=ax2color)
+ax2.set_ylabel(r'${\rm Im}[G^{{\rm eq},<}(t)]$', fontsize=fontsize, color=ax2color)
 ax2.tick_params(axis='both', which='major', labelsize=labelsize, colors=ax2color)
 ax2.locator_params(axis='both', nbins=6)
 ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
@@ -228,7 +228,7 @@ ax[2,1].plot(ts, nn.real, ls='-', color=ax3color, linewidth=linewidth1, label=r'
 ax[2,1].plot(ts2[:-1], nn2.real, ls='--', color=ax3color, linewidth=linewidth2, markersize=markersize, markerfacecolor='none', label=r'GTEMPO, $\chi=%s$'%(chi))
 
 ax[2,1].set_xlabel(r'$t$', fontsize=fontsize)
-ax[2,1].set_ylabel(r'$X(t)$', fontsize=fontsize)
+ax[2,1].set_ylabel(r'$X^{\rm eq}(t)$', fontsize=fontsize)
 ax[2,1].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[2,1].locator_params(axis='both', nbins=6)
 ax[2,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
