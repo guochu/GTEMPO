@@ -110,12 +110,11 @@ for i, N in enumerate(Ns):
 	taus1, gtau1, gnn1 = read_imag_tempo(beta, N, mu, d, alpha, chi)
 
 	step = N_max // N
-	gtau_scaled = gtau[0:step:len(gtau)]
-	gnn_scaled = gnn[0:step:len(gnn)]
+	gtau_scaled = gtau[0:len(gtau):step]
+	gnn_scaled = gnn[0:len(gnn):step]
 
 	gtau_errs.append(mse_error(gtau_scaled, gtau1[:len(gtau_scaled)]))
 	nn_errs.append(mse_error(gnn_scaled, gnn1[:len(gnn_scaled)]))
-
 
 ax1 = ax[0,0].inset_axes([0.2, 0.4, 0.5, 0.5])
 
@@ -179,16 +178,20 @@ dtaus = [beta / N for N in Ns]
 gtau_errs = []
 nn_errs = []
 
+# print(gtau[:10])
+# print(gnn[:10])
 
 for i, N in enumerate(Ns):
 	taus1, gtau1, gnn1 = read_imag_tempo(beta, N, mu, d, alpha, chi)
 
 	step = N_max // N
-	gtau_scaled = gtau[0:step:len(gtau)]
-	gnn_scaled = gnn[0:step:len(gnn)]
+	gtau_scaled = gtau[0:len(gtau):step]
+	gnn_scaled = gnn[0:len(gnn):step]
 
 	gtau_errs.append(mse_error(gtau_scaled, gtau1[:len(gtau_scaled)]))
 	nn_errs.append(mse_error(gnn_scaled, gnn1[:len(gnn_scaled)]))
+
+
 
 
 ax1 = ax[0,1].inset_axes([0.3, 0.4, 0.5, 0.5])

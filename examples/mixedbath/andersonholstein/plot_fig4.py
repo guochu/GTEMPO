@@ -66,7 +66,7 @@ chi_max = 500
 N_max = 80
 
 d = 1
-alpha = 0.1
+alpha = 1
 
 ts, gt, lt, gnn = read_real_tempo(beta, t, N_max, U, mu, d, alpha, chi_max)
 
@@ -170,9 +170,9 @@ nn_errs = []
 for i, Nt in enumerate(Nts):
 	ts1, gt1, lt1, gnn1 = read_real_tempo(beta, t, Nt, U, mu, d, alpha, chi_max)
 	step = N_max // Nt
-	gt_scaled = gt[0:step:len(gt)]
-	lt_scaled = lt[0:step:len(lt)]
-	gnn_scaled = gnn[0:step:len(gnn)]
+	gt_scaled = gt[0:len(gt):step]
+	lt_scaled = lt[0:len(lt):step]
+	gnn_scaled = gnn[0:len(gnn):step]
 	gt_errs.append(mse_error(gt_scaled, gt1[:len(gt_scaled)]))
 	lt_errs.append(mse_error(lt_scaled, lt1[:len(lt_scaled)]))
 	nn_errs.append(mse_error(gnn_scaled, gnn1[:len(gnn_scaled)]))
@@ -209,6 +209,6 @@ ax[2,2].annotate(r'(i)', xy=annotate_xy,xycoords='axes fraction', fontsize=fonts
 
 plt.tight_layout(pad=0.5)
 
-# plt.savefig('full_real_int_b.pdf', bbox_inches='tight')
+plt.savefig('full_real_int_a.pdf', bbox_inches='tight')
 
 plt.show()

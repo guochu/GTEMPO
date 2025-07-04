@@ -180,9 +180,9 @@ nn_errs = []
 for i, Nt in enumerate(Nts):
 	ts1, gt1, lt1, gnn1 = read_real_tempo(beta, t, Nt, mu, d, alpha, chi_max)
 	step = N_max // Nt
-	gt_scaled = gt_a[0:step:len(gt_a)]
-	lt_scaled = lt_a[0:step:len(lt_a)]
-	gnn_scaled = gnn_a[0:step:len(gnn_a)]
+	gt_scaled = gt_a[0:len(gt_a):step]
+	lt_scaled = lt_a[0:len(lt_a):step]
+	gnn_scaled = gnn_a[0:len(gnn_a):step]
 	gt_errs.append(mse_error(gt_scaled, gt1[:len(gt_scaled)]))
 	lt_errs.append(mse_error(lt_scaled, lt1[:len(lt_scaled)]))
 	nn_errs.append(mse_error(gnn_scaled, gnn1[:len(gnn_scaled)]))
