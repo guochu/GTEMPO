@@ -171,8 +171,8 @@ ax[1,1].tick_params(axis='both', which='major', labelsize=labelsize)
 ax[1,1].locator_params(axis='both', nbins=6)
 ax[1,1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 ax[1,1].annotate(r'(d)', xy=annotate_xy,xycoords='axes fraction', fontsize=fontsize)
-
-
+# ax[1,1].set_ylim(0.95, 1)
+# ax[1,0].set_ylim(0.95, 1)
 Ns = [50, 100, 200]
 
 dtaus = [beta / N for N in Ns]
@@ -215,6 +215,6 @@ ax1.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
 plt.tight_layout(pad=0.5)
 
-plt.savefig('full_imag_int.pdf', bbox_inches='tight')
+# plt.savefig('full_imag_int.pdf', bbox_inches='tight')
 
 plt.show()

@@ -1,75 +1,65 @@
-
 function hybriddynamics!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr::ImagCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
-	(lattice.bands in (1, 2)) || throw(ArgumentError("number of bands should be either 1 or 2"))
-	if lattice.bands == 1
-		return hybriddynamics_1band!(gmps, lattice, corr, trunc=trunc)
-	else
-		return hybriddynamics_2band!(gmps, lattice, corr, trunc=trunc)
-	end
-end
-
-function hybriddynamics_1band!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr::ImagCorrelationFunction; kwargs...)
-	@assert lattice.bands == 1
-	return _hybriddynamics_1band!(gmps, lattice, corr, 1; kwargs...)
-end 
-
-function _hybriddynamics_1band!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr1::ImagCorrelationFunction, band::Int; trunc::TruncationScheme=DefaultITruncation)
-	corr = corr1.data
 	k = lattice.N
-	for i in 1:k
-		tmp = vacuumstate(lattice)
-		pos1 = index(lattice, i, band=band)
-		for j in 1:k
-			pos2 = index(lattice, j, band=band)
-			coef = exp(corr[i, j]) 
-			if pos1==pos2
-				t = ExpNTerm(pos1, coeff=coef)
-			else
-				t = ExpNTerm(pos1, pos2, coeff=coef)
-			end
-			apply!(t, tmp)
-			canonicalize!(tmp, alg=Orthogonalize(TK.SVD(), trunc))
+	for i in 1:k, b1 in 1:lattice.bands
+		pos1 = index(lattice, i, band=b1)
+		pos2s = Int[]
+		coefs = scalartype(lattice)[]
+		for j in 1:k, b2 in 1:lattice.bands
+			pos2 = index(lattice, j, band=b2)
+			coef = index(corr, i, j)
+			push!(pos2s, pos2)
+			push!(coefs, coef)
 		end
-		# println("-bond dimension of partial IF is ", bond_dimension(tmp))
+		tmp = partialif_densemps(length(lattice), pos1, pos2s, coefs)
 		mult!(gmps, tmp, trunc=trunc)
 	end
 	return gmps
 end
 
-function hybriddynamics_2band!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr1::ImagCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
-	@assert lattice.bands == 2
-	_hybriddynamics_1band!(gmps, lattice, corr1, 2, trunc=trunc)
 
-	corr = corr1.data
-	k = lattice.N
-	for i in 1:k
-		pos1 = index(lattice, i, band=1)
-		tmp = vacuumstate(lattice)
-		for j in 1:k, b2 in 1:lattice.bands
-			coef = ifelse(b2==1, exp(corr[i, j]) , exp(corr[i, j] + corr[j, i]) )
-			pos2 = index(lattice, j, band=b2)
-			if pos1==pos2
-				t = ExpNTerm(pos1, coeff=coef)
-			else
-				t = ExpNTerm(pos1, pos2, coeff=coef)
-			end
-			apply!(t, tmp)
-			canonicalize!(tmp, alg=Orthogonalize(TK.SVD(), trunc))			
-		end
-		# println("--bond dimension of partial IF is ", bond_dimension(tmp))
-		mult!(gmps, tmp, trunc=trunc)
-	end
-	return gmps	
-end
+# function hybriddynamics!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr::ImagCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
+# 	(lattice.bands in (1, 2)) || throw(ArgumentError("number of bands should be either 1 or 2"))
+# 	if lattice.bands == 1
+# 		return hybriddynamics_1band!(gmps, lattice, corr, trunc=trunc)
+# 	else
+# 		return hybriddynamics_2band!(gmps, lattice, corr, trunc=trunc)
+# 	end
+# end
+
+# function hybriddynamics_1band!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr::ImagCorrelationFunction; kwargs...)
+# 	@assert lattice.bands == 1
+# 	return _hybriddynamics_1band!(gmps, lattice, corr, 1; kwargs...)
+# end 
 
 # function _hybriddynamics_1band!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr1::ImagCorrelationFunction, band::Int; trunc::TruncationScheme=DefaultITruncation)
 # 	corr = corr1.data
 # 	k = lattice.N
+
 # 	for i in 1:k
-# 		coefs = [exp(corr[i, j]) - 1 for j in 1:k]
-# 		row = index(lattice, i, band=band)
-# 		cols = [index(lattice, j, band=band) for j in 1:k]
-# 		tmp = partialdensempo(row, cols, coefs) * vacuumstate(lattice)
+# 		# tmp = vacuumstate(lattice)
+# 		# pos1 = index(lattice, i, band=band)
+# 		# for j in 1:k
+# 		# 	pos2 = index(lattice, j, band=band)
+# 		# 	coef = exp(corr[i, j]) 
+# 		# 	if pos1==pos2
+# 		# 		t = ExpNTerm(pos1, coeff=coef)
+# 		# 	else
+# 		# 		t = ExpNTerm(pos1, pos2, coeff=coef)
+# 		# 	end
+# 		# 	apply!(t, tmp)
+# 		# 	canonicalize!(tmp, alg=Orthogonalize(TK.SVD(), trunc))
+# 		# end
+
+# 		pos1 = index(lattice, i, band=band)
+# 		pos2s = Int[]
+# 		coefs = scalartype(corr)[]
+# 		for j in 1:k
+# 			pos2 = index(lattice, j, band=band)
+# 			push!(pos2s, pos2)
+# 			push!(coefs, corr[i, j])
+# 		end
+# 		tmp = partialif_densemps(length(lattice), pos1, pos2s, coefs)
+
 # 		mult!(gmps, tmp, trunc=trunc)
 # 	end
 # 	return gmps
@@ -83,19 +73,32 @@ end
 # 	k = lattice.N
 # 	for i in 1:k
 # 		pos1 = index(lattice, i, band=1)
-# 		cols = Int[]
-# 		coefs = scalartype(lattice)[]
+# 		# tmp = vacuumstate(lattice)
+# 		# for j in 1:k, b2 in 1:lattice.bands
+# 		# 	coef = ifelse(b2==1, exp(corr[i, j]) , exp(corr[i, j] + corr[j, i]) )
+# 		# 	pos2 = index(lattice, j, band=b2)
+# 		# 	if pos1==pos2
+# 		# 		t = ExpNTerm(pos1, coeff=coef)
+# 		# 	else
+# 		# 		t = ExpNTerm(pos1, pos2, coeff=coef)
+# 		# 	end
+# 		# 	apply!(t, tmp)
+# 		# 	canonicalize!(tmp, alg=Orthogonalize(TK.SVD(), trunc))			
+# 		# end
+# 		pos2s = Int[]
+# 		coefs = scalartype(corr)[]
 # 		for j in 1:k, b2 in 1:lattice.bands
-# 			coef = ifelse(b2==1, exp(corr[i, j]) - 1, exp(corr[i, j] + corr[j, i]) - 1)
+# 			coef = ifelse(b2==1, corr[i, j] , corr[i, j] + corr[j, i])
 # 			pos2 = index(lattice, j, band=b2)
-# 			push!(cols, pos2)
+# 			push!(pos2s, pos2)
 # 			push!(coefs, coef)
 # 		end
-# 		tmp = partialdensempo(row, cols, coefs) * vacuumstate(lattice)
+# 		tmp = partialif_densemps(length(lattice), pos1, pos2s, coefs)
 # 		mult!(gmps, tmp, trunc=trunc)
 # 	end
 # 	return gmps	
 # end
+
 
 # naive implementation with N^2 gate operations
 function hybriddynamics_naive!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr::ImagCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)

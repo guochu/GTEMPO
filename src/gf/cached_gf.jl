@@ -125,6 +125,11 @@ cached_electriccurrent_fast(lattice::RealGrassmannLattice1Order, corr::RealCorre
                         cache::AbstractExpectationCache=environments(lattice, A, B...), 
                         kwargs...) = [cached_electriccurrent_fast(lattice, corr, k, A, B...; cache=cache, kwargs...) for k in 2:lattice.k]
 
+function cached_heatcurrent_fast(lattice::RealGrassmannLattice1Order, bath::AbstractFermionicBath, args...; kwargs...)
+    bath2 = similar(bath, _mult_w(bath.spectrum))
+    corr = correlation(bath2, lattice)
+    return cached_electriccurrent_fast(lattice, corr, args...; kwargs...)
+end
 
 # real-time second order
 function cached_occupation(lattice::RealGrassmannLattice2Order, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...) 

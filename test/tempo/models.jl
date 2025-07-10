@@ -390,7 +390,7 @@ end
 	D = 1.0
 	ϵ_d = -1.0
 	N = 10
-	δt = 0.05
+	δt = 0.02
 	t = N*δt	
 	dw = 0.02
 
@@ -408,15 +408,17 @@ end
 		h = cmatrix(model)
 		cache = freefermions_cache(h)
 		observer = particlecurrent_cmatrix(model)
+		observer2 = heatcurrent_cmatrix(model)
 		currents = ComplexF64[]
+		heatcurrents = ComplexF64[]
 		ns = Float64[]
 		for i in 1:N
 			ρ = freefermions_timeevo(ρ₀, h, i*δt, cache)
 			push!(ns, real(ρ[1, 1]))
 			push!(currents, sum(observer .* ρ))
+			push!(heatcurrents, sum(observer2 .* ρ))
 		end
-		# currents = -2*im .* currents
-		# currents = currents[1:end-1]
+		heatcurrents = real(heatcurrents)
 
 		# TEMPO 1 order
 		exact_model = AndersonIM(μ=ϵ_d, U=0)
@@ -432,6 +434,9 @@ end
 			currents2 = electriccurrent(lattice, corr, mpsK, mpsI)
 			@test norm(ns-ns2) / norm(ns) < rtol
 			@test norm(currents - currents2) / norm(currents) < rtol
+
+			heatcurrents2 = real(heatcurrent_fast(lattice, bath, mpsK, mpsI))
+			@test norm(heatcurrents - heatcurrents2) / norm(heatcurrents) < rtol
 		end
 		# TEMPO 1 order 2
 		for ordering in (A1Ā1B1B̄1a1ā1b1b̄1(), A1Ā1a1ā1B1B̄1b1b̄1(), A1Ā1B1B̄1b̄1B̄1ā1Ā1())
