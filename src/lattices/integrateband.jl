@@ -4,6 +4,7 @@
 integrate our the "band"th band of GMPS x, return the result as another GMPS
 """
 function integrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS; band::Int=1) 
+	(lattice.bands == 1) && return integrate(lattice, x)
 	data = _integrateband(lattice, x, band=band)
 	return GrassmannMPS(data, scaling=scaling(x)^(length(x)/length(data)))
 end
@@ -13,7 +14,7 @@ function _integrateband(lattice::AbstractGrassmannLattice, x; band::Int=1)
 	(ConjugationStyle(lattice) isa AdjacentConjugation) || throw(ArgumentError("integrateband only supports AdjacentConjugation style"))
 	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	(length(x) == length(lattice)) || throw(DimensionMismatch())
-	(lattice.bands == 1) && return integrate(lattice, x)
+	
 	lattice2 = similar(lattice, bands=lattice.bands-1)
 
 	r2 = indexmappings(lattice2)
