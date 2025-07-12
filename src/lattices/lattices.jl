@@ -35,7 +35,7 @@ mixed (or equivalent KadanoffBaym): return MixedGrassmannLattice
 The kwargs are different for different lattice types
 """
 function GrassmannLattice(; contour::Symbol, kwargs...)
-	(contour in (:real, :imag, :Keldysh, :mixed, :KadanoffBaym)) || throw(ArgumentError("contour must be :real (equivalentlt :Keldysh), :imag or :mixed (equivalentlt :KadanoffBaym)"))
+	(contour in (:real, :imag, :Keldysh, :mixed, :Kadanoff)) || throw(ArgumentError("contour must be :real (equivalentlt :Keldysh), :imag or :mixed (equivalentlt :KadanoffBaym)"))
 	if (contour == :real) || (contour == :Keldysh)
 		return RealGrassmannLattice(; kwargs...)
 	elseif contour == :imag

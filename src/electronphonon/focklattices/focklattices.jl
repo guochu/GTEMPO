@@ -20,7 +20,7 @@ include("mixedtime.jl")
 
 
 function FockLattice(; contour::Symbol, kwargs...)
-	(contour in (:real, :imag, :Keldysh, :mixed, :KadanoffBaym)) || throw(ArgumentError("contour must be :real (equivalentlt :Keldysh), :imag or :mixed (equivalentlt :KadanoffBaym)"))
+	(contour in (:real, :imag, :Keldysh, :mixed, :Kadanoff)) || throw(ArgumentError("contour must be :real (equivalentlt :Keldysh), :imag or :mixed (equivalentlt :KadanoffBaym)"))
 	if (contour == :real) || (contour == :Keldysh)
 		return RealFockLattice(; kwargs...)
 	elseif contour == :imag
