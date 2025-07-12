@@ -34,7 +34,7 @@ function _differentialinfluencefunctional(lattice::ImagGrassmannLattice1Order, c
 	(alg.verbosity >= 1) && println(length(mpss), " terms to be multiply...")
 
 	# multiply together
-	multorder = alg.multorder == :default ? :λSM : alg.multorder
+	multorder = alg.multorder
 	if multorder == :no
 		p = collect(eachindex(mpss))
 	elseif multorder == :λLM

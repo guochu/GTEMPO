@@ -40,7 +40,7 @@ function _differentialinfluencefunctional(lattice::RealGrassmannLattice{<:_Allow
 	mpss = vcat(mpss...)
 
 	# multiply together
-	multorder = alg.multorder == :default ? :λSM : alg.multorder
+	multorder = alg.multorder
 	if multorder == :no
 		p = collect(eachindex(mpss))
 	elseif multorder == :λLM
