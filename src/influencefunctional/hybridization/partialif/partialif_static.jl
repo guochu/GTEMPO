@@ -16,20 +16,20 @@ hybriddynamics_naive(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr
 hybriddynamics_naive(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = hybriddynamics_naive!(vacuumstate(lattice), lattice, corr; kwargs...)
 
 
-### for single impurity models
+# ### for single impurity models
 
-"""
-	qim_hybriddynamics(gmps::GrassmannMPS, lattice::RealGrassmannLattice, corr::NTuple{4, <:AbstractMatrix}; trunc)
+# """
+# 	qim_hybriddynamics(gmps::GrassmannMPS, lattice::RealGrassmannLattice, corr::NTuple{4, <:AbstractMatrix}; trunc)
 
-Real time hybrid dynamics for single impurity model, all the bands 
-share the same bath 
-"""
-function qim_hybriddynamics!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...)
-	for band in 1:lattice.bands
-		gmps = hybriddynamics!(gmps, lattice, corr; band=band, kwargs...)
-	end
-	return gmps
-end
-qim_hybriddynamics(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = qim_hybriddynamics!(copy(gmps), lattice, corr; kwargs...)
-qim_hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = qim_hybriddynamics!(vacuumstate(lattice), lattice, corr; kwargs...)
+# Real time hybrid dynamics for single impurity model, all the bands 
+# share the same bath 
+# """
+# function qim_hybriddynamics!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...)
+# 	for band in 1:lattice.bands
+# 		gmps = hybriddynamics!(gmps, lattice, corr; band=band, kwargs...)
+# 	end
+# 	return gmps
+# end
+# qim_hybriddynamics(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = qim_hybriddynamics!(copy(gmps), lattice, corr; kwargs...)
+# qim_hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = qim_hybriddynamics!(vacuumstate(lattice), lattice, corr; kwargs...)
 
