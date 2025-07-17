@@ -22,12 +22,13 @@ export A1Ā1B1B̄1b̄1B̄1ā1Ā1, AaBbb̄B̄āĀ, A2Ā2A1Ā1a2ā2a1ā1B
 export A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2, A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2 #band local ordering
 export A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2, AĀBB̄_AĀaāBB̄bb̄, A1B1B̄1Ā1_A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2 #mixedtime lattice
 export A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2, AĀBB̄_aāAĀbb̄BB̄
-export changeordering, toadjacentordering
-
 export vacuumstate, makestep, timesteps
 export ImagGrassmannLattice1Order, RealGrassmannLattice1Order, RealGrassmannLattice2Order, GrassmannLattice, index
+
+# integration of GMPSs
 export integrate, integrateband
 export IntegrationAlgorithm, ExactIntegrate, BMPSIntegrate, Zvalue
+export changeordering, toadjacentordering
 
 # correlation functions
 export branch, correlationfunction
@@ -47,15 +48,18 @@ export cached_gf_fast, cached_Gτ_fast, cached_Gt_fast, cached_Gm_fast
 export cached_greater_fast, cached_lesser_fast
 export nn, cached_nn, insert_n!, insert_n, nn2
 
-# utilities for TEMPO
-# exact models
-export AbstractImpurityHamiltonian, AndersonIM, IRLM, KanamoriIM
+# connections of Grassmann variables
+export bulkconnection!, bulkconnection,
 export boundarycondition!, boundarycondition, boundarycondition_branching
+
+# utilities for TEMPO
+# impurity model Hamilltonians
+export AbstractImpurityHamiltonian, AndersonIM, IRLM, KanamoriIM
 export systhermalstate, systhermalstate!, sysdynamics, sysdynamics!, sysdynamicsstepper!, accsysdynamics, accsysdynamics_fast
 # export sysdynamics_forward!, sysdynamics_backward!, sysdynamics_imaginary!
 export zoomin, zoomout
 export ImpurityHamiltonian, tunneling, interaction, TunnelingTerm, InteractionTerm, AbstractFTerm
-export bulkconnection!, bulkconnection, baresysdynamics!, baresysdynamics
+export baresysdynamics!, baresysdynamics
 
 
 # electron-phonon interaction
@@ -100,8 +104,11 @@ include("grassmannmps/linalg.jl")
 include("grassmannmps/transfer.jl")
 include("grassmannmps/mult/mult.jl")
 
-# Grassmann lattice and integration
+# Grassmann lattice
 include("lattices/lattices.jl")
+
+# integration
+include("integration/integration.jl")
 
 # # correlation functions
 include("correlationfunction.jl")
@@ -110,7 +117,10 @@ include("correlationfunction.jl")
 include("influencefunctional/influencefunctional.jl")
 
 # calculating observables and green's functions
-include("gf/gf.jl")
+include("observables/observables.jl")
+
+# grassmann variables connections
+include("gvconnections/gvconnections.jl")
 
 # utility functions and models
 include("models/models.jl")

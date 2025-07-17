@@ -42,7 +42,7 @@ function ContourIndex(j::Int, band::Int, conj::Bool, branch::Symbol)
 end
 
 end
-ContourIndex(j::Int; conj::Bool, branch::Symbol, band::Int=1) = ContourIndex(j, band, conj, branch)
+ContourIndex(j::Int; conj::Bool, branch::Symbol=:τ, band::Int=1) = ContourIndex(j, band, conj, branch)
 branch(x::ContourIndex) = x.branch
 
 Base.:(==)(a::ContourIndex, b::ContourIndex) = (a.j == b.j) && (a.band == b.band) && (a.conj == b.conj) && (branch(a) == branch(b))

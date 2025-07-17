@@ -51,3 +51,7 @@ function integrate(lattice::AbstractGrassmannLattice, x0::Vector{<:GrassmannMPS}
 	end	
 	return r
 end
+
+# more complicatd integration
+include("parallelintegrate.jl")
+include("partialintegrate.jl")

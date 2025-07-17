@@ -38,13 +38,6 @@ function nn2(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::Union{Grassma
 	return integrate(lattice, A′, B..., alg=alg) / Z
 end
 
-function occupation2(lattice::AbstractGrassmannLattice, i::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; band::Int=1, 
-					 branch::Symbol=:τ, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Number = integrate(lattice, A, B..., alg=alg)) 
-	A′ = _insert_n(lattice, A, i, branch, band)
-	return integrate(lattice, A′, B..., alg=alg) / Z
-end
-
-
 function _insert_nn(lattice, A::GrassmannMPS, i, j, b1, b2, band)
 	A1 = insert_n(lattice, A, i, branch=b1, band=band)
 	A2 = insert_n(lattice, A1, j, branch=b2, band=band)
@@ -52,5 +45,3 @@ function _insert_nn(lattice, A::GrassmannMPS, i, j, b1, b2, band)
 end
 
 _insert_nn(lattice, A::Vector, i, j, b1, b2, band) = [_insert_nn(lattice, Aj, i, j, b1, b2, band) for Aj in A]
-_insert_n(lattice, A::GrassmannMPS, i, b1, band) = insert_n(lattice, A, i, branch=b1, band=band)
-_insert_n(lattice, A::Vector, i, b1, band) = [insert_n(lattice, Aj, i, branch=b1, band=band) for Aj in A]

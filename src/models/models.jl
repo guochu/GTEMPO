@@ -84,7 +84,6 @@ function systhermalstate!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, mod
 	return systhermalstate_iterative!(gmps, lattice, model; kwargs...)
 end 
 
-include("boundarycondition.jl")
 include("accsysdynamics/accsysdynamics.jl")
 include("sysinitstate.jl")
 

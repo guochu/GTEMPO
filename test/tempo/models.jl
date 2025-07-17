@@ -96,9 +96,7 @@ end
 			n2 = [occupation2(lattice, i, mpsK, mpsI, Z=Z) for i in 1:lattice.k-1]
 			@test norm(n1 - n2) / norm(n1) < rtol
 
-			# n1 = [nn(lattice, i, 1, mpsK, mpsI, Z=Z) for i in 1:lattice.k-1]
-			# n2 = [nn2(lattice, i, 1, mpsK, mpsI, Z=Z) for i in 1:lattice.k-1]
-			# @test norm(n1 - n2) / norm(n1) < 5.0e-2
+
 		end
 
 		# delta spectrum 
@@ -134,7 +132,6 @@ end
 	trunc = truncdimcutoff(D=100, ϵ=1.0e-10, add_back=0)
 		
 
-	# println("μ = ", μ)
 	for spec in (spectrum_func(), DiracDelta())
 		bath = fermionicbath(spec, β=β, μ=0.)
 		gt = [im*toulouse_Gt(spectrum_func(), tj, ϵ_d = ϵ_d, μ = 0.) for tj in ts]

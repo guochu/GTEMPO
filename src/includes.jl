@@ -3,7 +3,7 @@ using Logging: @warn
 using Permutations, Reexport, TupleTools, Strided, Statistics, TensorKit
 using TensorKit: TensorKit, QR, SVD, LQ, AdjointTensorMap, NoTruncation
 const TK = TensorKit
-using TensorOperations: TensorOperations, IndexTuple, Index2Tuple, linearize, AbstractBackend
+using TensorOperations: TensorOperations, IndexTuple, Index2Tuple, linearize, AbstractBackend # for Grassmann Tensors
 const TO = TensorOperations
 @reexport using DMRG, ImpurityModelBase, QuAPI
 import QuAPI: branch, index
@@ -31,8 +31,11 @@ include("grassmannmps/linalg.jl")
 include("grassmannmps/transfer.jl")
 include("grassmannmps/mult/mult.jl")
 
-# Grassmann lattice and integration
+# Grassmann lattice
 include("lattices/lattices.jl")
+
+# integration
+include("integration/integration.jl")
 
 # # correlation functions
 include("correlationfunction.jl")
@@ -41,11 +44,13 @@ include("correlationfunction.jl")
 include("influencefunctional/influencefunctional.jl")
 
 # calculating observables and green's functions
-include("gf/gf.jl")
+include("observables/observables.jl")
+
+# grassmann variables connections
+include("gvconnections/gvconnections.jl")
 
 # utility functions and models
 include("models/models.jl")
-
 
 # electron phonon interactions
 include("electronphonon/electronphonon.jl")
