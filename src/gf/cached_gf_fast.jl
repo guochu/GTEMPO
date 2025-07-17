@@ -43,6 +43,7 @@ function cached_gf_fast(lattice::MixedGrassmannLattice, A::GrassmannMPS, Bs::Var
 		return cached_gf_fast(lattice, lattice.kτ, A, Bs...; b1=b1, b2=b2, kwargs...)
 	end
 end
+# exhaust the first time index
 function cached_gf_fast(lattice::AbstractGrassmannLattice, N::Int, A::GrassmannMPS, Bs::Vararg{GrassmannMPS}; b1::Symbol, b2::Symbol, c1::Bool, c2::Bool, band::Int=1, kwargs...)
 	pos1 = index(lattice, 2, conj=c1, band=band, branch=b1) 
 	pos1′ = index(lattice, N, conj=c1, band=band, branch=b1) 
@@ -93,7 +94,7 @@ function cached_gf_fast_normal_order(lattice::AbstractGrassmannLattice, N::Int, 
 	@assert N > 0
 	# calculated G11
 	a, b = ContourIndex(1, conj=c1, branch=b1, band=band), ContourIndex(1, conj=c2, branch=b2, band=band)
-	g0 = cached_gf(lattice, a, b, A, Bs...; cache=cache, kwargs...)
+	g0 = cached_gf(lattice, (a, b), A, Bs...; cache=cache, kwargs...)
 	GFt = Vector{scalartype(A)}(undef, N)
 	GFt[1] = g0
 	(N == 1) && return GFt
@@ -142,7 +143,7 @@ function cached_gf_fast_reverse_order(lattice::AbstractGrassmannLattice, N::Int,
                     				 b1::Symbol, b2::Symbol, c1::Bool, c2::Bool, band::Int=1, kwargs...)
 	@assert N > 0
 	a, b = ContourIndex(1, conj=c1, branch=b1, band=band), ContourIndex(1, conj=c2, branch=b2, band=band)
-	g0 = cached_gf(lattice, a, b, A, Bs...; cache=cache, kwargs...)
+	g0 = cached_gf(lattice, (a, b), A, Bs...; cache=cache, kwargs...)
 	GFt = Vector{scalartype(A)}(undef, N)
 	GFt[1] = g0
 	(N == 1) && return GFt

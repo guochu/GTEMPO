@@ -9,3 +9,19 @@ function cached_nn(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::Union{G
 	a3, a4 = get_nn_contour_pos(lattice, j, band, b2)
 	return cached_gf(lattice, (a1, a2, a3, a4), A, B...; cache=cache, kwargs...)
 end
+
+
+
+# function nn(a::ContourIndex, b::ContourIndex, cache::TwosideExpectationCache)
+# 	j, k = cache.lattice[a], cache.lattice[b]
+# 	j, k = pos2pairindex(j), pos2pairindex(k)
+# 	left = leftenv(cache, j)  
+# 	right = rightenv(cache, k) 
+# 	# A2 = _mult_A(m, cache.A)
+# 	A2 = _insert_nn(cache.lattice, cached.A)
+# 	for tj in k:-1:j
+# 		right = GrassmannTransferMatrix(tj, A2, cache.Bs...) * right 
+# 		# right = update_pair_right(right, tj, A2, cache.Bs..., trunc=trunc)
+# 	end	
+# 	return contract_center(left, right) 	
+# end
