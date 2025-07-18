@@ -1,5 +1,5 @@
 
-function _ac_integrate(alg::ExactIntegrate, lattice::AbstractGrassmannLattice, x::GrassmannMPS...)
+function _ac_integrate(alg::ExactIntegrate, lattice::AbstractGrassmannLattice, x::Vararg{GrassmannMPS})
 	(ConjugationStyle(lattice) isa AdjacentConjugation) || throw(ArgumentError("AdjacentConjugation expected"))
 	transfer = GrassmannTransferMatrix(x...)
 	tmp2 = l_LL(x...) * transfer

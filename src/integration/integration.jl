@@ -33,7 +33,7 @@ ExactIntegrate: do the integration exactly using the zipup algorithm [see PRB 10
 BMPSIntegrate: do the integration approximately using the BoundaryMPS algorithm, in this case the keyword 
 trunc can be specified to control the truncation
 """
-function integrate(alg::IntegrationAlgorithm, lattice::AbstractGrassmannLattice, x0::GrassmannMPS, x1::GrassmannMPS...; kwargs...)
+function integrate(alg::IntegrationAlgorithm, lattice::AbstractGrassmannLattice, x0::GrassmannMPS, x1::Vararg{GrassmannMPS}; kwargs...)
 	if ConjugationStyle(lattice) isa AdjacentConjugation
 		return _ac_integrate(alg, lattice, x0, x1...; kwargs...)
 	else
@@ -41,10 +41,10 @@ function integrate(alg::IntegrationAlgorithm, lattice::AbstractGrassmannLattice,
 		return integrate(alg, first(r), Base.tail(r)...; kwargs...)
 	end
 end
-integrate(lattice::AbstractGrassmannLattice, x0::GrassmannMPS, x1::GrassmannMPS...; 
+integrate(lattice::AbstractGrassmannLattice, x0::GrassmannMPS, x1::Vararg{GrassmannMPS}; 
 			alg::IntegrationAlgorithm=ExactIntegrate(), kwargs...) = integrate(alg, lattice, x0, x1...; kwargs...)
 
-function integrate(lattice::AbstractGrassmannLattice, x0::Vector{<:GrassmannMPS}, x1::GrassmannMPS...; kwargs...)
+function integrate(lattice::AbstractGrassmannLattice, x0::Vector{<:GrassmannMPS}, x1::Vararg{GrassmannMPS}; kwargs...)
 	r = zero(scalartype(lattice))
 	for item in x0
 		r += integrate(lattice, item, x1...; kwargs...)

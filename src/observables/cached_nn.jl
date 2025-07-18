@@ -1,17 +1,17 @@
 
 function cached_nn2(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
                     cache::AbstractExpectationCache=environments(lattice, A, B...), b1::Symbol=:τ, b2::Symbol=b1, 
-                    band::Union{Int, Tuple{Int, Int}}=1, kwargs...)
+                    band::Union{Int, Tuple{Int, Int}}=1)
 	if isa(band, Int)
 		band = (band, band)
 	end
 	band1, band2 = band
 	a1, a2 = get_nn_contour_pos(lattice, i, band1, b1)
 	if (i == j) && (b1 == b2) && (band1==band2)
-		return cached_gf(lattice, (a1, a2), A, B...; cache=cache, kwargs...)
+		return cached_gf(lattice, (a1, a2), A, B...; cache=cache)
 	end
 	a3, a4 = get_nn_contour_pos(lattice, j, band2, b2)
-	return cached_gf(lattice, (a1, a2, a3, a4), A, B...; cache=cache, kwargs...)
+	return cached_gf(lattice, (a1, a2, a3, a4), A, B...; cache=cache)
 end
 
 function cached_nn(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 

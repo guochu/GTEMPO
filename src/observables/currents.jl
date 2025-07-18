@@ -8,12 +8,12 @@ of a series of Green's functions
 """
 function electriccurrent(lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction, k::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
                          alg::IntegrationAlgorithm=ExactIntegrate(),
-                         Z::Number = integrate(lattice, A, B..., alg=alg), band::Int=1, max_range::Int=10000)
+                         Z::Number = integrate(lattice, A, B..., alg=alg), band::Int=1)
     curr = complex(0.)
     η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
-    for j in max(1, k-max_range):k-1
-        curr += η⁺⁺[k, j] * Gt(lattice, k, j, A, B...; b1=:+, b2=:+, Z=Z, band=band, alg=alg)
-        curr += η⁺⁻[k, j] * Gt(lattice, k, j, A, B...; b1=:+, b2=:-, Z=Z, band=band, alg=alg)
+    for j in 1:k-1
+        curr += η⁺⁺[k, j] * Gt(lattice, k, j, A, B...; b1=:+, b2=:+, Z=Z, band=band, alg=alg, c1=true, c2=false)
+        curr += η⁺⁻[k, j] * Gt(lattice, k, j, A, B...; b1=:+, b2=:-, Z=Z, band=band, alg=alg, c1=true, c2=false)
     end
     return 2 * curr / lattice.δt
 end
@@ -61,19 +61,19 @@ _mult_w(x::DiracDelta) = similar(x, α=x.ω*x.α)
 
 function electriccurrent(lattice::RealGrassmannLattice2Order, corr::RealCorrelationFunction, A::GrassmannMPS, B::Vararg{GrassmannMPS}; 
                             alg::IntegrationAlgorithm=ExactIntegrate(), 
-                            Z::Number = integrate(lattice, A, B..., alg=alg), band::Int=1, max_range::Int=10000)
+                            Z::Number = integrate(lattice, A, B..., alg=alg), band::Int=1)
     curr = complex(0.)
     η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
     @assert  lattice.N <= div(size(η⁺⁺,1)-1, 2) 
     k = lattice.k
-    curr -= η⁺⁺[2*k-1, 1] * Gt(lattice, k, 1, A, B...; b1=:-, b2=:+, Z=Z, band=band, alg=alg)
-    curr -= η⁺⁻[2*k-1, 1] * Gt(lattice, k, 1, A, B..., b1=:-, b2=:-, Z=Z, band=band, alg=alg)
+    curr -= η⁺⁺[2*k-1, 1] * Gt(lattice, k, 1, A, B...; b1=:-, b2=:+, Z=Z, band=band, alg=alg, c1=true, c2=false)
+    curr -= η⁺⁻[2*k-1, 1] * Gt(lattice, k, 1, A, B..., b1=:-, b2=:-, Z=Z, band=band, alg=alg, c1=true, c2=false)
     for j in 2:k-1
-        curr -= (η⁺⁺[2*k-1, 2*j-2] + η⁺⁺[2*k-1, 2*j-1]) * Gt(lattice, k, j, A, B..., b1=:-, b2=:+, Z=Z, band=band, alg=alg)
-        curr -= (η⁺⁻[2*k-1, 2*j-2] + η⁺⁻[2*k-1, 2*j-1])  * Gt(lattice, k, j, A, B..., b1=:-, b2=:-, Z=Z, band=band, alg=alg)
+        curr -= (η⁺⁺[2*k-1, 2*j-2] + η⁺⁺[2*k-1, 2*j-1]) * Gt(lattice, k, j, A, B..., b1=:-, b2=:+, Z=Z, band=band, alg=alg, c1=true, c2=false)
+        curr -= (η⁺⁻[2*k-1, 2*j-2] + η⁺⁻[2*k-1, 2*j-1])  * Gt(lattice, k, j, A, B..., b1=:-, b2=:-, Z=Z, band=band, alg=alg, c1=true, c2=false)
     end
-    curr -= η⁺⁺[2*k-1, 2*k-2] * Gt(lattice, k, k, A, B..., b1=:-, b2=:+, Z=Z, band=band, alg=alg)
-    curr -= η⁺⁻[2*k-1, 2*k-2] * Gt(lattice, k, k, A, B..., b1=:-, b2=:-, Z=Z, band=band, alg=alg)
+    curr -= η⁺⁺[2*k-1, 2*k-2] * Gt(lattice, k, k, A, B..., b1=:-, b2=:+, Z=Z, band=band, alg=alg, c1=true, c2=false)
+    curr -= η⁺⁻[2*k-1, 2*k-2] * Gt(lattice, k, k, A, B..., b1=:-, b2=:-, Z=Z, band=band, alg=alg, c1=true, c2=false)
     return 2 * curr / (0.5*lattice.δt)
 end
 
@@ -86,8 +86,8 @@ function electriccurrent_fast(lattice::RealGrassmannLattice2Order, corr::RealCor
     curr = integrate(lattice, A2, B..., alg=alg) / Z
 
     η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
-    curr -= η⁺⁺[2*k-1, 2*k-2] * Gt(lattice, k, k, A, B..., b1=:-, b2=:+, Z=Z, band=band, alg=alg)
-    curr -= η⁺⁻[2*k-1, 2*k-2] * Gt(lattice, k, k, A, B..., b1=:-, b2=:-, Z=Z, band=band, alg=alg)
+    curr -= η⁺⁺[2*k-1, 2*k-2] * Gt(lattice, k, k, A, B..., b1=:-, b2=:+, Z=Z, band=band, alg=alg, c1=true, c2=false)
+    curr -= η⁺⁻[2*k-1, 2*k-2] * Gt(lattice, k, k, A, B..., b1=:-, b2=:-, Z=Z, band=band, alg=alg, c1=true, c2=false)
     return 2 * curr / (0.5*lattice.δt)
 end
 

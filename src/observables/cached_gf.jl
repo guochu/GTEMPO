@@ -8,10 +8,10 @@ The same as gf, but use a cache for efficiency, the cache can be precomputed
 and used for calculating any other observables
 """
 function cached_gf(lattice::AbstractGrassmannLattice, a::NTuple{N, ContourIndex}, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
-                    cache::AbstractExpectationCache=environments(lattice, A, B...), kwargs...) where {N}
+                    cache::AbstractExpectationCache=environments(lattice, A, B...)) where {N}
     pos = map(x->lattice[x], a)
     t = GTerm(pos, coeff=1)
-    return expectationvalue(t, cache; kwargs...)
+    return expectationvalue(t, cache)
 end
 
 
@@ -23,20 +23,20 @@ end
 # end
 
 function cached_contour_ordered_gf(lattice::AbstractGrassmannLattice, a::ContourIndex, b::ContourIndex, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
-                                    cache::AbstractExpectationCache=environments(lattice, A, B...), kwargs...) 
+                                    cache::AbstractExpectationCache=environments(lattice, A, B...)) 
     ((!a.conj) && (b.conj)) || throw(ArgumentError("conj(a)=false and conj(b)=true should be satisfied"))
-    return (a < b) ? -cached_gf(lattice, (b, a), A, B...; cache=cache, kwargs...) : cached_gf(lattice, (a, b), A, B...; cache=cache, kwargs...) 
+    return (a < b) ? -cached_gf(lattice, (b, a), A, B...; cache=cache) : cached_gf(lattice, (a, b), A, B...; cache=cache) 
 end
 
 # imaginary time
 function cached_Gτ(lattice::ImagGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
-                cache::AbstractExpectationCache=environments(lattice, A, B...), c1::Bool=false, c2::Bool=true, band::Union{Int, Tuple{Int, Int}}=1, kwargs...)
+                    cache::AbstractExpectationCache=environments(lattice, A, B...), c1::Bool=false, c2::Bool=true, band::Union{Int, Tuple{Int, Int}}=1)
     if isa(band, Int)
         band = (band, band)
     end
     band1, band2 = band    
 	a, b = ContourIndex(i, conj=c1, branch=:τ, band=band1), ContourIndex(j, conj=c2, branch=:τ, band=band2)
-    return cached_gf(lattice, (a, b), A, B...; cache=cache, kwargs...)
+    return cached_gf(lattice, (a, b), A, B...; cache=cache)
 end
 cached_Gτ(lattice::ImagGrassmannLattice, i::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; kwargs...) = cached_Gτ(lattice, i, 1, A, B...; kwargs...)
 
@@ -44,39 +44,39 @@ cached_Gτ(lattice::ImagGrassmannLattice, i::Int, A::Union{GrassmannMPS, Vector}
 # real time
 function cached_Gt(lattice::RealGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
                     cache::AbstractExpectationCache=environments(lattice, A, B...), b1::Symbol, b2::Symbol, c1::Bool=true, 
-                    c2::Bool=false, band::Union{Int, Tuple{Int, Int}}=1, kwargs...)
+                    c2::Bool=false, band::Union{Int, Tuple{Int, Int}}=1)
     if isa(band, Int)
         band = (band, band)
     end
     band1, band2 = band    
     a, b = ContourIndex(i, conj=c1, branch=b1, band=band1), ContourIndex(j, conj=c2, branch=b2, band=band2)
-    return cached_gf(lattice, (a, b), A, B...; cache=cache, kwargs...)
+    return cached_gf(lattice, (a, b), A, B...; cache=cache)
 end
 
 function cached_Gm(lattice::MixedGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
                     cache::AbstractExpectationCache=environments(lattice, A, B...), b1::Symbol, b2::Symbol, c1::Bool=true, 
-                    c2::Bool=false, band::Union{Int, Tuple{Int, Int}}=1, kwargs...)
+                    c2::Bool=false, band::Union{Int, Tuple{Int, Int}}=1)
     if isa(band, Int)
         band = (band, band)
     end
     band1, band2 = band    
     a, b = ContourIndex(i, conj=c1, branch=b1, band=band1), ContourIndex(j, conj=c2, branch=b2, band=band2)
-    return cached_gf(lattice, (a, b), A, B...; cache=cache, kwargs...)
+    return cached_gf(lattice, (a, b), A, B...; cache=cache)
 end
 
 function cached_contour_ordered_Gm(lattice::MixedGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
-                    cache::AbstractExpectationCache=environments(lattice, A, B...), b1::Symbol, b2::Symbol, band::Union{Int, Tuple{Int, Int}}=1, kwargs...) 
+                    cache::AbstractExpectationCache=environments(lattice, A, B...), b1::Symbol, b2::Symbol, band::Union{Int, Tuple{Int, Int}}=1) 
     if isa(band, Int)
         band = (band, band)
     end
     band1, band2 = band    
     a, b = ContourIndex(i, conj=false, branch=b1, band=band1), ContourIndex(j, conj=true, branch=b2, band=band2)
-    return cached_contour_ordered_gf(lattice, a, b, A, B...; cache=cache, kwargs...)
+    return cached_contour_ordered_gf(lattice, a, b, A, B...; cache=cache)
 end
 
 #########*******************************###########
 
-function cached_Gτ(lattice::Union{ImagGrassmannLattice, MixedGrassmannLattice}, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...;
+function cached_Gτ(lattice::Union{ImagGrassmannLattice, MixedGrassmannLattice}, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
                     cache::AbstractExpectationCache=environments(lattice, A, B...), band::Int=1, kwargs...)
 	g = zeros(scalartype(lattice), lattice.kτ)
 	for i in 1:lattice.kτ-1
@@ -87,24 +87,24 @@ function cached_Gτ(lattice::Union{ImagGrassmannLattice, MixedGrassmannLattice},
 end
 
 
-function cached_Gt(lattice::MixedGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; b1::Symbol, b2::Symbol, kwargs...)
+function cached_Gt(lattice::MixedGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; b1::Symbol, b2::Symbol, kwargs...)
     (b1 in (:+, :-)) || throw(ArgumentError("branch must be :+ or :-"))
     (b2 in (:+, :-)) || throw(ArgumentError("branch must be :+ or :-"))
     return cached_Gm(lattice, i, j, A, B...; b1=b1, b2=b2, kwargs...)
 end
-function cached_Gτ(lattice::MixedGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; c1::Bool=false, c2::Bool=true, kwargs...)
+function cached_Gτ(lattice::MixedGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; c1::Bool=false, c2::Bool=true, kwargs...)
     return cached_Gm(lattice, i, j, A, B...; b1=:τ, b2=:τ, c1=c1, c2=c2, kwargs...)
 end
-cached_Gτ(lattice::MixedGrassmannLattice, i::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...) = cached_Gτ(lattice, i, 1, A, B...; kwargs...)
+cached_Gτ(lattice::MixedGrassmannLattice, i::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; kwargs...) = cached_Gτ(lattice, i, 1, A, B...; kwargs...)
 
-function cached_greater(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...)
+function cached_greater(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; kwargs...)
     @assert i >= j
     return cached_Gt(lattice, i, j, A, B...; b1=:+, b2=:+, c1=false, c2=true, kwargs...)
 end
-cached_greater(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...) = cached_greater(lattice, i, 1, A, B...; kwargs...)
-function cached_lesser(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...)
+cached_greater(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; kwargs...) = cached_greater(lattice, i, 1, A, B...; kwargs...)
+function cached_lesser(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; kwargs...)
     @assert i <= j
     return cached_Gt(lattice, i, j, A, B...; b1=:-, b2=:+, c1=true, c2=false, kwargs...)
 end
-cached_lesser(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...) = cached_lesser(lattice, 1, i, A, B...; kwargs...)
+cached_lesser(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; kwargs...) = cached_lesser(lattice, 1, i, A, B...; kwargs...)
 

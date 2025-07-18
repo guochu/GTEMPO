@@ -44,14 +44,16 @@ function cached_gf_fast(lattice::MixedGrassmannLattice, A::GrassmannMPS, Bs::Var
 	end
 end
 # exhaust the first time index
-function cached_gf_fast(lattice::AbstractGrassmannLattice, N::Int, A::GrassmannMPS, Bs::Vararg{GrassmannMPS}; b1::Symbol, b2::Symbol, c1::Bool, c2::Bool, band::Int=1, kwargs...)
+function cached_gf_fast(lattice::AbstractGrassmannLattice, N::Int, A::GrassmannMPS, Bs::Vararg{GrassmannMPS}; 
+			cache::TwosideExpectationCache=environments(lattice, A, Bs...),
+			b1::Symbol, b2::Symbol, c1::Bool, c2::Bool, band::Int=1)
 	pos1 = index(lattice, 2, conj=c1, band=band, branch=b1) 
 	pos1′ = index(lattice, N, conj=c1, band=band, branch=b1) 
 	pos2 = index(lattice, 1, conj=c2, band=band, branch=b2)
 	if pos2 < min(pos1, pos1′)
-		GFt = cached_gf_fast_normal_order(lattice, N, A, Bs...; b1=b1, b2=b2, c1=c1, c2=c2, band=band, kwargs...)
+		GFt = cached_gf_fast_normal_order(lattice, N, A, Bs...; b1=b1, b2=b2, c1=c1, c2=c2, band=band, cache=cache)
 	elseif pos2 > max(pos1, pos1′)
-		GFt = cached_gf_fast_reverse_order(lattice, N, A, Bs...; b1=b1, b2=b2, c1=c1, c2=c2, band=band, kwargs...)
+		GFt = cached_gf_fast_reverse_order(lattice, N, A, Bs...; b1=b1, b2=b2, c1=c1, c2=c2, band=band, cache=cache)
 	else
 		error("time step indices should be monotonically ordered")
 	end
@@ -90,11 +92,11 @@ end
 
 function cached_gf_fast_normal_order(lattice::AbstractGrassmannLattice, N::Int, A::GrassmannMPS, Bs::Vararg{GrassmannMPS}; 
 					cache::TwosideExpectationCache=environments(lattice, A, Bs...), 
-					b1::Symbol, b2::Symbol, c1::Bool, c2::Bool, band::Int=1, kwargs...)
+					b1::Symbol, b2::Symbol, c1::Bool, c2::Bool, band::Int=1)
 	@assert N > 0
 	# calculated G11
 	a, b = ContourIndex(1, conj=c1, branch=b1, band=band), ContourIndex(1, conj=c2, branch=b2, band=band)
-	g0 = cached_gf(lattice, (a, b), A, Bs...; cache=cache, kwargs...)
+	g0 = cached_gf(lattice, (a, b), A, Bs...; cache=cache)
 	GFt = Vector{scalartype(A)}(undef, N)
 	GFt[1] = g0
 	(N == 1) && return GFt
@@ -140,10 +142,10 @@ end
 
 function cached_gf_fast_reverse_order(lattice::AbstractGrassmannLattice, N::Int, A::GrassmannMPS, Bs::Vararg{GrassmannMPS};
                     				 cache::TwosideExpectationCache=environments(lattice, A, B...),
-                    				 b1::Symbol, b2::Symbol, c1::Bool, c2::Bool, band::Int=1, kwargs...)
+                    				 b1::Symbol, b2::Symbol, c1::Bool, c2::Bool, band::Int=1)
 	@assert N > 0
 	a, b = ContourIndex(1, conj=c1, branch=b1, band=band), ContourIndex(1, conj=c2, branch=b2, band=band)
-	g0 = cached_gf(lattice, (a, b), A, Bs...; cache=cache, kwargs...)
+	g0 = cached_gf(lattice, (a, b), A, Bs...; cache=cache)
 	GFt = Vector{scalartype(A)}(undef, N)
 	GFt[1] = g0
 	(N == 1) && return GFt

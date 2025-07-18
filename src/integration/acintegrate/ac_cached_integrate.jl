@@ -21,12 +21,12 @@ Cache at the right of the j-th time step
 DMRG.rightenv(x::AbstractExpectationCache, j::Int) = error("rightenv not implemented for cache type $(typeof(x))")
 
 DMRG.environments(lattice::AbstractGrassmannLattice, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
-						alg::IntegrationAlgorithm=ExactIntegrate(), kwargs...) = _environments(alg, lattice, A, B...; kwargs...)
+						alg::IntegrationAlgorithm=ExactIntegrate()) = _environments(alg, lattice, A, B...)
 
 # cached_integrate_util(lattice::AbstractGrassmannLattice, j::Int, k::Int, cache::AbstractExpectationCache, A::Union{GrassmannMPS, Vector}, Bs::GrassmannMPS...; kwargs...) = _cached_integrate_util(
 # 	lattice, j, k, cache, A, Bs...; kwargs...) / Zvalue(cache)
 
-DMRG.expectationvalue(m::Union{GTerm, ExpGTerm}, cache::AbstractExpectationCache; kwargs...) = expectationvalue(convert(PartialMPO, m), cache; kwargs...)
+DMRG.expectationvalue(m::Union{GTerm, ExpGTerm}, cache::AbstractExpectationCache) = expectationvalue(convert(PartialMPO, m), cache)
 
 struct TwosideExpectationCache{M<:GrassmannMPS, G<:Tuple, L<:AbstractGrassmannLattice, Hl, Hr} <: AbstractExpectationCache
 	A::M

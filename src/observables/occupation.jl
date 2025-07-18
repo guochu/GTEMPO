@@ -8,7 +8,7 @@ Return the occupation at time step i on the Keldysh contour
 function occupation(lattice::RealGrassmannLattice1Order, i::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; kwargs...) 
     return real(Gt(lattice, i, i, A, B...; c1=false, c2=true, b1=:+, b2=:-, kwargs...))
 end
-occupation(lattice::RealGrassmannLattice1Order, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; band::Int=1, 
+occupation(lattice::RealGrassmannLattice1Order, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; band::Int=1, 
             alg::IntegrationAlgorithm=ExactIntegrate(), 
             Z::Number = integrate(lattice, A, B..., alg=alg)) = [occupation(lattice, i, A, B...; alg=alg, Z=Z, band=band) for i in 1:lattice.N]
 
@@ -18,7 +18,7 @@ end
 
 
 # real-time second order
-function occupation(lattice::RealGrassmannLattice2Order, A::GrassmannMPS, B::GrassmannMPS...; kwargs...) 
+function occupation(lattice::RealGrassmannLattice2Order, A::GrassmannMPS, B::Vararg{GrassmannMPS}; kwargs...) 
     return real(Gt(lattice, lattice.k, lattice.k, A, B...; c1=false, c2=true, b1=:+, b2=:-, kwargs...))
 end
 
