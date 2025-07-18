@@ -30,8 +30,12 @@ end
 
 # imaginary time
 function cached_Gτ(lattice::ImagGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
-                cache::AbstractExpectationCache=environments(lattice, A, B...), c1::Bool=false, c2::Bool=true, band::Int=1, kwargs...)
-	a, b = ContourIndex(i, conj=c1, branch=:τ, band=band), ContourIndex(j, conj=c2, branch=:τ, band=band)
+                cache::AbstractExpectationCache=environments(lattice, A, B...), c1::Bool=false, c2::Bool=true, band::Union{Int, Tuple{Int, Int}}=1, kwargs...)
+    if isa(band, Int)
+        band = (band, band)
+    end
+    band1, band2 = band    
+	a, b = ContourIndex(i, conj=c1, branch=:τ, band=band1), ContourIndex(j, conj=c2, branch=:τ, band=band2)
     return cached_gf(lattice, (a, b), A, B...; cache=cache, kwargs...)
 end
 cached_Gτ(lattice::ImagGrassmannLattice, i::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; kwargs...) = cached_Gτ(lattice, i, 1, A, B...; kwargs...)
@@ -39,30 +43,44 @@ cached_Gτ(lattice::ImagGrassmannLattice, i::Int, A::Union{GrassmannMPS, Vector}
 
 # real time
 function cached_Gt(lattice::RealGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
-                    cache::AbstractExpectationCache=environments(lattice, A, B...), b1::Symbol, b2::Symbol, c1::Bool=true, c2::Bool=false, band::Int=1, kwargs...)
-    a, b = ContourIndex(i, conj=c1, branch=b1, band=band), ContourIndex(j, conj=c2, branch=b2, band=band)
+                    cache::AbstractExpectationCache=environments(lattice, A, B...), b1::Symbol, b2::Symbol, c1::Bool=true, 
+                    c2::Bool=false, band::Union{Int, Tuple{Int, Int}}=1, kwargs...)
+    if isa(band, Int)
+        band = (band, band)
+    end
+    band1, band2 = band    
+    a, b = ContourIndex(i, conj=c1, branch=b1, band=band1), ContourIndex(j, conj=c2, branch=b2, band=band2)
     return cached_gf(lattice, (a, b), A, B...; cache=cache, kwargs...)
 end
 
 function cached_Gm(lattice::MixedGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
-                    cache::AbstractExpectationCache=environments(lattice, A, B...), b1::Symbol, b2::Symbol, c1::Bool=true, c2::Bool=false, band::Int=1, kwargs...)
-    a, b = ContourIndex(i, conj=c1, branch=b1, band=band), ContourIndex(j, conj=c2, branch=b2, band=band)
+                    cache::AbstractExpectationCache=environments(lattice, A, B...), b1::Symbol, b2::Symbol, c1::Bool=true, 
+                    c2::Bool=false, band::Union{Int, Tuple{Int, Int}}=1, kwargs...)
+    if isa(band, Int)
+        band = (band, band)
+    end
+    band1, band2 = band    
+    a, b = ContourIndex(i, conj=c1, branch=b1, band=band1), ContourIndex(j, conj=c2, branch=b2, band=band2)
     return cached_gf(lattice, (a, b), A, B...; cache=cache, kwargs...)
 end
 
 function cached_contour_ordered_Gm(lattice::MixedGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
-                    cache::AbstractExpectationCache=environments(lattice, A, B...), b1::Symbol, b2::Symbol, band::Int=1, kwargs...) 
-    a, b = ContourIndex(i, conj=false, branch=b1, band=band), ContourIndex(j, conj=true, branch=b2, band=band)
+                    cache::AbstractExpectationCache=environments(lattice, A, B...), b1::Symbol, b2::Symbol, band::Union{Int, Tuple{Int, Int}}=1, kwargs...) 
+    if isa(band, Int)
+        band = (band, band)
+    end
+    band1, band2 = band    
+    a, b = ContourIndex(i, conj=false, branch=b1, band=band1), ContourIndex(j, conj=true, branch=b2, band=band2)
     return cached_contour_ordered_gf(lattice, a, b, A, B...; cache=cache, kwargs...)
 end
 
 #########*******************************###########
 
 function cached_Gτ(lattice::Union{ImagGrassmannLattice, MixedGrassmannLattice}, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...;
-                    cache::AbstractExpectationCache=environments(lattice, A, B...), kwargs...)
+                    cache::AbstractExpectationCache=environments(lattice, A, B...), band::Int=1, kwargs...)
 	g = zeros(scalartype(lattice), lattice.kτ)
 	for i in 1:lattice.kτ-1
-		g[i] = cached_Gτ(lattice, i, A, B...; cache=cache, kwargs...)
+		g[i] = cached_Gτ(lattice, i, A, B...; cache=cache, band=band, kwargs...)
 	end
 	g[end] = 1 - g[1]
 	return g	

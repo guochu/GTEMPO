@@ -51,8 +51,12 @@ c2: whether to take the conjugate of the second GV b
 The other keywords are the same as gf
 """
 function Gτ(lattice::ImagGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
-            band::Int=1, c1::Bool=false, c2::Bool=true, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Real = integrate(lattice, A, B..., alg=alg))
-    a, b = ContourIndex(i, conj=c1, branch=:τ, band=band), ContourIndex(j, conj=c2, branch=:τ, band=band)
+            band::Union{Int, Tuple{Int, Int}}=1, c1::Bool=false, c2::Bool=true, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Real = integrate(lattice, A, B..., alg=alg))
+    if isa(band, Int)
+        band = (band, band)
+    end
+    band1, band2 = band
+    a, b = ContourIndex(i, conj=c1, branch=:τ, band=band1), ContourIndex(j, conj=c2, branch=:τ, band=band2)
     return gf(lattice, (a, b), A, B...; alg=alg, Z=Z)
 end
 Gτ(lattice::ImagGrassmannLattice, i::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...) = Gτ(lattice, i, 1, A, B...; kwargs...)
@@ -72,10 +76,14 @@ b2: the branch of the second GV (can be :+ or :-)
 The other keywords are the same as gf
 """
 function Gt(lattice::RealGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
-            b1::Symbol, b2::Symbol, c1::Bool=true, c2::Bool=false, band::Int=1, 
+            b1::Symbol, b2::Symbol, c1::Bool=true, c2::Bool=false, band::Union{Int, Tuple{Int, Int}}=1, 
             alg::IntegrationAlgorithm=ExactIntegrate(), 
             Z::Number = integrate(lattice, A, B..., alg=alg))
-    a, b = ContourIndex(i, conj=c1, branch=b1, band=band), ContourIndex(j, conj=c2, branch=b2, band=band)
+    if isa(band, Int)
+        band = (band, band)
+    end
+    band1, band2 = band
+    a, b = ContourIndex(i, conj=c1, branch=b1, band=band1), ContourIndex(j, conj=c2, branch=b2, band=band2)
     return gf(lattice, (a, b), A, B...; alg=alg, Z=Z)
 end
 
@@ -94,11 +102,14 @@ b2: the branch of the second GV (can be :+, :- or :τ)
 The other keywords are the same as gf
 """
 function Gm(lattice::MixedGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
-            b1::Symbol, b2::Symbol, c1::Bool=true, c2::Bool=false, band::Int=1, 
+            b1::Symbol, b2::Symbol, c1::Bool=true, c2::Bool=false, band::Union{Int, Tuple{Int, Int}}=1, 
             alg::IntegrationAlgorithm=ExactIntegrate(), 
             Z::Number = integrate(lattice, A, B..., alg=alg))
-    
-    a, b = ContourIndex(i, conj=c1, branch=b1, band=band), ContourIndex(j, conj=c2, branch=b2, band=band)
+    if isa(band, Int)
+        band = (band, band)
+    end
+    band1, band2 = band    
+    a, b = ContourIndex(i, conj=c1, branch=b1, band=band1), ContourIndex(j, conj=c2, branch=b2, band=band2)
     return gf(lattice, (a, b), A, B...; alg=alg, Z=Z)
 end
 
@@ -111,8 +122,12 @@ end
 The same as Gτ, but use multi-threading
 """
 function parallel_Gτ(lattice::ImagGrassmannLattice, i::Int, j::Int, A::Vector{<:GrassmannMPS}, B::GrassmannMPS...; 
-            band::Int=1, c1::Bool=false, c2::Bool=true, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Real = parallel_integrate(lattice, A, B..., alg=alg) )
-    pos1, pos2 = index(lattice, i, conj=c1, band=band), index(lattice, j, conj=c2, band=band)
+            band::Union{Int, Tuple{Int, Int}}=1, c1::Bool=false, c2::Bool=true, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Real = parallel_integrate(lattice, A, B..., alg=alg) )
+    if isa(band, Int)
+        band = (band, band)
+    end
+    band1, band2 = band    
+    pos1, pos2 = index(lattice, i, conj=c1, band=band1), index(lattice, j, conj=c2, band=band2)
     t = GTerm(pos1, pos2, coeff=1)
     A2 = _mult_A(t, A)
     return parallel_integrate(lattice, A2, B..., alg=alg)/Z
@@ -160,7 +175,7 @@ Gτ(lattice::MixedGrassmannLattice, i::Int, A::Union{GrassmannMPS, Vector}, B::G
 Return the greater Green's function ⟨aᵢ bⱼ⟩ on the Keldysh or the Kadanoff-Baym contour
 """
 function greater(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
-                 band::Int=1, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Number = integrate(lattice, A, B..., alg=alg))
+                 band::Union{Int, Tuple{Int, Int}}=1, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Number = integrate(lattice, A, B..., alg=alg))
     @assert i >= j
     return Gt(lattice, i, j, A, B...; b1=:+, b2=:+, c1=false, c2=true, band=band, alg=alg, Z=Z)
 end
@@ -173,7 +188,7 @@ greater(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, A::
 Return the lesser Green's function ⟨aᵢ bⱼ⟩ on the Keldysh or the Kadanoff-Baym contour
 """
 function lesser(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
-                 band::Int=1, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Number = integrate(lattice, A, B..., alg=alg))
+                 band::Union{Int, Tuple{Int, Int}}=1, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Number = integrate(lattice, A, B..., alg=alg))
     @assert i <= j
     return Gt(lattice, i, j, A, B...; b1=:-, b2=:+, c1=true, c2=false, band=band, alg=alg, Z=Z)
 end

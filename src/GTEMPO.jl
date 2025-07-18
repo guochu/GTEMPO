@@ -49,7 +49,7 @@ export cached_greater_fast, cached_lesser_fast
 export nn, cached_nn, insert_n!, insert_n, nn2, cached_nn2
 
 # connections of Grassmann variables
-export bulkconnection!, bulkconnection,
+export bulkconnection!, bulkconnection
 export boundarycondition!, boundarycondition, boundarycondition_branching
 
 # utilities for TEMPO

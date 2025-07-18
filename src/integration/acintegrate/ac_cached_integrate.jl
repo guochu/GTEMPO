@@ -20,7 +20,7 @@ Cache at the right of the j-th time step
 """
 DMRG.rightenv(x::AbstractExpectationCache, j::Int) = error("rightenv not implemented for cache type $(typeof(x))")
 
-DMRG.environments(lattice::AbstractGrassmannLattice, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
+DMRG.environments(lattice::AbstractGrassmannLattice, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
 						alg::IntegrationAlgorithm=ExactIntegrate(), kwargs...) = _environments(alg, lattice, A, B...; kwargs...)
 
 # cached_integrate_util(lattice::AbstractGrassmannLattice, j::Int, k::Int, cache::AbstractExpectationCache, A::Union{GrassmannMPS, Vector}, Bs::GrassmannMPS...; kwargs...) = _cached_integrate_util(
@@ -62,7 +62,7 @@ function TwosideExpectationCache(lattice::AbstractGrassmannLattice, As::Tuple)
 	return TwosideExpectationCache(first(As), Base.tail(As), lattice, hleft, hright)
 end
 
-_environments(alg::ExactIntegrate, lattice::AbstractGrassmannLattice, A::GrassmannMPS, B::GrassmannMPS...) = TwosideExpectationCache(lattice, (A, B...))
+_environments(alg::ExactIntegrate, lattice::AbstractGrassmannLattice, A::GrassmannMPS, B::Vararg{GrassmannMPS}) = TwosideExpectationCache(lattice, (A, B...))
 # _environments(alg::ExactIntegrate, lattice::AbstractGrassmannLattice, A::GrassmannMPS, B::GrassmannMPS, C::GrassmannMPS; kwargs...) = TwosideExpectationCache(lattice, (A, B, C); kwargs...)
 
 
@@ -156,7 +156,7 @@ end
 Base.length(x::VectorExpectationCache) = length(x.caches[1])
 Zvalue(x::VectorExpectationCache) = sum(Zvalue.(x.caches))
 
-function _environments(alg::ExactIntegrate, lattice::AbstractGrassmannLattice, A::Vector{<:GrassmannMPS}, B::GrassmannMPS...)
+function _environments(alg::ExactIntegrate, lattice::AbstractGrassmannLattice, A::Vector{<:GrassmannMPS}, B::Vararg{GrassmannMPS})
 	caches = [_environments(alg, lattice, Aj, B...) for Aj in A]
 	return VectorExpectationCache(caches)
 end
