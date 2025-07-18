@@ -46,7 +46,7 @@ export cached_gf, cached_Gτ, cached_Gt, cached_Gm, cached_greater, cached_lesse
 export cached_occupation, cached_electriccurrent, cached_electriccurrent_fast, cached_heatcurrent_fast
 export cached_gf_fast, cached_Gτ_fast, cached_Gt_fast, cached_Gm_fast
 export cached_greater_fast, cached_lesser_fast
-export nn, cached_nn, insert_n!, insert_n, nn2
+export nn, cached_nn, insert_n!, insert_n, nn2, cached_nn2
 
 # connections of Grassmann variables
 export bulkconnection!, bulkconnection,

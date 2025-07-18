@@ -143,6 +143,7 @@ end
 			mpsI = hybriddynamics(lattice, corr, trunc=trunc) 
 			mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
 			mpsK = boundarycondition(mpsK, lattice)
+			mpsK = systhermalstate!(mpsK, lattice, exact_model, β=β)
 			cache = environments(lattice, mpsK, mpsI)
 			g1 = [cached_Gt(lattice, k, 1, mpsK, mpsI, c1=false, c2=true, b1=:+, b2=:+, cache=cache) for k in 1:lattice.k]
 			g2 = [cached_Gt(lattice, 1, k, mpsK, mpsI, c1=true, c2=false, b1=:-, b2=:+, cache=cache) for k in 1:lattice.k]
@@ -153,8 +154,10 @@ end
 			n2 = [occupation2(lattice, i, mpsK, mpsI, branch=:+, Z=Zvalue(cache)) for i in 1:lattice.k-1]
 			@test norm(n1 - n2) / norm(n1) < rtol
 
-			n1 = [real(cached_nn(lattice, i, 2, mpsK, mpsI, b1=:+, b2=:-, cache=cache)) for i in 1:lattice.k-1]
-			n2 = [real(nn2(lattice, i, 2, mpsK, mpsI, b1=:+, b2=:+, Z=Zvalue(cache))) for i in 1:lattice.k-1]
+			n1 = [real(cached_nn2(lattice, i, 2, mpsK, mpsI, b1=:+, b2=:-, cache=cache)) for i in 1:lattice.k-1]
+			n2 = [real(nn(lattice, i, 2, mpsK, mpsI, b1=:+, b2=:+, Z=Zvalue(cache))) for i in 1:lattice.k-1]
+			@test norm(n1 - n2) / norm(n1) < rtol
+			n1 = [real(cached_nn(lattice, i, 2, mpsK, mpsI, b1=:+, b2=:+, cache=cache)) for i in 1:lattice.k-1]
 			@test norm(n1 - n2) / norm(n1) < rtol
 		end
 
@@ -242,8 +245,10 @@ end
 		@test norm(gt2 - g2) / norm(gt2) < rtol
 		@test norm(gτ - g3) / norm(gτ) < rtol
 
-		n1 = [real(cached_nn(lattice, i, 2, mpsK, mpsI, b1=:+, b2=:-, cache=cache)) for i in 1:lattice.kt-1]
+		n1 = [real(cached_nn2(lattice, i, 2, mpsK, mpsI, b1=:+, b2=:-, cache=cache)) for i in 1:lattice.kt-1]
 		n2 = [real(nn2(lattice, i, 2, mpsK, mpsI, b1=:+, b2=:+, Z=Zvalue(cache))) for i in 1:lattice.kt-1]
+		@test norm(n1 - n2) / norm(n1) < rtol
+		n1 = [real(cached_nn(lattice, i, 2, mpsK, mpsI, b1=:+, b2=:+, cache=cache)) for i in 1:lattice.kt-1]
 		@test norm(n1 - n2) / norm(n1) < rtol
 	end
 

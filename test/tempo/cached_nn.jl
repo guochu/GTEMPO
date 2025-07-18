@@ -17,8 +17,8 @@ println("------------------------------------")
 				for i in 1:lattice.k-1, j in 1:lattice.k-1
 					if j != i
 						for band in 1:lattice.bands
-							g1 = nn(lattice, i, j, A, band=band, Z=Z)
-							g2 = cached_nn(lattice, i, j, A, cache=cache, band=band)
+							g1 = nn2(lattice, i, j, A, band=band, Z=Z)
+							g2 = cached_nn2(lattice, i, j, A, cache=cache, band=band)
 							@test abs(g1-g2)/abs(g1) < rtol
 						end
 					end
@@ -38,8 +38,8 @@ println("------------------------------------")
 				for i in 1:lattice.k-1, j in 1:lattice.k-1
 					for b1 in branches(lattice), b2 in branches(lattice)
 						if !((j == i) && (b1 == b2))
-							g1 = nn(lattice, i, j, A, b1=b1, b2=b2, Z=Z)
-							g2 = cached_nn(lattice, i, j, A, cache=cache, b1=b1, b2=b2)
+							g1 = nn2(lattice, i, j, A, b1=b1, b2=b2, Z=Z)
+							g2 = cached_nn2(lattice, i, j, A, cache=cache, b1=b1, b2=b2)
 							@test abs(g1-g2)/abs(g1) < rtol
 						end
 					end
@@ -60,8 +60,8 @@ println("------------------------------------")
 					k2 = ifelse(b2==:τ, lattice.Nτ, lattice.Nt)
 					for i in 1:k1, j in 1:k2
 						if !((j == i) && (b1 == b2))
-							g1 = nn(lattice, i, j, A, b1=b1, b2=b2, Z=Z)
-							g2 = cached_nn(lattice, i, j, A, cache=cache, b1=b1, b2=b2)
+							g1 = nn2(lattice, i, j, A, b1=b1, b2=b2, Z=Z)
+							g2 = cached_nn2(lattice, i, j, A, cache=cache, b1=b1, b2=b2)
 							@test abs(g1-g2)/abs(g1) < rtol							
 						end
 					end
