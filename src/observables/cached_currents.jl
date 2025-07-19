@@ -1,4 +1,4 @@
-function cached_electriccurrent(lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction, k::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
+function cached_electriccurrent(lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction, k::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
                 	               cache::AbstractExpectationCache=environments(lattice, A, B...), band::Int=1)
     curr = complex(0.)
     η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
@@ -22,11 +22,9 @@ cached_electriccurrent_fast(lattice::RealGrassmannLattice1Order, corr::RealCorre
                         cache::AbstractExpectationCache=environments(lattice, A, B...), 
                         kwargs...) = [cached_electriccurrent_fast(lattice, corr, k, A, B...; cache=cache, kwargs...) for k in 2:lattice.k]
 
-function cached_heatcurrent_fast(lattice::RealGrassmannLattice1Order, bath::AbstractFermionicBath, args...; kwargs...)
-    bath2 = similar(bath, _mult_w(bath.spectrum))
-    corr = correlation(bath2, lattice)
-    return cached_electriccurrent_fast(lattice, corr, args...; kwargs...)
-end
+
+cached_heatcurrent_fast(lattice::RealGrassmannLattice1Order, bath::AbstractFermionicBath, args...; kwargs...) = cached_electriccurrent_fast(
+                        lattice, heatcorrelationfunction(bath, lattice), args...; kwargs...)
 
 
 function cached_electriccurrent(lattice::RealGrassmannLattice2Order, corr::RealCorrelationFunction, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 

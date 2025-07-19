@@ -41,21 +41,28 @@ electriccurrent_fast(lattice::RealGrassmannLattice1Order, corr::RealCorrelationF
                    alg::IntegrationAlgorithm=ExactIntegrate(),
                    Z::Number = integrate(lattice, A, B..., alg=alg)) = [electriccurrent_fast(lattice, corr, k, A, B...; alg=alg, Z=Z, band=band) for k in 2:lattice.k]
 
-"""
-    heatcurrent_fast(lattice::RealGrassmannLattice1Order, bath::AbstractFermionicBath, args...; kwargs...)
 
-The calculation of heat current is very similar to electric current, 
-the only change one needs to make is to replace the spectrum function
-as J(w) to w -> w * J(w)
-"""
-function heatcurrent_fast(lattice::RealGrassmannLattice1Order, bath::AbstractFermionicBath, args...; kwargs...)
+
+function heatcorrelationfunction(bath::AbstractFermionicBath, lattice::RealGrassmannLattice)
     bath2 = similar(bath, _mult_w(bath.spectrum))
     corr = correlationfunction(bath2, lattice)
-    return electriccurrent_fast(lattice, corr, args...; kwargs...)
+    return corr
 end
 
 _mult_w(x::AbstractSpectrumFunction) = similar(x, w -> w * x.f(w)) 
 _mult_w(x::DiracDelta) = similar(x, α=x.ω*x.α)
+
+
+# """
+#     heatcurrent_fast(lattice::RealGrassmannLattice1Order, bath::AbstractFermionicBath, args...; kwargs...)
+
+# The calculation of heat current is very similar to electric current, 
+# the only change one needs to make is to replace the spectrum function
+# as J(w) to w -> w * J(w)
+# """
+heatcurrent_fast(lattice::RealGrassmannLattice1Order, bath::AbstractFermionicBath, args...; kwargs...) = electriccurrent_fast(
+                    lattice, heatcorrelationfunction(bath, lattice), args...; kwargs...)
+
 
 
 

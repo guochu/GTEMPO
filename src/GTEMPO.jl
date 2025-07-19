@@ -41,7 +41,7 @@ export retardedinteractdynamics, retardedinteractdynamics!, retardedinteractdyna
 
 # GF and other observables
 export gf, Gτ, parallel_Gτ, Gt, parallel_Gt, Gm, greater, lesser, contour_ordered_gf
-export occupation, occupation2, electriccurrent, electriccurrent_fast, heatcurrent_fast
+export occupation, occupation2, electriccurrent, electriccurrent_fast, heatcorrelationfunction, heatcurrent_fast
 export cached_gf, cached_Gτ, cached_Gt, cached_Gm, cached_greater, cached_lesser, cached_contour_ordered_gf
 export cached_occupation, cached_electriccurrent, cached_electriccurrent_fast, cached_heatcurrent_fast
 export cached_gf_fast, cached_Gτ_fast, cached_Gt_fast, cached_Gm_fast
