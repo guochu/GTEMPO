@@ -52,7 +52,9 @@ function mult_cache(z::GrassmannMPS, x::GrassmannMPS, y::GrassmannMPS, lattice::
     return IntegrateBandIterativeMultCache(z, x, y, lattice, band, hstorage)
 end
 
-mult(x::GrassmannMPS, y::GrassmannMPS, lattice::AbstractGrassmannLattice, alg::DMRGMultAlgorithm; band::Int=1) = iterativemult(x, y, lattice, alg, band=band)
+integrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS; alg::DMRGMultAlgorithm=DefaultMultAlg, band::Int=1) = integrateband(lattice, x, y, alg, band=band)
+integrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS, alg::DMRGMultAlgorithm; band::Int=1) = iterativemult(x, y, lattice, alg, band=band)
+
 
 # multiply x and y, integrate out band
 function iterativemult(x::GrassmannMPS, y::GrassmannMPS, lattice::AbstractGrassmannLattice, alg::DMRGMultAlgorithm; band::Int=1)
