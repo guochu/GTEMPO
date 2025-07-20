@@ -249,3 +249,64 @@ function _lattice_mapping(lattice, lattice2; band::Int=1)
 	return [rmm[i] for i in 1:length(lattice2)]
 end
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+integrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS; alg::SVDCompression, band::Int=1) = mult(lattice, x, y, alg.trunc, band=band)
+integrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS, alg::SVDCompression; band::Int=1) = mult(lattice, x, y, alg.trunc, band=band)
+
+function mult(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS, trunc::TruncationScheme; band::Int=1, verbosity::Int=0)
+    (ConjugationStyle(lattice) isa AdjacentConjugation) || throw(ArgumentError("integrateband only supports AdjacentConjugation style"))
+	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
+	(length(x) == length(lattice)) || throw(DimensionMismatch())
+    (length(x) == length(y)) || throw(DimensionMismatch())
+
+	lattice2 = similar(lattice, bands=lattice.bands-1)
+	r2 = indexmappings(lattice2)
+	r1 = indexmappings(lattice)
+	mm = Dict(r1[(j, c, b, ifelse(bj<band, bj, bj+1))]=>pos for ((j, c, b, bj), pos) in r2)
+
+	data = similar(x.data, length(lattice2))
+    fuser = GrassmannTensorMap(isomorphism(scalartype(x), fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) ))
+    left = fuser
+
+    i = 1
+	idx = 1
+	while i <= length(lattice)
+		pos2 = get(mm, i, nothing)
+		if isnothing(pos2)
+            j = (i+1)÷2
+            @assert 2*j == i+1
+			left = left * GrassmannTransferMatrix(j, x, y)
+            i += 2
+		else
+            @tensor tmp1[1,5,4;2] := left[1,2,3] * GrassmannTensorMap(y[i])[3,4,5]
+            @tensor tmp2[1,3,5;6,2] := tmp1[1,2,3,4] * GrassmannTensorMap(x[i])[4,5,6]
+            tmp3 = g_fuse(tmp2, 2)
+            
+            q, r = leftorth!(tmp3, alg=QR())
+			data[idx] = q.data
+			idx += 1
+            left = r
+    
+            i += 1
+		end		
+	end
+    @tensor tmp[1,2;6] := GrassmannTensorMap(data[end])[1,2,3] * left[3,4,5] * conj(fuser[6,4,5])
+    data[end] = tmp.data
+
+    z = GrassmannMPS(data)
+
+    _rightorth!(z, SVD(), trunc, false, verbosity)
+    return z
+end
