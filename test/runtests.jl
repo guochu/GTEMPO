@@ -50,6 +50,7 @@ include("tempo/observables.jl")
 include("tempo/swapband.jl")
 include("tempo/fillband.jl")
 include("tempo/integrateband.jl")
+include("tempo/mult_integrateband.jl")
 
 
 include("tempo/models.jl")
