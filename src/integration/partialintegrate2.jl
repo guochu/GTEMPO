@@ -52,7 +52,7 @@ function mult_cache(z::GrassmannMPS, x::GrassmannMPS, y::GrassmannMPS, lattice::
     return IntegrateBandIterativeMultCache(z, x, y, lattice, band, hstorage)
 end
 
-integrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS; alg::DMRGMultAlgorithm=DefaultMultAlg, band::Int=1) = integrateband(lattice, x, y, alg, band=band)
+# integrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS; alg::DMRGMultAlgorithm=DefaultMultAlg, band::Int=1) = integrateband(lattice, x, y, alg, band=band)
 integrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS, alg::DMRGMultAlgorithm; band::Int=1) = iterativemult(x, y, lattice, alg, band=band)
 
 
@@ -262,8 +262,9 @@ end
 
 
 
-integrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS; alg::SVDCompression, band::Int=1) = mult(lattice, x, y, alg.trunc, band=band)
+# integrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS; alg::SVDCompression, band::Int=1) = mult(lattice, x, y, alg.trunc, band=band)
 integrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS, alg::SVDCompression; band::Int=1) = mult(lattice, x, y, alg.trunc, band=band)
+integrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme, band::Int=1) = mult(lattice, x, y, trunc, band=band)
 
 function mult(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS, trunc::TruncationScheme; band::Int=1, verbosity::Int=0)
     (ConjugationStyle(lattice) isa AdjacentConjugation) || throw(ArgumentError("integrateband only supports AdjacentConjugation style"))

@@ -3,8 +3,8 @@ push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/InfiniteDMRG/src")
 push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/GeneralHamiltonians/src")
 push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/TEBD/src")
 push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/FermionicTCMPS/src")
-push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/ImpurityModelBase/src")
-push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/QuAPI/src")
+# push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/ImpurityModelBase/src")
+# push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/QuAPI/src")
 
 using Test, Random
 using TensorKit, DMRG, FermionicTCMPS
