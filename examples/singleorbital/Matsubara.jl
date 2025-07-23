@@ -25,8 +25,8 @@ function main(;β=10, δτ=0.1, chi=60,  U=1, ϵ_d=-U/2)
 	lattice1 = similar(lattice, bands=1)
 	@time mpsI = hybriddynamics(lattice1, corr, trunc=trunc, band=1)
 
-	# algmult = ExactTranslationInvariantIF(algmult=SVDCompression(trunc=trunc))
 	# algexpan = PronyExpansion(n=20, tol=1.0e-5, verbosity=4)
+	# alg = ExactTranslationInvariantIF(algmult=SVDCompression(trunc),algexpan=algexpan)
 	# @time mpsI = hybriddynamics(lattice1, corr, algmult, band=1)
 
 

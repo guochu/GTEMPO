@@ -25,9 +25,10 @@ function main(t; β=Inf, δt=0.1, chi=60, U=1, ϵ_d=-U/2)
 	lattice1 = similar(lattice, bands=1)
 	# @time mpsI = hybriddynamics(lattice1, corr, trunc=trunc, band=1)
 
-	algmult = ExactTranslationInvariantIF(algmult=SVDCompression(trunc=trunc))
 	algexpan = PronyExpansion(n=20, tol=1.0e-5, verbosity=4)
-	@time mpsI = hybriddynamics(lattice1, corr, algmult, band=1)
+	alg = ExactTranslationInvariantIF(algmult=SVDCompression(trunc),algexpan=algexpan)
+	
+	@time mpsI = hybriddynamics(lattice1, corr, alg, band=1)
 
 
 	mpsI1 = fillband(lattice, mpsI, band=1)
