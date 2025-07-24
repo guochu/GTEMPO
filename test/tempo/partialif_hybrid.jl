@@ -37,7 +37,7 @@ end
 	D = 1
 	β=0.2
 	J(ε) = D/(ε^2+D^2)/pi
-	f = SpectrumFunction(J)
+	f = spectrum(J)
 	trunc = truncdimcutoff(D=300, ϵ=1.0e-6, add_back=0)
 	for bands in (1, 2)
 		for N in (1, 2, 3)
@@ -183,7 +183,7 @@ end
 	Nτ = 2
 	δτ = β / Nτ
 	J(ω) = (D/(2*pi)) * sqrt(1 - (ω/D)^2 ) * 0.1
-	f = SpectrumFunction(J, lb = -D, ub = D)
+	f = spectrum(J, lb = -D, ub = D)
 	trunc = truncdimcutoff(D=300, ϵ=1.0e-6, add_back=0)
 
 	for bands in (1, 2)

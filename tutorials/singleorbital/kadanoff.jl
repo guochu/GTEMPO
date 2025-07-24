@@ -8,7 +8,8 @@ using GTEMPO
 
 
 function main(t; β=10, δτ=0.1, δt=0.1, chi=60,  U=1, ϵ_d=-U/2)
-	N = round(Int, t / δt)
+	Nt = round(Int, t / δt)
+	Nτ = round(Int, β/δτ)
 
 	bath = fermionicbath(semicircular(t=1), β=β, μ=0)
 	exact_model = AndersonIM(μ = ϵ_d, U=U)

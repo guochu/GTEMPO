@@ -49,7 +49,7 @@ function heatcorrelationfunction(bath::AbstractFermionicBath, lattice::RealGrass
     return corr
 end
 
-_mult_w(x::AbstractSpectrumFunction) = similar(x, w -> w * x.f(w)) 
+_mult_w(x::AbstractBoundedFunction) = similar(x, w -> w * x.f(w)) 
 _mult_w(x::DiracDelta) = similar(x, α=x.ω*x.α)
 
 

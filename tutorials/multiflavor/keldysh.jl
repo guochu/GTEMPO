@@ -5,7 +5,7 @@ using JSON, Serialization
 
 
 J(D, ε) = sqrt(D^2-ε^2)/pi
-spectrum_func(D=1) = SpectrumFunction(ω -> J(D, ω), lb = -D, ub = D)
+spectrum_func(D=1) = spectrum(ω -> J(D, ω), lb = -D, ub = D)
 
 
 function main(t; β=5, δt = 0.1, chi=60, chi2=4*chi)

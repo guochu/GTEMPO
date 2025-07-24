@@ -49,6 +49,10 @@ function Base.getproperty(x::MixedGrassmannLattice1Order, s::Symbol)
 		return 0:x.δt:x.t
 	elseif s == :τs
 		return 0:x.δτ:x.β
+	elseif s == :norb
+		bands = x.bands
+		iseven(bands) || throw(ArgumentError("even number of bands expected"))
+		return div(bands, 2)
 	else
 		getfield(x, s)
 	end
