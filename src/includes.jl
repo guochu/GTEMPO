@@ -43,6 +43,8 @@ include("correlationfunction.jl")
 # Feynman-Vernon influence functional as a multiplications of partial MPOs
 include("influencefunctional/influencefunctional.jl")
 
+include("bcsinfluencefunctional/bcsinfluencefunctional.jl")
+
 # calculating observables and green's functions
 include("observables/observables.jl")
 

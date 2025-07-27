@@ -1,0 +1,77 @@
+println("------------------------------------")
+println("|          BCS Mixed-time          |")
+println("------------------------------------")
+
+
+
+
+@testset "BCS Mixed time evolution" begin
+	tol = 1.0e-5
+	rtol = 2.0e-2
+	δt=0.05
+	Nt = 5
+	δτ = 0.1
+	Nτ = 10
+	β = Nτ * δτ
+	t = Nt * δt
+	chi = 60
+	chi2 = 200
+
+	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10)
+	trunc2 = truncdimcutoff(D=chi2, ϵ=1.0e-10)
+
+	U = 1
+	# ϵ_d = -0.7
+	ϵ_d = 0.67
+	ω = 1
+	α = 0.5
+
+	lattice = GrassmannLattice(Nt=Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:Kadanoff, bands=2)
+	model = AndersonIM(U=U, μ=-ϵ_d)
+	mpsK = sysdynamics(lattice, model, trunc=trunc)
+	for band in 1:lattice.bands
+		mpsK = boundarycondition!(mpsK, lattice, band=band, trunc=trunc)
+	end
+
+	# trivial case
+	Δ = 0
+	bath = fermionicbath(semicircular(t=1), β=β)
+	corr = correlationfunction(bath, lattice)
+	mpsI1 = hybriddynamics(lattice, corr, band=1, trunc=trunc)
+	mpsI2 = swapband(mpsI1, lattice, 1, 2, trunc=trunc)
+
+	cache = environments(lattice, mpsK, mpsI1, mpsI2)
+	g1 = [-im*cached_greater(lattice, i, mpsK, mpsI1, mpsI2, cache=cache) for i in 1:lattice.kt]
+	g2 = [im*cached_lesser(lattice, i, mpsK, mpsI1, mpsI2, cache=cache) for i in 1:lattice.kt]
+
+	bath2 = bcsbath(bath)
+	corr = correlationfunction(bath2, lattice)
+	mpsI = hybriddynamics_naive!(vacuumstate(lattice), lattice, corr, orbital=1, trunc=trunc2)
+	cache = environments(lattice, mpsK, mpsI)
+	g1′ = [-im*cached_greater(lattice, i, mpsK, mpsI, cache=cache) for i in 1:lattice.kt]
+	g2′ = [im*cached_lesser(lattice, i, mpsK, mpsI, cache=cache) for i in 1:lattice.kt]
+	@test norm(g1-g1′) / norm(g1) < rtol
+	@test norm(g2-g2′) / norm(g2) < rtol
+
+	# compare with ED
+	Δ = 0.7
+	bath2 = bcsbath(fermionicbath(DiracDelta(ω=ω, α=α), β=β), Δ=Δ)
+	corr = correlationfunction(bath2, lattice)
+	mpsI = hybriddynamics_naive!(vacuumstate(lattice), lattice, corr, orbital=1, trunc=trunc2)
+	mpsI′ = hybriddynamics!(vacuumstate(lattice), lattice, corr, orbital=1, trunc=trunc)
+	@test distance(mpsI, mpsI′) / norm(mpsI) < tol
+	cache = environments(lattice, mpsK, mpsI)
+	g1 = [-im*cached_greater(lattice, i, mpsK, mpsI, cache=cache) for i in 1:lattice.kt]
+	g2 = [im*cached_lesser(lattice, i, mpsK, mpsI, cache=cache) for i in 1:lattice.kt]
+
+
+	H, a, adag, H0 = bcs_operators(U, ϵ_d, ω₀=ω, α=α, Δ=Δ)
+
+	ρ = exp(-β*H)
+	cache = eigencache(H)
+	g1′ = -im .* correlation_2op_1t(H, a, adag, ρ, 0:δt:t, cache, reverse = false)
+	g2′ = im .* correlation_2op_1t(H, adag, a, ρ, 0:δt:t, cache, reverse = true)
+
+	@test norm(g1-g1′) / norm(g1) < rtol
+	@test norm(g2-g2′) / norm(g2) < rtol
+end

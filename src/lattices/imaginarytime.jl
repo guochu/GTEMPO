@@ -36,7 +36,7 @@ function Base.getproperty(x::ImagGrassmannLattice1Order, s::Symbol)
 		return 1 / x.β
 	elseif s == :Nτ
 		return x.N
-	elseif s == :norb
+	elseif s == :orbitals
 		bands = x.bands
 		iseven(bands) || throw(ArgumentError("even number of bands expected"))
 		return div(bands, 2)

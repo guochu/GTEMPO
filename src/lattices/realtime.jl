@@ -53,7 +53,7 @@ function Base.getproperty(x::RealGrassmannLattice, s::Symbol)
 		return 0:x.δt:x.N*x.δt
 	elseif s == :Nt
 		return x.N
-	elseif s == :norb
+	elseif s == :orbitals
 		bands = x.bands
 		iseven(bands) || throw(ArgumentError("even number of bands expected"))
 		return div(bands, 2)
