@@ -15,7 +15,7 @@ function bcs_operators(U, ϵ_d; ω₀=1, α=0.5, Δ=0.3)
 	# total Hamiltonian
 	Himpbare = -ϵ_d*n_ud + U * nn
 	Himp = kron(Himpbare, I_ud)
-	Hbathbare = ω₀ * n_ud - Δ * (kron(JW*σ₊, σ₊)-kron(JW*σ₋, σ₋))
+	Hbathbare = ω₀ * n_ud - (Δ * kron(JW*σ₊, σ₊)- conj(Δ) * kron(JW*σ₋, σ₋))
 	Hbath = kron(I_ud, Hbathbare)
 	tmp = sqrt(α) * (kron(kron(kron(JW*σ₊, JW), σ₋), Is) + kron(Is, kron(JW*σ₊, kron(JW, σ₋))))
 	Hhyb = tmp + tmp'

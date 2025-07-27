@@ -51,9 +51,32 @@ println("------------------------------------")
 	@test norm(g1-g1′) / norm(g1) < rtol
 	@test norm(g2-g2′) / norm(g2) < 5*rtol
 
-	# compare with ED
 	mpsK = systhermalstate!(mpsK, lattice, model, trunc=trunc, β=β)
+
+	# compare with ED
 	Δ = 0.6
+	bath2 = bcsbath(fermionicbath(DiracDelta(ω=ω, α=α), β=β), Δ=Δ)
+	corr = correlationfunction(bath2, lattice)
+	mpsI = hybriddynamics_naive!(vacuumstate(lattice), lattice, corr, orbital=1, trunc=trunc2)
+	mpsI′ = hybriddynamics!(vacuumstate(lattice), lattice, corr, orbital=1, trunc=trunc)
+	@test distance(mpsI, mpsI′) / norm(mpsI) < tol
+	cache = environments(lattice, mpsK, mpsI)
+	g1 = [-im*cached_greater(lattice, i, mpsK, mpsI, cache=cache) for i in 1:lattice.k]
+	g2 = [-im*cached_lesser(lattice, i, mpsK, mpsI, cache=cache) for i in 1:lattice.k]
+
+
+	H, a, adag, H0 = bcs_operators(U, ϵ_d, ω₀=ω, α=α, Δ=Δ)
+
+	ρ = exp(-β*H0)
+	cache = eigencache(H)
+	g1′ = -im .* correlation_2op_1t(H, a, adag, ρ, 0:δt:t, cache, reverse = false)
+	g2′ = im .* correlation_2op_1t(H, adag, a, ρ, 0:δt:t, cache, reverse = true)
+
+	@test norm(g1-g1′) / norm(g1) < rtol
+	@test norm(g2-g2′) / norm(g2) < rtol
+
+	# complex gap
+	Δ = 0.3 + 0.4*im
 	bath2 = bcsbath(fermionicbath(DiracDelta(ω=ω, α=α), β=β), Δ=Δ)
 	corr = correlationfunction(bath2, lattice)
 	mpsI = hybriddynamics_naive!(vacuumstate(lattice), lattice, corr, orbital=1, trunc=trunc2)

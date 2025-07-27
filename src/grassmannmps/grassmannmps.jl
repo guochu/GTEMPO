@@ -80,7 +80,7 @@ Base.copy(psi::GrassmannMPS) = GrassmannMPS(copy(psi.data), copy(psi.svectors), 
 function Base.complex(psi::GrassmannMPS)
 	if scalartype(psi) <: Real
 		data = [complex(item) for item in psi.data]
-		return GrassmannMPS(data, psi.svectors, x.scaling)
+		return GrassmannMPS(data, psi.svectors, psi.scaling)
 	end
 	return psi
 end

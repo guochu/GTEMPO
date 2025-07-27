@@ -16,3 +16,8 @@ function correlationfunction(bath::AbstractBath, lattice::MixedGrassmannLattice1
     (lattice.β == bath.β) || @warn "lattice.β=$(lattice.β), but bath.β=$(bath.β)"
     Δm(bath, Nτ=lattice.Nτ, t=lattice.t, Nt=lattice.Nt)
 end  
+
+TK.scalartype(::Type{<:ImagCorrelationFunction{<:AbstractMatrix{T}}}) where {T} = T
+TK.scalartype(::Type{<:RealCorrelationFunction}) = ComplexF64
+TK.scalartype(::Type{<:MixedCorrelationFunction}) = ComplexF64
+TK.scalartype(::Type{<:BCSCorrelationFunction{M}}) where M = scalartype(M)

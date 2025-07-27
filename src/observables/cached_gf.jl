@@ -78,7 +78,7 @@ end
 
 function cached_Gτ(lattice::Union{ImagGrassmannLattice, MixedGrassmannLattice}, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
                     cache::AbstractExpectationCache=environments(lattice, A, B...), band::Int=1, kwargs...)
-	g = zeros(scalartype(lattice), lattice.kτ)
+	g = zeros(_scalartype(A), lattice.kτ)
 	for i in 1:lattice.kτ-1
 		g[i] = cached_Gτ(lattice, i, A, B...; cache=cache, band=band, kwargs...)
 	end

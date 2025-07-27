@@ -136,13 +136,16 @@ parallel_Gτ(lattice::ImagGrassmannLattice, i::Int, A::Vector{<:GrassmannMPS}, B
 
 function Gτ(lattice::ImagGrassmannLattice1Order, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...;
             band::Int=1, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Real = integrate(lattice, A, B..., alg=alg))
-    g = zeros(Float64, lattice.k)
+    g = zeros(_scalartype(A), lattice.k)
     for i in 1:lattice.k-1
         g[i] = Gτ(lattice, i, A, B...; band=band, alg=alg, Z=Z)
     end
     g[end] = 1 - g[1]
     return g
 end
+
+_scalartype(x::GrassmannMPS) = scalartype(x)
+_scalartype(x::Vector{<:GrassmannMPS}) = scalartype(x[1])
 
 function parallel_Gτ(lattice::ImagGrassmannLattice1Order, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
                      band::Int=1, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Real = parallel_integrate(lattice, A, B..., alg=alg))

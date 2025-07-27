@@ -42,12 +42,14 @@ function GrassmannLattice(; contour::Symbol, kwargs...)
 	end
 end
 
+vacuumstate(::Type{T}, x::AbstractGrassmannLattice) where {T<:Number} = GrassmannMPS(T, length(x))
+
 """
 	vacuumstate(x::AbstractGrassmannLattice)
 
 Return the vacuum state as a GMPS
 """
-vacuumstate(x::AbstractGrassmannLattice) = GrassmannMPS(scalartype(x), length(x))
+vacuumstate(x::AbstractGrassmannLattice) = vacuumstate(scalartype(x), x)
 
 
 """

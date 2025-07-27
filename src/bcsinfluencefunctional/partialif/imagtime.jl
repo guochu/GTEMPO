@@ -29,11 +29,12 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order
 	orth = Orthogonalize(TK.SVD(), trunc)
 	band1, band2 = 2*orbital-1, 2*orbital
 	k = lattice.k-1
+	T = scalartype(corr)
 	for i in 1:k, c1 in (true, false)
 		band1′ = ifelse(c1, band1, band2)
 		pos1 = index(lattice, i+1, conj=c1, band=band1′)
 		pos2s = Int[]
-		coefs = scalartype(lattice)[]
+		coefs = T[]
 		for j in 1:k, c2 in (true, false)
 			coef = index(corr[c1, c2], i, j)
 			band2′ = ifelse(c2, band2, band1)
@@ -41,7 +42,7 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order
 			push!(pos2s, pos2)
 			push!(coefs, coef)
 		end
-		tmp = partialmpo(pos1, pos2s, coefs) * vacuumstate(lattice)
+		tmp = partialmpo(pos1, pos2s, coefs) * vacuumstate(T, lattice)
 		gmps = mult!(gmps, tmp, trunc=trunc)
 	end
 	return gmps

@@ -11,7 +11,7 @@ function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::AbstractGrassmannLat
 	for b1 in branches(lattice), c1 in (true, false)
 		k1 = (b1 == :τ) ? lattice.Nτ : lattice.Nt
 		for i in 1:k1
-			tmp = vacuumstate(lattice)
+			tmp = vacuumstate(scalartype(corr), lattice)
 			band1′ = ifelse(c1, band1, band2)
 			i′ = (b1 == :τ) ? i+1 : i
 			pos1 = index(lattice, i′, conj=c1, band=band1′, branch=b1)
