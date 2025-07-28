@@ -63,7 +63,7 @@ function sysdynamics_backward!(gmps::FockMPS, lattice::AbstractFockLattice, mode
 	end
 
 	# interacting dynamics
-	if U != 0.
+	if U != zero(U)
 		(lattice.bands == 2) || throw(ArgumentError("lattice should have two bands"))
 		for i in 1:lattice.Nt
 			for band in 1:2:lattice.bands
