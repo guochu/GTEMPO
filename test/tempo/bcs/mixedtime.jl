@@ -79,8 +79,8 @@ println("------------------------------------")
 	Δ = 0.3 + 0.4*im
 	bath2 = bcsbath(fermionicbath(DiracDelta(ω=ω, α=α), β=β), Δ=Δ)
 	corr = correlationfunction(bath2, lattice)
-	mpsI = hybriddynamics_naive!(vacuumstate(lattice), lattice, corr, orbital=1, trunc=trunc2)
-	mpsI′ = hybriddynamics!(vacuumstate(lattice), lattice, corr, orbital=1, trunc=trunc)
+	mpsI = hybriddynamics_naive(lattice, corr, orbital=1, trunc=trunc2)
+	mpsI′ = hybriddynamics(lattice, corr, orbital=1, trunc=trunc)
 	@test distance(mpsI, mpsI′) / norm(mpsI) < tol
 	cache = environments(lattice, mpsK, mpsI)
 	g1 = [-im*cached_greater(lattice, i, mpsK, mpsI, cache=cache) for i in 1:lattice.kt]
