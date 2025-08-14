@@ -78,4 +78,30 @@ println("------------------------------------")
 	g2 = correlation_2op_1τ(H, a, adag, 0:δτ:β, β=β)
 
 	@test norm(g1-g2) / norm(g2) < rtol
+
+	# quadratic ED
+	Δ = 0.2 + 0.45*im
+	δτ=0.05
+	β = Nτ * δτ
+	lattice = GrassmannLattice(N=Nτ, δτ=δτ, contour=:imag, bands=2)
+	model = AndersonIM(U=0, μ=-ϵ_d)
+	mpsK = sysdynamics(lattice, model, trunc=trunc)
+	for band in 1:lattice.bands
+		mpsK = boundarycondition!(mpsK, lattice, band=band, trunc=trunc)
+	end
+	mpsK = complex(mpsK)
+	bath2 = bcsbath(fermionicbath(semicircular(t=1), β=β), Δ=Δ)
+	corr = correlationfunction(bath2, lattice)
+	mpsI = hybriddynamics(lattice, corr, orbital=1, trunc=trunc)
+	cache = environments(lattice, mpsK, mpsI)
+	g1 = cached_Gτ(lattice, mpsK, mpsI, cache=cache)
+
+
+	disbath2 = discretebath(bath2, δw=0.01)
+	ed_model = Toulouse(disbath2, ϵ_d=-ϵ_d)
+
+	τs = collect(0:δτ:β)
+	g2 = toulouse_Gτ(ed_model, τs)
+
+	@test norm(g1-g2) / norm(g2) < rtol
 end
