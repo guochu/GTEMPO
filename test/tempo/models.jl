@@ -406,16 +406,16 @@ end
 		# ED
 		b2 = discretebath(bath, δw=dw)
 		model = Toulouse(b2, ϵ_d=ϵ_d)
-		ρ₀ = separablestate(model, 0)
+		ρ₀ = separablecdm(model, 0)
 		h = cmatrix(model)
-		cache = freefermions_cache(h)
+		cache = cdmcache(h)
 		observer = particlecurrent_cmatrix(model)
 		observer2 = heatcurrent_cmatrix(model)
 		currents = ComplexF64[]
 		heatcurrents = ComplexF64[]
 		ns = Float64[]
 		for i in 1:N
-			ρ = freefermions_timeevo(ρ₀, h, i*δt, cache)
+			ρ = ImpurityModelBase.timeevo(ρ₀, h, -im*i*δt, cache)
 			push!(ns, real(ρ[1, 1]))
 			push!(currents, sum(observer .* ρ))
 			push!(heatcurrents, sum(observer2 .* ρ))

@@ -46,7 +46,7 @@ end
 	observer1 = leftparticlecurrent_cmatrix(model)
 	observer2 = rightparticlecurrent_cmatrix(model)
 
-	ρ₀ = separablestate(model, zeros(3,3))
+	ρ₀ = separablecdm(model, zeros(3,3))
 
 	syssite1, syssite2, syssite3 = 1, 2, 3
 	ns1 = Float64[]
@@ -54,9 +54,9 @@ end
 	ns3 = Float64[]
 	currents1 = ComplexF64[]
 	currents2 = ComplexF64[]
-	cache = freefermions_cache(ham)
+	cache = cdmcache(ham)
 	for i in 1:N
-		ρ = freefermions_timeevo(ρ₀, ham, ts[i], cache)
+		ρ = ImpurityModelBase.timeevo(ρ₀, ham, -im*ts[i], cache)
 		push!(currents1, sum(observer1 .* ρ))
 		push!(currents2, sum(observer2 .* ρ))
 		push!(ns1, real(ρ[syssite1, syssite1]))
