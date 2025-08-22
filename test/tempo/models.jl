@@ -408,7 +408,7 @@ end
 		model = Toulouse(b2, ϵ_d=ϵ_d)
 		ρ₀ = separablecdm(model, 0)
 		h = cmatrix(model)
-		cache = cdmcache(h)
+		cache = eigencache(transpose(h))
 		observer = particlecurrent_cmatrix(model)
 		observer2 = heatcurrent_cmatrix(model)
 		currents = ComplexF64[]

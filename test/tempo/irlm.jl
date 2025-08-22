@@ -54,7 +54,7 @@ end
 	ns3 = Float64[]
 	currents1 = ComplexF64[]
 	currents2 = ComplexF64[]
-	cache = cdmcache(ham)
+	cache = eigencache(transpose(ham))
 	for i in 1:N
 		ρ = ImpurityModelBase.timeevo(ρ₀, ham, -im*ts[i], cache)
 		push!(currents1, sum(observer1 .* ρ))
