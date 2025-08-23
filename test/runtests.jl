@@ -59,6 +59,8 @@ include("tempo/irlm.jl")
 include("tempo/generalimpurity.jl")
 include("tempo/buildK.jl")
 
+include("tempo/bcs/bcs.jl")
+
 
 ### tempo for interacting systems
 include("interacting/neq_tempo.jl")
@@ -70,4 +72,3 @@ include("electronphonon/retardedinteract.jl")
 include("electronphonon/independentbosons.jl")
 
 
-include("tempo/bcs/bcs.jl")

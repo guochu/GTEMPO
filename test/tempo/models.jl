@@ -226,8 +226,8 @@ end
 		
 	bath = fermionicbath(spectrum_func(), β=β, μ=0)
 	b2 = discretebath(bath, δw=dw)
-	gτ = toulouse_Gτ(b2, τs, ϵ_d=ϵ_d)
-	gt1, gt2 = toulouse_greater_lesser(b2, ts, ϵ_d=ϵ_d)
+	gτ = toulouse_Gτ(Toulouse(b2, ϵ_d=ϵ_d), τs)
+	gt1, gt2 = toulouse_greater_lesser(Toulouse(b2, ϵ_d=ϵ_d), ts)
 	gt1, gt2 = im*gt1, -im*gt2
 
 	exact_model = AndersonIM(μ=ϵ_d, U=0)
