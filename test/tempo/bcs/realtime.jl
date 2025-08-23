@@ -97,28 +97,26 @@ println("------------------------------------")
 	@test norm(g1-g1′) / norm(g1) < rtol
 	@test norm(g2-g2′) / norm(g2) < rtol
 
-	# # quadratic ED
-	# Δ = 0.2 + 0.45*im
-	# model = AndersonIM(U=0, μ=-ϵ_d)
-	# mpsK = sysdynamics(lattice, model, trunc=trunc)
-	# for band in 1:lattice.bands
-	# 	mpsK = boundarycondition!(mpsK, lattice, band=band, trunc=trunc)
-	# end
-	# bath2 = bcsbath(fermionicbath(semicircular(t=1), β=β), Δ=Δ)
-	# corr = correlationfunction(bath2, lattice)
-	# mpsI = hybriddynamics(lattice, corr, orbital=1, trunc=trunc2)
-	# cache = environments(lattice, mpsK, mpsI)
-	# g1 = [-im*cached_greater(lattice, i, mpsK, mpsI, cache=cache) for i in 1:lattice.k]
-	# g2 = [-im*cached_lesser(lattice, i, mpsK, mpsI, cache=cache) for i in 1:lattice.k]
+	# quadratic ED
+	Δ = 0.2 + 0.45*im
+	model = AndersonIM(U=0, μ=-ϵ_d)
+	mpsK = sysdynamics(lattice, model, trunc=trunc)
+	for band in 1:lattice.bands
+		mpsK = boundarycondition!(mpsK, lattice, band=band, trunc=trunc)
+	end
+	bath2 = bcsbath(fermionicbath(semicircular(t=1), β=β), Δ=Δ)
+	corr = correlationfunction(bath2, lattice)
+	mpsI = hybriddynamics(lattice, corr, orbital=1, trunc=trunc2)
+	cache = environments(lattice, mpsK, mpsI)
+	g1 = [-im*cached_greater(lattice, i, mpsK, mpsI, cache=cache) for i in 1:lattice.k]
+	g2 = [-im*cached_lesser(lattice, i, mpsK, mpsI, cache=cache) for i in 1:lattice.k]
 
-	# disbath2 = discretebath(bath2, δw=0.01)
-	# ed_model = Toulouse(disbath2, ϵ_d=-ϵ_d)
+	disbath2 = discretebath(bath2, δw=0.01)
+	ed_model = Toulouse(disbath2, ϵ_d=-ϵ_d)
 
-	# ts = [i*δt for i in 0:Nt]
-	# g1′, g2′ = toulouse_neq_greater_lesser(ed_model, ts)
-	# println(g2)
-	# println(g2′)
+	ts = [i*δt for i in 0:Nt]
+	g1′, g2′ = toulouse_neq_greater_lesser(ed_model, ts)
 
-	# @test norm(g1-g1′) / norm(g1) < rtol
-	# @test norm(g2-g2′) / norm(g2) < rtol	
+	@test norm(g1-g1′) / norm(g1) < 2*rtol
+	@test norm(g2-g2′) < rtol	
 end
