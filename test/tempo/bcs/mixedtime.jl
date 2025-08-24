@@ -96,4 +96,28 @@ println("------------------------------------")
 
 	@test norm(g1-g1′) / norm(g1) < rtol
 	@test norm(g2-g2′) / norm(g2) < rtol
+
+	# quadratic models
+	Δ = 0.1 + 0.2*im
+	model = AndersonIM(U=0, μ=-ϵ_d)
+	mpsK = sysdynamics(lattice, model, trunc=trunc)
+	for band in 1:lattice.bands
+		mpsK = boundarycondition!(mpsK, lattice, band=band, trunc=trunc)
+	end
+	bath2 = bcsbath(fermionicbath(semicircular(t=1), β=β), Δ=Δ)
+	corr = correlationfunction(bath2, lattice)
+	mpsI = hybriddynamics(lattice, corr, orbital=1, trunc=trunc)
+	cache = environments(lattice, mpsK, mpsI)
+	g1 = [-im*cached_greater(lattice, i, mpsK, mpsI, cache=cache) for i in 1:lattice.kt]
+	g2 = [im*cached_lesser(lattice, i, mpsK, mpsI, cache=cache) for i in 1:lattice.kt]
+
+	disbath2 = discretebath(bath2, δw=0.01)
+	ed_model = Toulouse(disbath2, ϵ_d=-ϵ_d)
+
+	ts = [i*δt for i in 0:Nt]
+	g1′, g2′ = toulouse_greater_lesser(ed_model, ts)
+
+	@test norm(g1-g1′) / norm(g1) < 4*rtol
+	@test norm(g2-g2′) / norm(g2) < 4*rtol	
+
 end

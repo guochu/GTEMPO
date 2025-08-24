@@ -116,12 +116,6 @@ println("------------------------------------")
 
 	ts = [i*δt for i in 0:Nt]
 	g1′, g2′ = toulouse_neq_greater_lesser(ed_model, ts, nsys=0)
-	println("results...")
-	println(g1)
-	println(g1′)
-
-	println(g2)
-	println(g2′)
 
 	@test norm(g1-g1′) / norm(g1) < 2*rtol
 	@test norm(g2-g2′) < rtol	
