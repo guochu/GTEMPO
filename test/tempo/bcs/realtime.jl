@@ -119,4 +119,10 @@ println("------------------------------------")
 
 	@test norm(g1-g1′) / norm(g1) < 2*rtol
 	@test norm(g2-g2′) < rtol	
+
+	# # adagadag
+
+	# g1 = [-im*cached_Gt(lattice, i, 1, mpsK, mpsI, cache=cache, b1=:+, b2=:+, c1=true, c2=true, band=(1,2)) for i in 1:lattice.k]
+	# g2 = [-im*cached_Gt(lattice, i, 1, mpsK, mpsI, cache=cache, b1=:+, b2=:+, c1=true, c2=true, band=(2,1)) for i in 1:lattice.k]
+
 end
