@@ -23,7 +23,7 @@ cached_electriccurrent_fast(lattice::RealGrassmannLattice1Order, corr::RealCorre
                         kwargs...) = [cached_electriccurrent_fast(lattice, corr, k, A, B...; cache=cache, kwargs...) for k in 2:lattice.k]
 
 
-cached_heatcurrent_fast(lattice::RealGrassmannLattice1Order, bath::AbstractFermionicBath, args...; kwargs...) = cached_electriccurrent_fast(
+cached_heatcurrent_fast(lattice::RealGrassmannLattice1Order, bath::AbstractFermionicNormalBath, args...; kwargs...) = cached_electriccurrent_fast(
                         lattice, heatcorrelationfunction(bath, lattice), args...; kwargs...)
 
 

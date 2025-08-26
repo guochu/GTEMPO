@@ -43,7 +43,7 @@ electriccurrent_fast(lattice::RealGrassmannLattice1Order, corr::RealCorrelationF
 
 
 
-function heatcorrelationfunction(bath::AbstractFermionicBath, lattice::RealGrassmannLattice)
+function heatcorrelationfunction(bath::AbstractFermionicNormalBath, lattice::RealGrassmannLattice)
     bath2 = similar(bath, _mult_w(bath.spectrum))
     corr = correlationfunction(bath2, lattice)
     return corr
@@ -54,13 +54,13 @@ _mult_w(x::DiracDelta) = similar(x, α=x.ω*x.α)
 
 
 # """
-#     heatcurrent_fast(lattice::RealGrassmannLattice1Order, bath::AbstractFermionicBath, args...; kwargs...)
+#     heatcurrent_fast(lattice::RealGrassmannLattice1Order, bath::AbstractFermionicNormalBath, args...; kwargs...)
 
 # The calculation of heat current is very similar to electric current, 
 # the only change one needs to make is to replace the spectrum function
 # as J(w) to w -> w * J(w)
 # """
-heatcurrent_fast(lattice::RealGrassmannLattice1Order, bath::AbstractFermionicBath, args...; kwargs...) = electriccurrent_fast(
+heatcurrent_fast(lattice::RealGrassmannLattice1Order, bath::AbstractFermionicNormalBath, args...; kwargs...) = electriccurrent_fast(
                     lattice, heatcorrelationfunction(bath, lattice), args...; kwargs...)
 
 
