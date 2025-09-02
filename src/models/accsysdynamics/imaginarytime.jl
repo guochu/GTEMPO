@@ -74,5 +74,22 @@ function _accsysdynamics_fast_timelocal(lattice::AbstractGrassmannLattice, model
 	return gmps
 end
 
+function _purge(a, b, tol)
+	sl = space_l(b)
+	if !isoneunit(sl)
+		id0 = Z2Irrep(0)
+		sl′ = typeof(sl)(id0=>dim(sl, id0))
+		m = isometry(sl, sl′)
+		@tensor a1[1,2;4] := a[1,2,3] * m[3,4]
+		@tensor b1[1,3;4] := conj(m[2,1]) * b[2,3,4]
+		@tensor ab[1,2;4,5] := a[1,2,3] * b[3,4,5]
+		@tensor a1b1[1,2;4,5] := a1[1,2,3] * b1[3,4,5]
+		println("error is ", norm(ab - a1b1) / norm(ab))
+		@assert (norm(ab - a1b1) / norm(ab) ) < tol
+		return a1, b1
+	end
+	return a, b
+end
+
 get_left(lattice::ImagGrassmannLattice{<:A1B1B̄1Ā1}, j::Int) = index(lattice, j, conj=true, band=lattice.bands)
 get_right(lattice::ImagGrassmannLattice{<:A1B1B̄1Ā1}, j::Int) = index(lattice, j, conj=false, band=lattice.bands)

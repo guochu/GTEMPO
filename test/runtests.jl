@@ -59,7 +59,7 @@ include("tempo/irlm.jl")
 include("tempo/generalimpurity.jl")
 include("tempo/buildK.jl")
 
-# include("tempo/bcs/bcs.jl")
+include("tempo/bcs/bcs.jl")
 
 
 ### tempo for interacting systems

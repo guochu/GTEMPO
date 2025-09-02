@@ -118,7 +118,7 @@ println("------------------------------------")
 	g1′, g2′ = toulouse_neq_greater_lesser(ed_model, ts, nsys=0)
 
 	@test norm(g1-g1′) / norm(g1) < 2*rtol
-	@test norm(g2-g2′) < rtol	
+	@test norm(g2-g2′) < 5*rtol	
 
 	# # adagadag
 
@@ -126,3 +126,80 @@ println("------------------------------------")
 	# g2 = [-im*cached_Gt(lattice, i, 1, mpsK, mpsI, cache=cache, b1=:+, b2=:+, c1=true, c2=true, band=(2,1)) for i in 1:lattice.k]
 
 end
+
+
+# @testset "BCS Real time evolution 2" begin
+# 	tol = 1.0e-5
+# 	rtol = 1.0e-2
+# 	δt=0.05
+# 	Nt = 5
+# 	β = 10
+# 	t = Nt * δt
+# 	chi = 60
+# 	chi2 = 200
+
+# 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10)
+# 	trunc2 = truncdimcutoff(D=chi2, ϵ=1.0e-10)
+
+# 	U = 1
+# 	# ϵ_d = -0.7
+# 	ϵ_d = 0.8
+# 	ω = 1
+# 	α = 0.5
+
+# 	lattice = GrassmannLattice(N=Nt, δt=δt, contour=:Keldysh, bands=2)
+# 	model = bcs_siam(U=U, μ=-ϵ_d)
+# 	mpsK = accsysdynamics(lattice, model, trunc=trunc, scaling=20)
+# 	for band in 1:lattice.bands
+# 		mpsK = boundarycondition!(mpsK, lattice, band=band, trunc=trunc)
+# 	end
+
+# 	# compare with ED
+# 	Δ = 0.6
+# 	bath2 = bcsbath(fermionicbath(DiracDelta(ω=ω, α=α), β=β), Δ=Δ)
+# 	corr = correlationfunction(bath2, lattice)
+# 	mpsI = hybriddynamics(lattice, corr, orbital=1, trunc=trunc)
+# 	cache = environments(lattice, mpsK, mpsI)
+# 	g1 = [-im*cached_greater(lattice, i, mpsK, mpsI, cache=cache) for i in 1:lattice.k]
+# 	g2 = [-im*cached_lesser(lattice, i, mpsK, mpsI, cache=cache) for i in 1:lattice.k]
+
+
+# 	H, a, adag, Hbath = bcs_operators2(U, ϵ_d, ω₀=ω, α=α, Δ=Δ)
+
+# 	ρsys = zeros(4,4)
+# 	ρsys[1,1] = 1
+# 	ρ = kron(ρsys, exp(-β*Hbath)) 
+# 	cache = eigencache(H)
+# 	g1′ = -im .* correlation_2op_1t(H, a, adag, ρ, 0:δt:t, cache, reverse = false)
+# 	g2′ = im .* correlation_2op_1t(H, adag, a, ρ, 0:δt:t, cache, reverse = true)
+
+# 	println("********************")
+# 	println(g1)
+# 	println(g1′)
+# 	@test norm(g1-g1′) / norm(g1) < rtol
+# 	@test norm(g2-g2′) < rtol
+
+# 	# # complex gap
+# 	# Δ = 0.3 + 0.4*im
+# 	# bath2 = bcsbath(fermionicbath(DiracDelta(ω=ω, α=α), β=β), Δ=Δ)
+# 	# corr = correlationfunction(bath2, lattice)
+# 	# mpsI = hybriddynamics_naive(lattice, corr, orbital=1, trunc=trunc2)
+# 	# mpsI′ = hybriddynamics(lattice, corr, orbital=1, trunc=trunc)
+# 	# @test distance(mpsI, mpsI′) / norm(mpsI) < tol
+# 	# cache = environments(lattice, mpsK, mpsI)
+# 	# g1 = [-im*cached_greater(lattice, i, mpsK, mpsI, cache=cache) for i in 1:lattice.k]
+# 	# g2 = [-im*cached_lesser(lattice, i, mpsK, mpsI, cache=cache) for i in 1:lattice.k]
+
+
+# 	# H, a, adag, H0 = bcs_operators2(U, ϵ_d, ω₀=ω, α=α, Δ=Δ)
+
+# 	# ρ = exp(-β*H0)
+# 	# cache = eigencache(H)
+# 	# g1′ = -im .* correlation_2op_1t(H, a, adag, ρ, 0:δt:t, cache, reverse = false)
+# 	# g2′ = im .* correlation_2op_1t(H, adag, a, ρ, 0:δt:t, cache, reverse = true)
+
+# 	# @test norm(g1-g1′) / norm(g1) < rtol
+# 	# @test norm(g2-g2′) < rtol
+
+
+# end

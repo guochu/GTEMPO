@@ -117,7 +117,7 @@ println("------------------------------------")
 	ts = [i*δt for i in 0:Nt]
 	g1′, g2′ = toulouse_greater_lesser(ed_model, ts)
 
-	@test norm(g1-g1′) / norm(g1) < 4*rtol
-	@test norm(g2-g2′) / norm(g2) < 4*rtol	
+	@test norm(g1-g1′) / norm(g1) < 2*rtol
+	@test norm(g2-g2′) / norm(g2) < 2*rtol	
 
 end

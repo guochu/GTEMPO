@@ -82,11 +82,11 @@ function Base.push!(x::ImpurityHamiltonian, f::AbstractTerm)
 			(1 <= j <= x.bands) || throw(BoundsError(1:x.bands, j))
 		end
 	end
-	for t in x.data
-		if positions(t) == positions(f)
-			throw(ArgumentError("duplicate positions not allowed"))
-		end
-	end
+	# for t in x.data
+	# 	if positions(t) == positions(f)
+	# 		throw(ArgumentError("duplicate positions not allowed"))
+	# 	end
+	# end
 	push!(x.data, f)
 end 
 
