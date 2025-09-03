@@ -59,10 +59,10 @@ DMRG.positions(x::AbstractTerm) = x.positions
 
 
 struct ImpurityHamiltonian <: AbstractImpurityHamiltonian
-	data::Vector{AbstractTerm}
+	data::Vector{NormalTerm}
 	bands::Int
 
-function ImpurityHamiltonian(data::Vector{<:AbstractTerm}, bands::Int)
+function ImpurityHamiltonian(data::Vector{<:NormalTerm}, bands::Int)
 	@boundscheck begin
 		for f in data
 			for j in positions(f)
@@ -70,13 +70,13 @@ function ImpurityHamiltonian(data::Vector{<:AbstractTerm}, bands::Int)
 			end
 		end
 	end
-	new(convert(Vector{AbstractTerm}, data), bands)
+	new(convert(Vector{NormalTerm}, data), bands)
 end
 
 end
-ImpurityHamiltonian(data::Vector{<:AbstractTerm}; bands::Int=1) = ImpurityHamiltonian(data, bands)
-ImpurityHamiltonian(; bands::Int = 1) = ImpurityHamiltonian(Vector{AbstractTerm}(), bands)
-function Base.push!(x::ImpurityHamiltonian, f::AbstractTerm)
+ImpurityHamiltonian(data::Vector{<:NormalTerm}; bands::Int=1) = ImpurityHamiltonian(data, bands)
+ImpurityHamiltonian(; bands::Int = 1) = ImpurityHamiltonian(Vector{NormalTerm}(), bands)
+function Base.push!(x::ImpurityHamiltonian, f::NormalTerm)
 	@boundscheck begin
 		for j in f.positions
 			(1 <= j <= x.bands) || throw(BoundsError(1:x.bands, j))

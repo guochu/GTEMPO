@@ -104,21 +104,21 @@ function get_Gterm(lattice::AbstractGrassmannLattice, h::AdagATerm, j::Int, dt::
 	return exp(GTerm(pos1, pos2, coeff=c))
 end
 
-function get_Gterm(lattice::AbstractGrassmannLattice, h::AdagAdagTerm, j::Int, dt::Number, branch::Symbol)
-	b1, b2 = h.positions
-	c = h.coeff * dt
-	a, b = (branch == :-) ? (j, j+1) : (j+1, j)
-	pos1, pos2 = index(lattice, a, conj=true, band=b1, branch=branch), index(lattice, b, conj=true, band=b2, branch=branch)
-	return exp(GTerm(pos1, pos2, coeff=c))
-end
+# function get_Gterm(lattice::AbstractGrassmannLattice, h::AdagAdagTerm, j::Int, dt::Number, branch::Symbol)
+# 	b1, b2 = h.positions
+# 	c = h.coeff * dt
+# 	a, b = (branch == :-) ? (j, j+1) : (j+1, j)
+# 	pos1, pos2 = index(lattice, a, conj=true, band=b1, branch=branch), index(lattice, b, conj=true, band=b2, branch=branch)
+# 	return exp(GTerm(pos1, pos2, coeff=c))
+# end
 
-function get_Gterm(lattice::AbstractGrassmannLattice, h::AATerm, j::Int, dt::Number, branch::Symbol)
-	b1, b2 = h.positions
-	c = h.coeff * dt
-	a, b = (branch == :-) ? (j, j+1) : (j+1, j)
-	pos1, pos2 = index(lattice, a, conj=false, band=b1, branch=branch), index(lattice, b, conj=false, band=b2, branch=branch)
-	return exp(GTerm(pos1, pos2, coeff=c))
-end
+# function get_Gterm(lattice::AbstractGrassmannLattice, h::AATerm, j::Int, dt::Number, branch::Symbol)
+# 	b1, b2 = h.positions
+# 	c = h.coeff * dt
+# 	a, b = (branch == :-) ? (j, j+1) : (j+1, j)
+# 	pos1, pos2 = index(lattice, a, conj=false, band=b1, branch=branch), index(lattice, b, conj=false, band=b2, branch=branch)
+# 	return exp(GTerm(pos1, pos2, coeff=c))
+# end
 
 function get_Gterm(lattice::AbstractGrassmannLattice, h::QuarticTerm, j::Int, dt::Number, branch::Symbol)
 	b1, b2, b3, b4 = h.positions
