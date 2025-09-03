@@ -179,7 +179,7 @@ function partialif_densemps(lat_size::Int, row::Int, cols::Vector{Int}, coefs::V
 		mpsdata[L] = reshape(tmp,2,2,1)
 	else
 		m = twobody(coefs[1])
-		mpsdata[1] = reshape(tmp, 1,2,2)
+		mpsdata[1] = reshape(m, 1,2,2)
 		for j in 2:pos-1
 			m = twobody(coefs[j])
 			tmp = zeros(T, 2,2,2)
