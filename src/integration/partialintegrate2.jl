@@ -263,8 +263,8 @@ end
 
 
 # integrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS; alg::SVDCompression, band::Int=1) = mult(lattice, x, y, alg.trunc, band=band)
-integrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS, alg::SVDCompression; band::Int=1) = mult(lattice, x, y, alg.trunc, band=band)
-integrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme, band::Int=1) = mult(lattice, x, y, trunc, band=band)
+integrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS, alg::SVDCompression; band::Int=1) = mult(lattice, x, y, alg.trunc, band=band, verbosity=alg.verbosity)
+integrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme, band::Int=1, verbosity::Int=0) = mult(lattice, x, y, trunc, band=band, verbosity=verbosity)
 
 function mult(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS, trunc::TruncationScheme; band::Int=1, verbosity::Int=0)
     (ConjugationStyle(lattice) isa AdjacentConjugation) || throw(ArgumentError("integrateband only supports AdjacentConjugation style"))
@@ -307,7 +307,7 @@ function mult(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMP
     data[end] = tmp.data
 
     z = GrassmannMPS(data)
-
+    (verbosity >= 2) && println("bond dimension of intermediate GMPS: ", bond_dimension(z))
     _rightorth!(z, SVD(), trunc, false, verbosity)
     return z
 end
