@@ -4,6 +4,7 @@ include("insertn.jl") # special treatment of the "n" operator
 include("gf.jl")
 include("cached_gf.jl")
 include("cached_gf_fast.jl")
+include("cached_gf_fast2.jl")
 
 # occupations
 include("occupation.jl")
