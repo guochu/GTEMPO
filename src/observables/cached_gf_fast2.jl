@@ -10,10 +10,14 @@ cached_greater_fast(idx0::Int, lattice::RealGrassmannLattice, A::GrassmannMPS, B
 cached_lesser_fast(idx0::Int, lattice::RealGrassmannLattice, A::GrassmannMPS, B::Vararg{GrassmannMPS}; kwargs...) = -cached_gf_fast(
 	idx0, lattice, A, B...; b1=:+, b2=:-, c1=false, c2=true, kwargs...)
 
+cached_greater_fast(idx0::Int, lattice::RealGrassmannLattice, N::Int, A::GrassmannMPS, B::Vararg{GrassmannMPS}; kwargs...) = cached_gf_fast(
+	idx0, lattice, N, A, B...; b1=:+, b2=:+, c1=false, c2=true, kwargs...)
+cached_lesser_fast(idx0::Int, lattice::RealGrassmannLattice, N::Int, A::GrassmannMPS, B::Vararg{GrassmannMPS}; kwargs...) = -cached_gf_fast(
+	idx0, lattice, N, A, B...; b1=:+, b2=:-, c1=false, c2=true, kwargs...)
+
 
 function cached_gf_fast(idx0::Int, lattice::RealGrassmannLattice, A::GrassmannMPS, Bs::Vararg{GrassmannMPS}; kwargs...)
-	GFt = cached_gf_fast(idx0, lattice, lattice.k, A, Bs...; kwargs...)
-	return GFt
+	cached_gf_fast(idx0, lattice, lattice.k, A, Bs...; kwargs...)
 end 
 
 # exhaust the first time index
