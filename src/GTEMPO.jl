@@ -26,7 +26,7 @@ export vacuumstate, makestep, timesteps
 export ImagGrassmannLattice1Order, RealGrassmannLattice1Order, RealGrassmannLattice2Order, GrassmannLattice, index
 
 # integration of GMPSs
-export integrate, integrateband
+export integrate, integrateband, partialintegrate
 export IntegrationAlgorithm, ExactIntegrate, BMPSIntegrate, Zvalue
 export changeordering, toadjacentordering
 

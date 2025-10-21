@@ -25,7 +25,7 @@ function _leftorth!(psi::GrassmannMPS, alg::SVD, trunc::TruncationScheme, normal
 	maxerr = 0.
 	for i in 1:L-1
 		u, s, v, err = stable_tsvd!(GrassmannTensorMap(psi[i]), trunc=trunc)
-		nr = _renormalize!(psi, s, normalize)
+		nr = _renormalize!(psi, get_data(s), normalize)
 		rerror = sqrt(err * err / (nr * nr + err * err))
 		(verbosity > 1) && println("SVD truncerror at bond $(i): ", rerror)
 		psi[i] = get_data(u)
