@@ -46,7 +46,11 @@ end
 	trunc1 = truncdimcutoff(D=1024, ϵ=1.0e-10)
 	trunc2 = truncdimcutoff(D=500, ϵ=1.0e-10)
     alg1 = SVDCompression(trunc2)
-    alg2 = DMRGMult1(trunc2, initguess=:svd, maxiter=10, verbosity=0)
+    alg2 = DMRGMult1(trunc2, initguess=:svd, maxiter=5, verbosity=0)
+    algs = [alg1, alg2]
+
+    branchs = (:τ,)
+    bands = [(1,), (2,), (3,), (1,2), (1,3), (2,3)]
 
     δ = 1e-7
 	for T in (Float64, ComplexF64)
@@ -64,41 +68,13 @@ end
             push!(xs, psi)
             res0 = mult(res0, psi, trunc=trunc1)
 
-            res1 = integrateband(lattice, res0, band=1)
-            res2 = partialintegrate(lattice, (1,), alg1, xs...)
-            res3 = partialintegrate(lattice, (1,), alg2, xs...)
-            @test distance(res1, res2) < δ
-            @test _dis(res1, res3) < δ
-
-            res1 = integrateband(lattice, res0, band=2)
-            res2 = partialintegrate(lattice, (2,), alg1, xs...)
-            res3 = partialintegrate(lattice, (2,), alg2, xs...)
-            @test distance(res1, res2) < δ
-            @test _dis(res1, res3) < δ
-
-            res1 = integrateband(lattice, res0, band=3)
-            res2 = partialintegrate(lattice, (3,), alg1, xs...)
-            res3 = partialintegrate(lattice, (3,), alg2, xs...)
-            @test distance(res1, res2) < δ
-            @test _dis(res1, res3) < δ
-
-            res1 = integrateband(lattice2, integrateband(lattice, res0, band=2), band=1)
-            res2 = partialintegrate(lattice, (1,2), alg1, xs...)
-            res3 = partialintegrate(lattice, (1,2), alg2, xs...)
-            @test distance(res1, res2) < δ
-            @test _dis(res1, res3) < δ
-
-            res1 = integrateband(lattice2, integrateband(lattice, res0, band=3), band=1)
-            res2 = partialintegrate(lattice, (1,3), alg1, xs...)
-            res3 = partialintegrate(lattice, (1,3), alg2, xs...)
-            @test distance(res1, res2) < δ
-            @test _dis(res1, res3) < δ
-
-            res1 = integrateband(lattice2, integrateband(lattice, res0, band=3), band=2)
-            res2 = partialintegrate(lattice, (2,3), alg1, xs...)
-            res3 = partialintegrate(lattice, (2,3), alg2, xs...)
-            @test distance(res1, res2) < δ
-            @test _dis(res1, res3) < δ
+            for j in eachindex(bands)
+                res1 = integratebands(lattice, res0, bands[j])
+                res2 = partialintegrate(lattice, alg1, xs...; branchs=branchs, bands=bands[j])
+                res3 = partialintegrate(lattice, alg2, xs...; branchs=branchs, bands=bands[j])
+                @test distance(res1, res2) < δ
+                @test _dis(res1, res3) < δ    
+            end
         end
     end
 end

@@ -18,6 +18,8 @@
 
 # Using iterative multiply, the scaling will lost
 
+# TODO: how to recover the residual when using normalize!(hstorage[iz])
+
 
 
 # multiply xs, integrate out cidx, result in o
@@ -27,9 +29,9 @@ struct PartialIntegrateIterativeMultCache{M<:GrassmannMPS, G<:Tuple, H}
     cidx::Vector{Int}
     hstorage::H
 end
-function parint_cache(z::GrassmannMPS, xs::GrassmannMPS...; cidx::Vector{Int})
+function parint_cache(z::GrassmannMPS, xs::GrassmannMPS...; cidx::Vector{Int}, verbosity::Int=0)
     Lxs = length(xs[1])
-    (unique(length.(xs)) == [Lxs,]) || throw(DimensionMismatch())
+    (unique(length.(xs)) == [Lxs,]) || throw(DimensionMismatch("unique($(length.(xs))) != [$Lxs,]"))
     @assert Lxs == length(z) + 2*length(cidx)
     chack_contract_idx(Lxs, cidx)
 
@@ -43,7 +45,7 @@ function parint_cache(z::GrassmannMPS, xs::GrassmannMPS...; cidx::Vector{Int})
     ixs = Lxs
     iz = Lz
 	while true
-		if insorted(ixs-1, cidx)
+		rt = @elapsed if insorted(ixs-1, cidx)
             j = ixs ÷ 2
             @assert 2*j == ixs
 			hstorage[iz+1] = (GrassmannTransferMatrix(j, xs...) * GrassmannTensorMap(hstorage[iz+1])).data
@@ -57,6 +59,7 @@ function parint_cache(z::GrassmannMPS, xs::GrassmannMPS...; cidx::Vector{Int})
 			iz -= 1
             ixs -= 1
 		end
+        (verbosity >= 2) && println("$ixs / $Lxs cost $rt Seconds")
 	end
     for j in 2:2:ixs
         hstorage[1] = left_m(hstorage[1], GrassmannTransferMatrix(j÷2, xs...))
@@ -67,13 +70,15 @@ function parint_cache(z::GrassmannMPS, xs::GrassmannMPS...; cidx::Vector{Int})
 end
 
 function parint_iterativemult(xs::GrassmannMPS...; cidx::Vector{Int}, alg::DMRGMultAlgorithm)
-    if alg.initguess == :svd
-        z = _parint_svd_guess(xs...; cidx=cidx, trunc=alg.trunc)
+    rt = @elapsed if alg.initguess == :svd
+        z = _parint_svd_guess(xs...; cidx=cidx, trunc=alg.trunc, verbosity=alg.verbosity)
     else
         error("unsupported initguess $(alg.initguess)")
     end
+    (alg.verbosity >= 1) && println("initial guess cost $rt Seconds")
 
-	cache = parint_cache(z, xs..., cidx=cidx)
+	rt = @elapsed cache = parint_cache(z, xs..., cidx=cidx, verbosity=alg.verbosity)
+    (alg.verbosity >= 1) && println("build cache cost $rt Seconds")
 
     deltas = compute!(cache, alg)
     z = cache.o
@@ -97,19 +102,19 @@ function DMRG.leftsweep!(m::PartialIntegrateIterativeMultCache, alg::DMRGMult1)
     Lz, iz = length(z), 1
     kvals = Float64[]
     while true
-        if insorted(ixs, cidx)
+        rt = @elapsed if insorted(ixs, cidx)
             j = (ixs+1) ÷ 2
             hstorage[iz] = left_m(hstorage[iz], GrassmannTransferMatrix(j, xs...))
             normalize!(hstorage[iz])
             ixs += 2
         else
             (iz == Lz) && break
-            (alg.verbosity > 3) && println("Sweeping from left to right at site: $iz")
+            (alg.verbosity >= 4) && println("Sweeping from left to right at site: $iz")
             tmp = get_left_below(hstorage[iz], getindex.(xs, ixs)...)
             mpsj = left_below__right(tmp, hstorage[iz+1])
     
             push!(kvals, norm(mpsj))
-            (alg.verbosity > 1) && println("residual is $(kvals[end])...")
+            (alg.verbosity >= 3) && println("residual is $(kvals[end])...")
             z[iz], r = leftorth!(mpsj, alg = QR())
             
             tmp = left_below_above(tmp, z[iz])
@@ -118,8 +123,10 @@ function DMRG.leftsweep!(m::PartialIntegrateIterativeMultCache, alg::DMRGMult1)
             iz += 1
             ixs += 1
         end
+        (alg.verbosity >= 2) && println("$ixs / $Lxs cost $rt Seconds")
     end
     
+    (alg.verbosity >= 2) && println("z of bond dimension: ", bond_dimension(z))
 	# println(kvals)
     return kvals    
 end
@@ -132,19 +139,19 @@ function DMRG.rightsweep!(m::PartialIntegrateIterativeMultCache, alg::DMRGMult1)
     kvals = Float64[]
     local l
     while true
-        if insorted(ixs-1, cidx)
+        rt = @elapsed if insorted(ixs-1, cidx)
             j = (ixs+1) ÷ 2
             hstorage[iz+1] = m_right(GrassmannTransferMatrix(j, xs...), hstorage[iz+1])
             normalize!(hstorage[iz+1])
             ixs -= 2
         else
             (iz == 1) && break
-            (alg.verbosity > 3) && println("Sweeping from left to right at site: $iz")
+            (alg.verbosity >= 4) && println("Sweeping from left to right at site: $iz")
             tmp = get_below_right(hstorage[iz+1], getindex.(xs, ixs)...)
             mpsj = left__below_right(hstorage[iz], tmp)
     
             push!(kvals, norm(mpsj))
-            (alg.verbosity > 1) && println("residual is $(kvals[end])...")
+            (alg.verbosity >= 3) && println("residual is $(kvals[end])...")
             l, zj = rightorth(mpsj, (1,), (2,3), alg=LQ())
             z[iz] = permute(zj, (1,2), (3,))
     
@@ -154,8 +161,10 @@ function DMRG.rightsweep!(m::PartialIntegrateIterativeMultCache, alg::DMRGMult1)
             iz -= 1
             ixs -= 1
         end
+        (alg.verbosity >= 2) && println("$ixs / $Lxs cost $rt Seconds")
     end
     z[1] = @tensor tmp[1,2;4] := z[1][1,2,3] * l[3,4]
+    (alg.verbosity >= 2) && println("z of bond dimension: ", bond_dimension(z))
     return kvals
 end
 
@@ -170,19 +179,19 @@ function rightsweep_final!(m::PartialIntegrateIterativeMultCache, alg::DMRGMult1
     kvals = Float64[]
     local u, s
     while true
-        if insorted(ixs-1, cidx)
+        rt = @elapsed if insorted(ixs-1, cidx)
             j = (ixs+1) ÷ 2
             hstorage[iz+1] = m_right(GrassmannTransferMatrix(j, xs...), hstorage[iz+1])
             normalize!(hstorage[iz+1])
             ixs -= 2
         else
             (iz == 1) && break
-            (alg.verbosity > 3) && println("Sweeping from left to right at site: $iz")
+            (alg.verbosity >= 4) && println("Sweeping from left to right at site: $iz")
             tmp = get_below_right(hstorage[iz+1], getindex.(xs, ixs)...)
             mpsj = left__below_right(hstorage[iz], tmp)
     
             push!(kvals, norm(mpsj))
-            (alg.verbosity > 1) && println("residual is $(kvals[end])...")
+            (alg.verbosity >= 3) && println("residual is $(kvals[end])...")
             u, s, v = stable_tsvd(mpsj, (1,), (2,3), trunc=trunc)
             z[iz] = permute(v, (1,2), (3,))
             z.s[iz] = normalize!(s)
@@ -193,9 +202,14 @@ function rightsweep_final!(m::PartialIntegrateIterativeMultCache, alg::DMRGMult1
             iz -= 1
             ixs -= 1
         end
+        (alg.verbosity >= 2) && println("$ixs / $Lxs cost $rt Seconds")
     end
     r = u * s
     z[1] = @tensor tmp[1,2;4] := z[1][1,2,3] * r[3,4]
+
+    z.svectors[1] = Diagonal(id(space_l(z[1])))
+	z.svectors[end] = Diagonal(id(space_r(z[end])'))
+    (alg.verbosity >= 2) && println("z of bond dimension: ", bond_dimension(z))
     return kvals
 end
 
@@ -203,11 +217,11 @@ end
 
 
 function _parint_svd_guess(xs::GrassmannMPS...; cidx::Vector{Int}, trunc::TruncationScheme=DMRG.DefaultTruncation, verbosity::Int=0)
-    L = length(xs[1])
-    (unique(length.(xs)) == [L,]) || throw(DimensionMismatch())
-    chack_contract_idx(L, cidx)
+    Lxs = length(xs[1])
+    (unique(length.(xs)) == [Lxs,]) || throw(DimensionMismatch("unique($(length.(xs))) != [$Lxs,]"))
+    chack_contract_idx(Lxs, cidx)
 
-    Lz = L-2*length(cidx)
+    Lz = Lxs-2*length(cidx)
     A = xs[1][1]
 	B = bondtensortype(spacetype(A), real(scalartype(A)))
 	z = GrassmannMPS(similar(xs[1].data, Lz), Vector{Union{Missing, B}}(missing, Lz), Ref(1.0))
@@ -217,7 +231,7 @@ function _parint_svd_guess(xs::GrassmannMPS...; cidx::Vector{Int}, trunc::Trunca
     ixs = 1
     iz = 1
 	while true
-		if insorted(ixs, cidx)
+		rt = @elapsed if insorted(ixs, cidx)
             left = left_m(left, GrassmannTransferMatrix((ixs+1)÷2, xs...))
             ixs += 2
 		else
@@ -228,43 +242,15 @@ function _parint_svd_guess(xs::GrassmannMPS...; cidx::Vector{Int}, trunc::Trunca
             iz += 1
             ixs += 1
 		end
+        (verbosity >= 2) && println("$ixs / $Lxs cost $rt Seconds")
         _renormalize!(z, left, false)
-        (ixs > L) && break
+        (ixs > Lxs) && break
 	end
     @tensor tmp[1 2;4] := z[end][1 2 3] * left_right(left, right)[3 4]
     z[end] = tmp
     _rightorth!(z, SVD(), trunc, false, verbosity)
     setscaling!(z, 1)
+
+    (verbosity >= 2) && println("initial z of bond dimension: ", bond_dimension(z))
     return z
 end
-
-# function _parint_svd_guess(xs::GrassmannMPS...; cidx::Vector{Int}, trunc::TruncationScheme=DMRG.DefaultTruncation, verbosity::Int=0)
-#     L = length(xs[1])
-#     (unique(length.(xs)) == [L,]) || throw(DimensionMismatch())
-#     chack_contract_idx(L, cidx)
-
-# 	data = similar(xs[1].data, L-2*length(cidx))
-#     left = isomorphism(scalartype(xs[1]), fuse(space_l.(xs)...), ⊗(space_l.(xs)...) )
-#     right = isomorphism(scalartype(xs[1]), ⊗(space_r.(xs)...)', fuse(space_r.(xs)...))
-
-#     ixs = 1
-#     iz = 1
-# 	while true
-# 		if insorted(ixs, cidx)
-#             left = left_m(left, GrassmannTransferMatrix((ixs+1)÷2, xs...))
-#             ixs += 2
-# 		else
-#             tmp = get_left_below(left, getindex.(xs, ixs)...)
-#             data[iz], s, v = stable_tsvd!(tmp, trunc=trunc)
-#             left = s * v
-#             iz += 1
-#             ixs += 1
-# 		end
-#         (ixs > L) && break
-# 	end
-#     @tensor tmp[1 2;4] := data[end][1 2 3] * left_right(left, right)[3 4]
-#     data[end] = tmp
-#     return GrassmannMPS(data)
-# end
-
-

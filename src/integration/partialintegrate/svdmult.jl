@@ -1,10 +1,10 @@
 
 function parint_mult(xs::GrassmannMPS...; cidx::Vector{Int}, trunc::TruncationScheme=DMRG.DefaultTruncation, verbosity::Int=0)
-    L = length(xs[1])
-    (unique(length.(xs)) == [L,]) || throw(DimensionMismatch())
-    chack_contract_idx(L, cidx)
+    Lxs = length(xs[1])
+    (unique(length.(xs)) == [Lxs,]) || throw(DimensionMismatch())
+    chack_contract_idx(Lxs, cidx)
 
-    Lz = L-2*length(cidx)
+    Lz = Lxs-2*length(cidx)
     A = xs[1][1]
 	B = bondtensortype(spacetype(A), real(scalartype(A)))
 	z = GrassmannMPS(similar(xs[1].data, Lz), Vector{Union{Missing, B}}(missing, Lz), Ref(1.0))
@@ -14,7 +14,7 @@ function parint_mult(xs::GrassmannMPS...; cidx::Vector{Int}, trunc::TruncationSc
     ixs = 1
     iz = 1
 	while true
-		if insorted(ixs, cidx)
+		rt = @elapsed if insorted(ixs, cidx)
             left = left_m(left, GrassmannTransferMatrix((ixs+1)÷2, xs...))
             ixs += 2
 		else
@@ -24,10 +24,14 @@ function parint_mult(xs::GrassmannMPS...; cidx::Vector{Int}, trunc::TruncationSc
             ixs += 1
 		end
         _renormalize!(z, left, false)
-        (ixs > L) && break
+        (verbosity >= 2) && println("$ixs / $Lxs cost $rt Seconds, with bond tensor of dimension $(dim(space(left, 1)))")
+        (ixs > Lxs) && break
 	end
     @tensor tmp[1 2;4] := z[end][1 2 3] * left_right(left, right)[3 4]
     z[end] = tmp
+
+    z.svectors[1] = Diagonal(id(space_l(z[1])))
+	z.svectors[end] = Diagonal(id(space_r(z[end])'))
 
     setscaling!(z, *(scaling.(xs)...) ^ (length(xs[1]) / length(z)) * scaling(z))
     (verbosity >= 2) && println("bond dimension of intermediate GMPS: ", bond_dimension(z))
@@ -39,15 +43,15 @@ end
 # multiply n GMPS together
 # left to right
 function my_mult(xs::GrassmannMPS...; trunc::TruncationScheme=DMRG.DefaultTruncation, verbosity::Int=0)
-    L = length(xs[1])
-    (unique(length.(xs)) == [L,]) || throw(DimensionMismatch())
+    Lxs = length(xs[1])
+    (unique(length.(xs)) == [Lxs,]) || throw(DimensionMismatch("unique($(length.(xs))) != [$Lxs,]"))
     res = copy(xs[1])
 
     left = isomorphism(scalartype(xs[1]), fuse(space_l.(xs)...), ⊗(space_l.(xs)...) )
     right = isomorphism(scalartype(xs[1]), ⊗(space_r.(xs)...)', fuse(space_r.(xs)...))
 
     tmp4 = get_left_below(left, getindex.(xs, 1)...)
-    for i in 1:L-1
+    for i in 1:Lxs-1
         q, r = leftorth!(tmp4, alg = QR())
         res[i] = q
         _renormalize!(res, r, false)
@@ -62,15 +66,15 @@ end
 # right to left
 function my_mult2(xs::GrassmannMPS...; trunc::TruncationScheme=DMRG.DefaultTruncation, verbosity::Int=0)
     nx = length(xs)
-    L = length(xs[1])
-    (unique(length.(xs)) == [L,]) || throw(DimensionMismatch())
+    Lxs = length(xs[1])
+    (unique(length.(xs)) == [Lxs,]) || throw(DimensionMismatch("unique($(length.(xs))) != [$Lxs,]"))
     res = copy(xs[1])
 
     left = isomorphism(scalartype(xs[1]), fuse(space_l.(xs)...), ⊗(space_l.(xs)...) )
     right = isomorphism(scalartype(xs[1]), ⊗(space_r.(xs)...)', fuse(space_r.(xs)...))
 
-    tmp4 = get_below_right(right, getindex.(xs, L)...)
-    for i in L:-1:2
+    tmp4 = get_below_right(right, getindex.(xs, Lxs)...)
+    for i in Lxs:-1:2
         l, q = rightorth(tmp4, alg=LQ())
         res[i] = permute(q, (1,2), (3,))
 

@@ -61,3 +61,14 @@ function _absorb_sitetensor(tmp, x)
 	isnothing(tmp) && return x
 	@tensor tmp2[1 3; 4] := tmp[1,2] * x[2,3,4]
 end
+
+
+
+function integratebands(lattice::AbstractGrassmannLattice, x::GrassmannMPS, bands::Tuple)
+    bands = sort(collect(bands))
+    for i in length(bands):-1:1
+        x = integrateband(lattice, x; band=bands[i])
+        lattice = similar(lattice, bands=lattice.bands-1)
+    end
+    x
+end
