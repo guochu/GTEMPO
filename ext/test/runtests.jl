@@ -7,13 +7,13 @@ push!(LOAD_PATH, dirname(dirname(dirname(Base.@__DIR__))) * "/TEBD/src")
 push!(LOAD_PATH, dirname(dirname(dirname(Base.@__DIR__))) * "/FermionicTCMPS/src")
 push!(LOAD_PATH, dirname(dirname(dirname(Base.@__DIR__))) * "/ImpurityModelBase/src")
 push!(LOAD_PATH, dirname(dirname(dirname(Base.@__DIR__))) * "/QuAPI/src")
-push!(LOAD_PATH, dirname(dirname(dirname(Base.@__DIR__))) * "/Z2TensorKit/src")
-push!(LOAD_PATH, dirname(dirname(dirname(Base.@__DIR__))) * "/Z2TensorKit/ext/Z2TensorKitCUDAExt/")
+push!(LOAD_PATH, dirname(dirname(dirname(Base.@__DIR__))) * "/Z2Tensors/src")
+push!(LOAD_PATH, dirname(dirname(dirname(Base.@__DIR__))) * "/Z2Tensors/ext/Z2TensorsCUDAExt/")
 push!(LOAD_PATH, dirname(dirname(dirname(Base.@__DIR__))) * "/GTEMPO/src")
 
 using Test, Random
-using Z2TensorKit
-const TK = Z2TensorKit
+using Z2Tensors
+const TK = Z2Tensors
 using GTEMPO
                     
 

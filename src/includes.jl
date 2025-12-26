@@ -1,9 +1,9 @@
 using Base: @boundscheck, @propagate_inbounds
 using Logging: @warn
 using Permutations, Reexport, TupleTools, Strided, Statistics
-using Z2TensorKit
-using Z2TensorKit: Z2TensorKit, QR, SVD, LQ, AdjointTensorMap, NoTruncation, TruncationDimCutoff
-const TK = Z2TensorKit
+using Z2Tensors
+using Z2Tensors: Z2Tensors, QR, SVD, LQ, AdjointTensorMap, NoTruncation, TruncationDimCutoff
+const TK = Z2Tensors
 using TensorOperations: TensorOperations, IndexTuple, Index2Tuple, linearize, AbstractBackend # for Grassmann Tensors
 const TO = TensorOperations
 # @reexport using DMRG, ImpurityModelBase, QuAPI

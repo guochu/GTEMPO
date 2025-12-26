@@ -25,14 +25,14 @@ end
 
 
 
-function Z2TensorKitCUDAExt.tocu(t::GrassmannTensorMap)
+function Z2TensorsCUDAExt.tocu(t::GrassmannTensorMap)
 	return GrassmannTensorMap(tocu(t.data))
 end
-function Z2TensorKitCUDAExt.fromcu(t::GrassmannTensorMap)
+function Z2TensorsCUDAExt.fromcu(t::GrassmannTensorMap)
 	return GrassmannTensorMap(fromcu(t.data))
 end
 
-function Z2TensorKitCUDAExt.tocu(m::GrassmannTransferMatrix)
+function Z2TensorsCUDAExt.tocu(m::GrassmannTransferMatrix)
     states = map(x->map(i->tocu(i).data, x), m.states)
     return GrassmannTransferMatrix(states, m.scaling)
 end

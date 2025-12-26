@@ -9,7 +9,7 @@ export cu_environments, cu_cached_Gt_fast, cu_cached_greater_fast, cu_cached_les
 
 
         
-using Z2TensorKit, Z2TensorKitCUDAExt
+using Z2Tensors, Z2TensorsCUDAExt
 using GTEMPO
 using GTEMPO: TruncationScheme, GMPSIterativeMultCache, PartialIntegrateIterativeMultCache, Diagonal,
             TwosideExpectationCache, pos2pairindex, leftenv, rightenv, _mult_A, contract_center,

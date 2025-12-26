@@ -1,11 +1,11 @@
 push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/ImpurityModelBase/src")
 push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/QuAPI/src")
-push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/Z2TensorKit/src")
-push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/Z2TensorKit/ext/Z2TensorKitCUDAExt/")
+push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/Z2Tensors/src")
+push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/Z2Tensors/ext/Z2TensorsCUDAExt/")
 
 using Test, Random
-using Z2TensorKit
-const TK = Z2TensorKit
+using Z2Tensors
+const TK = Z2Tensors
                     
 
 include("../src/includes.jl")
