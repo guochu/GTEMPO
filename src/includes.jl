@@ -1,13 +1,39 @@
 using Base: @boundscheck, @propagate_inbounds
 using Logging: @warn
-using Permutations, Reexport, TupleTools, Strided, Statistics, TensorKit
-using TensorKit: TensorKit, QR, SVD, LQ, AdjointTensorMap, NoTruncation
-const TK = TensorKit
+using Permutations, Reexport, TupleTools, Strided, Statistics
+using Z2TensorKit
+using Z2TensorKit: Z2TensorKit, QR, SVD, LQ, AdjointTensorMap, NoTruncation, TruncationDimCutoff
+const TK = Z2TensorKit
 using TensorOperations: TensorOperations, IndexTuple, Index2Tuple, linearize, AbstractBackend # for Grassmann Tensors
 const TO = TensorOperations
-@reexport using DMRG, ImpurityModelBase, QuAPI
+# @reexport using DMRG, ImpurityModelBase, QuAPI
+@reexport using ImpurityModelBase, QuAPI
 import QuAPI: branch, index
-using DMRG: TimeEvoMPOAlgorithm
+# using DMRG: TimeEvoMPOAlgorithm
+
+
+
+
+
+
+
+
+
+
+using Parameters, Polynomials, KrylovKit, LsqFit
+using LinearAlgebra: LinearAlgebra, Symmetric, eigen, qr, pinv, eigvals, Diagonal
+
+include("auxiliary/CachedVectors.jl")
+include("auxiliary/defaults.jl") # default constants
+include("auxiliary/linalg.jl")
+include("auxiliary/mpstensors.jl")
+include("auxiliary/orth.jl")
+include("auxiliary/mpsalgs.jl")
+
+include("mpo/mpo.jl")
+
+
+
 
 
 # # TEMPO algorithm
@@ -16,9 +42,6 @@ using DMRG: TimeEvoMPOAlgorithm
 include("grassmanntensor/grassmanntensor.jl")
 include("grassmanntensor/linalg.jl")
 include("grassmanntensor/tensoroperations.jl")
-
-# default constants
-include("defaults.jl")
 
 # Grassmann MPS operations
 include("grassmannmps/util.jl")

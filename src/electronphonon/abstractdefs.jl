@@ -15,40 +15,40 @@ Base.isempty(t::Dense1DTN) = isempty(t.data)
 const DenseMPSTensor{T} = AbstractArray{T, 3} where {T<:Number}
 const DenseMPOTensor{T} = AbstractArray{T, 4} where {T<:Number}
 
-DMRG.space_l(m::DenseMPSTensor) = size(m, 1)
-DMRG.space_r(m::DenseMPSTensor) = size(m, 3)
-DMRG.space_l(m::DenseMPOTensor) = size(m, 1)
-DMRG.space_r(m::DenseMPOTensor) = size(m, 3)
-DMRG.space_l(t::Dense1DTN) = size(t[1], 1)
-DMRG.space_r(t::Dense1DTN) = size(t[end], 3)
+space_l(m::DenseMPSTensor) = size(m, 1)
+space_r(m::DenseMPSTensor) = size(m, 3)
+space_l(m::DenseMPOTensor) = size(m, 1)
+space_r(m::DenseMPOTensor) = size(m, 3)
+space_l(t::Dense1DTN) = size(t[1], 1)
+space_r(t::Dense1DTN) = size(t[end], 3)
 
-DMRG.r_RR(psiA::Dense1DTN, psiB::Dense1DTN) = _eye(promote_type(scalartype(psiA), scalartype(psiB)), space_r(psiA), space_r(psiB))
-DMRG.r_RR(psi::Dense1DTN) = r_RR(psi, psi)
-DMRG.l_LL(psiA::Dense1DTN, psiB::Dense1DTN) = _eye(promote_type(scalartype(psiA), scalartype(psiB)), space_l(psiA), space_l(psiB))
-DMRG.l_LL(psi::Dense1DTN) = l_LL(psi, psi)
+r_RR(psiA::Dense1DTN, psiB::Dense1DTN) = _eye(promote_type(scalartype(psiA), scalartype(psiB)), space_r(psiA), space_r(psiB))
+r_RR(psi::Dense1DTN) = r_RR(psi, psi)
+l_LL(psiA::Dense1DTN, psiB::Dense1DTN) = _eye(promote_type(scalartype(psiA), scalartype(psiB)), space_l(psiA), space_l(psiB))
+l_LL(psi::Dense1DTN) = l_LL(psi, psi)
 
 
-DMRG.bond_dimension(psi::Dense1DTN, bond::Int) = begin
+bond_dimension(psi::Dense1DTN, bond::Int) = begin
 	((bond >= 1) && (bond <= length(psi))) || throw(BoundsError())
 	space_r(psi[bond])
 end 
-DMRG.bond_dimensions(psi::Dense1DTN) = [bond_dimension(psi, i) for i in 1:length(psi)]
-DMRG.bond_dimension(psi::Dense1DTN) = maximum(bond_dimensions(psi))
+bond_dimensions(psi::Dense1DTN) = [bond_dimension(psi, i) for i in 1:length(psi)]
+bond_dimension(psi::Dense1DTN) = maximum(bond_dimensions(psi))
 
 
-function DMRG.isleftcanonical(psij::DenseMPSTensor; kwargs...)
+function isleftcanonical(psij::DenseMPSTensor; kwargs...)
 	@tensor r[-1, -2] := conj(psij[1,2,-1]) * psij[1,2,-2]
 	return isapprox(r, one(r); kwargs...) 
 end
-function DMRG.isrightcanonical(psij::DenseMPSTensor; kwargs...)
+function isrightcanonical(psij::DenseMPSTensor; kwargs...)
 	@tensor r[-1, -2] := conj(psij[-1,1,2]) * psij[-2,1,2]
 	return isapprox(r, one(r); kwargs...) 
 end
-function DMRG.isleftcanonical(psij::DenseMPOTensor; kwargs...)
+function isleftcanonical(psij::DenseMPOTensor; kwargs...)
 	@tensor r[-1; -2] := conj(psij[1,2,-1,3]) * psij[1,2,-2,3]
 	return isapprox(r, one(r); kwargs...) 
 end
-function DMRG.isrightcanonical(psij::DenseMPOTensor; kwargs...)
+function isrightcanonical(psij::DenseMPOTensor; kwargs...)
 	@tensor r[-1; -2] := conj(psij[-1,1,2,3]) * psij[-2,1,2,3]
 	return isapprox(r, one(r); kwargs...) 
 end

@@ -354,7 +354,7 @@ end
 function left_m(left::AbstractParityTensorMap{<:Number, 1, N}, m::GrassmannTransferMatrix) where N
     left = deepcopy(left)
     p = (1,ntuple(i->N+2-i,N)...)
-    swaps = TensorKit.permutation2swaps(p)
+    swaps = TK.permutation2swaps(p)
     for (f1, f2) in fusiontrees(left)
         ns = getproperty.([f1.uncoupled..., dual.(f2.uncoupled)...], :n)
         coef = 1

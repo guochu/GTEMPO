@@ -54,16 +54,20 @@ end
 
 function f_permute(f1::FusionTree{ZNIrrep{2}}, f2::FusionTree{ZNIrrep{2}},
                             p1::IndexTuple{N₁}, p2::IndexTuple{N₂}) where {N₁, N₂}
-    isdual = (f1.isdual..., (!).(f2.isdual)...)
+    # isdual = (f1.isdual..., (!).(f2.isdual)...)
     uncoupled = (f1.uncoupled..., dual.(f2.uncoupled)...)
-    isdual1′, isdual2′ = TupleTools.getindices(isdual, p1), TupleTools.getindices(isdual, p2)
+    # isdual1′, isdual2′ = TupleTools.getindices(isdual, p1), TupleTools.getindices(isdual, p2)
     uncoupled1′, uncoupled2′ = TupleTools.getindices(uncoupled, p1), TupleTools.getindices(uncoupled, p2)
     uncoupled2′ = ntuple(i->dual(uncoupled2′[i]), Val(N₂))
-    isdual2′ = (!).(isdual2′)
-    coupled1′ = first(⊗(ZNIrrep{2}, uncoupled1′...))
-    coupled2′ = first(⊗(ZNIrrep{2}, uncoupled2′...))
-    f1′ = FusionTree(uncoupled1′, coupled1′, isdual1′)
-    f2′ = FusionTree(uncoupled2′, coupled2′, isdual2′)
+    # isdual2′ = (!).(isdual2′)
+    # coupled1′ = first(⊗(ZNIrrep{2}, uncoupled1′...))
+    # coupled2′ = first(⊗(ZNIrrep{2}, uncoupled2′...))
+    # coupled1′ = first(⊗(uncoupled1′...))
+    # coupled2′ = first(⊗(uncoupled2′...))
+    coupled1′ = ⊗(uncoupled1′...)
+    coupled2′ = ⊗(uncoupled2′...)
+    f1′ = FusionTree(uncoupled1′, coupled1′)
+    f2′ = FusionTree(uncoupled2′, coupled2′)
     # compute the sign
     if coupled1′ == coupled2′
     	p = TK.linearizepermutation(p1, p2, length(f1), length(f2))

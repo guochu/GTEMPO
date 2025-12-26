@@ -29,18 +29,20 @@ struct PartialIntegrateIterativeMultCache{M<:GrassmannMPS, G<:Tuple, H}
     cidx::Vector{Int}
     hstorage::H
 end
-function parint_cache(z::GrassmannMPS, xs::GrassmannMPS...; cidx::Vector{Int}, verbosity::Int=0)
+function parint_cache(z::GrassmannMPS, xs::GrassmannMPS...; cidx::Vector{Int}, verbosity::Int=0, useHCache::Bool=DefaultUseCache)
     Lxs = length(xs[1])
     (unique(length.(xs)) == [Lxs,]) || throw(DimensionMismatch("unique($(length.(xs))) != [$Lxs,]"))
     @assert Lxs == length(z) + 2*length(cidx)
-    chack_contract_idx(Lxs, cidx)
+    check_contract_idx(Lxs, cidx)
 
     Lz = length(z)
     left = isomorphism(scalartype(xs[1]), space_l(z), ⊗(space_l.(xs)...) )
     right = isomorphism(scalartype(z), ⊗(space_r.(xs)...)', space_r(z)')
-    hstorage = Vector{Union{typeof(left),typeof(right)}}(undef, Lz+1)
-    hstorage[Lz+1] = right
+    # hstorage = Vector{Union{typeof(left),typeof(right)}}(undef, Lz+1)
+    hstorage = useHCache ? CachedVector{Union{typeof(left),typeof(right)}}(undef, Lz+1) : Vector{Union{typeof(left),typeof(right)}}(undef, Lz+1)
+
     hstorage[1] = left
+    hstorage[Lz+1] = right
 
     ixs = Lxs
     iz = Lz
@@ -87,14 +89,14 @@ function parint_iterativemult(xs::GrassmannMPS...; cidx::Vector{Int}, alg::DMRGM
     return z
 end
 
-DMRG.compute!(env::PartialIntegrateIterativeMultCache, alg::DMRGMult1) = iterative_compute!(env, alg)
-DMRG.sweep!(m::PartialIntegrateIterativeMultCache, alg::DMRGMult1) = vcat(leftsweep!(m, alg), rightsweep!(m, alg))
+compute!(env::PartialIntegrateIterativeMultCache, alg::DMRGMult1) = iterative_compute!(env, alg)
+sweep!(m::PartialIntegrateIterativeMultCache, alg::DMRGMult1) = vcat(leftsweep!(m, alg), rightsweep!(m, alg))
 function finalize!(m::PartialIntegrateIterativeMultCache, alg::DMRGMult1)
     leftsweep!(m, alg)
     rightsweep_final!(m, alg)
 end
 
-function DMRG.leftsweep!(m::PartialIntegrateIterativeMultCache, alg::DMRGMult1)
+function leftsweep!(m::PartialIntegrateIterativeMultCache, alg::DMRGMult1)
     z, xs, cidx, hstorage = m.o, m.xs, m.cidx, m.hstorage
 
     Lxs = length(xs[1])
@@ -131,7 +133,7 @@ function DMRG.leftsweep!(m::PartialIntegrateIterativeMultCache, alg::DMRGMult1)
     return kvals    
 end
 
-function DMRG.rightsweep!(m::PartialIntegrateIterativeMultCache, alg::DMRGMult1)
+function rightsweep!(m::PartialIntegrateIterativeMultCache, alg::DMRGMult1)
     z, xs, cidx, hstorage = m.o, m.xs, m.cidx, m.hstorage
     Lxs = length(xs[1])
     ixs = findlast(x->!insorted(x, cidx), 1:2:Lxs) * 2
@@ -207,8 +209,11 @@ function rightsweep_final!(m::PartialIntegrateIterativeMultCache, alg::DMRGMult1
     r = u * s
     z[1] = @tensor tmp[1,2;4] := z[1][1,2,3] * r[3,4]
 
-    z.svectors[1] = Diagonal(id(space_l(z[1])))
-	z.svectors[end] = Diagonal(id(space_r(z[end])'))
+    # z.svectors[1] = Diagonal(id(space_l(z[1])))
+	# z.svectors[end] = Diagonal(id(space_r(z[end])'))
+    z.svectors[1] = DiagonalTensorMap{Float64}(ones, space_l(z[1]) )
+	z.svectors[end] = DiagonalTensorMap{Float64}(ones, space_r(z[end])' )
+
     (alg.verbosity >= 2) && println("z of bond dimension: ", bond_dimension(z))
     return kvals
 end
@@ -216,10 +221,10 @@ end
 
 
 
-function _parint_svd_guess(xs::GrassmannMPS...; cidx::Vector{Int}, trunc::TruncationScheme=DMRG.DefaultTruncation, verbosity::Int=0)
+function _parint_svd_guess(xs::GrassmannMPS...; cidx::Vector{Int}, trunc::TruncationScheme=DefaultTruncation, verbosity::Int=0)
     Lxs = length(xs[1])
     (unique(length.(xs)) == [Lxs,]) || throw(DimensionMismatch("unique($(length.(xs))) != [$Lxs,]"))
-    chack_contract_idx(Lxs, cidx)
+    check_contract_idx(Lxs, cidx)
 
     Lz = Lxs-2*length(cidx)
     A = xs[1][1]

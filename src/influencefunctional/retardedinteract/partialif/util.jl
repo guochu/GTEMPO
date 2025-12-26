@@ -17,7 +17,7 @@ function partialmpo_retardedinteract(row::Tuple{Int, Int}, cols::Vector{Tuple{In
 	f = isomorphism(eltype(coefs), fuse(ph, ph), ph ⊗ ph)
 	@tensor abar_a[1,7;9,8] := σ₊[1,2,3,4] * σ₋'[3,5,9,6] * f[7,2,5] * conj(f[8,4,6])
 	@tensor I4[5,6] := I2[1,2] * I2[3,4] * f[5,1,3] * conj(f[6,2,4])
-    virtual = isomorphism(eltype(coefs), Rep[ℤ₂](0=>1), Rep[ℤ₂](0=>1))
+    virtual = isomorphism(eltype(coefs), Z2Space(0=>1), Z2Space(0=>1))
     T = scalartype(virtual)
     @tensor m22I[1,3;2,4] := virtual[1,2] * I4[3,4] 
     # println(space_l(abar_a), " ", space_r(abar_a))

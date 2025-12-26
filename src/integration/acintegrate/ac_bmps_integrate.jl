@@ -138,7 +138,7 @@ function _trace_boundary(tmp1::GrassmannTensorMap{<:AbstractTensorMap{<:Number, 
 	m1 = zeros(scalartype(tmp1), space(tmp1, 3) ← space(tmp1, 4)' )
 	for (f1, f2) in fusiontrees(tmp1)
 		if f1.uncoupled[1] == f1.uncoupled[2]
-			f0 = FusionTree((f1.uncoupled[3],), f1.coupled, (f1.isdual[3],))
+			f0 = FusionTree((f1.uncoupled[3],), f1.coupled)
 			coef = (isodd(f1.uncoupled[1].n) && (!nt)) ? -1 : 1
 			@tensor m1[f0, f2][2,3] += coef * tmp1[f1, f2][1,1,2,3]
 		end

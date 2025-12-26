@@ -5,7 +5,11 @@
 
 function contract_center(left::GrassmannTensorMap{<:AbstractTensorMap{T, S, 1, N}}, right::GrassmannTensorMap{<:AbstractTensorMap{T, S, N, 1}}) where {T, S, N}
 	@assert space(left.data, 1) == space(right.data, N+1)'
-	r = GrassmannTensorMap(zeros(scalartype(left.data), space(left.data, 1), space(right.data, N+1)'))
+
+	# r = GrassmannTensorMap(zeros(scalartype(left.data), space(left.data, 1), space(right.data, N+1)'))
+	s = space(left.data, 1) ← space(right.data, N+1)'
+	r = GrassmannTensorMap( fill!(similar(left.data, s), zero(T)) )
+
 	cindA = ntuple(x->x+1, N)
 	cindB = ntuple(x->N-x+1, N)
 	contract!(r, left, ((1,), cindA), right, (cindB, (N+1,)), ((1,), (2,)), true, false, 0, 0)

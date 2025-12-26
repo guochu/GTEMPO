@@ -1,6 +1,6 @@
 # abstract type AbstractFTerm end
 
-DMRG.positions(x::AbstractTerm) = x.positions
+positions(x::AbstractTerm) = x.positions
 
 # """
 # 	struct TunnelingTerm <: AbstractFTerm

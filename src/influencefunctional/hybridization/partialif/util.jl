@@ -62,7 +62,7 @@ function partialmpo(row::Int, cols::Vector{Int}, coefs::Vector{<:Number})
 	coefs = coefs[p]
 	# I2 = one(JW)
 
-    virtual = isomorphism(eltype(coefs), Rep[ℤ₂](1=>1), Rep[ℤ₂](1=>1))
+    virtual = isomorphism(eltype(coefs), Z2Space(1=>1), Z2Space(1=>1))
     pspace = grassmannpspace()
     T = scalartype(virtual)
     @tensor m22I[1,3;2,4] := virtual[1,2] * I2[3,4] 

@@ -4,7 +4,7 @@ println("------------------------------------")
 
 
 @testset "GrassmannTensor permute" begin
-	s = Rep[ℤ₂](0=>5, 1=>4)
+	s = Z2Space(0=>5, 1=>4)
 	# test 1
 	m1 = randn(ComplexF64, s ⊗ s ⊗ s, s ⊗ s)
 	m2 = permute(m1, (1,2), (3,4,5))
@@ -63,7 +63,7 @@ end
 
 
 @testset "GrassmannTensor contract" begin
-	s = Rep[ℤ₂](0=>3, 1=>4)
+	s = Z2Space(0=>3, 1=>4)
 
 	# test 1
 	m1 = randn(ComplexF64, s ⊗ s, s ⊗ s ⊗ s)

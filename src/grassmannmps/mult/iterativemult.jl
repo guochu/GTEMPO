@@ -58,16 +58,20 @@ struct GMPSIterativeMultCache{_O, _A, _B, _H}
     hstorage::_H
 end
 
-function mult_cache(z::GrassmannMPS, x::GrassmannMPS, y::GrassmannMPS)
+function mult_cache(z::GrassmannMPS, x::GrassmannMPS, y::GrassmannMPS; useHCache::Bool=DefaultUseCache)
     @assert length(z) == length(x) == length(y)
     # initialize Hstorage
     L = length(z)
     right = ones(scalartype(z), space_r(y)' ⊗ space_r(x)', space_r(z)')
-    hstorage = Vector{typeof(right)}(undef, L+1)
-    hstorage[L+1] = right
+    hstorage = useHCache ? CachedVector{typeof(right)}(undef, L+1) : Vector{typeof(right)}(undef, L+1)
+
     hstorage[1] = ones( scalartype(z), space_l(z) ⊗ space_l(x)', space_l(y) )
+    hstorage[L+1] = right
+    hip1 = hstorage[L+1]
     for i in L:-1:2
-        hstorage[i] = updatemultright(hstorage[i+1], z[i], x[i], y[i])
+        # hstorage[i] = updatemultright(hstorage[i+1], z[i], x[i], y[i])
+        hip1 = updatemultright(hip1, z[i], x[i], y[i])
+        hstorage[i] = hip1
     end
     # i = 1
     # tmp = updatemultright(hstorage[i+1], z[i], x[i], y[i])
@@ -96,7 +100,7 @@ function iterativemult(x::GrassmannMPS, y::GrassmannMPS, alg::DMRGMultAlgorithm)
     return z
 end
 
-DMRG.compute!(env::GMPSIterativeMultCache, alg::DMRGMultAlgorithm) = iterative_compute!(env, alg)
+compute!(env::GMPSIterativeMultCache, alg::DMRGMultAlgorithm) = iterative_compute!(env, alg)
 
 
 function iterative_compute!(m, alg)
@@ -108,12 +112,12 @@ function iterative_compute!(m, alg)
         delta = iterative_error_2(_kvals)
         push!(kvals, delta)
         iter += 1
-        (alg.verbosity > 1) && println("finish the $iter-th sweep with error $delta", "\n")
+        (alg.verbosity >= 2) && println("finish the $iter-th sweep with error $delta", "\n")
     end
-    if (alg.verbosity >= 2) && (iter < alg.maxiter)
+    if (alg.verbosity >= 1) && (iter < alg.maxiter)
         println("early converge in $iter-th sweeps with error $delta")
     end
-    if (alg.verbosity > 0) && (delta >= alg.tol)
+    if (alg.verbosity >= 0) && (delta >= alg.tol)
         println("fail to converge, required precision: $(alg.tol), actual precision $delta in $iter sweeps")
     end
     finalize!(m ,alg)
@@ -121,27 +125,27 @@ function iterative_compute!(m, alg)
 end
 iterative_error_2(m::AbstractVector) = std(m) / abs(mean(m))
 
-DMRG.sweep!(m::GMPSIterativeMultCache, alg::DMRGMultAlgorithm) = vcat(leftsweep!(m, alg), rightsweep!(m, alg))
+sweep!(m::GMPSIterativeMultCache, alg::DMRGMultAlgorithm) = vcat(leftsweep!(m, alg), rightsweep!(m, alg))
 
 function finalize!(m::GMPSIterativeMultCache, alg::DMRGMultAlgorithm) end
 function finalize!(m::GMPSIterativeMultCache, alg::DMRGMult1)
     leftsweep!(m, alg)
     rightsweep_final!(m, alg)
 end
-function DMRG.leftsweep!(m::GMPSIterativeMultCache, alg::DMRGMult1)
+function leftsweep!(m::GMPSIterativeMultCache, alg::DMRGMult1)
     z, x, y = m.z, m.x, m.y
     hstorage = m.hstorage
     L = length(z)
     kvals = Float64[]
     for site in 1:L-1
-        (alg.verbosity > 3) && println("Sweeping from left to right at site: $site")
+        (alg.verbosity >= 4) && println("Sweeping from left to right at site: $site")
         
         # mpsj = g_ac_prime(x[site], y[site], hstorage[site], hstorage[site+1])
         left_xy = get_left_xy(hstorage[site], x[site], y[site])
         @tensor mpsj[1,2;5] := left_xy[1,2,3,4] * hstorage[site+1][4,3,5]
         
         push!(kvals, norm(mpsj))
-        (alg.verbosity > 1) && println("residual is $(kvals[end])...")
+        (alg.verbosity >= 3) && println("residual is $(kvals[end])...")
         z[site], r = leftorth!(mpsj, alg = QR())
         
         # hstorage[site+1] = updatemultleft(hstorage[site], z[site], x[site], y[site])
@@ -151,21 +155,21 @@ function DMRG.leftsweep!(m::GMPSIterativeMultCache, alg::DMRGMult1)
     return kvals    
 end
 
-function DMRG.rightsweep!(m::GMPSIterativeMultCache, alg::DMRGMult1)
+function rightsweep!(m::GMPSIterativeMultCache, alg::DMRGMult1)
     z, x, y = m.z, m.x, m.y
     hstorage = m.hstorage
     L = length(z)
     kvals = Float64[]
     local r
     for site in L:-1:2
-        (alg.verbosity > 3) && println("Sweeping from right to left at site: $site")
+        (alg.verbosity >= 4) && println("Sweeping from right to left at site: $site")
         
         # mpsj = g_ac_prime(x[site], y[site], hstorage[site], hstorage[site+1])
         xy_right = get_xy_right(hstorage[site+1], x[site], y[site])
         @tensor mpsj[1,4;5] := hstorage[site][1,2,3] * xy_right[3,2,4,5]
 
         push!(kvals, norm(mpsj))
-        (alg.verbosity > 1) && println("residual is $(kvals[end])...")
+        (alg.verbosity >= 3) && println("residual is $(kvals[end])...")
 
         r, zj = rightorth(mpsj, (1,), (2,3), alg=LQ())
         z[site] = permute(zj, (1,2), (3,))
@@ -186,14 +190,14 @@ function rightsweep_final!(m::GMPSIterativeMultCache, alg::DMRGMult1)
     kvals = Float64[]
     trunc = alg.trunc
     for site in L:-1:2
-        (alg.verbosity > 3) && println("Sweeping from right to left at site: $site")
+        (alg.verbosity >= 4) && println("Sweeping from right to left at site: $site")
         
         # mpsj = g_ac_prime(x[site], y[site], hstorage[site], hstorage[site+1])
         xy_right = get_xy_right(hstorage[site+1], x[site], y[site])
         @tensor mpsj[1,4;5] := hstorage[site][1,2,3] * xy_right[3,2,4,5]
 
         push!(kvals, norm(mpsj))
-        (alg.verbosity > 1) && println("residual is $(kvals[end])...")
+        (alg.verbosity >= 3) && println("residual is $(kvals[end])...")
 
         u, s, v = stable_tsvd(mpsj, (1,), (2,3), trunc=trunc)
         z[site] = permute(v, (1,2), (3,))
@@ -211,17 +215,17 @@ function rightsweep_final!(m::GMPSIterativeMultCache, alg::DMRGMult1)
     return kvals    
 end
 
-function DMRG.leftsweep!(m::GMPSIterativeMultCache, alg::DMRGMult2)
+function leftsweep!(m::GMPSIterativeMultCache, alg::DMRGMult2)
     z, x, y = m.z, m.x, m.y
     hstorage = m.hstorage
     L = length(z)
     kvals = Float64[]
     trunc = alg.trunc
     for site in 1:L-1
-        (alg.verbosity > 3) && println("Sweeping from left to right at bond: $site")
+        (alg.verbosity >= 4) && println("Sweeping from left to right at bond: $site")
         twositemps = g_ac_prime2(x[site], x[site+1], y[site], y[site+1], hstorage[site], hstorage[site+2])
         push!(kvals, norm(twositemps))
-        (alg.verbosity > 1) && println("residual is $(kvals[end])...")
+        (alg.verbosity >= 3) && println("residual is $(kvals[end])...")
         u, s, v = stable_tsvd!(twositemps, trunc=trunc)
         z[site] = u
         hstorage[site+1] = updatemultleft(hstorage[site], z[site], x[site], y[site])
@@ -229,17 +233,17 @@ function DMRG.leftsweep!(m::GMPSIterativeMultCache, alg::DMRGMult2)
     return kvals    
 end
 
-function DMRG.rightsweep!(m::GMPSIterativeMultCache, alg::DMRGMult2)
+function rightsweep!(m::GMPSIterativeMultCache, alg::DMRGMult2)
     z, x, y = m.z, m.x, m.y
     hstorage = m.hstorage
     L = length(z)
     kvals = Float64[]
     trunc = alg.trunc
     for site in L-1:-1:1
-        (alg.verbosity > 3) && println("Sweeping from right to left at bond: $site")
+        (alg.verbosity >= 4) && println("Sweeping from right to left at bond: $site")
         twositemps = g_ac_prime2(x[site], x[site+1], y[site], y[site+1], hstorage[site], hstorage[site+2])
         push!(kvals, norm(twositemps))
-        (alg.verbosity > 1) && println("residual is $(kvals[end])...")
+        (alg.verbosity >= 3) && println("residual is $(kvals[end])...")
         u, s, v = stable_tsvd!(twositemps, trunc=trunc)
         z[site+1] = permute(v, (1,2), (3,))
         if site == 1

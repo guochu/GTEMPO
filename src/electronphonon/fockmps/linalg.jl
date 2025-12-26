@@ -5,8 +5,8 @@ function TK.norm(psi::FockMPS)
     a = (abs(a) >= 1.0e-14) ? a : zero(a)
 	return sqrt(a) * scaling(psi)^(length(psi))
 end
-DMRG.distance(a::FockMPS, b::FockMPS) = DMRG._distance(a, b)
-DMRG.distance2(a::FockMPS, b::FockMPS) = DMRG._distance2(a, b)
+distance(a::FockMPS, b::FockMPS) = _distance(a, b)
+distance2(a::FockMPS, b::FockMPS) = _distance2(a, b)
 
 
 function TK.lmul!(f::Number, psi::FockMPS)
@@ -60,7 +60,7 @@ end
 Base.:-(x::FockMPS, y::FockMPS) = x + (-y)
 
 
-function _permute!(x::AbstractFiniteMPS, perm::Vector{Int}; trunc::TruncationScheme=DefaultIntegrationTruncation)
+function _permute!(x::FockMPS, perm::Vector{Int}; trunc::TruncationScheme=DefaultIntegrationTruncation)
     @assert length(x) == length(perm)
     if svectors_uninitialized(x)
         canonicalize!(x, alg=Orthogonalize(trunc=trunc, normalize=false))
@@ -72,9 +72,9 @@ function _permute!(x::AbstractFiniteMPS, perm::Vector{Int}; trunc::TruncationSch
     return x
 end
 TK.permute!(x::FockMPS, perm::Vector; kwargs...) = _permute!(x, perm; kwargs...)
-TK.permute(x::AbstractFiniteMPS, perm::Vector{Int}; kwargs...) = permute!(deepcopy(x), perm; kwargs...)
+TK.permute(x::FockMPS, perm::Vector{Int}; kwargs...) = permute!(deepcopy(x), perm; kwargs...)
 
-function naive_permute!(x::AbstractFiniteMPS, perm::Vector{Int}; trunc::TruncationScheme=DefaultIntegrationTruncation)
+function naive_permute!(x::FockMPS, perm::Vector{Int}; trunc::TruncationScheme=DefaultIntegrationTruncation)
     @assert length(x) == length(perm)
     p = CoxeterDecomposition(Permutation(perm))
     for i in p.terms
@@ -82,7 +82,7 @@ function naive_permute!(x::AbstractFiniteMPS, perm::Vector{Int}; trunc::Truncati
     end
     return x
 end
-naive_permute(x::AbstractFiniteMPS, perm::Vector{Int}; kwargs...) = naive_permute!(copy(x), perm; kwargs...)
+naive_permute(x::FockMPS, perm::Vector{Int}; kwargs...) = naive_permute!(copy(x), perm; kwargs...)
 
 function _mult_site_n(xj, yj)
     @tensor r[1,4,2,5;3,6] := xj[1,2,3] * yj[4,5,6]

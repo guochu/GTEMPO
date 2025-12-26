@@ -22,5 +22,8 @@ is DMRGMult1
 mult(x::GrassmannMPS, y::GrassmannMPS, alg::SVDCompression) = mult(x, y, trunc=alg.trunc, verbosity=alg.verbosity)
 mult(x::GrassmannMPS, y::GrassmannMPS, alg::DMRGMultAlgorithm) = iterativemult(x, y, alg)
 
+mult!(x::GrassmannMPS, y::GrassmannMPS, alg::SVDCompression) = mult!(x, y, trunc=alg.trunc, verbosity=alg.verbosity)
+mult!(x::GrassmannMPS, y::GrassmannMPS, alg::DMRGMultAlgorithm) = iterativemult(x, y, alg)
+
 
 const DefaultMultAlg = DMRGMult1(DefaultITruncation)

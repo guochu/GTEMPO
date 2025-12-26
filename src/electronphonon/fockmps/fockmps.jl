@@ -59,8 +59,8 @@ end
 
 Base.copy(psi::FockMPS) = FockMPS(copy(psi.data), copy(psi.s), scaling=scaling(psi))
 
-DMRG.svectors_uninitialized(psi::FockMPS) = any(ismissing, psi.s)
-function DMRG.unset_svectors!(psi::FockMPS)
+svectors_uninitialized(psi::FockMPS) = any(ismissing, psi.s)
+function unset_svectors!(psi::FockMPS)
 	psi.s[2:end-1] .= missing
 	return psi
 end
@@ -105,15 +105,15 @@ end
 
 
 # check is canonical
-DMRG.isleftcanonical(a::FockMPS; kwargs...) = all(x->isleftcanonical(x; kwargs...), a.data)
-DMRG.isrightcanonical(a::FockMPS; kwargs...) = all(x->isrightcanonical(x; kwargs...), a.data)
+isleftcanonical(a::FockMPS; kwargs...) = all(x->isleftcanonical(x; kwargs...), a.data)
+isrightcanonical(a::FockMPS; kwargs...) = all(x->isrightcanonical(x; kwargs...), a.data)
 
 """
 	iscanonical(psi::MPS; kwargs...) = is_right_canonical(psi; kwargs...)
 check if the state is right-canonical, the singular vectors are also checked that whether there are the correct Schmidt numbers or not
 This form is useful for time evolution for stability issue and also efficient for computing observers of unitary systems
 """
-function DMRG.iscanonical(psi::FockMPS; kwargs...)
+function iscanonical(psi::FockMPS; kwargs...)
 	isrightcanonical(psi) || return false
 	# we also check whether the singular vectors are the correct Schmidt numbers
 	svectors_uninitialized(psi) && return false

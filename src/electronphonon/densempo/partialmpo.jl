@@ -30,15 +30,15 @@ PartialDenseMPO(positions::AbstractVector{Int}, data::AbstractVector{<:DenseMPOT
 TK.scalartype(::Type{PartialDenseMPO{T}}) where {T<:Number} = T
 
 storage(a::PartialDenseMPO) = a.data
-DMRG.positions(a::PartialDenseMPO) = a.positions
+positions(a::PartialDenseMPO) = a.positions
 Base.length(a::PartialDenseMPO) = length(storage(a))
 Base.isempty(a::PartialDenseMPO) = isempty(storage(a))
 Base.getindex(a::PartialDenseMPO, i::Int) = getindex(storage(a), i)
 Base.firstindex(a::PartialDenseMPO) = firstindex(storage(a))
 Base.lastindex(a::PartialDenseMPO) = lastindex(storage(a))
 
-DMRG.space_l(state::PartialDenseMPO) = space_l(state[1])
-DMRG.space_r(state::PartialDenseMPO) = space_r(state[end])
+space_l(state::PartialDenseMPO) = space_l(state[1])
+space_r(state::PartialDenseMPO) = space_r(state[end])
 
 function Base.setindex!(h::PartialDenseMPO, v::DenseMPOTensor, i::Int)
 	# check_mpotensor_dir(v) || throw(SpaceMismatch())

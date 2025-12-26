@@ -17,7 +17,7 @@ function Base.:*(h::DenseMPO, psi::FockMPS)
 end
 
 Base.:*(h::PartialDenseMPO, psi::FockMPS) = apply!(h, copy(psi))
-function DMRG.apply!(h::PartialDenseMPO, psi::FockMPS)
+function apply!(h::PartialDenseMPO, psi::FockMPS)
     @assert positions(h)[end] <= length(psi)
     T = promote_type(scalartype(h), scalartype(psi))
     _start, _end = positions(h)[1], positions(h)[end]

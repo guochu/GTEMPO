@@ -40,8 +40,8 @@
 # 	end
 # 	# println("j=", j, ",band=", band, ",branch=", b, ",pos1=", pos1, ",pos2=", pos2)
 # 	(pos1 + 1 == pos2) || error("something wrong")
-# 	left = Rep[ℤ₂](0=>space_l(t))
-# 	right = Rep[ℤ₂](0=>space_r(t))
+# 	left = Z2Space(0=>space_l(t))
+# 	right = Z2Space(0=>space_r(t))
 # 	t2 = zeros(scalartype(mps), left ⊗ ph ← ph' ⊗ right)
 # 	copy!(block(t2, Z2Irrep(0)), t[:, 1, :])
 # 	copy!(block(t2, Z2Irrep(1)), t[:, 2, :])

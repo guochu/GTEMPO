@@ -13,7 +13,7 @@ end
 end
 
 TK.scalartype(::Type{ExpNTerm{N, T}}) where {N, T} = T
-DMRG.positions(x::ExpNTerm) = x.positions
+positions(x::ExpNTerm) = x.positions
 ExpNTerm(a::Vararg{Int}; kwargs...) = ExpNTerm(a; kwargs...)
 
 
@@ -46,14 +46,14 @@ function Base.convert(::Type{<:PartialDenseMPO}, x::ExpNTerm{N, T}) where {N, T}
 	end
 end
 
-# function DMRG.apply!(x::ExpNTerm, mps::FockMPS) 
+# function apply!(x::ExpNTerm, mps::FockMPS) 
 #     all(s -> 1 <= s <= length(mps), positions(x)) || throw(BoundsError())
 #     t = convert(PartialDenseMPO, x)
 #     apply!(t, mps)
 #     return mps
 # end
 
-function DMRG.apply!(x::ExpNTerm{N, T}, mps::FockMPS) where {N, T}
+function apply!(x::ExpNTerm{N, T}, mps::FockMPS) where {N, T}
 	Λ = x.coeff
 	if N == 1
 		# nop = Matrix{T}([Λ 0; 0 1])

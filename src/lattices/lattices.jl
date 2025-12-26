@@ -168,7 +168,7 @@ function trivial_sitetenor(::Type{T}, leftspace) where {T <: Number}
 	v = zeros(T, leftspace ⊗ grassmannpspace() ← leftspace )
 	for s in sectors(leftspace)
 		d = dim(leftspace, s)
-		copy!(v[(s, Irrep[ℤ₂](0), s)], reshape(one(zeros(d, d)), d, 1, d))
+		copy!(v[(s, Z2Irrep(0), s)], reshape(one(zeros(d, d)), d, 1, d))
 	end
 	return v
 end

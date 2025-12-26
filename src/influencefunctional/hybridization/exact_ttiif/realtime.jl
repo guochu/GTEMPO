@@ -59,7 +59,7 @@ function _differentialinfluencefunctional(lattice::RealGrassmannLattice{<:_Allow
 
 	mps = mpss[1]
 	for i in 2:length(mpss)
-		t = @elapsed mps = mult(mps, mpss[i], alg.algmult)
+		t = @elapsed mps = mult!(mps, mpss[i], alg.algmult)
 		(alg.verbosity >= 2) && println("$i of $(length(mpss)) takes $t seconds, result mps of bond dimension: ", bond_dimension(mps))
 	end
 	return mps

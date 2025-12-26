@@ -4,7 +4,6 @@ authors = ["Guo Chu <guochu604b@gmail.com>"]
 version = "0.0.1"
 
 [deps]
-DMRG = "1240110f-4488-488b-9691-4f58b4220f75"
 ImpurityModelBase = "a5817ebb-6d84-46c1-a17a-d25f868e249e"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
@@ -13,6 +12,6 @@ QuAPI = "49288508-9298-4753-b2e7-d320e8956d6c"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Strided = "5e0ebb24-38b0-5f93-81fe-25c709ecae67"
-TensorKit = "07d1fe3e-3e46-537d-9eac-e9e13d0d4cec"
+Z2TensorKit = "fbfa7797-1d9b-4030-96ff-ac5316b66f85"
 TensorOperations = "6aa20fa7-93e2-5fca-9bc0-fbd0db3c71a2"
 TupleTools = "9d95972d-f1c8-5527-a6e0-b4b365fa01f6"

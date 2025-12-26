@@ -4,7 +4,7 @@ include("svdmult.jl")
 include("itermult.jl")
 
 
-function chack_contract_idx(L::Int, cidx::Vector{Int})
+function check_contract_idx(L::Int, cidx::Vector{Int})
     @assert issorted(cidx) "contracted index should sorted"
     @assert all(isodd, cidx) "contracted index should be odd, which will contracted with adjacent one after it"
     @assert all(diff(cidx) .> 0) "cidx should be sorted, and no duplication"

@@ -37,11 +37,11 @@ function Base.:*(m::GrassmannTransferMatrix{M, N}, right::GrassmannTensorMap{<:A
 	return right
 end
 
-function DMRG.l_LL(f, vspace::ElementarySpace, m::GrassmannTransferMatrix)
+function l_LL(f, vspace::ElementarySpace, m::GrassmannTransferMatrix)
 	return GrassmannTensorMap(f(scalartype(m), vspace, ⊗(map(y->space_l(y[1].data), m.states)...)))
 end
 
-function DMRG.r_RR(f, vspace::ElementarySpace, m::GrassmannTransferMatrix)
+function r_RR(f, vspace::ElementarySpace, m::GrassmannTransferMatrix)
 	return GrassmannTensorMap(f(scalartype(m), ⊗(map(y->space_r(y[end].data)', reverse(m.states))...), vspace))
 end
 

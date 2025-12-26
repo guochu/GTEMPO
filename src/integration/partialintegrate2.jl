@@ -74,8 +74,8 @@ function iterativemult(x::GrassmannMPS, y::GrassmannMPS, lattice::AbstractGrassm
 end
 
 
-DMRG.compute!(env::IntegrateBandIterativeMultCache, alg::DMRGMult1) = iterative_compute!(env, alg)
-DMRG.sweep!(m::IntegrateBandIterativeMultCache, alg::DMRGMult1) = vcat(leftsweep!(m, alg), rightsweep!(m, alg))
+compute!(env::IntegrateBandIterativeMultCache, alg::DMRGMult1) = iterative_compute!(env, alg)
+sweep!(m::IntegrateBandIterativeMultCache, alg::DMRGMult1) = vcat(leftsweep!(m, alg), rightsweep!(m, alg))
 function finalize!(m::IntegrateBandIterativeMultCache, alg::DMRGMult1)
     leftsweep!(m, alg)
     rightsweep_final!(m, alg)
@@ -84,7 +84,7 @@ end
 
 
 
-function DMRG.leftsweep!(m::IntegrateBandIterativeMultCache, alg::DMRGMult1)
+function leftsweep!(m::IntegrateBandIterativeMultCache, alg::DMRGMult1)
     z, x, y = m.z, m.x, m.y
     hstorage = m.hstorage
 
@@ -120,7 +120,7 @@ function DMRG.leftsweep!(m::IntegrateBandIterativeMultCache, alg::DMRGMult1)
     return kvals    
 end
 
-function DMRG.rightsweep!(m::IntegrateBandIterativeMultCache, alg::DMRGMult1)
+function rightsweep!(m::IntegrateBandIterativeMultCache, alg::DMRGMult1)
     z, x, y = m.z, m.x, m.y
     hstorage = m.hstorage
 

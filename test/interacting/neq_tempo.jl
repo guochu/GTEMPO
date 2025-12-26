@@ -4,6 +4,11 @@ println("|     NEQ TEMPO For Interacting System       |")
 println("----------------------------------------------")
 
 
+using JSON
+
+parse_complex_number(a) = a["re"] + im * a["im"]
+tcmps_result_file = joinpath(@__DIR__, "tcmps_result.json")
+tcmps_results = [[parse_complex_number.(j) for j in i] for i in JSON.parsefile(tcmps_result_file)]
 
 @testset "TEMPO vs TCMPS: NEQ for single bath" begin
 
@@ -18,17 +23,10 @@ println("----------------------------------------------")
 	dw = 0.2
 	tol = 1.0e-2
 
-	# TCMPS
 	bath = fermionicbath(spectrum_func(D), β=β, μ=μ)
-	config = thermofield( chainmapping(star(bath, dw=dw)) )
-	model = SISBD(config, U=U, μ=ϵ_d)
-
-	state = complex(separable_state(model, sys_states=[0]))
 	trunc = truncdimcutoff(D=100, ϵ=1.0e-6)
-	gf_stepper = TEBDStepper(tspan=(0 , -im*δt), stepsize=δt, order=2, trunc=trunc)
-	ts = [i * δt for i in 0:N]
-	g_tcmps, l_tcmps = gf_greater_lesser_t(model, ts, 1, 1, gf_stepper=gf_stepper, th_state=state)
-
+	
+	g_tcmps, l_tcmps = tcmps_results[1]
 	@test norm(l_tcmps) < tol
 
 	# tempo
@@ -82,43 +80,10 @@ end
 
 	leftdw = 0.4
 	rightdw = 0.4
-	leftconfig = thermofield(chainmapping(star(leftbath, dw=leftdw)))
-	rightconfig = thermofield(chainmapping(star(rightbath, dw=rightdw)))
-
-	# TCMPS
-	model = SIDBD(leftconfig, rightconfig, μ=epsilon_d, U=U)
-	state = complex(separable_state(model, sys_states=[0]))
-
-	symmetry = SpinCharge()
-	sys_site = only(default_sys_sites(model))
-	ham = consolidate(FermionicHamiltonian(model), symmetry=symmetry)
-	
-	observer_n = consolidate(TwoBodyTerm(sys_site, sys_site), symmetry=symmetry) 
-	observer1 = consolidate(left_sysbath_tunneling(model), symmetry=symmetry)
-	observer2 = consolidate(right_sysbath_tunneling(model), symmetry=symmetry)
 
 	trunc = truncdimcutoff(D=100, ϵ=1.0e-6, add_back=0)
 
-	ns = Float64[]
-	currents_left = ComplexF64[]
-	currents_right = ComplexF64[]
-
-	local cache
-	for i in 1:N
-		stepper = TEBDStepper(tspan=(-im*(i-1)*δt, -im*i*δt), stepsize=δt, order=2, trunc=trunc)
-		if !(@isdefined cache)
-			state, cache = timeevo!(state, ham, stepper)
-		else
-			state, cache = timeevo!(state, ham, stepper, cache)
-		end
-		push!(ns, real(expectation(observer_n, state)) )
-		push!(currents_left, expectation(observer1, state) )
-		push!(currents_right, expectation(observer2, state) )
-	end
-	# why the convention is so strength for TCMPS?
-	currents_left = conj(im .* currents_left)
-	currents_right = conj(im .* currents_right)
-	ns ./= 2
+	ns, currents_left, currents_right = tcmps_results[2]
 
 	# TEMPO
 	lattice = GrassmannLattice(N=N, δt=δt, contour=:real, bands=2, order=1)

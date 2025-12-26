@@ -53,9 +53,11 @@ function stable_svd!(a::StridedArray{T, 2}, workspace::AbstractVector{T}) where 
     ac = reshape(view(workspace, 1:length(a)), size(a))
     copy!(ac, a)
     try
-        return TK.MatrixAlgebra.svd!(ac, TK.SDD())
+        # return TK.MatrixAlgebra.svd!(ac, TK.SDD())
+        return TK._svd!(ac, TK.SDD())
     catch
-        return TK.MatrixAlgebra.svd!(a, SVD())
+        # return TK.MatrixAlgebra.svd!(a, SVD())
+        return TK._svd!(a, SVD())
     end
 end
 
@@ -92,12 +94,14 @@ function TK.tsvd!(a::StridedArray{T, N}, left::NTuple{N1, Int}, right::NTuple{N2
 end
 
 function tqr!(a::StridedMatrix) 
-    q, r = TK.MatrixAlgebra.leftorth!(a, QR(), 0)
+    # q, r = TK.MatrixAlgebra.leftorth!(a, QR(), 0)
+    q, r = TK.leftorth!(a, QR(), 0)
     return q, r
 end
 
 function tlq!(a::StridedMatrix) 
-    l, q = TK.MatrixAlgebra.rightorth!(a, LQ(), 0)
+    # l, q = TK.MatrixAlgebra.rightorth!(a, LQ(), 0)
+    l, q = TK.rightorth!(a, LQ(), 0)
     return l, q
 end
 
@@ -150,7 +154,7 @@ end
 
 # truncation
 _truncate!(v::AbstractVector{<:Real}, trunc::NoTruncation, p::Real=2) = v, 0.
-function _truncate!(v::AbstractVector{<:Real}, trunc::DMRG.TruncationDimCutoff, p::Real=2)
+function _truncate!(v::AbstractVector{<:Real}, trunc::TruncationDimCutoff, p::Real=2)
     sca = norm(v, p)
     dtrunc = findlast(Base.Fix2(>, sca * trunc.ϵ), v)
     if isnothing(dtrunc)

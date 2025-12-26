@@ -4,15 +4,15 @@ abstract type AbstractGTerm end
 function spin_site_ops_z2()
     ph = _ph
     vacuum = oneunit(ph)
-    σ₊ = zeros(vacuum ⊗ ph ← Rep[ℤ₂](1=>1) ⊗ ph)
-    copy!(block(σ₊, Irrep[ℤ₂](1)), ones(1, 1))
-    σ₋ = zeros(vacuum ⊗ ph ← Rep[ℤ₂](1=>1) ⊗ ph)
-    copy!(block(σ₋, Irrep[ℤ₂](0)), ones(1, 1))
+    σ₊ = zeros(vacuum ⊗ ph ← Z2Space(1=>1) ⊗ ph)
+    copy!(block(σ₊, Z2Irrep(1)), ones(1, 1))
+    σ₋ = zeros(vacuum ⊗ ph ← Z2Space(1=>1) ⊗ ph)
+    copy!(block(σ₋, Z2Irrep(0)), ones(1, 1))
     σz = ones(ph ← ph)
-    copy!(block(σz, Irrep[ℤ₂](0)), -ones(1, 1))
+    copy!(block(σz, Z2Irrep(0)), -ones(1, 1))
     JW = -σz
     n = zeros(ph ← ph)
-    copy!(block(n, Irrep[ℤ₂](1)),ones(1, 1))
+    copy!(block(n, Z2Irrep(1)),ones(1, 1))
     return σ₊, σ₋,σz, JW, one(JW), n
 end
 
@@ -34,7 +34,7 @@ end
 end
 
 TK.scalartype(::Type{GTerm{N, T}}) where {N, T} = T
-DMRG.positions(x::GTerm) = x.positions
+positions(x::GTerm) = x.positions
 GTerm(a::Vararg{Int}; kwargs...) = GTerm(a; kwargs...)
 
 function Base.convert(::Type{<:PartialMPO}, x::GTerm)
@@ -66,7 +66,7 @@ struct ExpGTerm{N, T <:Number} <: AbstractGTerm
 	data::GTerm{N, T}
 end
 TK.scalartype(::Type{ExpGTerm{N, T}}) where {N, T} = T
-DMRG.positions(x::ExpGTerm) = x.data.positions
+positions(x::ExpGTerm) = x.data.positions
 Base.exp(x::GTerm{N}) where N = ExpGTerm(x)
 function Base.convert(::Type{<:PartialMPO}, x::ExpGTerm)
 	t1 = convert(PartialMPO, x.data)
