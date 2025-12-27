@@ -1,17 +1,30 @@
 name = "GTEMPO"
 uuid = "44ad46a9-1ad4-442b-94e0-dc86be91c0af"
-authors = ["Guo Chu <guochu604b@gmail.com>"]
+authors = ["Guo Chu <guochu604b@gmail.com>", "Sun Zhijie <zjsun@mail.ustc.edu.cn>"]
 version = "0.0.1"
 
 [deps]
 ImpurityModelBase = "a5817ebb-6d84-46c1-a17a-d25f868e249e"
+KrylovKit = "0b1a1467-8014-51b9-945f-bf0ae24f4b77"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+LsqFit = "2fda8390-95c7-5789-9bda-21331edee243"
+Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
 Permutations = "2ae35dd2-176d-5d53-8349-f30d82d94d4f"
+Polynomials = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
 QuAPI = "49288508-9298-4753-b2e7-d320e8956d6c"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Strided = "5e0ebb24-38b0-5f93-81fe-25c709ecae67"
-Z2Tensors = "fbfa7797-1d9b-4030-96ff-ac5316b66f85"
 TensorOperations = "6aa20fa7-93e2-5fca-9bc0-fbd0db3c71a2"
 TupleTools = "9d95972d-f1c8-5527-a6e0-b4b365fa01f6"
+Z2Tensors = "fbfa7797-1d9b-4030-96ff-ac5316b66f85"
+
+[compat]
+ImpurityModelBase = "0.0.1"
+KrylovKit = "0.10.2"
+LsqFit = "0.15.1"
+Parameters = "0.12.3"
+Polynomials = "4.1.0"
+QuAPI = "0.0.1"
+Z2Tensors = "0.1.0"
