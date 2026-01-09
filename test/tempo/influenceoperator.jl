@@ -77,7 +77,6 @@ end
 	algexpan = PronyExpansion(tol=1.0e-6)
 	tol = 1.0e-5
 	# only supports the following ordering currently
-	ordering = 
 	for ordering in [A1Ā1a1ā1B1B̄1b1b̄1(), A1Ā1B1B̄1a1ā1b1b̄1()]
 		for bands in 1:3
 

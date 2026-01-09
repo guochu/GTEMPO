@@ -91,6 +91,7 @@ export PronyExpansion2, LsqExpansion2
 using Base: @boundscheck, @propagate_inbounds
 using Logging: @warn
 using Permutations, Reexport, TupleTools, Strided, Statistics
+using Serialization
 using Z2Tensors
 using Z2Tensors: Z2Tensors, QR, SVD, LQ, AdjointTensorMap, NoTruncation, TruncationDimCutoff
 const TK = Z2Tensors
