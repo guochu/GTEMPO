@@ -1,5 +1,8 @@
 module GTEMPO
 
+# auxiliary 
+export truncdimcutoff
+
 # GrassmannTensor
 export GrassmannTensorMap
 
