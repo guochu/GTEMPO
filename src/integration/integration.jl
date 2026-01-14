@@ -19,6 +19,7 @@ include("acintegrate/integrate5.jl")
 # include("acintegrate/integrate7.jl")
 
 include("acintegrate/ac_cached_integrate.jl")
+include("acintegrate/ac_cached_integrate2.jl")
 include("acintegrate/ac_bmps_integrate.jl")
 
 include("conversion.jl")

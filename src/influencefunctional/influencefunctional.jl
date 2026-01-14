@@ -7,8 +7,9 @@ see [SciPost Phys. Core 7, 063 (2024)]
 """
 struct PartialIF <: InfluenceFunctionalAlgorithm 
 	trunc::TruncationDimCutoff
+	verbosity::Int
 end
-PartialIF(; trunc::TruncationDimCutoff=DefaultITruncation) = PartialIF(trunc)
+PartialIF(; trunc::TruncationDimCutoff=DefaultITruncation, verbosity::Int=0) = PartialIF(trunc, verbosity)
 """
 	struct TranslationInvariantIF
 

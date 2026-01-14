@@ -12,7 +12,7 @@ println("------------------------------------")
 
 					lattice = GrassmannLattice(N=N, δt = 0.1, bands=bands, contour=:real, ordering=ordering)
 					A = randomgmps(Float64, length(lattice), D=4)
-					cache = environments(lattice, A)
+					cache = environments2(lattice, A)
 					for band in 1:lattice.bands
 						for f1 in (:+, ), f2 in (:+, :-), c1 in (true, false), c2 in (true, false)
 							if !((f1 == f2) && (c1 == c2))
@@ -32,7 +32,7 @@ println("------------------------------------")
 					end
 
 					B = randomgmps(Float64, length(lattice), D=6)
-					cache = environments(lattice, A, B)
+					cache = environments2(lattice, A, B)
 					
 					for band in 1:lattice.bands
 						for f1 in (:+, ), f2 in (:+, :-), c1 in (true, false), c2 in (true, false)
