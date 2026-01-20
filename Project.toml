@@ -20,13 +20,3 @@ Strided = "5e0ebb24-38b0-5f93-81fe-25c709ecae67"
 TensorOperations = "6aa20fa7-93e2-5fca-9bc0-fbd0db3c71a2"
 TupleTools = "9d95972d-f1c8-5527-a6e0-b4b365fa01f6"
 Z2Tensors = "fbfa7797-1d9b-4030-96ff-ac5316b66f85"
-
-[compat]
-ImpurityModelBase = "0.0.1"
-KrylovKit = "0.10.2"
-LsqFit = "0.15.1"
-Parameters = "0.12.3"
-Polynomials = "4.1.0"
-QuAPI = "0.0.1"
-Serialization = "1.11.0"
-Z2Tensors = "0.1.0"
