@@ -4,7 +4,7 @@ module GTEMPO
 export truncdimcutoff
 
 # GrassmannTensor
-export GrassmannTensorMap
+export GrassmannTensorMap, scalartype
 
 # Grassmann MPS
 export AbstractGTerm, GTerm, ExpGTerm, grassmannpspace
