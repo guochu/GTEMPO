@@ -12,7 +12,7 @@ println("------------------------------------")
 
 					lattice = GrassmannLattice(N=N, δt = 0.1, bands=bands, contour=:real, ordering=ordering)
 					A = randomgmps(Float64, length(lattice), D=4)
-					cache = cu_environments(lattice, A)
+					cache = cu_environments2(lattice, A)
 					for band in 1:lattice.bands
 						for f1 in (:+, ), f2 in (:+, :-), c1 in (true, false), c2 in (true, false)
 							if !((f1 == f2) && (c1 == c2))
@@ -32,7 +32,7 @@ println("------------------------------------")
 					end
 
 					B = randomgmps(Float64, length(lattice), D=6)
-					cache = cu_environments(lattice, A, B)
+					cache = cu_environments2(lattice, A, B)
 					
 					for band in 1:lattice.bands
 						for f1 in (:+, ), f2 in (:+, :-), c1 in (true, false), c2 in (true, false)
@@ -56,3 +56,25 @@ println("------------------------------------")
 	end
 
 end
+
+@testset "environments2 scaling" begin
+    N, idx0 = 190, 1
+    bands = 2
+
+    lattice = GrassmannLattice(N=N, δt = 0.1, bands=bands, contour=:real)
+    A = randomgmps(Float64, length(lattice), D=4)
+    B = randomgmps(Float64, length(lattice), D=6)
+    cache = environments(lattice, A, B)
+    cache2 = cu_environments2(lattice, A, B)
+
+    for band in 1:lattice.bands
+        g1 = cached_greater_fast(lattice, A, B, cache=cache, band=band)
+        g2 = cu_cached_greater_fast(idx0, lattice, A, B, cache=cache2, band=band)
+        @test norm(g1-g2) / norm(g1) < 1e-10
+
+        g1 = cached_lesser_fast(lattice, A, B, cache=cache, band=band)
+        g2 = cu_cached_lesser_fast(idx0, lattice, A, B, cache=cache2, band=band)
+        @test norm(g1-g2) / norm(g1) < 1e-10
+    end
+end
+

@@ -1,4 +1,4 @@
-ENV["CUDA_VISIBLE_DEVICES"] = 6
+ENV["CUDA_VISIBLE_DEVICES"] = 5
 
 push!(LOAD_PATH, dirname(dirname(dirname(Base.@__DIR__))) * "/DMRG/src")
 push!(LOAD_PATH, dirname(dirname(dirname(Base.@__DIR__))) * "/InfiniteDMRG/src")

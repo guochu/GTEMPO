@@ -20,6 +20,8 @@ function cached_gf_fast(idx0::Int, lattice::RealGrassmannLattice, A::GrassmannMP
 	cached_gf_fast(idx0, lattice, lattice.k, A, Bs...; kwargs...)
 end 
 
+# moved to ac_cached_integrate2.jl
+
 # # exhaust the first time index
 # function cached_gf_fast(idx0::Int, lattice::AbstractGrassmannLattice, N::Int, A::GrassmannMPS, Bs::Vararg{GrassmannMPS}; 
 # 			cache::TwosideExpectationCache=environments(lattice, A, Bs...),

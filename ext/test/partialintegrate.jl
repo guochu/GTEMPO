@@ -3,15 +3,7 @@ println("|    Partial Integrate in CUDA     |")
 println("------------------------------------")
 
 
-function _normalize!(psi::GrassmannMPS)
-    alg = Orthogonalize(SVD(), normalize=true)
-    open("/dev/null", "w") do devnull
-        redirect_stderr(devnull) do
-            canonicalize!(psi, alg=alg)
-        end
-    end
 
-end
 function _dis(mps1, mps2)
     mps1, mps2 = deepcopy(mps1), deepcopy(mps2)
     _normalize!(mps1)

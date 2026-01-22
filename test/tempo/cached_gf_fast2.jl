@@ -56,3 +56,24 @@ println("------------------------------------")
 	end
 
 end
+
+@testset "environments2 scaling" begin
+    N, idx0 = 190, 1
+    bands = 2
+
+    lattice = GrassmannLattice(N=N, δt = 0.1, bands=bands, contour=:real)
+    A = randomgmps(Float64, length(lattice), D=4)
+    B = randomgmps(Float64, length(lattice), D=6)
+    cache = environments(lattice, A, B)
+    cache2 = environments2(lattice, A, B)
+
+    for band in 1:lattice.bands
+        g1 = cached_greater_fast(lattice, A, B, cache=cache, band=band)
+        g2 = cached_greater_fast(idx0, lattice, A, B, cache=cache2, band=band)
+        @test norm(g1-g2) / norm(g1) < 1e-10
+
+        g1 = cached_lesser_fast(lattice, A, B, cache=cache, band=band)
+        g2 = cached_lesser_fast(idx0, lattice, A, B, cache=cache2, band=band)
+        @test norm(g1-g2) / norm(g1) < 1e-10
+    end
+end
