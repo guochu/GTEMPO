@@ -18,7 +18,7 @@ import QuAPI: branch, index
 
 
 using Parameters, Polynomials, KrylovKit, LsqFit
-using LinearAlgebra: LinearAlgebra, Symmetric, eigen, qr, pinv, eigvals, Diagonal
+using LinearAlgebra: LinearAlgebra, Symmetric, eigen, qr, pinv, eigvals, Diagonal, diagm
 
 
 include("auxiliary/CachedVectors.jl")

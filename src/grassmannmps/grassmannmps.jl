@@ -181,6 +181,9 @@ function apply!(x::Union{GTerm, ExpGTerm}, mps::GrassmannMPS)
 	return mps
 end
 Base.:*(x::Union{GTerm, ExpGTerm}, mps::GrassmannMPS) = apply!(x, copy(mps))
+function apply!(x::GTerm{0}, mps::GrassmannMPS)
+	return mps * x.coeff
+end
 
 # function randomgmps(::Type{T}, L::Int; D::Int) where {T <: Number}
 # 	physpaces = [_ph for i in 1:L]

@@ -92,5 +92,7 @@ include("predefined/siam.jl")
 include("predefined/irlm.jl")
 include("predefined/skmodel.jl")
 
+include("sysinitstate2.jl")
+
 # general model
 include("generalimpurity/generalimpurity.jl")
