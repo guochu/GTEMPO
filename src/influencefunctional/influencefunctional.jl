@@ -41,16 +41,17 @@ function Base.getproperty(x::TranslationInvariantIF, s::Symbol)
 end
 
 
-struct ExactTranslationInvariantIF{T<:ExponentialExpansionAlgorithm, M<:DMRGAlgorithm} <: InfluenceFunctionalAlgorithm 
+struct ExactTranslationInvariantIF{T<:ExponentialExpansionAlgorithm, M<:DMRGAlgorithm, M2<:DMRGAlgorithm} <: InfluenceFunctionalAlgorithm 
 	algexpan::T
 	algmult::M
+	algmult2::M2 # only used in iGTEMPO._differentialinfluencefunctional2
 	multorder::Symbol
 	verbosity::Int
 end
 ExactTranslationInvariantIF(; algexpan::ExponentialExpansionAlgorithm=PronyExpansion(n=15, tol=1.0e-4, verbosity=0), 
-						 algmult::DMRGAlgorithm=DefaultMultAlg,
+						 algmult::DMRGAlgorithm=DefaultMultAlg, algmult2::DMRGAlgorithm=algmult,
 						 multorder::Symbol = :αSM,
-						 verbosity::Int=0) = ExactTranslationInvariantIF(algexpan, algmult, multorder, verbosity)
+						 verbosity::Int=0) = ExactTranslationInvariantIF(algexpan, algmult, algmult2, multorder, verbosity)
 # allowed order: 
 # :λLM, λ large first
 # :λSM, λ small first
