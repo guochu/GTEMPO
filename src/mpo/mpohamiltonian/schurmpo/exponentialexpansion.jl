@@ -128,7 +128,7 @@ function _exponential_expansion_impl(f::Vector{<:Number}, alg::AbstractPronyExpa
             return xs, lambdas
         end
         if n >= min(L-n, nitr)
-            (verbosity > 0) && @warn "can not find a good approximation with L=$(L), n=$(alg.n), tol=$(alg.tol), return with error $err"
+            (verbosity > 0) && @warn "can not find a good approximation with L=$(L), n=$(alg.n), atol=$(alg.tol), rtol=$(tol), return with error $err"
             # println(xs, " ", lambdas)
             return xs, lambdas
         end
