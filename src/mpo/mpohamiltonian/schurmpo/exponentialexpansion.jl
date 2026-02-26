@@ -115,10 +115,10 @@ end
 
 function _exponential_expansion_impl(f::Vector{<:Number}, alg::AbstractPronyExpansion)
     L = length(f)
-    tol = alg.tol
+    tol = alg.tol * norm(f)
     verbosity = alg.verbosity
     maxiter = alg.n
-    nitr = min(maxiter, L)
+    nitr = min(maxiter, div(L, 2))
     for n in 1:nitr
         xs, lambdas = exponential_expansion_n(f, n, alg)
         err = expansion_error(f, xs, lambdas)
@@ -127,8 +127,8 @@ function _exponential_expansion_impl(f::Vector{<:Number}, alg::AbstractPronyExpa
             # println(xs, " ", lambdas)
             return xs, lambdas
         end
-        if n >= min(L-n+1, nitr)
-            (verbosity > 0) && @warn "can not find a good approximation with L=$(L), n=$(alg.n), tol=$(tol), return with error $err"
+        if n >= min(L-n, nitr)
+            (verbosity > 0) && @warn "can not find a good approximation with L=$(L), n=$(alg.n), tol=$(alg.tol), return with error $err"
             # println(xs, " ", lambdas)
             return xs, lambdas
         end
