@@ -1,0 +1,3 @@
+1. Conversion from Fock-state basis matrix into Grassmann matrix, used for efficient initialization, and dealing with impurity propagators
+2. Removing the redundant GVs with lattice index 0
+3. Removing unnecessary lattice ordering, stop giving the choice of ordering to users (give a default ordering)?
