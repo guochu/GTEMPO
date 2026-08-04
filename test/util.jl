@@ -140,3 +140,13 @@ end
 
 # 	return g1, g2
 # end
+
+
+
+function _dis(mps1, mps2)
+    mps1, mps2 = deepcopy(mps1), deepcopy(mps2)
+    _normalize!(mps1)
+    _normalize!(mps2)
+    return distance(mps1, mps2)
+end
+

@@ -63,6 +63,7 @@ include("tempo/independentbosons.jl")
 include("tempo/irlm.jl")
 include("tempo/generalimpurity.jl")
 include("tempo/buildK.jl")
+include("tempo/buildK2.jl")
 
 include("tempo/bcs/bcs.jl")
 
