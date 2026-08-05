@@ -48,7 +48,8 @@ function main(t; β=5, δt = 0.1, chi=60, chi2=4*chi)
 
 	println("bond dimension of mpsI is ", bond_dimension(mpsI))
 
-	@time mpsK = accsysdynamics_fast(lattice, exact_model, trunc=trunc2)
+	# @time mpsK = accsysdynamics_fast(lattice, exact_model, trunc=trunc2)
+	@time mpsK = sysdynamics_fast(lattice, exact_model, trunc=trunc2)
 	# mpsK = boundarycondition!(mpsK, lattice, band=1)
 	println("bond dimension of mpsK is ", bond_dimension(mpsK))
 	mps_adt = mpsK
@@ -74,7 +75,7 @@ function main(t; β=5, δt = 0.1, chi=60, chi2=4*chi)
 
 	data_path = "result/keldysh_norb$(norb)_beta$(β)_t$(t)_U$(U)_J$(J)_mu$(μ)_N$(N)_chi$(chi)_chi2$(chi2).json"
 
-	results = Dict("ts"=>ts, "gt" => gt, "lt"=>lt)
+	results = Dict("ts"=>ts, "gt_real" => real(gt), "gt_imag" => imag(gt), "lt_real"=>real(lt), "lt_imag"=>imag(lt))
 
 	open(data_path, "w") do f
 		write(f, JSON.json(results))
