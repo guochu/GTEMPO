@@ -40,6 +40,8 @@ function main(;β=10, δτ=0.1, chi=60,  U=1, ϵ_d=-U/2)
 	end
 
 	cache = environments(lattice, mpsK, mpsI1, mpsI2)
+	println("partition function is ", Zvalue(cache))
+
 	gt = cached_Gτ_fast(lattice, mpsK, mpsI1, mpsI2, cache=cache)
 
 	ts = [i*δτ for i in 1:N]
