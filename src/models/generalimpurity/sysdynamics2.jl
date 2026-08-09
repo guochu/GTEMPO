@@ -1,3 +1,19 @@
+function jw_operators(term::AdagATerm, N::Int)
+	adag, a = jw_operators(N)
+	return term.coeff * adag[term.positions[1]] * a[term.positions[2]]
+end
+function jw_operators(term::QuarticTerm, N::Int)
+	adag, a = jw_operators(N)
+	return term.coeff * adag[term.positions[1]] * adag[term.positions[2]] * a[term.positions[3]] * a[term.positions[4]]
+end
+function fockmatrix(h::ImpurityHamiltonian, bands::Int)
+	@assert bands == h.bands
+	adag, a = jw_operators(h.bands)
+	sum(h.data) do data
+		jw_operators(data, h.bands)
+	end
+end
+
 
 function sysdynamics_util2(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model; idx::Int=1, branch::Symbol=:+, trunc::TruncationScheme=DefaultKTruncation)
     H = fockmatrix(model, lattice.bands)
