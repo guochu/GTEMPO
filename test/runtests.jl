@@ -15,6 +15,9 @@ include("../src/includes.jl")
 
 Random.seed!(12354)
 
+# 重型测试开关：是否运行 test/models/ 下的耗时测试（每个 ≥4 分钟），默认开启
+const RUN_HEAVY_TESTS = true
+
 include("util.jl")
 
 
@@ -49,7 +52,6 @@ include("tempo/cached_gf.jl")
 include("tempo/cached_nn.jl")
 include("tempo/cached_gf_fast.jl")
 include("tempo/cached_gf_fast2.jl")
-include("tempo/bmps_gf.jl")
 include("tempo/observables.jl")
 
 include("tempo/swapband.jl")
@@ -59,13 +61,8 @@ include("tempo/integrateband2.jl")
 include("tempo/partialintegrate.jl")
 
 include("tempo/models.jl")
-include("tempo/independentbosons.jl")
 include("tempo/irlm.jl")
-include("tempo/generalimpurity.jl")
-include("tempo/buildK.jl")
 include("tempo/buildK2.jl")
-
-include("tempo/bcs/bcs.jl")
 
 ### tempo for interacting systems
 include("interacting/neq_tempo.jl")
@@ -74,6 +71,15 @@ include("interacting/neq_tempo.jl")
 include("electronphonon/focklattice.jl")
 include("electronphonon/fockmps.jl")
 include("electronphonon/retardedinteract.jl")
-include("electronphonon/independentbosons.jl")
+
+### heavy tests (each ≥4 min, in test/models/)
+if RUN_HEAVY_TESTS
+    include("models/bmps_gf.jl")
+    include("models/independentbosons.jl")
+    include("models/generalimpurity.jl")
+    include("models/buildK.jl")
+    include("models/bcs/bcs.jl")
+    include("models/ep_independentbosons.jl")
+end
 
 
