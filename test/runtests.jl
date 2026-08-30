@@ -63,6 +63,7 @@ include("tempo/partialintegrate.jl")
 include("tempo/models.jl")
 include("tempo/irlm.jl")
 include("tempo/buildK2.jl")
+include("tempo/buildK2_new.jl")
 
 ### tempo for interacting systems
 include("interacting/neq_tempo.jl")

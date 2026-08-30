@@ -1,4 +1,5 @@
 include("fermionoperator.jl")
 include("sysdynamics.jl")
 include("sysdynamics2.jl")
+include("sysdynamics2_new.jl")
 include("termdynamics.jl")
