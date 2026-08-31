@@ -175,6 +175,37 @@ function _fockpropagator_sites(fockstate::AbstractMatrix, brel::Vector{Int}, kre
 end
 
 """
+	_fockstate_gmps(fockstate, lattice, bpos, kpos; δ) -> GrassmannMPS
+
+Directly convert the Fock-space matrix `fockstate` (an operator in the
+occupation number basis, e.g. a propagator or a density matrix) into a
+GrassmannMPS on `lattice`, with the bra (conjugated) variables at the
+site positions `bpos` and the ket variables at `kpos`.
+"""
+function _fockstate_gmps(fockstate::AbstractMatrix, lattice::AbstractGrassmannLattice,
+						 bpos::Vector{Int}, kpos::Vector{Int}; δ::Float64=1.0e-10)
+	M = lattice.bands
+	(length(bpos) == M && length(kpos) == M) || throw(DimensionMismatch("bra/ket positions do not match bands"))
+	(size(fockstate, 1) == 2^M) || throw(DimensionMismatch("fockstate size does not match bands"))
+
+	pmin = min(minimum(bpos), minimum(kpos))
+	pmax = max(maximum(bpos), maximum(kpos))
+	L = pmax - pmin + 1
+
+	sites = _fockpropagator_sites(fockstate, bpos .- pmin, kpos .- pmin, L; δ=δ)
+
+	gmps = vacuumstate(lattice)
+	if !(scalartype(sites[1]) <: Real) && (scalartype(gmps[1]) <: Real)
+		gmps = complex(gmps)
+	end
+	for (j, p) in enumerate(pmin:pmax)
+		gmps[p] = sites[j]
+	end
+	unset_svectors!(gmps)
+	return gmps
+end
+
+"""
 	fockpropagator_gmps(fockstate, lattice, idx; branch, δ, cache) -> GrassmannMPS
 
 Directly convert the Fock-space propagator matrix `fockstate` (i.e. the
@@ -191,20 +222,18 @@ function fockpropagator_gmps(fockstate::AbstractMatrix, lattice::AbstractGrassma
 							 cache::Union{Nothing, Dict}=nothing)
 	M = lattice.bands
 	(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
-	(size(fockstate, 1) == 2^M) || throw(DimensionMismatch("fockstate size does not match bands"))
 
 	ib, ik = branch == :- ? (idx, idx+1) : (idx+1, idx)
 	bpos = [index(lattice, ib, conj=true, branch=branch, band=i) for i in 1:M]
 	kpos = [index(lattice, ik, conj=false, branch=branch, band=i) for i in 1:M]
-	pmin = min(minimum(bpos), minimum(kpos))
-	pmax = max(maximum(bpos), maximum(kpos))
-	L = pmax - pmin + 1
 
+	pmin = min(minimum(bpos), minimum(kpos))
 	brel = bpos .- pmin
 	krel = kpos .- pmin
 	sites = isnothing(cache) ? nothing : get(cache, (branch, brel, krel), nothing)
 	if isnothing(sites)
-		sites = _fockpropagator_sites(fockstate, brel, krel, L; δ=δ)
+		pmax = max(maximum(bpos), maximum(kpos))
+		sites = _fockpropagator_sites(fockstate, brel, krel, pmax - pmin + 1; δ=δ)
 		isnothing(cache) || (cache[(branch, brel, krel)] = sites)
 	end
 
@@ -212,7 +241,7 @@ function fockpropagator_gmps(fockstate::AbstractMatrix, lattice::AbstractGrassma
 	if !(scalartype(sites[1]) <: Real) && (scalartype(gmps[1]) <: Real)
 		gmps = complex(gmps)
 	end
-	for (j, p) in enumerate(pmin:pmax)
+	for (j, p) in enumerate(pmin:pmin+length(sites)-1)
 		gmps[p] = sites[j]
 	end
 	unset_svectors!(gmps)

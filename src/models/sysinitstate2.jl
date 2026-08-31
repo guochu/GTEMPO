@@ -153,3 +153,52 @@ function initthermalstate(lattice::RealGrassmannLattice, model, β::Real)
     initfockstate(lattice, rho; normalize=true)
 end
 
+
+"""
+	initfockstate2(lattice, fockstate; normalize) -> GrassmannMPS
+
+Same as `initfockstate`, but the Fock-space matrix is converted directly
+into the site tensors of a GrassmannMPS (see `fockpropagator_gmps`),
+instead of being decomposed into GTerms which are then applied one by
+one to the vacuum state. The bra variables sit on the forward branch and
+the ket variables on the backward branch at time slice 1.
+"""
+function initfockstate2(lattice::RealGrassmannLattice, fockstate::AbstractMatrix; normalize::Bool=true)
+    M = lattice.bands
+    @assert M == convert(Int, log2(size(fockstate,1)))
+    bpos = [index(lattice, 1, conj=true, branch=:+, band=i) for i in 1:M]
+    kpos = [index(lattice, 1, conj=false, branch=:-, band=i) for i in 1:M]
+    state = _fockstate_gmps(fockstate, lattice, bpos, kpos)
+
+    alg = Orthogonalize(SVD(), normalize=normalize)
+    open("/dev/null", "w") do devnull # slience the warning
+        redirect_stderr(devnull) do
+            canonicalize!(state, alg=alg)
+        end
+    end
+    return state
+end
+
+"""
+	initthermalstate2(lattice, model, β) -> GrassmannMPS
+
+Same as `initthermalstate`, but built via `initfockstate2`.
+"""
+function initthermalstate2(lattice::RealGrassmannLattice, model, β::Real)
+    H = fockmatrix(model, lattice.bands)
+
+    # direct exp will introduce many non-physcial non-zero elements
+    # rho = exp(-β * H)
+    vals, vecs = eigen(H)
+	if β == Inf
+		rho = vecs[:,1] * vecs[:,1]'
+	else
+		E0 = minimum(vals)
+		exp_vals = exp.(-β .* (vals .- E0))
+		exp_vals = exp_vals ./ sum(exp_vals)
+		rho = vecs * diagm(exp_vals) * vecs'
+	end
+
+    initfockstate2(lattice, rho; normalize=true)
+end
+
