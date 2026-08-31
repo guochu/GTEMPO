@@ -77,10 +77,10 @@ end
 _models = [
 	gAndersonIM(U=0., μ=0.5),
 	gAndersonIM(U=1., μ=0.5),
-	gIRLM(U=0., μ=0.5, J=1),
-	gIRLM(U=1., μ=0.5, J=1),
-	gKanamoriIM(U=1., μ=0.7, J=1.1, norb=1),
-	gKanamoriIM(U=1., μ=0.7, J=1.1, norb=2)
+	IRLM(U=0., μ=0.5, J=1),
+	IRLM(U=1., μ=0.5, J=1),
+	KanamoriIM(U=1., μ=0.7, J=1.1, norb=1),
+	KanamoriIM(U=1., μ=0.7, J=1.1, norb=2)
 ]
 
 @testset "build K new general impurity imag time" begin
@@ -135,8 +135,8 @@ end
 	models = [
 		gAndersonIM(U=0., μ=0.5),
 		gAndersonIM(U=1., μ=0.5),
-		gIRLM(U=1., μ=0.5, J=1),
-		gKanamoriIM(U=1., μ=0.7, J=1.1, norb=1)
+		IRLM(U=1., μ=0.5, J=1),
+		KanamoriIM(U=1., μ=0.7, J=1.1, norb=1)
 	]
 
 	# bulkconnection on the bare propagator must reproduce sysdynamics2_new exactly

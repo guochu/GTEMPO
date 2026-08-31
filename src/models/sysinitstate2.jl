@@ -55,31 +55,6 @@ function fockmatrix(m::AndersonIM, bands::Int)
         error("Invalid bands of $bands")
     end
 end
-function fockmatrix(m::KanamoriIM, bands::Int)
-    norb, U, J, μ = m.norb, m.U, m.J, m.μ
-	@assert bands == 2*norb
-    N = 2 * norb
-    adag, a = jw_operators(N)
-
-    mat = μ * sum(adag[i]*a[i] for i in 1:N)
-    for x in 1:m.norb
-        xu, xd = 2*x-1, 2*x
-        mat += U * adag[xu]*adag[xd]*a[xd]*a[xu]
-        for y in 1:m.norb
-            yu, yd = 2*y-1, 2*y
-            if x != y
-                mat += (U - 2*J) * adag[xu]*adag[yd]*a[yd]*a[xu]
-                mat -= J * (adag[xu]*adag[xd]*a[yu]*a[yd] + adag[xu]*adag[yd]*a[yu]*a[xd])
-            end
-            if x > y
-                mat += (U - 3*J) * adag[xu]*adag[yu]*a[yu]*a[xu]
-                mat += (U - 3*J) * adag[xd]*adag[yd]*a[yd]*a[xd]
-            end
-        end
-    end
-    return mat
-end
-
 function fock2grassmann(H::AbstractMatrix; δ::Float64 = 1e-10)
     M::Int = convert(Int, log2(size(H,1)))
     coherent_terms = []

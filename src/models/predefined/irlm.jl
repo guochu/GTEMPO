@@ -1,226 +1,27 @@
 """
-	struct IRLM{L<:AbstractFermionicBath, R<:AbstractFermionicBath}
+	IRLM(; μ, J, U) -> ImpurityHamiltonian
 
-Interacting resonant level model, a spinless fermionic model with 
-three impurities and two baths
+Interacting resonant level model, a spinless fermionic model with
+three impurities and two baths:
+
+H = (μ-U) n₂ + J (c†₁c₂ + c†₂c₁ + c†₂c₃ + c†₃c₂) + U (n₁n₂ + n₂n₃)
+
+constructed as a generic `ImpurityHamiltonian` with 3 bands.
 """
-struct IRLM <: AbstractImpurityHamiltonian
-	μ::Float64
-	J::Float64
-	U::Float64
+function IRLM(; μ::Real, J::Real, U::Real)
+	μ, J, U = float(μ), float(J), float(U)
+	h = ImpurityHamiltonian(bands=3)
+	push!(h, tunneling(2, 2, coeff=μ-U))
+
+	t = tunneling(2, 1, coeff=J)
+	push!(h, t)
+	push!(h, t')
+
+	t = tunneling(2, 3, coeff=J)
+	push!(h, t)
+	push!(h, t')
+
+	push!(h, interaction(1, 2, 2, 1, coeff=U))
+	push!(h, interaction(3, 2, 2, 3, coeff=U))
+	return h
 end
-IRLM(; μ::Real, J::Real, U::Real) = IRLM(convert(Float64, μ), convert(Float64, J), convert(Float64, U))
-
-# H = (μ-U) n₂ + J (c†₁c₂ + c†₂c₁ + c†₂c₃ + c†₃c₂) + U (n₁n₂ + n₂n₃)
-function fockmatrix(m::IRLM, bands::Int)
-	@assert bands == 3
-	adag, a = jw_operators(3)
-	return (m.μ - m.U) * adag[2]*a[2] +
-		m.J * (adag[2]*a[1] + adag[1]*a[2] + adag[2]*a[3] + adag[3]*a[2]) +
-		m.U * (adag[1]*a[1]*adag[2]*a[2] + adag[3]*a[3]*adag[2]*a[2])
-end
-
-
-
-# function sysdynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::IRLM; trunc::TruncationScheme=DMRG.DefaultTruncation)
-# 	@assert lattice.bands == 3
-# 	μ, J, U = model.μ, model.J, model.U
-# 	δt = lattice.δt
-# 	# forward evolution
-# 	## ε part
-# 	a = exp(-im*δt*(μ-U))
-# 	for i in 1:lattice.k-1
-# 		pos1, pos2 = index(lattice, i+1, conj=true, branch=:+, band=2), index(lattice, i, conj=false, branch=:+, band=2)
-# 		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
-# 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
-
-# 		pos1, pos2 = index(lattice, i+1, conj=true, branch=:+, band=1), index(lattice, i, conj=false, branch=:+, band=1)
-# 		apply!(exp(GTerm(pos1, pos2, coeff=1)), gmps)
-# 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
-
-# 		pos1, pos2 = index(lattice, i+1, conj=true, branch=:+, band=3), index(lattice, i, conj=false, branch=:+, band=3)
-# 		apply!(exp(GTerm(pos1, pos2, coeff=1)), gmps)
-# 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
-# 	end
-
-# 	## J part
-# 	a = -im*δt*J
-# 	for i in 1:lattice.k-1
-# 		pos1, pos2 = index(lattice, i+1, conj=true, branch=:+, band=2), index(lattice, i, conj=false, branch=:+, band=1)
-# 		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
-# 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
-
-# 		pos1, pos2 = index(lattice, i+1, conj=true, branch=:+, band=1), index(lattice, i, conj=false, branch=:+, band=2)
-# 		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
-# 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
-
-# 		pos1, pos2 = index(lattice, i+1, conj=true, branch=:+, band=2), index(lattice, i, conj=false, branch=:+, band=3)
-# 		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
-# 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
-
-# 		pos1, pos2 = index(lattice, i+1, conj=true, branch=:+, band=3), index(lattice, i, conj=false, branch=:+, band=2)
-# 		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
-# 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
-# 	end
-
-# 	## U part
-# 	a = -im*δt*U
-# 	for i in 1:lattice.k-1
-# 		pos1 = index(lattice, i+1, conj=true, branch=:+, band=1)
-# 		pos2 = index(lattice, i+1, conj=true, branch=:+, band=2)
-# 		pos3 = index(lattice, i, conj=false, branch=:+, band=2)
-# 		pos4 = index(lattice, i, conj=false, branch=:+, band=1)
-# 		apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=a)), gmps)
-# 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))	
-
-# 		pos1 = index(lattice, i+1, conj=true, branch=:+, band=3)
-# 		pos2 = index(lattice, i+1, conj=true, branch=:+, band=2)
-# 		pos3 = index(lattice, i, conj=false, branch=:+, band=2)
-# 		pos4 = index(lattice, i, conj=false, branch=:+, band=3)
-# 		apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=a)), gmps)
-# 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))					
-# 	end
-
-# 	# backward evolution
-# 	## ε part
-# 	a = exp(im*δt*(μ-U))
-# 	for i in 1:lattice.k-1
-# 		pos1, pos2 = index(lattice, i, conj=true, branch=:-, band=2), index(lattice, i+1, conj=false, branch=:-, band=2)
-# 		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
-# 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
-
-# 		pos1, pos2 = index(lattice, i, conj=true, branch=:-, band=1), index(lattice, i+1, conj=false, branch=:-, band=1)
-# 		apply!(exp(GTerm(pos1, pos2, coeff=1)), gmps)
-# 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
-
-# 		pos1, pos2 = index(lattice, i, conj=true, branch=:-, band=3), index(lattice, i+1, conj=false, branch=:-, band=3)
-# 		apply!(exp(GTerm(pos1, pos2, coeff=1)), gmps)
-# 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
-# 	end
-
-# 	## J part
-# 	a = im*δt*J
-# 	for i in 1:lattice.k-1
-# 		pos1, pos2 = index(lattice, i, conj=true, branch=:-, band=2), index(lattice, i+1, conj=false, branch=:-, band=1)
-# 		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
-# 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
-
-# 		pos1, pos2 = index(lattice, i, conj=true, branch=:-, band=1), index(lattice, i+1, conj=false, branch=:-, band=2)
-# 		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
-# 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
-
-# 		pos1, pos2 = index(lattice, i, conj=true, branch=:-, band=2), index(lattice, i+1, conj=false, branch=:-, band=3)
-# 		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
-# 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
-
-# 		pos1, pos2 = index(lattice, i, conj=true, branch=:-, band=3), index(lattice, i+1, conj=false, branch=:-, band=2)
-# 		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
-# 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
-# 	end
-
-# 	## U part
-# 	a = im*δt*U
-# 	for i in 1:lattice.k-1
-# 		pos1 = index(lattice, i, conj=true, branch=:-, band=1)
-# 		pos2 = index(lattice, i, conj=true, branch=:-, band=2)
-# 		pos3 = index(lattice, i+1, conj=false, branch=:-, band=2)
-# 		pos4 = index(lattice, i+1, conj=false, branch=:-, band=1)
-# 		apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=a)), gmps)
-# 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))	
-
-# 		pos1 = index(lattice, i, conj=true, branch=:-, band=3)
-# 		pos2 = index(lattice, i, conj=true, branch=:-, band=2)
-# 		pos3 = index(lattice, i+1, conj=false, branch=:-, band=2)
-# 		pos4 = index(lattice, i+1, conj=false, branch=:-, band=3)
-# 		apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=a)), gmps)
-# 		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))					
-# 	end
-
-# 	return gmps
-# end
-
-sysdynamics_imaginary!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::IRLM; trunc::TruncationScheme=GTEMPO.DefaultTruncation) = sysdynamics_util!(
-					gmps, lattice, model, lattice.Nτ, -lattice.δτ, :τ, trunc)
-sysdynamics_forward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::IRLM; trunc::TruncationScheme=GTEMPO.DefaultTruncation) = sysdynamics_util!(
-					gmps, lattice, model, lattice.Nt, -im*lattice.δt, :+, trunc)
-sysdynamics_backward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::IRLM; trunc::TruncationScheme=GTEMPO.DefaultTruncation) = sysdynamics_util!(
-					gmps, lattice, model, lattice.Nt, im*lattice.δt, :-, trunc)
-
-
-function sysdynamics_util!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::IRLM, N::Int, dt::Number, branch::Symbol, trunc)
-	@assert lattice.bands == 3
-	μ, J, U = model.μ, model.J, model.U
-	# forward evolution
-	## ε part
-	a = exp(dt*(μ-U))
-	for i in 1:N
-		x, y = (branch == :-) ? (i, i+1) : (i+1, i)
-		pos1, pos2 = index(lattice, x, conj=true, branch=branch, band=2), index(lattice, y, conj=false, branch=branch, band=2)
-		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
-		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
-
-		pos1, pos2 = index(lattice, x, conj=true, branch=branch, band=1), index(lattice, y, conj=false, branch=branch, band=1)
-		apply!(exp(GTerm(pos1, pos2, coeff=1)), gmps)
-		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
-
-		pos1, pos2 = index(lattice, x, conj=true, branch=branch, band=3), index(lattice, y, conj=false, branch=branch, band=3)
-		apply!(exp(GTerm(pos1, pos2, coeff=1)), gmps)
-		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
-	end
-
-	## J part
-	a = dt*J
-	for i in 1:N
-		x, y = (branch == :-) ? (i, i+1) : (i+1, i)
-		pos1, pos2 = index(lattice, x, conj=true, branch=branch, band=2), index(lattice, y, conj=false, branch=branch, band=1)
-		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
-		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
-
-		pos1, pos2 = index(lattice, x, conj=true, branch=branch, band=1), index(lattice, y, conj=false, branch=branch, band=2)
-		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
-		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
-
-		pos1, pos2 = index(lattice, x, conj=true, branch=branch, band=2), index(lattice, y, conj=false, branch=branch, band=3)
-		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
-		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
-
-		pos1, pos2 = index(lattice, x, conj=true, branch=branch, band=3), index(lattice, y, conj=false, branch=branch, band=2)
-		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
-		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
-	end
-
-	## U part
-	a = dt*U
-	for i in 1:N
-		x, y = (branch == :-) ? (i, i+1) : (i+1, i)
-		pos1 = index(lattice, x, conj=true, branch=branch, band=1)
-		pos2 = index(lattice, x, conj=true, branch=branch, band=2)
-		pos3 = index(lattice, y, conj=false, branch=branch, band=2)
-		pos4 = index(lattice, y, conj=false, branch=branch, band=1)
-		apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=a)), gmps)
-		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))	
-
-		pos1 = index(lattice, x, conj=true, branch=branch, band=3)
-		pos2 = index(lattice, x, conj=true, branch=branch, band=2)
-		pos3 = index(lattice, y, conj=false, branch=branch, band=2)
-		pos4 = index(lattice, y, conj=false, branch=branch, band=3)
-		apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=a)), gmps)
-		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))					
-	end
-	return gmps
-end
-
-
-# function hybriddynamics(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, model::IRLM;
-# 	leftcorr::Union{Nothing, <:RealCorrelationFunction}=nothing,
-# 	rightcorr::Union{Nothing, <:RealCorrelationFunction}=nothing, kwargs...)
-# 	if isnothing(leftcorr)
-# 		leftcorr = correlationfunction(model.leftbath, lattice)
-# 	end
-# 	if isnothing(rightcorr)
-# 		rightcorr = correlationfunction(model.rightbath, lattice)
-# 	end
-# 	gmps = hybriddynamics(gmps, lattice, leftcorr; band=1, kwargs...)
-# 	gmps = hybriddynamics(gmps, lattice, leftcorr; band=3, kwargs...)
-# 	return gmps
-# end
