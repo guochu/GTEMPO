@@ -61,7 +61,6 @@ export AbstractImpurityHamiltonian, AndersonIM, IRLM, KanamoriIM
 export systhermalstate, systhermalstate!, sysdynamics, sysdynamics!, sysdynamicsstepper!,
         sysdynamics2, sysdynamics_fast, sysdynamics2_new, fockpropagator_gmps
 # export sysdynamics_forward!, sysdynamics_backward!, sysdynamics_imaginary!
-export zoomin, zoomout
 export ImpurityHamiltonian
 export baresysdynamics!, baresysdynamics
 

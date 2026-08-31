@@ -33,61 +33,6 @@ println("------------------------------------")
 
 end
 
-@testset "Zoomout grassmannmps" begin
-	δτ = 0.02
-	N = 5
-	tol = 1.0e-10
-	for ordering in (A1Ā1B1B̄1(), A1B1B̄1Ā1())
-		for scaling in (2, 3)
-			for bands in (1,2,3)
-				lattice = GrassmannLattice(δτ=δτ, N=N, bands=bands, contour=:imag, ordering=ordering)
-				lattice_scaling = zoomin(lattice, scaling=scaling)
-				K1 = randomgmps(scalartype(lattice_scaling), length(lattice_scaling), D=6)
-				canonicalize!(K1, alg=Orthogonalize(trunc=NoTruncation()))
-				K2 = zoomout(K1, lattice_scaling, scaling=scaling)
-
-				Z1 = integrate(lattice_scaling, K1)
-				Z2 = integrate(lattice, K2)
-				@test _error(Z1, Z2, tol) < tol
-				for i in 1:lattice.N
-					for band in 1:lattice.bands
-						g1 = Gτ(lattice_scaling, (i-1)*scaling+1, K1, band=band, Z=Z1)
-						g2 = Gτ(lattice, i, K2, band=band, Z=Z2)
-						@test _error(g1, g2, tol) < tol
-					end
-				end	
-			end
-		end
-	end
-
-	for ordering in (A1Ā1a1ā1B1B̄1b1b̄1(), A1Ā1B1B̄1b̄1B̄1ā1Ā1(), A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2(), A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2())
-		for scaling in (2, 3)
-			for bands in (1,2,3)
-				lattice = GrassmannLattice(δt=δτ, N=N, bands=bands, contour=:real, ordering=ordering)
-				lattice_scaling = zoomin(lattice, scaling=scaling)
-				K1 = randomgmps(scalartype(lattice_scaling), length(lattice_scaling), D=4)
-				canonicalize!(K1, alg=Orthogonalize(trunc=NoTruncation()))
-				K2 = zoomout(K1, lattice_scaling, scaling=scaling)
-
-				Z1 = integrate(lattice_scaling, K1)
-				Z2 = integrate(lattice, K2)
-				@test _error(Z1, Z2, tol) < tol
-				for i in 1:lattice.k-1
-					for j in 1:lattice.k-1
-						for f1 in (:+, :-), f2 in (:+, :-)
-							for band in 1:lattice.bands
-								g1 = Gt(lattice_scaling, (i-1)*scaling+1, (j-1)*scaling+1, K1, b1=f1, b2=f2, band=band, Z=Z1)
-								g2 = Gt(lattice, i, j, K2, b1=f1, b2=f2, band=band, Z=Z2)
-								@test _error(g1, g2, tol) < tol
-							end		
-						end
-					end
-				end
-			end
-		end
-	end
-end
-
 @testset "build K-imaginary time" begin
 	U = 1.
 	ϵ_d = 0.7
@@ -103,7 +48,7 @@ end
 	for ordering in (A1Ā1B1B̄1(), A1B1B̄1Ā1())
 		lattice = GrassmannLattice(δτ=δτ, N=N, bands=2, contour=:imag, ordering=ordering)
 		for scaling in [3,4]
-			lattice_scaling = zoomin(lattice, scaling=scaling)
+			lattice_scaling = similar(lattice, N=lattice.N*scaling, δτ=lattice.δτ/scaling)
 			K1 = sysdynamics2_new(lattice_scaling, exact_model)
 			for band in 1:lattice.bands
 				K1 = boundarycondition(K1, lattice_scaling, band=band)
@@ -131,7 +76,7 @@ end
 		for ordering in (A1Ā1B1B̄1(), A1B1B̄1Ā1())
 			lattice = GrassmannLattice(δτ=δτ, N=N, bands=2*norb, contour=:imag, ordering=ordering)
 			for scaling in [2,3]
-				lattice_scaling = zoomin(lattice, scaling=scaling)
+				lattice_scaling = similar(lattice, N=lattice.N*scaling, δτ=lattice.δτ/scaling)
 				K1 = sysdynamics2_new(lattice_scaling, exact_model)
 				for band in 1:lattice.bands
 					K1 = boundarycondition(K1, lattice_scaling, band=band)
@@ -170,7 +115,7 @@ end
 	for ordering in (A1Ā1a1ā1B1B̄1b1b̄1(), A1Ā1B1B̄1b̄1B̄1ā1Ā1(), A1B1ā1b̄1Ā1B̄1a1b1())
 		lattice = GrassmannLattice(δt=δτ, N=N, bands=2, contour=:real, ordering=ordering)
 		for scaling in [2]
-			lattice_scaling = zoomin(lattice, scaling=scaling)
+			lattice_scaling = similar(lattice, N=lattice.N*scaling, δt=lattice.δt/scaling)
 			K1 = sysdynamics2_new(lattice_scaling, exact_model)
 			for band in 1:lattice.bands
 				K1 = boundarycondition(K1, lattice_scaling, band=band)
@@ -201,7 +146,7 @@ end
 	for ordering in (A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2(), A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2())
 		lattice = GrassmannLattice(δt=δτ, N=N, bands=2, contour=:real, ordering=ordering)
 		for scaling in [2,3]
-			lattice_scaling = zoomin(lattice, scaling=scaling)
+			lattice_scaling = similar(lattice, N=lattice.N*scaling, δt=lattice.δt/scaling)
 			K1 = [sysdynamics2_new(lattice_scaling, exact_model)]
 			for band in 1:lattice.bands
 				K1 = boundarycondition_branching(K1, lattice_scaling, band=band)
@@ -232,7 +177,7 @@ end
 		for ordering in (A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2(), A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2())
 			lattice = GrassmannLattice(δt=δτ, N=N, bands=2*norb, contour=:real, ordering=ordering)
 			for scaling in [2]
-				lattice_scaling = zoomin(lattice, scaling=scaling)
+				lattice_scaling = similar(lattice, N=lattice.N*scaling, δt=lattice.δt/scaling)
 				K1 = [sysdynamics2_new(lattice_scaling, exact_model)]
 				for band in 1:lattice.bands
 					K1 = boundarycondition_branching(K1, lattice_scaling, band=band)
@@ -265,7 +210,7 @@ end
 		lattice = GrassmannLattice(δt=δτ, N=N, bands=2*norb, contour=:real, ordering=ordering)
 		for scaling in [2]
 			for f in (:+, :-)
-				lattice_scaling = zoomin(lattice, scaling=scaling)
+				lattice_scaling = similar(lattice, N=lattice.N*scaling, δt=lattice.δt/scaling)
 				K1 = sysdynamics2_new(lattice_scaling, exact_model, branch=f)
 				for band in 1:lattice.bands
 					K1 = boundarycondition(K1, lattice_scaling, band=band)

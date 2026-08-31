@@ -86,8 +86,6 @@ function systhermalstate!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, mod
 	return mult!(gmps, state, trunc=trunc)
 end
 
-include("accsysdynamics/accsysdynamics.jl")
-
 # predefined models
 include("predefined/siam.jl")
 include("predefined/irlm.jl")
