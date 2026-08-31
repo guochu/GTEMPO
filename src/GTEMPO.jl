@@ -8,7 +8,7 @@ export GrassmannTensorMap, scalartype
 
 # Grassmann MPS
 export AbstractGTerm, GTerm, ExpGTerm, grassmannpspace
-export AbstractGMPS, AbstractFiniteGMPS, GrassmannMPS, scaling, setscaling!, randomgmps, increase_bond!
+export AbstractGMPS, AbstractFiniteGMPS, GrassmannMPS, SparseGMPS, togmps, scaling, setscaling!, randomgmps, increase_bond!
 export mult!, mult, DMRGMult1, DMRGMult2, DMRGMultAlgorithm
 export GrassmannTransferMatrix
 
@@ -59,10 +59,9 @@ export boundarycondition!, boundarycondition, boundarycondition_branching
 # impurity model Hamilltonians
 export AbstractImpurityHamiltonian, AndersonIM, IRLM, KanamoriIM
 export systhermalstate, systhermalstate!, sysdynamics, sysdynamics!, sysdynamicsstepper!,
-        sysdynamics2, sysdynamics_fast, sysdynamics2_new, fockpropagator_gmps,
-        baresysdynamics2_new, barefockpropagator_gmps
+        sysdynamics2, sysdynamics_fast, sysdynamics2_new, baresysdynamics2_new
 # export sysdynamics_forward!, sysdynamics_backward!, sysdynamics_imaginary!
-export ImpurityHamiltonian
+export ImpurityHamiltonian, FockMatrix, fock_propagator, fock_thermalstate
 export baresysdynamics!, baresysdynamics
 
 
@@ -142,6 +141,7 @@ include("grassmannmps/orth.jl")
 include("grassmannmps/linalg.jl")
 include("grassmannmps/transfer.jl")
 include("grassmannmps/mult/mult.jl")
+include("grassmannmps/sparsegmps.jl")
 
 # Grassmann lattice
 include("lattices/lattices.jl")

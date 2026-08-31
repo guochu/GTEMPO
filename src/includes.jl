@@ -48,6 +48,7 @@ include("grassmannmps/orth.jl")
 include("grassmannmps/linalg.jl")
 include("grassmannmps/transfer.jl")
 include("grassmannmps/mult/mult.jl")
+include("grassmannmps/sparsegmps.jl")
 
 # Grassmann lattice
 include("lattices/lattices.jl")

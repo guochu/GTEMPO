@@ -46,6 +46,6 @@ end
         d = 2^bands
         A = randn(d, d) + im*randn(d, d)
         ρ = A * A' / tr(A * A')
-        @test distance(initfockstate(lattice, ρ), initfockstate2(lattice, ρ)) < 1e-7
+        @test distance(initfockstate(lattice, ρ), initfockstate2(lattice, FockMatrix(ρ))) < 1e-7
     end
 end

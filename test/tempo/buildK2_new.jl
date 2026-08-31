@@ -115,7 +115,7 @@ end
 	end
 end
 
-@testset "fockpropagator_gmps branch consistency" begin
+@testset "sysdynamics2_new branch consistency" begin
 	# the branch entries must agree with sysdynamics2 branch by branch
 	for (U, ϵ_d, δt, N) in [(1., 0.7, 0.05, 2)]
 		exact_model = AndersonIM(U=U, μ=ϵ_d)

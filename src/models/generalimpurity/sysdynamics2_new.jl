@@ -1,273 +1,49 @@
 # sysdynamics2_new
 # ---------------
-# Same propagator as sysdynamics2, but the Fock-space propagator
-# exp(coeff*H) is converted *directly* into the site tensors of a
-# GrassmannMPS in the coherent-state (Grassmann) representation,
-# instead of being decomposed into GTerms which are then applied
-# one by one to the vacuum state.
+# Same propagator as sysdynamics2, but built from the Fock-space
+# propagator matrix (FockMatrix) which is converted directly into the
+# site tensors of a SparseGMPS in the coherent-state (Grassmann)
+# representation (see `_tosparsegmps`), instead of being decomposed into
+# GTerms which are then applied one by one to the vacuum state.
 #
-# The coherent-state coefficient tensor
-#     T[x] = Σ_{m,n} (-1)^{inv(m,n)} ρ[m,n]
-# (x = occupations of the bra/ket Grassmann variables in site order,
-# ρ = fockstate, inv = inversions needed to sort the monomial
-#  c̄(bra, ascending bands) c(ket, descending bands) into site order)
-# is assembled directly in the Z2Irrep(0) block of a graded tensor and
-# then factorized into site tensors by a single Z2-graded SVD sweep.
-# The propagator of every time step has the same structure, so the site
-# tensors are cached per branch and re-used (re-positioned) at each step.
+# The propagator of every time step of a branch has the same FockMatrix,
+# so the SparseGMPS is built once per branch and re-used (re-positioned)
+# at each step via the sparse mult!.
 
-function _inversion_parity(seq)
-	inv = 0
-	for i in 1:length(seq)-1
-		for j in i+1:length(seq)
-			inv += seq[i] > seq[j]
-		end
-	end
-	return isodd(inv) ? -1 : 1
-end
-
-_z2space(d0::Int, d1::Int) = (d1 == 0) ? Z2Space(0=>d0) : (d0 == 0) ? Z2Space(1=>d1) : Z2Space(0=>d0, 1=>d1)
-
-# svd of a (possibly empty) matrix; the number of kept singular values is
-# reduced to the numerical rank (σ > tol·σmax)
-function _rank_svd(M::AbstractMatrix, tol::Real=1.0e-14)
-	T = eltype(M)
-	(minimum(size(M)) == 0) && return Matrix{T}(undef, size(M, 1), 0), Float64[], Matrix{T}(undef, size(M, 2), 0)
-	U, S, V = LinearAlgebra.svd(M)
-	σmax = maximum(S)
-	(σmax == 0) && return Matrix{T}(undef, size(M, 1), 0), Float64[], Matrix{T}(undef, size(M, 2), 0)
-	keep = S .> σmax * tol
-	return U[:, keep], S[keep], V[:, keep]
-end
-
-"""
-	_fockpropagator_sites(fockstate, brel, krel, L; δ) -> Vector{MPSTensor}
-
-Build the site tensors of the propagator GrassmannMPS on a span of `L`
-sites. `brel`/`krel` are the 0-based positions (within the span) of the
-bra (conjugated) resp. ket Grassmann variables of the `M = length(brel)`
-bands; span sites which carry no variable stay in the vacuum sector.
-
-The coherent-state coefficient tensor is factorized by a left-to-right
-SVD sweep over only the `2M` sites carrying a Grassmann variable (cost
-O(4^M), independent of the span); the spectator sites in between are
-filled with identity pass-through tensors.
-"""
-# identity pass-through tensor on a spectator site with bond space V:
-# only the x=0 sector of the physical index is populated
-function _wire_tensor(V::Z2Space, T::Type)
-	data = Dict{Z2Irrep, Matrix{T}}()
-	for c in (Z2Irrep(0), Z2Irrep(1))
-		d0 = dim(V, c)
-		d0 == 0 && continue
-		d1 = dim(V, Z2Irrep(1 - c.n))
-		m = zeros(T, d0 + d1, d0)
-		for i in 1:d0
-			m[i, i] = one(T)
-		end
-		data[c] = m
-	end
-	return TensorMap(data, V ⊗ _ph, V)
-end
-
-function _fockpropagator_sites(fockstate::AbstractMatrix, brel::Vector{Int}, krel::Vector{Int},
-								L::Int; δ::Float64=1.0e-10)
-	M = length(brel)
-	(length(krel) == M) || throw(DimensionMismatch("bra and ket positions do not match"))
-	allunique(vcat(brel, krel)) || throw(ArgumentError("bra and ket grassmann variables overlap"))
-	all(0 .<= vcat(brel, krel) .<= L-1) || throw(ArgumentError("variable outside of the span"))
-	T = eltype(fockstate)
-
-	# active sites (carrying a grassmann variable) in span order
-	act = sort(vcat(brel, krel))
-	Lact = length(act)
-	actind = Dict(p => j for (j, p) in enumerate(act))
-	# which grassmann variable is carried by each active site
-	avars = Vector{Tuple{Symbol, Int}}(undef, Lact)
-	for i in 1:M
-		avars[actind[brel[i]]] = (:bra, i)
-		avars[actind[krel[i]]] = (:ket, i)
-	end
-	occ(b, i) = (b >> (M - i)) & 1
-
-	# dense coefficient vector over the active sites; the occupation bitstring
-	# (y_1, ..., y_{2M}) is encoded as Σ_j y_j·2^(j-1) (y_1 = LSB), matching
-	# the Z2 graded basis ordering where the first tensor index varies fastest
-	Tvec = zeros(T, 2^Lact)
-	for row in 1:2^M, col in 1:2^M
-		v = fockstate[row, col]
-		abs(v) < δ && continue
-		m, n = row - 1, col - 1
-		if count(i -> occ(m, i) == 1, 1:M) != count(i -> occ(n, i) == 1, 1:M)
-			@warn "Ignore non-physical element: $row $col => $v"
-			continue
-		end
-		ys = zeros(Int, Lact)
-		for j in 1:Lact
-			ys[j] = avars[j][1] === :bra ? occ(m, avars[j][2]) : occ(n, avars[j][2])
-		end
-		yint = sum(ys[j] * 2^(j-1) for j in 1:Lact)
-		iseven(count_ones(yint)) || throw(ArgumentError("odd number of grassmann variables"))
-		# sign from reordering c̄(bra, ascending bands) c(ket, descending bands) into site order
-		seq = vcat([brel[i] for i in 1:M if occ(m, i) == 1],
-				   [krel[i] for i in M:-1:1 if occ(n, i) == 1])
-		Tvec[yint+1] += _inversion_parity(seq) * v
-	end
-	all(iszero, Tvec) && throw(ArgumentError("empty propagator"))
-
-	# Z2-resolved SVD sweep over the active sites, left to right. The carry R
-	# has rows grouped as [even bond basis; odd bond basis] and columns
-	# indexed by the integer encoding of the remaining occupations; the next
-	# active site is the least significant bit of the column index
-	asites = Vector{Any}(undef, Lact)
-	d_even, d_odd = 1, 0
-	R = reshape(Tvec, 1, 2^Lact)
-	for k in 1:Lact-1
-		C = size(R, 2)
-		# split off y_k (the LSB of the column index): rows become the fused
-		# (y_k, bond) basis with y_k major (bond index varies fastest)
-		R2 = vcat(R[:, 1:2:C], R[:, 2:2:C])
-		d = d_even + d_odd
-		# rows of the Z2Irrep(0) block: (y_k=0, l even) followed by (y_k=1, l odd)
-		erows = vcat(1:d_even, d+d_even+1:2d)
-		# rows of the Z2Irrep(1) block: (y_k=0, l odd) followed by (y_k=1, l even)
-		orows = vcat(d_even+1:d, d+1:d+d_even)
-		ncol = C ÷ 2
-		ecols = [j for j in 1:ncol if iseven(count_ones(j-1))]
-		ocols = [j for j in 1:ncol if isodd(count_ones(j-1))]
-
-		U0, S0, V0 = _rank_svd(R2[erows, ecols])
-		U1, S1, V1 = _rank_svd(R2[orows, ocols])
-		r0, r1 = length(S0), length(S1)
-
-		l_space = _z2space(d_even, d_odd)
-		r_space = _z2space(r0, r1)
-		data = Dict{Z2Irrep, Matrix{T}}()
-		(r0 > 0) && (data[Z2Irrep(0)] = U0)
-		(r1 > 0) && (data[Z2Irrep(1)] = U1)
-		asites[k] = TensorMap(data, l_space ⊗ _ph, r_space)
-
-		# new carry, with the columns indexed by the remaining occupations
-		R = zeros(T, r0+r1, ncol)
-		(r0 > 0) && (R[1:r0, ecols] = Diagonal(S0) * V0')
-		(r1 > 0) && (R[r0+1:r0+r1, ocols] = Diagonal(S1) * V1')
-		d_even, d_odd = r0, r1
-	end
-	# last active site: (bond ⊗ y ← oneunit)
-	d = d_even + d_odd
-	data = Dict{Z2Irrep, Matrix{T}}()
-	data[Z2Irrep(0)] = reshape(vcat(R[1:d_even, 1], R[d_even+1:d, 2]), d, 1)
-	asites[Lact] = TensorMap(data, _z2space(d_even, d_odd) ⊗ _ph, oneunit(_ph))
-
-	# assemble the full span: active tensors at their positions, identity
-	# pass-through tensors on the spectator sites in between
-	sites = Vector{Any}(undef, L)
-	ia = 0
-	for p in 0:L-1
-		if haskey(actind, p)
-			ia += 1
-			sites[p+1] = asites[ia]
-		else
-			sites[p+1] = _wire_tensor(dual(space_r(sites[p])), T)  # p>=1 since pmin is active
-		end
-	end
-	return sites
-end
-
-"""
-	_fockstate_gmps(fockstate, lattice, bpos, kpos; δ) -> GrassmannMPS
-
-Directly convert the Fock-space matrix `fockstate` (an operator in the
-occupation number basis, e.g. a propagator or a density matrix) into a
-GrassmannMPS on `lattice`, with the bra (conjugated) variables at the
-site positions `bpos` and the ket variables at `kpos`.
-"""
-function _fockstate_gmps(fockstate::AbstractMatrix, lattice::AbstractGrassmannLattice,
-						 bpos::Vector{Int}, kpos::Vector{Int}; δ::Float64=1.0e-10)
+# the propagator SparseGMPS of time step `idx` on `branch`; the bra
+# (conjugated) variables sit on time slice `idx+1` and the ket variables
+# on `idx` (swapped for the backward branch), exactly as in
+# `sysdynamics_util2`. The cache is keyed by the branch and the relative
+# layout of the variables, since the propagator is the same at every step.
+function _propagator_sparsegmps(lattice::AbstractGrassmannLattice, fm::FockMatrix, idx::Int, branch::Symbol,
+								cache::Union{Nothing, Dict})
 	M = lattice.bands
-	(length(bpos) == M && length(kpos) == M) || throw(DimensionMismatch("bra/ket positions do not match bands"))
-	(size(fockstate, 1) == 2^M) || throw(DimensionMismatch("fockstate size does not match bands"))
-
-	pmin = min(minimum(bpos), minimum(kpos))
-	pmax = max(maximum(bpos), maximum(kpos))
-	L = pmax - pmin + 1
-
-	sites = _fockpropagator_sites(fockstate, bpos .- pmin, kpos .- pmin, L; δ=δ)
-
-	gmps = vacuumstate(lattice)
-	if !(scalartype(sites[1]) <: Real) && (scalartype(gmps[1]) <: Real)
-		gmps = complex(gmps)
-	end
-	for (j, p) in enumerate(pmin:pmax)
-		gmps[p] = sites[j]
-	end
-	unset_svectors!(gmps)
-	return gmps
-end
-
-"""
-	fockpropagator_gmps(fockstate, lattice, idx; branch, δ, cache) -> GrassmannMPS
-
-Directly convert the Fock-space propagator matrix `fockstate` (i.e. the
-operator `exp(coeff*H)` in the occupation number basis) into a
-GrassmannMPS on `lattice`. The bra (conjugated) variables sit on time
-slice `idx+1` and the ket variables on `idx` (swapped for the backward
-branch), exactly as in `sysdynamics_util2`.
-
-If `cache` (a `Dict`) is given, the site tensors of the propagator are
-cached by their relative layout and re-used for all time steps.
-"""
-function fockpropagator_gmps(fockstate::AbstractMatrix, lattice::AbstractGrassmannLattice,
-							 idx::Int, branch::Symbol; δ::Float64=1.0e-10,
-							 cache::Union{Nothing, Dict}=nothing)
-	M = lattice.bands
-	(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
-
 	ib, ik = branch == :- ? (idx, idx+1) : (idx+1, idx)
 	bpos = [index(lattice, ib, conj=true, branch=branch, band=i) for i in 1:M]
 	kpos = [index(lattice, ik, conj=false, branch=branch, band=i) for i in 1:M]
-
 	pmin = min(minimum(bpos), minimum(kpos))
-	brel = bpos .- pmin
-	krel = kpos .- pmin
-	sites = isnothing(cache) ? nothing : get(cache, (branch, brel, krel), nothing)
-	if isnothing(sites)
-		pmax = max(maximum(bpos), maximum(kpos))
-		sites = _fockpropagator_sites(fockstate, brel, krel, pmax - pmin + 1; δ=δ)
-		isnothing(cache) || (cache[(branch, brel, krel)] = sites)
-	end
+	brel, krel = bpos .- pmin, kpos .- pmin
 
-	gmps = vacuumstate(lattice)
-	if !(scalartype(sites[1]) <: Real) && (scalartype(gmps[1]) <: Real)
-		gmps = complex(gmps)
+	if isnothing(cache)
+		return _tosparsegmps(lattice, fm, bpos, kpos)
 	end
-	for (j, p) in enumerate(pmin:pmin+length(sites)-1)
-		gmps[p] = sites[j]
+	cached = get(cache, (branch, brel, krel), nothing)
+	if isnothing(cached)
+		sparse = _tosparsegmps(lattice, fm, bpos, kpos)
+		cache[(branch, brel, krel)] = (sparse.data, sparse.positions .- pmin)
+		return sparse
 	end
-	unset_svectors!(gmps)
-	return gmps
+	data, relpos = cached
+	return SparseGMPS(data, relpos .+ pmin)
 end
 
 function sysdynamics_util2_new(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model;
 								idx::Int=1, branch::Symbol=:+, trunc::TruncationScheme=DefaultKTruncation,
 								cache::Union{Nothing, Dict}=nothing)
-	H = fockmatrix(model, lattice.bands)
-	if branch == :+
-		coeff = - im * lattice.δt
-	elseif branch == :-
-		coeff = im * lattice.δt
-	elseif branch == :τ
-		coeff = - lattice.δτ
-	else
-		throw(ArgumentError("branch must be one of :+, :- or :τ"))
-	end
-
-	# exact propagator from the spectral decomposition of H
-	vals, vecs = eigen(H)
-	fockstate = vecs * Diagonal(exp.(coeff .* vals)) * vecs'
-
-	state = fockpropagator_gmps(fockstate, lattice, idx, branch; cache=cache)
-	return mult(state, gmps, trunc=trunc)
+	dt = branch == :τ ? lattice.δτ : lattice.δt
+	fm = fock_propagator(model, branch, dt, lattice.bands)
+	sparse = _propagator_sparsegmps(lattice, fm, idx, branch, cache)
+	return mult!(gmps, sparse, trunc=trunc)
 end
 
 function sysdynamics_forward2_new(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model;
@@ -299,8 +75,10 @@ end
 	sysdynamics2_new(lattice, model; branch, trunc) -> GrassmannMPS
 
 Build the GrassmannMPS of the impurity propagator `K` on `lattice`,
-identical to `sysdynamics2` but with the Fock-space propagator converted
-directly into coherent-state site tensors (see `fockpropagator_gmps`).
+identical to `sysdynamics2` but with the Fock-space propagator
+(`fock_propagator`) converted directly into a SparseGMPS
+(`_tosparsegmps`) which is multiplied into the accumulating state with
+the sparse `mult!`.
 """
 function sysdynamics2_new(lattice::ImagGrassmannLattice, model::AbstractImpurityHamiltonian;
 							trunc::TruncationScheme=DefaultKTruncation)
@@ -340,51 +118,65 @@ function sysdynamics2_new(lattice::MixedGrassmannLattice, model::AbstractImpurit
 	end
 end
 
+# the bare propagator: the coherent-state overlap ∏_b (1 + c̄_b c_b)
+# between the bra and ket variables of the propagator is removed by
+# multiplying with its inverse ∏_b (1 - c̄_b c_b) — the overlap is what
+# `bulkconnection` re-applies, so bulkconnection on the bare propagator
+# recovers the full propagator exactly. The removal follows the original
+# implementation: the propagator is materialized on its (small) window,
+# the overlap-removal GTerms are applied, and the result is canonicalized.
+# The window content depends only on the relative layout of the variables,
+# so it is computed once per branch and re-positioned at each time step.
+function _bare_window_sparsegmps(lattice::AbstractGrassmannLattice, fm::FockMatrix,
+									bwin::Vector{Int}, kwin::Vector{Int}, Lw::Int)
+	# bwin/kwin: 1-based positions of the bra/ket variables inside the window
+	sites, _ = _fockpropagator_sites(fm.data, bwin .- 1, kwin .- 1, Lw)
+	state = GrassmannMPS(convert(Vector{typeof(sites[1])}, sites))
 
+	# multiply by ∏_b (1 - c̄_b c_b): each GTerm connects the bra variable
+	# of band b with the ket variable of band b
+	for band in 1:length(bwin)
+		apply!(exp(GTerm(bwin[band], kwin[band], coeff=-1)), state)
+	end
+	canonicalize!(state, alg=Orthogonalize(SVD(), trunc=NoTruncation(), normalize=false))
 
-"""
-	barefockpropagator_gmps(fockstate, lattice, idx; branch, δ, cache) -> GrassmannMPS
+	# fold the scaling into the first tensor (SparseGMPS carries no scaling)
+	data = copy(state.data)
+	data[1] = data[1] * (scaling(state)^Lw)
+	return SparseGMPS(data, collect(1:Lw))
+end
 
-Like `fockpropagator_gmps`, but with the coherent-state overlap between the
-bra and ket variables removed from the propagator: the single-step factor is
-multiplied by ∏_b (1 - c̄_b c_b), the inverse of the overlap that
-`bulkconnection` applies. Applying `bulkconnection` to the result recovers
-the full propagator exactly.
-"""
-function barefockpropagator_gmps(fockstate::AbstractMatrix, lattice::AbstractGrassmannLattice,
-								  idx::Int, branch::Symbol; δ::Float64=1.0e-10,
-								  cache::Union{Nothing, Dict}=nothing)
-	state = fockpropagator_gmps(fockstate, lattice, idx, branch; δ=δ, cache=cache)
+function _bare_propagator_sparsegmps(lattice::AbstractGrassmannLattice, fm::FockMatrix, idx::Int,
+									branch::Symbol, cache::Union{Nothing, Dict})
 	M = lattice.bands
 	ib, ik = branch == :- ? (idx, idx+1) : (idx+1, idx)
-	for band in 1:M
-		pos1 = index(lattice, ib, conj=true, branch=branch, band=band)
-		pos2 = index(lattice, ik, conj=false, branch=branch, band=band)
-		apply!(exp(GTerm(pos1, pos2, coeff=-1)), state)
+	bpos = [index(lattice, ib, conj=true, branch=branch, band=i) for i in 1:M]
+	kpos = [index(lattice, ik, conj=false, branch=branch, band=i) for i in 1:M]
+	pmin = min(minimum(bpos), minimum(kpos))
+	pmax = max(maximum(bpos), maximum(kpos))
+	bwin, kwin = bpos .- pmin .+ 1, kpos .- pmin .+ 1
+
+	if isnothing(cache)
+		sparse = _bare_window_sparsegmps(lattice, fm, bwin, kwin, pmax - pmin + 1)
+		return SparseGMPS(sparse.data, sparse.positions .+ (pmin - 1))
 	end
-	return canonicalize!(state, alg=Orthogonalize(SVD(), trunc=NoTruncation(), normalize=false))
+	cached = get(cache, (branch, bwin, kwin), nothing)
+	if isnothing(cached)
+		sparse = _bare_window_sparsegmps(lattice, fm, bwin, kwin, pmax - pmin + 1)
+		cache[(branch, bwin, kwin)] = (sparse.data, sparse.positions)
+		return SparseGMPS(sparse.data, sparse.positions .+ (pmin - 1))
+	end
+	data, relpos = cached
+	return SparseGMPS(data, relpos .+ (pmin - 1))
 end
 
 function baresysdynamics_util2_new(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model;
 									idx::Int=1, branch::Symbol=:+, trunc::TruncationScheme=DefaultKTruncation,
 									cache::Union{Nothing, Dict}=nothing)
-	H = fockmatrix(model, lattice.bands)
-	if branch == :+
-		coeff = - im * lattice.δt
-	elseif branch == :-
-		coeff = im * lattice.δt
-	elseif branch == :τ
-		coeff = - lattice.δτ
-	else
-		throw(ArgumentError("branch must be one of :+, :- or :τ"))
-	end
-
-	# exact propagator from the spectral decomposition of H
-	vals, vecs = eigen(H)
-	fockstate = vecs * Diagonal(exp.(coeff .* vals)) * vecs'
-
-	state = barefockpropagator_gmps(fockstate, lattice, idx, branch; cache=cache)
-	return mult(state, gmps, trunc=trunc)
+	dt = branch == :τ ? lattice.δτ : lattice.δt
+	fm = fock_propagator(model, branch, dt, lattice.bands)
+	sparse = _bare_propagator_sparsegmps(lattice, fm, idx, branch, cache)
+	return mult!(gmps, sparse, trunc=trunc)
 end
 
 function baresysdynamics_forward2_new(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model;
@@ -416,7 +208,7 @@ end
 	baresysdynamics2_new(lattice, model; branch, trunc) -> GrassmannMPS
 
 Exact version of `baresysdynamics`: the impurity propagator without the
-coherent-state bra-ket overlaps, built via `barefockpropagator_gmps`.
+coherent-state bra-ket overlaps (see `_bare_window_sparsegmps`).
 Applying `bulkconnection` to its output gives `sysdynamics2_new`, exactly
 as `bulkconnection` on `baresysdynamics` gives `sysdynamics`.
 """
