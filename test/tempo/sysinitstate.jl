@@ -10,7 +10,7 @@ println("------------------------------------")
         model = AndersonIM(U, μ)
 
         res1 = initthermalstate(lattice, model, β)
-        res2 = systhermalstate!(vacuumstate(lattice), lattice, model; β=β, trunc=notrunc())
+        res2 = systhermalstate!(vacuumstate(lattice), lattice, model; β=β)
         _normalize!(res2)
         @test distance(res1, res2) < 1e-6
     end
@@ -22,12 +22,9 @@ end
         model = KanamoriIM(; U=U, J=J, μ=μ, norb=norb)
 
         res1 = initthermalstate(lattice, model, β)
-        dis = map([100, 1000, 3000]) do n
-            vac = vacuumstate(lattice)
-            res2 = systhermalstate!(vac, lattice, model; β=β, trunc=notrunc(), δτ=β/n)
-            distance(res1, res2)
-        end
-        @test all(diff(dis) .<= 1e-6)
+        res2 = systhermalstate!(vacuumstate(lattice), lattice, model; β=β)
+        _normalize!(res2)
+        @test distance(res1, res2) < 1e-6
     end
 end
 

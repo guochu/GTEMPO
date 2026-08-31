@@ -1,12 +1,5 @@
-# the functions here are only applicable for specific orderings
-
-# There is a "root" ordering which can be used to build K accurately and efficiently
-# TODO: generalize accsysdynamics to BandLocalLayout
-
+# lattice zooming utilities: contract a GMPS on a refined lattice back to
+# the coarse one (zoomout) resp. refine the lattice (zoomin)
 
 include("util.jl")
 include("zooming.jl")
-
-include("imaginarytime.jl")
-include("realtime.jl")
-include("mixedtime.jl")

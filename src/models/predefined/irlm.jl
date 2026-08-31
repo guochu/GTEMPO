@@ -5,11 +5,20 @@ Interacting resonant level model, a spinless fermionic model with
 three impurities and two baths
 """
 struct IRLM <: AbstractImpurityHamiltonian
-	μ::Float64	
+	μ::Float64
 	J::Float64
 	U::Float64
 end
 IRLM(; μ::Real, J::Real, U::Real) = IRLM(convert(Float64, μ), convert(Float64, J), convert(Float64, U))
+
+# H = (μ-U) n₂ + J (c†₁c₂ + c†₂c₁ + c†₂c₃ + c†₃c₂) + U (n₁n₂ + n₂n₃)
+function fockmatrix(m::IRLM, bands::Int)
+	@assert bands == 3
+	adag, a = jw_operators(3)
+	return (m.μ - m.U) * adag[2]*a[2] +
+		m.J * (adag[2]*a[1] + adag[1]*a[2] + adag[2]*a[3] + adag[3]*a[2]) +
+		m.U * (adag[1]*a[1]*adag[2]*a[2] + adag[3]*a[3]*adag[2]*a[2])
+end
 
 
 

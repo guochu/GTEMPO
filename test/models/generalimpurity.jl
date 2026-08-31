@@ -18,8 +18,8 @@ println("------------------------------------")
 		model2 = gAndersonIM(U=U, μ=ϵ_d)
 		bands = (U == zero(U)) ? 1 : 2
 		lattice = GrassmannLattice(δτ=δτ, N=N, bands=bands, contour=:imag)
-		K1 = accsysdynamics(lattice, model1)
-		K2 = accsysdynamics_fast(lattice, model2, scaling=1000)
+		K1 = sysdynamics2_new(lattice, model1)
+		K2 = sysdynamics2_new(lattice, model2)
 		@test distance(K1, K2) / norm(K1) < rtol
 		for band in 1:lattice.bands
 			K1 = boundarycondition!(K1, lattice, band=band)
@@ -50,8 +50,8 @@ end
 		model2 = gAndersonIM(U=U, μ=ϵ_d)
 		bands = (U == zero(U)) ? 1 : 2
 		lattice = GrassmannLattice(δt=δt, N=N, bands=bands, contour=:real)
-		K1 = accsysdynamics(lattice, model1)
-		K2 = accsysdynamics_fast(lattice, model2, scaling=100)
+		K1 = sysdynamics2_new(lattice, model1)
+		K2 = sysdynamics2_new(lattice, model2)
 		@test distance(K1, K2) / norm(K1) < rtol
 		for band in 1:lattice.bands
 			K1 = boundarycondition!(K1, lattice, band=band)
@@ -87,8 +87,8 @@ end
 		model1 = IRLM(U=U, μ=ϵ_d, J=1)
 		model2 = gIRLM(U=U, μ=ϵ_d, J=1)
 		lattice = GrassmannLattice(δτ=δτ, N=N, bands=3, contour=:imag)
-		K1 = accsysdynamics_fast(lattice, model1, scaling=1000)
-		K2 = accsysdynamics_fast(lattice, model2, scaling=1000)
+		K1 = sysdynamics2_new(lattice, model1)
+		K2 = sysdynamics2_new(lattice, model2)
 		@test distance(K1, K2) / norm(K1) < rtol
 		for band in 1:lattice.bands
 			K1 = boundarycondition!(K1, lattice, band=band)
@@ -118,8 +118,8 @@ end
 		model1 = IRLM(U=U, μ=ϵ_d, J=1)
 		model2 = gIRLM(U=U, μ=ϵ_d, J=1)
 		lattice = GrassmannLattice(δt=δt, N=N, bands=3, contour=:real)
-		K1 = accsysdynamics_fast(lattice, model1, scaling=100)
-		K2 = accsysdynamics_fast(lattice, model2, scaling=100)
+		K1 = sysdynamics2_new(lattice, model1)
+		K2 = sysdynamics2_new(lattice, model2)
 		@test distance(K1, K2) / norm(K1) < rtol
 		for band in 1:lattice.bands
 			K1 = boundarycondition!(K1, lattice, band=band)
@@ -157,8 +157,8 @@ end
 		model2 = gKanamoriIM(U=U, μ=ϵ_d, J=J, norb=norb)
 		bands = 2 * norb
 		lattice = GrassmannLattice(δτ=δτ, N=N, bands=bands, contour=:imag)
-		K1 = accsysdynamics(lattice, model1)
-		K2 = accsysdynamics(lattice, model2)
+		K1 = sysdynamics2_new(lattice, model1)
+		K2 = sysdynamics2_new(lattice, model2)
 		@test distance(K1, K2) / norm(K1) < rtol
 		for band in 1:lattice.bands
 			K1 = boundarycondition!(K1, lattice, band=band)
@@ -193,8 +193,8 @@ end
 		model2 = gKanamoriIM(U=U, μ=ϵ_d, J=J, norb=norb)
 		bands = 2 * norb
 		lattice = GrassmannLattice(δt=δt, N=N, bands=bands, contour=:real)
-		K1 = accsysdynamics(lattice, model1)
-		K2 = accsysdynamics(lattice, model2)
+		K1 = sysdynamics2_new(lattice, model1)
+		K2 = sysdynamics2_new(lattice, model2)
 		@test distance(K1, K2) / norm(K1) < rtol
 		for band in 1:lattice.bands
 			K1 = boundarycondition!(K1, lattice, band=band)

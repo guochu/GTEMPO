@@ -120,6 +120,14 @@ function sysdynamics_fast(lattice::ImagGrassmannLattice{O}, model::AbstractImpur
 	return changeordering(O, lattice2, x, trunc=trunc)[2]
 end
 
+# boundary positions of the physical block of time slice j, used by sysdynamics_fast
+get_left(lattice::ImagGrassmannLattice{<:A1B1B̄1Ā1}, j::Int) = index(lattice, j, conj=true, band=lattice.bands)
+get_right(lattice::ImagGrassmannLattice{<:A1B1B̄1Ā1}, j::Int) = index(lattice, j, conj=false, band=lattice.bands)
+get_left(lattice::RealGrassmannLattice{<:A1B1ā1b̄1Ā1B̄1a1b1}, j::Int) = index(lattice, j, conj=true, band=1, branch=:+)
+get_right(lattice::RealGrassmannLattice{<:A1B1ā1b̄1Ā1B̄1a1b1}, j::Int) = index(lattice, j, conj=true, band=lattice.bands, branch=:-)
+get_left(lattice::RealGrassmannLattice{<:A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2}, j::Int; branch::Symbol) = index(lattice, j, conj=true, band=lattice.bands, branch=branch)
+get_right(lattice::RealGrassmannLattice{<:A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2}, j::Int; branch::Symbol) = index(lattice, j, conj=false, band=lattice.bands, branch=branch)
+
 _sysdynamics_fast(lattice::ImagGrassmannLattice{<:A1B1B̄1Ā1}, model::AbstractImpurityHamiltonian; kwargs...) = _sysdynamics_fast_timelocal2(lattice, model; kwargs...)
 
 function _sysdynamics_fast_timelocal2(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian; 

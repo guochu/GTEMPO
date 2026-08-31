@@ -80,12 +80,13 @@ systhermalstate(lattice::RealGrassmannLattice, model::AbstractImpurityHamiltonia
 
 Reset the initial state of the impurity to be a local thermal state
 """
-function systhermalstate!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::AbstractImpurityHamiltonian; kwargs...)
-	return systhermalstate_iterative!(gmps, lattice, model; kwargs...)
-end 
+function systhermalstate!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::AbstractImpurityHamiltonian;
+							β::Real, trunc::TruncationScheme=DefaultKTruncation)
+	state = initthermalstate2(lattice, model, β)
+	return mult!(gmps, state, trunc=trunc)
+end
 
 include("accsysdynamics/accsysdynamics.jl")
-include("sysinitstate.jl")
 
 # predefined models
 include("predefined/siam.jl")

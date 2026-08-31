@@ -307,16 +307,16 @@ end
 		bands = (U == 0.) ? 1 : 2
 		lattice = GrassmannLattice(δτ=δτ, N=N, bands=bands, contour=:imag)
 
-		mpsKs = [accsysdynamics_fast(lattice, exact_model)]
+		mpsKs = [sysdynamics2_new(lattice, exact_model)]
 		for band in 1:lattice.bands
 			mpsKs = boundarycondition_branching(mpsKs, lattice, band=band)
 		end
-		
+
 		for ordering in [A1Ā1B1B̄1a1ā1b1b̄1(), A1Ā1a1ā1B1B̄1b1b̄1(), A1Ā1B1B̄1b̄1B̄1ā1Ā1(), A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1(), A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2()]
 
 			lattice_r = GrassmannLattice(δt=0.1, N=5, bands=bands, contour=:real)
 			exact_model = AndersonIM(U=U, μ=ϵ_d)
-			mps = accsysdynamics_fast(lattice_r, exact_model)
+			mps = sysdynamics2_new(lattice_r, exact_model)
 			mps = systhermalstate!(mps, lattice_r, exact_model, β= β)
 			for band in 1:lattice.bands
 				mps = boundarycondition(mps, lattice_r, band=band)
@@ -350,14 +350,14 @@ end
 		bands = 2 * norb
 		lattice = GrassmannLattice(δτ=δτ, N=N, bands=bands, contour=:imag)
 
-		mpsKs = [accsysdynamics_fast(lattice, exact_model)]
+		mpsKs = [sysdynamics2_new(lattice, exact_model)]
 		for band in 1:lattice.bands
 			mpsKs = boundarycondition_branching(mpsKs, lattice, band=band)
 		end
 
 
 		lattice_r = GrassmannLattice(δt=0.1, N=2, bands=bands, contour=:real, ordering = A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2())
-		mps = accsysdynamics_fast(lattice_r, exact_model)
+		mps = sysdynamics2_new(lattice_r, exact_model)
 		mps = systhermalstate!(mps, lattice_r, exact_model, β= β)
 		for band in 1:lattice.bands
 			mps = boundarycondition(mps, lattice_r, band=band)

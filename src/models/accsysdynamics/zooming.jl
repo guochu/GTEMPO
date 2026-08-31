@@ -111,11 +111,3 @@ function zoomin(lattice::ImagGrassmannLattice, scaling::Int)
 	similar(lattice, N=lattice.N * scaling, δτ=lattice.δτ/scaling)
 end 
 zoomin(lattice::AbstractGrassmannLattice; scaling::Int=10) = zoomin(lattice, scaling)
-
-function accsysdynamics(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian; scaling::Int=10, trunc::TruncationScheme=DefaultKTruncation, kwargs...)
-	lattice_scaling = zoomin(lattice, scaling)
-	gmps = sysdynamics(lattice_scaling, model; trunc = trunc, kwargs...)
-	gmps2 = zoomout(gmps, lattice_scaling, scaling=scaling)
-	@assert length(gmps2) == length(lattice)
-	return canonicalize!(gmps2, alg=Orthogonalize(trunc=trunc))
-end

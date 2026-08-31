@@ -104,30 +104,22 @@ end
 		lattice = GrassmannLattice(δτ=δτ, N=N, bands=2, contour=:imag, ordering=ordering)
 		for scaling in [3,4]
 			lattice_scaling = zoomin(lattice, scaling=scaling)
-			K1 = sysdynamics(lattice_scaling, exact_model)
+			K1 = sysdynamics2_new(lattice_scaling, exact_model)
 			for band in 1:lattice.bands
 				K1 = boundarycondition(K1, lattice_scaling, band=band)
 			end
-			K2 = accsysdynamics(lattice, exact_model, scaling=scaling)
+			K2 = sysdynamics2_new(lattice, exact_model)
 			for band in 1:lattice.bands
 				K2 = boundarycondition(K2, lattice, band=band)
-			end	
-			K3 = accsysdynamics_fast(lattice, exact_model, scaling=scaling)
-			for band in 1:lattice.bands
-				K3 = boundarycondition(K3, lattice, band=band)
-			end	
+			end
 			Z1 = integrate(lattice_scaling, K1)
 			Z2 = integrate(lattice, K2)
 			@test _error(Z1, Z2, tol) < tol
-			Z3 = integrate(lattice, K3)
-			@test _error(Z1, Z3, tol) < tol
 			for i in 1:lattice.N
 				for band in 1:lattice.bands
 					g1 = Gτ(lattice_scaling, (i-1)*scaling+1, K1, band=band, Z=Z1)
 					g2 = Gτ(lattice, i, K2, band=band, Z=Z2)
 					@test _error(g1, g2, tol) < tol
-					g3 = Gτ(lattice, i, K3, band=band, Z=Z3)
-					@test _error(g1, g3, tol) < tol
 				end
 			end
 		end
@@ -140,36 +132,28 @@ end
 			lattice = GrassmannLattice(δτ=δτ, N=N, bands=2*norb, contour=:imag, ordering=ordering)
 			for scaling in [2,3]
 				lattice_scaling = zoomin(lattice, scaling=scaling)
-				K1 = sysdynamics(lattice_scaling, exact_model)
+				K1 = sysdynamics2_new(lattice_scaling, exact_model)
 				for band in 1:lattice.bands
 					K1 = boundarycondition(K1, lattice_scaling, band=band)
 				end
-				K2 = accsysdynamics(lattice, exact_model, scaling=scaling)
+				K2 = sysdynamics2_new(lattice, exact_model)
 				for band in 1:lattice.bands
 					K2 = boundarycondition(K2, lattice, band=band)
-				end	
-				K3 = accsysdynamics_fast(lattice, exact_model, scaling=scaling)
-				for band in 1:lattice.bands
-					K3 = boundarycondition(K3, lattice, band=band)
-				end	
+				end
 				Z1 = integrate(lattice_scaling, K1)
 				Z2 = integrate(lattice, K2)
 				@test _error(Z1, Z2, tol) < tol
-				Z3 = integrate(lattice, K3)
-				@test _error(Z1, Z3, tol) < tol
 				for i in 1:lattice.N
 					for band in 1:lattice.bands
 						g1 = Gτ(lattice_scaling, (i-1)*scaling+1, K1, band=band, Z=Z1)
 						g2 = Gτ(lattice, i, K2, band=band, Z=Z2)
 						@test _error(g1, g2, tol) < tol
-						g3 = Gτ(lattice, i, K3, band=band, Z=Z3)
-						@test _error(g1, g3, tol) < tol
 					end
 				end
-			end			
+			end
 		end
 	end
-	
+
 end
 
 @testset "build K-real time" begin
@@ -187,14 +171,14 @@ end
 		lattice = GrassmannLattice(δt=δτ, N=N, bands=2, contour=:real, ordering=ordering)
 		for scaling in [2]
 			lattice_scaling = zoomin(lattice, scaling=scaling)
-			K1 = sysdynamics(lattice_scaling, exact_model)
+			K1 = sysdynamics2_new(lattice_scaling, exact_model)
 			for band in 1:lattice.bands
 				K1 = boundarycondition(K1, lattice_scaling, band=band)
 			end
-			K2 = accsysdynamics(lattice, exact_model, scaling=scaling)
+			K2 = sysdynamics2_new(lattice, exact_model)
 			for band in 1:lattice.bands
 				K2 = boundarycondition(K2, lattice, band=band)
-			end	
+			end
 			Z1 = integrate(lattice_scaling, K1)
 			Z2 = integrate(lattice, K2)
 			@test _error(Z1, Z2, tol) < tol
@@ -205,7 +189,7 @@ end
 							g1 = Gt(lattice_scaling, (i-1)*scaling+1, (j-1)*scaling+1, K1, b1=f1, b2=f2, band=band,Z=Z1)
 							g2 = Gt(lattice, i, j, K2, b1=f1, b2=f2, band=band,Z=Z2)
 							@test _error(g1, g2, tol) < tol
-						end		
+						end
 					end
 				end
 			end
@@ -218,24 +202,17 @@ end
 		lattice = GrassmannLattice(δt=δτ, N=N, bands=2, contour=:real, ordering=ordering)
 		for scaling in [2,3]
 			lattice_scaling = zoomin(lattice, scaling=scaling)
-			K1 = sysdynamics(lattice_scaling, exact_model)
+			K1 = [sysdynamics2_new(lattice_scaling, exact_model)]
 			for band in 1:lattice.bands
-				K1 = boundarycondition(K1, lattice_scaling, band=band)
+				K1 = boundarycondition_branching(K1, lattice_scaling, band=band)
 			end
-			K2 = accsysdynamics(lattice, exact_model, scaling=scaling)
+			K2 = [sysdynamics2_new(lattice, exact_model)]
 			for band in 1:lattice.bands
-				K2 = boundarycondition(K2, lattice, band=band)
-			end	
-			K3 = accsysdynamics_fast(lattice, exact_model, scaling=scaling)
-			K3 = [K3]
-			for band in 1:lattice.bands
-				K3 = boundarycondition_branching(K3, lattice, band=band)
-			end	
+				K2 = boundarycondition_branching(K2, lattice, band=band)
+			end
 			Z1 = integrate(lattice_scaling, K1)
 			Z2 = integrate(lattice, K2)
 			@test _error(Z1, Z2, tol) < tol
-			Z3 = integrate(lattice, K3)
-			@test _error(Z1, Z3, tol) < tol
 			for i in 1:lattice.k-1
 				for j in 1:lattice.k-1
 					for f1 in (:+, :-), f2 in (:+, :-)
@@ -243,9 +220,7 @@ end
 							g1 = Gt(lattice_scaling, (i-1)*scaling+1, (j-1)*scaling+1, K1, b1=f1, b2=f2, band=band,Z=Z1)
 							g2 = Gt(lattice, i, j, K2, b1=f1, b2=f2, band=band,Z=Z2)
 							@test _error(g1, g2, tol) < tol
-							g3 = Gt(lattice, i, j, K3, b1=f1, b2=f2, band=band,Z=Z3)
-							@test _error(g1, g3, tol) < tol
-						end		
+						end
 					end
 				end
 			end
@@ -258,23 +233,17 @@ end
 			lattice = GrassmannLattice(δt=δτ, N=N, bands=2*norb, contour=:real, ordering=ordering)
 			for scaling in [2]
 				lattice_scaling = zoomin(lattice, scaling=scaling)
-				K1 = [sysdynamics(lattice_scaling, exact_model)]
+				K1 = [sysdynamics2_new(lattice_scaling, exact_model)]
 				for band in 1:lattice.bands
 					K1 = boundarycondition_branching(K1, lattice_scaling, band=band)
 				end
-				K2 = [accsysdynamics(lattice, exact_model, scaling=scaling)]
+				K2 = [sysdynamics2_new(lattice, exact_model)]
 				for band in 1:lattice.bands
 					K2 = boundarycondition_branching(K2, lattice, band=band)
-				end	
-				K3 = [accsysdynamics_fast(lattice, exact_model, scaling=scaling)]
-				for band in 1:lattice.bands
-					K3 = boundarycondition_branching(K3, lattice, band=band)
-				end	
+				end
 				Z1 = integrate(lattice_scaling, K1)
 				Z2 = integrate(lattice, K2)
 				@test _error(Z1, Z2, tol) < tol
-				Z3 = integrate(lattice, K3)
-				@test _error(Z1, Z3, tol) < tol
 				for i in 1:lattice.k-1
 					for j in 1:lattice.k-1
 						for f1 in (:+, :-), f2 in (:+, :-)
@@ -282,9 +251,7 @@ end
 								g1 = Gt(lattice_scaling, (i-1)*scaling+1, (j-1)*scaling+1, K1, b1=f1, b2=f2, band=band,Z=Z1)
 								g2 = Gt(lattice, i, j, K2, b1=f1, b2=f2, band=band,Z=Z2)
 								@test _error(g1, g2, tol) < tol
-								g3 = Gt(lattice, i, j, K3, b1=f1, b2=f2, band=band,Z=Z3)
-								@test _error(g1, g3, tol) < tol
-							end		
+							end
 						end
 					end
 				end
@@ -299,14 +266,14 @@ end
 		for scaling in [2]
 			for f in (:+, :-)
 				lattice_scaling = zoomin(lattice, scaling=scaling)
-				K1 = sysdynamics(lattice_scaling, exact_model, branch=f)
+				K1 = sysdynamics2_new(lattice_scaling, exact_model, branch=f)
 				for band in 1:lattice.bands
 					K1 = boundarycondition(K1, lattice_scaling, band=band)
 				end
-				K2 = accsysdynamics_fast(lattice, exact_model, scaling=scaling, branch=f)
+				K2 = sysdynamics2_new(lattice, exact_model, branch=f)
 				for band in 1:lattice.bands
 					K2 = boundarycondition(K2, lattice, band=band)
-				end	
+				end
 				Z1 = integrate(lattice_scaling, K1)
 				Z2 = integrate(lattice, K2)
 				@test _error(Z1, Z2, tol) < tol
@@ -317,7 +284,7 @@ end
 								g1 = Gt(lattice_scaling, (i-1)*scaling+1, (j-1)*scaling+1, K1, b1=f1, b2=f2, band=band,Z=Z1)
 								g2 = Gt(lattice, i, j, K2, b1=f1, b2=f2, band=band,Z=Z2)
 								@test _error(g1, g2, tol) < tol
-							end		
+							end
 						end
 					end
 				end
@@ -348,7 +315,7 @@ end
 
 	for ordering in [A1Ā1a1ā1B1B̄1b1b̄1(), A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2(), A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2()]
 		lattice = GrassmannLattice(δt=δt, N=N, bands=2, contour=:real, ordering=ordering)
-		K = accsysdynamics_fast(lattice, exact_model)
+		K = sysdynamics2_new(lattice, exact_model)
 		K = systhermalstate!(K, lattice, exact_model, β=β)
 		for band in 1:lattice.bands
 			K = boundarycondition(K, lattice, band=band)
