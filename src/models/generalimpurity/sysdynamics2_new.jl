@@ -339,3 +339,121 @@ function sysdynamics2_new(lattice::MixedGrassmannLattice, model::AbstractImpurit
 		end
 	end
 end
+
+
+
+"""
+	barefockpropagator_gmps(fockstate, lattice, idx; branch, δ, cache) -> GrassmannMPS
+
+Like `fockpropagator_gmps`, but with the coherent-state overlap between the
+bra and ket variables removed from the propagator: the single-step factor is
+multiplied by ∏_b (1 - c̄_b c_b), the inverse of the overlap that
+`bulkconnection` applies. Applying `bulkconnection` to the result recovers
+the full propagator exactly.
+"""
+function barefockpropagator_gmps(fockstate::AbstractMatrix, lattice::AbstractGrassmannLattice,
+								  idx::Int, branch::Symbol; δ::Float64=1.0e-10,
+								  cache::Union{Nothing, Dict}=nothing)
+	state = fockpropagator_gmps(fockstate, lattice, idx, branch; δ=δ, cache=cache)
+	M = lattice.bands
+	ib, ik = branch == :- ? (idx, idx+1) : (idx+1, idx)
+	for band in 1:M
+		pos1 = index(lattice, ib, conj=true, branch=branch, band=band)
+		pos2 = index(lattice, ik, conj=false, branch=branch, band=band)
+		apply!(exp(GTerm(pos1, pos2, coeff=-1)), state)
+	end
+	return canonicalize!(state, alg=Orthogonalize(SVD(), trunc=NoTruncation(), normalize=false))
+end
+
+function baresysdynamics_util2_new(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model;
+									idx::Int=1, branch::Symbol=:+, trunc::TruncationScheme=DefaultKTruncation,
+									cache::Union{Nothing, Dict}=nothing)
+	H = fockmatrix(model, lattice.bands)
+	if branch == :+
+		coeff = - im * lattice.δt
+	elseif branch == :-
+		coeff = im * lattice.δt
+	elseif branch == :τ
+		coeff = - lattice.δτ
+	else
+		throw(ArgumentError("branch must be one of :+, :- or :τ"))
+	end
+
+	# exact propagator from the spectral decomposition of H
+	vals, vecs = eigen(H)
+	fockstate = vecs * Diagonal(exp.(coeff .* vals)) * vecs'
+
+	state = barefockpropagator_gmps(fockstate, lattice, idx, branch; cache=cache)
+	return mult(state, gmps, trunc=trunc)
+end
+
+function baresysdynamics_forward2_new(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model;
+										trunc::TruncationScheme=DefaultKTruncation)
+	cache = Dict{Tuple, Any}()
+	for i in 1:lattice.Nt
+		gmps = baresysdynamics_util2_new(gmps, lattice, model; idx=i, branch=:+, trunc=trunc, cache=cache)
+	end
+	return gmps
+end
+function baresysdynamics_backward2_new(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model;
+										trunc::TruncationScheme=DefaultKTruncation)
+	cache = Dict{Tuple, Any}()
+	for i in 1:lattice.Nt
+		gmps = baresysdynamics_util2_new(gmps, lattice, model; idx=i, branch=:-, trunc=trunc, cache=cache)
+	end
+	return gmps
+end
+function baresysdynamics_imaginary2_new(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model;
+										trunc::TruncationScheme=DefaultKTruncation)
+	cache = Dict{Tuple, Any}()
+	for i in 1:lattice.Nτ
+		gmps = baresysdynamics_util2_new(gmps, lattice, model; idx=i, branch=:τ, trunc=trunc, cache=cache)
+	end
+	return gmps
+end
+
+"""
+	baresysdynamics2_new(lattice, model; branch, trunc) -> GrassmannMPS
+
+Exact version of `baresysdynamics`: the impurity propagator without the
+coherent-state bra-ket overlaps, built via `barefockpropagator_gmps`.
+Applying `bulkconnection` to its output gives `sysdynamics2_new`, exactly
+as `bulkconnection` on `baresysdynamics` gives `sysdynamics`.
+"""
+function baresysdynamics2_new(lattice::ImagGrassmannLattice, model::AbstractImpurityHamiltonian;
+								trunc::TruncationScheme=DefaultKTruncation)
+	gmps = vacuumstate(lattice)
+	return baresysdynamics_imaginary2_new(gmps, lattice, model; trunc=trunc)
+end
+
+function baresysdynamics2_new(lattice::RealGrassmannLattice, model::AbstractImpurityHamiltonian;
+								branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
+	gmps = vacuumstate(lattice)
+	if isnothing(branch)
+		gmps = baresysdynamics_forward2_new(gmps, lattice, model; trunc=trunc)
+		return baresysdynamics_backward2_new(gmps, lattice, model; trunc=trunc)
+	else
+		(branch in (:+, :-)) || throw(ArgumentError("branch must be one of :+ or :-"))
+		return (branch == :+) ? baresysdynamics_forward2_new(gmps, lattice, model; trunc=trunc) :
+								baresysdynamics_backward2_new(gmps, lattice, model; trunc=trunc)
+	end
+end
+
+function baresysdynamics2_new(lattice::MixedGrassmannLattice, model::AbstractImpurityHamiltonian;
+								branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
+	gmps = vacuumstate(lattice)
+	if isnothing(branch)
+		gmps = baresysdynamics_forward2_new(gmps, lattice, model; trunc=trunc)
+		gmps = baresysdynamics_backward2_new(gmps, lattice, model; trunc=trunc)
+		return baresysdynamics_imaginary2_new(gmps, lattice, model; trunc=trunc)
+	else
+		if branch == :+
+			return baresysdynamics_forward2_new(gmps, lattice, model; trunc=trunc)
+		elseif branch == :-
+			return baresysdynamics_backward2_new(gmps, lattice, model; trunc=trunc)
+		else
+			(branch == :τ) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
+			return baresysdynamics_imaginary2_new(gmps, lattice, model; trunc=trunc)
+		end
+	end
+end

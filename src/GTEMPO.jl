@@ -59,7 +59,8 @@ export boundarycondition!, boundarycondition, boundarycondition_branching
 # impurity model Hamilltonians
 export AbstractImpurityHamiltonian, AndersonIM, IRLM, KanamoriIM
 export systhermalstate, systhermalstate!, sysdynamics, sysdynamics!, sysdynamicsstepper!,
-        sysdynamics2, sysdynamics_fast, sysdynamics2_new, fockpropagator_gmps
+        sysdynamics2, sysdynamics_fast, sysdynamics2_new, fockpropagator_gmps,
+        baresysdynamics2_new, barefockpropagator_gmps
 # export sysdynamics_forward!, sysdynamics_backward!, sysdynamics_imaginary!
 export ImpurityHamiltonian
 export baresysdynamics!, baresysdynamics

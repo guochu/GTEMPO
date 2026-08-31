@@ -130,3 +130,59 @@ end
 		@test _dis(Kb1, Kb2) < 1e-7
 	end
 end
+
+@testset "baresysdynamics2_new" begin
+	models = [
+		gAndersonIM(U=0., μ=0.5),
+		gAndersonIM(U=1., μ=0.5),
+		gIRLM(U=1., μ=0.5, J=1),
+		gKanamoriIM(U=1., μ=0.7, J=1.1, norb=1)
+	]
+
+	# bulkconnection on the bare propagator must reproduce sysdynamics2_new exactly
+	for model in models
+		lattice = GrassmannLattice(δτ=0.05, N=3, bands=model.bands, contour=:imag, ordering=A1Ā1B1B̄1())
+		Kfull = sysdynamics2_new(lattice, model)
+		Kbare = baresysdynamics2_new(lattice, model)
+		for band in 1:lattice.bands
+			Kbare = bulkconnection!(Kbare, lattice, band=band)
+		end
+		@test (norm(Kfull) - norm(Kbare)) < 1e-8
+		@test _dis(Kfull, Kbare) < 1e-7
+	end
+	for model in models
+		lattice = GrassmannLattice(δt=0.05, N=2, bands=model.bands, contour=:real, ordering=A1Ā1a1ā1B1B̄1b1b̄1())
+		Kfull = sysdynamics2_new(lattice, model)
+		Kbare = baresysdynamics2_new(lattice, model)
+		for band in 1:lattice.bands
+			Kbare = bulkconnection!(Kbare, lattice, band=band)
+		end
+		@test (norm(Kfull) - norm(Kbare)) < 1e-8
+		@test _dis(Kfull, Kbare) < 1e-7
+	end
+	# mixed contour
+	for model in (models[2], models[4])
+		lattice = GrassmannLattice(δt=0.04, Nt=2, δτ=0.05, Nτ=2, bands=model.bands, contour=:mixed, ordering=A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2())
+		Kfull = sysdynamics2_new(lattice, model)
+		Kbare = baresysdynamics2_new(lattice, model)
+		for band in 1:lattice.bands
+			Kbare = bulkconnection!(Kbare, lattice, band=band)
+		end
+		@test (norm(Kfull) - norm(Kbare)) < 1e-8
+		@test _dis(Kfull, Kbare) < 1e-7
+	end
+
+	# first-order consistency with the Trotterized baresysdynamics at small dt
+	for model in models
+		lattice = GrassmannLattice(δτ=0.02, N=2, bands=model.bands, contour=:imag, ordering=A1Ā1B1B̄1())
+		K1 = baresysdynamics(lattice, model)
+		K2 = baresysdynamics2_new(lattice, model)
+		@test _dis(K1, K2) / norm(K1) < 5e-3
+	end
+	for model in models
+		lattice = GrassmannLattice(δt=0.02, N=2, bands=model.bands, contour=:real, ordering=A1Ā1a1ā1B1B̄1b1b̄1())
+		K1 = baresysdynamics(lattice, model)
+		K2 = baresysdynamics2_new(lattice, model)
+		@test _dis(K1, K2) / norm(K1) < 5e-3
+	end
+end
