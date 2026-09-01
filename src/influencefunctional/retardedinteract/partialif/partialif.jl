@@ -13,4 +13,3 @@ Build the retarded interaction e^{ΣᵢⱼΔᵢⱼnᵢnⱼ} as a GMPS using the 
 corr: bosonic hybridization function calculated using QuAPI
 """
 retardedinteractdynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = retardedinteractdynamics!(vacuumstate(lattice), lattice, corr; kwargs...)
-retardedinteractdynamics_naive(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = retardedinteractdynamics_naive!(vacuumstate(lattice), lattice, corr; kwargs...)

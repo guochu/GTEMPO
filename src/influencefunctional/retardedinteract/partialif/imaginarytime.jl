@@ -70,61 +70,6 @@ function retardedinteractdynamics_2band!(gmps::GrassmannMPS, lattice::ImagGrassm
 	return gmps	
 end
 
-# naive implementation with N^2 gate operations
-function retardedinteractdynamics_naive!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr::ImagCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
-	(lattice.bands in (1, 2)) || throw(ArgumentError("number of bands should be either 1 or 2"))
-	if lattice.bands == 1
-		return retardedinteractdynamics_1band_naive!(gmps, lattice, corr, trunc=trunc)
-	else
-		return retardedinteractdynamics_2band_naive!(gmps, lattice, corr, trunc=trunc)
-	end
-end
-
-function retardedinteractdynamics_1band_naive!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr::ImagCorrelationFunction; kwargs...)
-	@assert lattice.bands == 1
-	return _retardedinteractdynamics_1band_naive!(gmps, lattice, corr, 1; kwargs...)
-end 
-
-function _retardedinteractdynamics_1band_naive!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr1::ImagCorrelationFunction, band::Int; trunc::TruncationScheme=DefaultITruncation)
-	corr = corr1.data
-	k = lattice.k-1
-	for i in 1:k, j in 1:k
-		pos1a, pos1b = index(lattice, i+1, conj=true, band=band), index(lattice, i, conj=false, band=band)
-		pos2a, pos2b = index(lattice, j+1, conj=true, band=band), index(lattice, j, conj=false, band=band)
-		if i == j
-			coef = corr[i, j]
-			t = exp(GTerm(pos1a, pos1b, coeff=coef))
-		else
-			coef = corr[i, j]
-			t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=coef))
-		end
-		apply!(t, gmps)
-		canonicalize!(gmps, alg=Orthogonalize(TK.SVD(), trunc))
-	end
-	return gmps
-end
-
-function retardedinteractdynamics_2band_naive!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr1::ImagCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
-	@assert lattice.bands == 2
-	for band in 1:lattice.bands
-		_retardedinteractdynamics_1band_naive!(gmps, lattice, corr1, band, trunc=trunc)
-	end
-
-	corr = corr1.data
-	k = lattice.k-1
-	for i in 1:k, j in 1:k
-		pos1a, pos1b = index(lattice, i+1, conj=true, band=1), index(lattice, i, conj=false, band=1)
-		pos2a, pos2b = index(lattice, j+1, conj=true, band=2), index(lattice, j, conj=false, band=2)
-		coef = corr[i, j] + corr[j, i]
-		t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=coef))
-		apply!(t, gmps)
-		canonicalize!(gmps, alg=Orthogonalize(TK.SVD(), trunc))
-	end
-	return gmps	
-end
-
-
-
 # """
 # 	retardedinteractdynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice, corr::ImagCorrelationFunction; trunc)
 

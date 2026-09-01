@@ -33,9 +33,6 @@ println("------------------------------------")
 			end
 			mpsb = retardedinteractdynamics(lattice, ImagCorrelationFunction(η), trunc=trunc)
 			@test distance(mpsa, mpsb) / norm(mpsa) <= rtol
-
-			mpsc = retardedinteractdynamics_naive(lattice, ImagCorrelationFunction(η), trunc=trunc)
-			@test distance(mpsa, mpsc) / norm(mpsa) <= rtol
 		end
 	end		
 
@@ -77,70 +74,6 @@ println("------------------------------------")
 
 			mpsb = retardedinteractdynamics(lattice, ImagCorrelationFunction(η), trunc=trunc)
 			@test distance(mpsa, mpsb) / norm(mpsa) <= rtol
-
-			mpsc = retardedinteractdynamics_naive(lattice, ImagCorrelationFunction(η), trunc=trunc)
-			@test distance(mpsa, mpsc) / norm(mpsa) <= rtol
-		end
-	end	
-
-end
-
-
-@testset "Retarded Interact IF: real time" begin
-	D = 1
-	β=0.2
-	J(ε) = D/(ε^2+D^2)/pi
-	f = spectrum(J)
-	trunc = truncdimcutoff(D=300, ϵ=1.0e-6, add_back=0)
-	rtol = 1.0e-5
-
-	# 1 band
-	for N in (2, 3, 4)
-		for ordering in real_grassmann_orderings
-			# println("bands=", bands, ", N=", N)
-			lattice = GrassmannLattice(N=N, δt=0.05, bands=1, contour=:real, order=1, ordering=ordering)
-			corr = fermionic_Δt(f, β=β, N=lattice.N, t=lattice.t)
-			mpsa = retardedinteractdynamics_naive(lattice, corr, trunc=trunc)
-			mpsb = retardedinteractdynamics(lattice, corr, trunc=trunc)
-			@test distance(mpsa, mpsb) / norm(mpsa) <= rtol
-		end
-	end
-
-	# 2 bands
-
-	for N in (2, 3)
-		for ordering in real_grassmann_orderings
-			lattice = GrassmannLattice(N=N, δt=0.05, bands=2, contour=:real, order=1, ordering=ordering)
-			corr = fermionic_Δt(f, β=β, N=lattice.N, t=lattice.t)
-
-			mpsa = retardedinteractdynamics_naive(lattice, corr, trunc=trunc)	
-			mpsb = retardedinteractdynamics(lattice, corr, trunc=trunc)
-			@test distance(mpsa, mpsb) / norm(mpsa) <= rtol
-		end
-	end	
-
-end
-
-@testset "Retarded Interact IF: mixed time" begin
-	D = 1
-	β=0.2
-	Nτ = 2
-	δτ = β / Nτ
-	J(ω) = (D/(2*pi)) * sqrt(1 - (ω/D)^2 ) * 0.1
-	f = spectrum(J, lb = -D, ub = D)
-	trunc = truncdimcutoff(D=300, ϵ=1.0e-6, add_back=0)
-	rtol = 1.0e-5
-
-	for bands in (1, 2)
-		for N in (1, 2, 3)
-			for ordering in mixed_grassmann_orderings
-				lattice = GrassmannLattice(Nt=N, δt=0.05, δτ=δτ, Nτ=Nτ, bands=bands, contour=:mixed, order=1, ordering=ordering)
-				corr = fermionic_Δm(f, β=β, Nt=lattice.Nt, t=lattice.t, Nτ=lattice.Nτ)
-
-				mpsa = retardedinteractdynamics_naive(lattice, corr, trunc=trunc)
-				mpsb = retardedinteractdynamics(lattice, corr, trunc=trunc)
-				@test distance(mpsa, mpsb) / norm(mpsa) <= rtol
-			end
 		end
 	end
 

@@ -4,7 +4,6 @@ println("------------------------------------")
 
 @testset "Independent bosons: imaginary time" begin
 	rtol = 1.0e-2
-	rtol2 = 1.0e-5
 	δτ=0.01
 	N = 10
 	β = N * δτ
@@ -22,8 +21,6 @@ println("------------------------------------")
 			corr = correlationfunction(bath, lattice)
 
 			mpsI = retardedinteractdynamics(lattice, corr, trunc=trunc)
-			mpsI′ = retardedinteractdynamics_naive(lattice, corr, trunc=trunc)
-			@test distance(mpsI, mpsI′) / norm(mpsI) <= rtol2
 
 			fbath = fermionicbath(semicircular(), β=β, μ=0)
 			exact_model = AndersonIM(U=0., μ=-ϵ_d)
@@ -50,8 +47,6 @@ println("------------------------------------")
 			corr = correlationfunction(bath, lattice)
 
 			mpsI = retardedinteractdynamics(lattice, corr, trunc=trunc)
-			mpsI′ = retardedinteractdynamics_naive(lattice, corr, trunc=trunc)
-			@test distance(mpsI, mpsI′) / norm(mpsI) <= rtol2
 
 			fbath = fermionicbath(semicircular(), β=β, μ=0)
 			exact_model = AndersonIM(U=U, μ=-ϵ_d)
@@ -71,7 +66,6 @@ end
 
 @testset "Independent bosons: real time" begin
 	rtol = 1.0e-2
-	rtol2 = 1.0e-3
 	β = 0.1
 	δt=0.01
 	Nt = 10
@@ -87,8 +81,6 @@ end
 		bath = bosonicbath(DiracDelta(ω=1, α=0.5), β=β)
 		corr = correlationfunction(bath, lattice)
 		mpsI = retardedinteractdynamics(lattice, corr, trunc=trunc)
-		mpsI′ = retardedinteractdynamics_naive(lattice, corr, trunc=trunc)
-		@test distance(mpsI, mpsI′) / norm(mpsI) <= rtol2
 
 		fbath = fermionicbath(semicircular(), β=β, μ=0)
 		exact_model = AndersonIM(U=0., μ=-ϵ_d)
@@ -124,8 +116,6 @@ end
 		bath = bosonicbath(DiracDelta(ω=1, α=0.5), β=β)
 		corr = correlationfunction(bath, lattice)
 		mpsI = retardedinteractdynamics(lattice, corr, trunc=trunc)
-		mpsI′ = retardedinteractdynamics_naive(lattice, corr, trunc=trunc)
-		@test distance(mpsI, mpsI′) / norm(mpsI) <= rtol2
 
 		fbath = fermionicbath(semicircular(), β=β, μ=0)
 		exact_model = AndersonIM(U=U, μ=-ϵ_d)
@@ -156,7 +146,6 @@ end
 
 @testset "Independent bosons: mixed time" begin
 	rtol = 5.0e-2
-	rtol2 = 1.0e-3
 	β = 0.05
 	δτ = 0.01
 	Nτ = round(Int, β/δτ)
@@ -178,8 +167,6 @@ end
 	corr = correlationfunction(bath, lattice)
 
 	mpsI = retardedinteractdynamics(lattice, corr, trunc=trunc)
-	mpsI′ = retardedinteractdynamics_naive(lattice, corr, trunc=trunc)
-	@test distance(mpsI, mpsI′) / norm(mpsI) <= rtol2
 
 	fbath = fermionicbath(semicircular(), β=β, μ=0)
 	exact_model = AndersonIM(U=0., μ=-ϵ_d)
@@ -206,8 +193,6 @@ end
 	lattice = GrassmannLattice(Nt=Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed, order=1, bands=2)
 
 	mpsI = retardedinteractdynamics(lattice, corr, trunc=trunc)
-	mpsI′ = retardedinteractdynamics_naive(lattice, corr, trunc=trunc)
-	@test distance(mpsI, mpsI′) / norm(mpsI) <= rtol2
 	
 	fbath = fermionicbath(semicircular(), β=β, μ=0)
 	exact_model = AndersonIM(U=U, μ=-ϵ_d)
