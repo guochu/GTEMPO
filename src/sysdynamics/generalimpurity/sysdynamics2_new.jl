@@ -128,8 +128,9 @@ end
 # The window content depends only on the relative layout of the variables,
 # so it is computed once per branch and re-positioned at each time step.
 function _bare_window_sparsegmps(lattice::AbstractGrassmannLattice, fm::FockMatrix,
-									bwin::Vector{Int}, kwin::Vector{Int}, Lw::Int)
-	# bwin/kwin: 1-based positions of the bra/ket variables inside the window
+									bwin::Vector{Int}, kwin::Vector{Int}, Lw::Int, L::Int)
+	# bwin/kwin: 1-based positions of the bra/ket variables inside the
+	# window; L: total lattice length
 	sites, _ = _fockpropagator_sites(fm.data, bwin .- 1, kwin .- 1, Lw)
 	state = GrassmannMPS(convert(Vector{typeof(sites[1])}, sites))
 
@@ -140,9 +141,17 @@ function _bare_window_sparsegmps(lattice::AbstractGrassmannLattice, fm::FockMatr
 	end
 	canonicalize!(state, alg=Orthogonalize(SVD(), trunc=NoTruncation(), normalize=false))
 
-	# fold the scaling into the first tensor (SparseGMPS carries no scaling)
+	# fold the scaling into the site tensors (SparseGMPS carries no scaling
+	# field). The scaling of the window GrassmannMPS of length Lw satisifies
+	# norm = sqrt(⟨ψ|ψ⟩)·scaling^Lw, while the mult! of the full lattice
+	# expects norm = sqrt(⟨ψ|ψ⟩)·(per-site factor)^L, so each window tensor
+	# carries scaling^(L/Lw) — the same total as scaling^L, distributed as
+	# in GrassmannMPS (which stores scaling^(1/L) per site via _rescaling!)
 	data = copy(state.data)
-	data[1] = data[1] * (scaling(state)^Lw)
+	s = scaling(state)^(L / Lw)
+	for i in 1:Lw
+		data[i] = data[i] * s
+	end
 	return SparseGMPS(data, collect(1:Lw))
 end
 
@@ -157,12 +166,12 @@ function _bare_propagator_sparsegmps(lattice::AbstractGrassmannLattice, fm::Fock
 	bwin, kwin = bpos .- pmin .+ 1, kpos .- pmin .+ 1
 
 	if isnothing(cache)
-		sparse = _bare_window_sparsegmps(lattice, fm, bwin, kwin, pmax - pmin + 1)
+		sparse = _bare_window_sparsegmps(lattice, fm, bwin, kwin, pmax - pmin + 1, length(lattice))
 		return SparseGMPS(sparse.data, sparse.positions .+ (pmin - 1))
 	end
 	cached = get(cache, (branch, bwin, kwin), nothing)
 	if isnothing(cached)
-		sparse = _bare_window_sparsegmps(lattice, fm, bwin, kwin, pmax - pmin + 1)
+		sparse = _bare_window_sparsegmps(lattice, fm, bwin, kwin, pmax - pmin + 1, length(lattice))
 		cache[(branch, bwin, kwin)] = (sparse.data, sparse.positions)
 		return SparseGMPS(sparse.data, sparse.positions .+ (pmin - 1))
 	end

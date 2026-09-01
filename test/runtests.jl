@@ -1,17 +1,8 @@
-push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/ImpurityModelBase/src")
-push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/QuAPI/src")
-push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/Z2Tensors/src")
-push!(LOAD_PATH, dirname(dirname(Base.@__DIR__)) * "/Z2Tensors/ext/Z2TensorsCUDAExt/")
-
 using Test, Random
+using GTEMPO
 using Z2Tensors
+using ImpurityModelBase
 const TK = Z2Tensors
-                    
-
-include("../src/includes.jl")
-
-# push!(LOAD_PATH, "../src")
-# using GTEMPO
 
 Random.seed!(12354)
 
