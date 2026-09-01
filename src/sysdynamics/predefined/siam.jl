@@ -150,6 +150,15 @@ AndersonIM(; U::Real, μ::Real) = AndersonIM(convert(Float64, U), convert(Float6
 # 	return gmps
 # end
 
+"""
+	sysdynamics_imaginary!(gmps, lattice, model::AndersonIM; trunc) -> GrassmannMPS
+
+Analytical solution of the imaginary-time propagator for the Anderson
+impurity: the Hamiltonian terms μ(n₁+n₂) and U n₁n₂ all commute, so the
+factorization into GTerms is exact. Building an equivalent model from
+`ImpurityHamiltonian` and calling the generic `sysdynamics_imaginary!`
+yields exactly the same result.
+"""
 function sysdynamics_imaginary!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::AndersonIM; trunc::TruncationScheme=DefaultKTruncation)
 	# free dynamics
 	μ, U = model.μ, model.U
@@ -180,6 +189,15 @@ function sysdynamics_imaginary!(gmps::GrassmannMPS, lattice::AbstractGrassmannLa
 	end
 	return gmps
 end
+"""
+	sysdynamics_forward!(gmps, lattice, model::AndersonIM; trunc) -> GrassmannMPS
+
+Analytical solution of the forward-branch propagator for the Anderson
+impurity: the Hamiltonian terms μ(n₁+n₂) and U n₁n₂ all commute, so the
+factorization into GTerms is exact. Building an equivalent model from
+`ImpurityHamiltonian` and calling the generic `sysdynamics_forward!`
+yields exactly the same result.
+"""
 function sysdynamics_forward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::AndersonIM; trunc::TruncationScheme=DefaultKTruncation)
 	# free dynamics
 	μ, U = model.μ, model.U
@@ -210,6 +228,15 @@ function sysdynamics_forward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLatt
 	end
 	return gmps
 end
+"""
+	sysdynamics_backward!(gmps, lattice, model::AndersonIM; trunc) -> GrassmannMPS
+
+Analytical solution of the backward-branch propagator for the Anderson
+impurity: the Hamiltonian terms μ(n₁+n₂) and U n₁n₂ all commute, so the
+factorization into GTerms is exact. Building an equivalent model from
+`ImpurityHamiltonian` and calling the generic `sysdynamics_backward!`
+yields exactly the same result.
+"""
 function sysdynamics_backward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::AndersonIM; trunc::TruncationScheme=DefaultKTruncation)
 	# free dynamics
 	μ, U = model.μ, model.U
@@ -294,8 +321,21 @@ function siam_coeffs(μ, U, dt)
 	return a, b
 end
 
+"""
+	systhermalstate!(gmps, lattice, model::AndersonIM; β, trunc) -> GrassmannMPS
+
+Analytical solution of the normalized thermal state exp(-βĤ)/tr(exp(-βĤ))
+for the Anderson impurity: the Hamiltonian terms μ(n₁+n₂) and U n₁n₂ all
+commute, so the factorization of exp(-βĤ) into GTerms is exact. Building
+an equivalent model from `ImpurityHamiltonian` and calling the generic
+`systhermalstate!` yields exactly the same result. For `β == Inf` the
+ground state projector is built via the generic Fock-space construction.
+"""
 function systhermalstate!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::AndersonIM; β::Real, trunc::TruncationScheme=DefaultKTruncation)
 	μ, U = model.μ, model.U
+	if β == Inf
+		return sysinitialstate!(gmps, lattice, fock_thermalstate(model, β, lattice.bands); trunc=trunc)
+	end
 	a, b = siam_coeffs(μ, U, -β)
 	for band in 1:lattice.bands
 		pos1, pos2 = index(lattice, 1, conj=true, branch=:+, band=band), index(lattice, 1, conj=false, branch=:-, band=band)
@@ -309,6 +349,10 @@ function systhermalstate!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, mod
 		pos4 = index(lattice, 1, conj=false, branch=:-, band=1)
 		apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=b)), gmps)			
 	end
+	# normalize: divide by tr(exp(-βĤ)) so that the result equals the
+	# normalized thermal state, consistent with fock_thermalstate
+	Z = (1 + a)^lattice.bands + (U != zero(U) ? b : 0)
+	gmps[1] = gmps[1] * (1 / Z)
 	canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
 	return gmps
 end 

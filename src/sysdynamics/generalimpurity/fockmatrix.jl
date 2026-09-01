@@ -60,10 +60,12 @@ end
 """
 	fock_thermalstate(h, β) -> FockMatrix
 
-The thermal equilibrium state `exp(-βĤ)/tr(exp(-βĤ))` of the impurity in
-the Fock basis. For `β == Inf` the (normalized) ground state projector
-is returned. For a generic `AbstractImpurityHamiltonian` the number of
-bands must be passed explicitly via the three-argument method.
+The normalized thermal equilibrium state `exp(-βĤ)/tr(exp(-βĤ))` of the
+impurity in the Fock basis — consistent with the analytical solution
+returned by `systhermalstate!` for `AndersonIM`. For `β == Inf` the
+(normalized) ground state projector is returned. For a generic
+`AbstractImpurityHamiltonian` the number of bands must be passed
+explicitly via the three-argument method.
 """
 function fock_thermalstate(h::ImpurityHamiltonian, β::Real)
 	return fock_thermalstate(h, β, h.bands)
@@ -75,6 +77,8 @@ function fock_thermalstate(model::AbstractImpurityHamiltonian, β::Real, bands::
 	if β == Inf
 		rho = vecs[:,1] * vecs[:,1]'
 	else
+		# shift by E0 to avoid overflow at large β, then normalize by the
+		# trace so that tr(rho) == 1
 		E0 = minimum(vals)
 		weights = exp.(-β .* (vals .- E0))
 		weights ./= sum(weights)

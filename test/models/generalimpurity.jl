@@ -18,8 +18,8 @@ println("------------------------------------")
 		model2 = gAndersonIM(U=U, μ=ϵ_d)
 		bands = (U == zero(U)) ? 1 : 2
 		lattice = GrassmannLattice(δτ=δτ, N=N, bands=bands, contour=:imag)
-		K1 = sysdynamics2_new(lattice, model1)
-		K2 = sysdynamics2_new(lattice, model2)
+		K1 = sysdynamics(lattice, model1)
+		K2 = sysdynamics(lattice, model2)
 		@test distance(K1, K2) / norm(K1) < rtol
 		for band in 1:lattice.bands
 			K1 = boundarycondition!(K1, lattice, band=band)
@@ -50,8 +50,8 @@ end
 		model2 = gAndersonIM(U=U, μ=ϵ_d)
 		bands = (U == zero(U)) ? 1 : 2
 		lattice = GrassmannLattice(δt=δt, N=N, bands=bands, contour=:real)
-		K1 = sysdynamics2_new(lattice, model1)
-		K2 = sysdynamics2_new(lattice, model2)
+		K1 = sysdynamics(lattice, model1)
+		K2 = sysdynamics(lattice, model2)
 		@test distance(K1, K2) / norm(K1) < rtol
 		for band in 1:lattice.bands
 			K1 = boundarycondition!(K1, lattice, band=band)

@@ -76,7 +76,7 @@ end
 	truncK = truncdimcutoff(D=1000, ϵ=1.0e-10, add_back=0)
 
 	exact_model = IRLM(μ=μ, J=J, U=0)
-	mpsK = sysdynamics2_new(lattice, exact_model, trunc=truncK)
+	mpsK = sysdynamics(lattice, exact_model, trunc=truncK)
 	for band in 1:lattice.bands
 		boundarycondition!(mpsK, lattice, trunc=truncK, band=band)
 	end
