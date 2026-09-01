@@ -37,7 +37,7 @@ export vacuumstate, makestep, timesteps
 export ImagGrassmannLattice1Order, RealGrassmannLattice1Order, RealGrassmannLattice2Order, GrassmannLattice, index
 
 # integration of GMPSs
-export integrate, integrateband, integratebands, partialintegrate
+export integrate, integrateband, integratebands, partialintegrate, multintegrateband
 export IntegrationAlgorithm, ExactIntegrate, BMPSIntegrate, Zvalue
 export changeordering, toadjacentordering
 export environments, environments2
@@ -162,6 +162,9 @@ include("lattices/lattices.jl")
 
 # integration
 include("integration/integration.jl")
+
+# partial integration
+include("partialintegrate/partialintegrate.jl")
 
 # # correlation functions
 include("correlationfunction.jl")

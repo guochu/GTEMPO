@@ -72,3 +72,6 @@ function integratebands(lattice::AbstractGrassmannLattice, x::GrassmannMPS, band
     end
     x
 end
+
+include("multpartialintegrate.jl")
+include("generalmultpartialintegrate/generalmultpartialintegrate.jl")

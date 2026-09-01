@@ -126,7 +126,7 @@ function main2(t; β=5, δτ=0.1, δt = 0.1, chi=60, chi2=4*chi)
 		mps_adt = boundarycondition!(mps_adt, lattice_tmp, band=1)
 		mpsI1 = fillband(lattice_tmp, mpsI, band=1)
 
-		mps_adt = integrateband(lattice_tmp, mps_adt, mpsI1, algmult, band=1)
+		mps_adt = multintegrateband(lattice_tmp, mps_adt, mpsI1, algmult, band=1)
 		lattice_tmp = similar(lattice_tmp, bands=lattice_tmp.bands-1)
 	end
 	mps_adt = boundarycondition!(mps_adt, lattice1, band=1)

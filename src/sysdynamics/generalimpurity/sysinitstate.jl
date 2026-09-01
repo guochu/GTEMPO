@@ -17,7 +17,7 @@ variables on the backward branch at time slice 1, and multiplied into
 `gmps` with the sparse `mult!` using the truncation scheme `trunc`.
 """
 function sysinitialstate!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, fockstate::FockMatrix;
-							trunc::TruncationScheme=NoTruncation())
+						trunc::TruncationScheme=DefaultKTruncation)
     (fockstate.bands == lattice.bands) || throw(DimensionMismatch("FockMatrix bands $(fockstate.bands) do not match lattice bands $(lattice.bands)"))
     M = lattice.bands
     bpos = [index(lattice, 1, conj=true, branch=:+, band=i) for i in 1:M]

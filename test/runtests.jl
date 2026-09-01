@@ -48,7 +48,7 @@ include("tempo/observables.jl")
 include("tempo/swapband.jl")
 include("tempo/fillband.jl")
 include("tempo/integrateband.jl")
-include("tempo/integrateband2.jl")
+include("tempo/multintegrateband.jl")
 include("tempo/partialintegrate.jl")
 
 include("tempo/models.jl")

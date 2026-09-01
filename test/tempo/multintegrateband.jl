@@ -29,7 +29,7 @@ println("------------------------------------")
 		for band in 1:2
 			res1 = integrateband(lattice, mult(mpsI1, mpsI2), band=band)
 			for algmult in algmults
-				res2 = integrateband(lattice, mpsI1, mpsI2, algmult; band=band)
+				res2 = multintegrateband(lattice, mpsI1, mpsI2, algmult; band=band)
 				@test distance(res1, res2) / norm(res1) < rtol
 			end
 		end
@@ -62,7 +62,7 @@ end
 		for band in 1:2
 			res1 = integrateband(lattice, mult(mpsI1, mpsI2), band=band)
 			for algmult in algmults
-				res2 = integrateband(lattice, mpsI1, mpsI2, algmult; band=band)
+				res2 = multintegrateband(lattice, mpsI1, mpsI2, algmult; band=band)
 				@test distance(res1, res2) / norm(res1) < rtol
 			end
 		end
@@ -100,7 +100,7 @@ end
 		for band in 1:2
 			res1 = integrateband(lattice, mult(mpsI1, mpsI2), band=band)
 			for algmult in algmults
-				res2 = integrateband(lattice, mpsI1, mpsI2, algmult; band=band)
+				res2 = multintegrateband(lattice, mpsI1, mpsI2, algmult; band=band)
 				@test distance(res1, res2) / norm(res1) < rtol
 			end
 		end

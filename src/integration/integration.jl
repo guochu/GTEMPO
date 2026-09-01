@@ -55,7 +55,3 @@ end
 
 # more complicatd integration
 include("parallelintegrate.jl")
-include("partialintegrate.jl")
-include("partialintegrate2.jl")
-
-include("partialintegrate/partialintegrate.jl")
