@@ -186,3 +186,80 @@ end
 		@test _dis(K1, K2) / norm(K1) < 5e-3
 	end
 end
+
+@testset "sysdynamics2_fast_new" begin
+	# imaginary time: direct tiling and changeordering paths
+	for (U, ϵ_d, δτ, N) in [(1., 0.7, 0.05, 4), (0.8, 0.6, 0.1, 5)]
+		model = AndersonIM(U=U, μ=ϵ_d)
+		for ordering in (A1Ā1B1B̄1(), A1B1B̄1Ā1(), A2Ā2A1Ā1B2B̄2B1B̄1())
+			lattice = GrassmannLattice(δτ=δτ, N=N, bands=2, contour=:imag, ordering=ordering)
+			K1 = sysdynamics2_new(lattice, model)
+			K2 = sysdynamics2_fast_new(lattice, model)
+			@test abs(norm(K1) - norm(K2)) < 1e-8
+			@test _dis(K1, K2) < 1e-7
+		end
+	end
+	# real time: full contour and single branches, all orderings
+	for (U, ϵ_d, δt, N) in [(1., 0.7, 0.05, 3)]
+		model = AndersonIM(U=U, μ=ϵ_d)
+		for ordering in real_grassmann_orderings
+			lattice = GrassmannLattice(δt=δt, N=N, bands=2, contour=:real, ordering=ordering)
+			K1 = sysdynamics2_new(lattice, model)
+			K2 = sysdynamics2_fast_new(lattice, model)
+			@test abs(norm(K1) - norm(K2)) < 1e-8
+			@test _dis(K1, K2) < 1e-7
+			Kf1 = sysdynamics2_new(lattice, model, branch=:+)
+			Kf2 = sysdynamics2_fast_new(lattice, model, branch=:+)
+			@test abs(norm(Kf1) - norm(Kf2)) < 1e-8
+			@test _dis(Kf1, Kf2) < 1e-7
+		end
+	end
+	# mixed contour
+	for (U, ϵ_d, δt, Nt, δτ, Nτ) in [(1., 0.7, 0.04, 2, 0.05, 2)]
+		model = AndersonIM(U=U, μ=ϵ_d)
+		for ordering in mixed_grassmann_orderings
+			lattice = GrassmannLattice(δt=δt, Nt=Nt, δτ=δτ, Nτ=Nτ, bands=2, contour=:mixed, ordering=ordering)
+			K1 = sysdynamics2_new(lattice, model)
+			K2 = sysdynamics2_fast_new(lattice, model)
+			@test abs(norm(K1) - norm(K2)) < 1e-7
+			@test _dis(K1, K2) < 1e-6
+		end
+	end
+end
+
+@testset "baresysdynamics2_fast_new" begin
+	models = [
+		gAndersonIM(U=0., μ=0.5),
+		gAndersonIM(U=1., μ=0.5),
+		IRLM(U=1., μ=0.5, J=1),
+		KanamoriIM(U=1., μ=0.7, J=1.1, norb=1)
+	]
+	for model in models
+		lattice = GrassmannLattice(δτ=0.05, N=3, bands=model.bands, contour=:imag, ordering=A1Ā1B1B̄1())
+		K1 = baresysdynamics2_new(lattice, model)
+		K2 = baresysdynamics2_fast_new(lattice, model)
+		@test abs(norm(K1) - norm(K2)) < 1e-8
+		@test _dis(K1, K2) < 1e-7
+		# bulkconnection recovers the full fast propagator
+		Kfull = sysdynamics2_fast_new(lattice, model)
+		for band in 1:lattice.bands
+			K2 = bulkconnection!(K2, lattice, band=band)
+		end
+		@test abs(norm(Kfull) - norm(K2)) < 1e-8
+		@test _dis(Kfull, K2) < 1e-7
+	end
+	# real and mixed contours
+	model = AndersonIM(U=1., μ=0.7)
+	for ordering in (A1Ā1B1B̄1a1ā1b1b̄1(), A1B1ā1b̄1Ā1B̄1a1b1(), A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2())
+		lattice = GrassmannLattice(δt=0.05, N=2, bands=2, contour=:real, ordering=ordering)
+		K1 = baresysdynamics2_new(lattice, model)
+		K2 = baresysdynamics2_fast_new(lattice, model)
+		@test abs(norm(K1) - norm(K2)) < 1e-8
+		@test _dis(K1, K2) < 1e-7
+	end
+	lattice = GrassmannLattice(δt=0.04, Nt=2, δτ=0.05, Nτ=2, bands=2, contour=:mixed, ordering=A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2())
+	K1 = baresysdynamics2_new(lattice, model)
+	K2 = baresysdynamics2_fast_new(lattice, model)
+	@test abs(norm(K1) - norm(K2)) < 1e-7
+	@test _dis(K1, K2) < 1e-6
+end

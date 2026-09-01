@@ -128,9 +128,8 @@ end
 # The window content depends only on the relative layout of the variables,
 # so it is computed once per branch and re-positioned at each time step.
 function _bare_window_sparsegmps(lattice::AbstractGrassmannLattice, fm::FockMatrix,
-									bwin::Vector{Int}, kwin::Vector{Int}, Lw::Int, L::Int)
-	# bwin/kwin: 1-based positions of the bra/ket variables inside the
-	# window; L: total lattice length
+									bwin::Vector{Int}, kwin::Vector{Int}, Lw::Int)
+	# bwin/kwin: 1-based positions of the bra/ket variables inside the window
 	sites, _ = _fockpropagator_sites(fm.data, bwin .- 1, kwin .- 1, Lw)
 	state = GrassmannMPS(convert(Vector{typeof(sites[1])}, sites))
 
@@ -142,13 +141,12 @@ function _bare_window_sparsegmps(lattice::AbstractGrassmannLattice, fm::FockMatr
 	canonicalize!(state, alg=Orthogonalize(SVD(), trunc=NoTruncation(), normalize=false))
 
 	# fold the scaling into the site tensors (SparseGMPS carries no scaling
-	# field). The scaling of the window GrassmannMPS of length Lw satisifies
-	# norm = sqrt(⟨ψ|ψ⟩)·scaling^Lw, while the mult! of the full lattice
-	# expects norm = sqrt(⟨ψ|ψ⟩)·(per-site factor)^L, so each window tensor
-	# carries scaling^(L/Lw) — the same total as scaling^L, distributed as
-	# in GrassmannMPS (which stores scaling^(1/L) per site via _rescaling!)
+	# field): the window GrassmannMPS of length Lw satisfies
+	# (∏T_i)·scaling^Lw = Ô_bare, so multiplying each tensor by scaling
+	# gives ∏(T_i·scaling) = Ô_bare exactly — the same operator content in
+	# every ordering, with the scaling distributed evenly over the window
 	data = copy(state.data)
-	s = scaling(state)^(L / Lw)
+	s = scaling(state)
 	for i in 1:Lw
 		data[i] = data[i] * s
 	end
@@ -166,12 +164,12 @@ function _bare_propagator_sparsegmps(lattice::AbstractGrassmannLattice, fm::Fock
 	bwin, kwin = bpos .- pmin .+ 1, kpos .- pmin .+ 1
 
 	if isnothing(cache)
-		sparse = _bare_window_sparsegmps(lattice, fm, bwin, kwin, pmax - pmin + 1, length(lattice))
+		sparse = _bare_window_sparsegmps(lattice, fm, bwin, kwin, pmax - pmin + 1)
 		return SparseGMPS(sparse.data, sparse.positions .+ (pmin - 1))
 	end
 	cached = get(cache, (branch, bwin, kwin), nothing)
 	if isnothing(cached)
-		sparse = _bare_window_sparsegmps(lattice, fm, bwin, kwin, pmax - pmin + 1, length(lattice))
+		sparse = _bare_window_sparsegmps(lattice, fm, bwin, kwin, pmax - pmin + 1)
 		cache[(branch, bwin, kwin)] = (sparse.data, sparse.positions)
 		return SparseGMPS(sparse.data, sparse.positions .+ (pmin - 1))
 	end
@@ -257,4 +255,194 @@ function baresysdynamics2_new(lattice::MixedGrassmannLattice, model::AbstractImp
 			return baresysdynamics_imaginary2_new(gmps, lattice, model; trunc=trunc)
 		end
 	end
+end
+
+# sysdynamics2_fast_new
+# ---------------------
+# Fast version of sysdynamics2_new. The single-step propagator is a
+# SparseGMPS supported on a small window of sites. Whenever the windows
+# of all time steps are pairwise disjoint in the ordering of the lattice
+# — true for the time-local orderings such as A1B1B̄1Ā1 — the product of
+# all propagators is obtained by filling the window tensors directly
+# into a vacuum GrassmannMPS: no GMPS multiplications at all, and the
+# result is the exact product (no truncation). For general orderings the
+# windows overlap; the propagator is then built in a canonical ordering
+# in which the windows are disjoint and transformed to the requested
+# ordering with changeordering (or, when only windows of *different*
+# branches overlap, per-branch GMPSs are tiled and multiplied).
+
+# the canonical ordering in which the propagator windows of one branch
+# (for real time: of both branches together) are pairwise disjoint
+_fastordering(lattice::ImagGrassmannLattice) = A1B1B̄1Ā1()
+_fastordering(lattice::RealGrassmannLattice) = LayoutStyle(lattice) isa TimeLocalLayout ?
+		A1B1ā1b̄1Ā1B̄1a1b1() : A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2()
+_fastordering(lattice::MixedGrassmannLattice) = A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄1A1B1()
+
+# the propagator windows of all time steps of the given branches, in the
+# ordering of `lattice`; the per-branch window layout is cached, so each
+# distinct window is built only once
+function _collect_windows(lattice::AbstractGrassmannLattice, model, branches; bare::Bool=false)
+	windows = SparseGMPS[]
+	for branch in branches
+		N = branch == :τ ? lattice.Nτ : lattice.Nt
+		N == 0 && continue
+		dt = branch == :τ ? lattice.δτ : lattice.δt
+		fm = fock_propagator(model, branch, dt, lattice.bands)
+		cache = Dict{Tuple, Any}()
+		for i in 1:N
+			sparse = bare ? _bare_propagator_sparsegmps(lattice, fm, i, branch, cache) :
+							_propagator_sparsegmps(lattice, fm, i, branch, cache)
+			push!(windows, sparse)
+		end
+	end
+	return windows
+end
+
+"""
+	_try_tile(lattice, windows) -> Union{GrassmannMPS, Nothing}
+
+Fill the window SparseGMPSs directly into a vacuum GrassmannMPS. The
+result represents the product of all window operators exactly, provided
+their nontrivial positions are pairwise disjoint (the site-wise product
+with the implicit vacuum unit tensors then equals the operator product);
+otherwise `nothing` is returned.
+"""
+function _try_tile(lattice::AbstractGrassmannLattice, windows::Vector{<:SparseGMPS})
+	allpos = Int[]
+	for w in windows
+		append!(allpos, w.positions)
+	end
+	allunique(allpos) || return nothing
+	(isempty(allpos) || (minimum(allpos) >= 1 && maximum(allpos) <= length(lattice))) || throw(BoundsError())
+
+	T = scalartype(lattice)
+	for w in windows
+		T = promote_type(T, scalartype(w))
+	end
+	gmps = (T == scalartype(lattice)) ? vacuumstate(lattice) : GrassmannMPS(T, length(lattice))
+	for w in windows
+		for (t, p) in zip(w.data, w.positions)
+			gmps[p] = (scalartype(t) == T) ? t : complex(t)
+		end
+	end
+	unset_svectors!(gmps)
+	return gmps
+end
+
+function _fast_new_driver(lattice::AbstractGrassmannLattice{O}, model, branches;
+							bare::Bool=false, trunc::TruncationScheme=DefaultKTruncation) where {O}
+	branches = Tuple(b for b in branches if (b == :τ ? lattice.Nτ : lattice.Nt) > 0)
+	isempty(branches) && return vacuumstate(lattice)
+
+	# 1) windows of all branches pairwise disjoint in the target ordering:
+	#    direct tiling, exact product of all propagators
+	windows = _collect_windows(lattice, model, branches; bare=bare)
+	gmps = _try_tile(lattice, windows)
+	isnothing(gmps) || return gmps
+
+	# 2) windows of each single branch disjoint (only windows of different
+	#    branches overlap): tile per branch and multiply
+	if length(branches) > 1
+		gs = [_try_tile(lattice, _collect_windows(lattice, model, (b,); bare=bare)) for b in branches]
+		if !any(isnothing, gs)
+			gmps = gs[1]
+			for i in 2:length(gs)
+				gmps = mult(gmps, gs[i], trunc=trunc)
+			end
+			return gmps
+		end
+	end
+
+	# 3) build in the canonical ordering (windows disjoint) and change
+	#    the ordering of the result
+	lattice2 = similar(lattice, ordering=_fastordering(lattice))
+	windows2 = _collect_windows(lattice2, model, branches; bare=bare)
+	gmps2 = _try_tile(lattice2, windows2)
+	if isnothing(gmps2)
+		# windows of different branches overlap even in the canonical
+		# ordering (mixed contour): tile per branch and multiply
+		gs2 = [_try_tile(lattice2, _collect_windows(lattice2, model, (b,); bare=bare)) for b in branches]
+		any(isnothing, gs2) && error("propagator windows overlap even in the canonical ordering")
+		gmps2 = gs2[1]
+		for i in 2:length(gs2)
+			gmps2 = mult(gmps2, gs2[i], trunc=trunc)
+		end
+	end
+	return changeordering(O, lattice2, gmps2, trunc=trunc)[2]
+end
+
+"""
+	sysdynamics2_fast_new(lattice, model; branch, trunc) -> GrassmannMPS
+
+Fast version of `sysdynamics2_new`: if the single-step propagator
+windows are pairwise disjoint in the ordering of `lattice` (time-local
+orderings such as A1B1B̄1Ā1), their tensors are filled directly into a
+vacuum GrassmannMPS — the exact product of all propagators, without any
+GMPS multiplication. Otherwise the propagator is built in a canonical
+ordering (A1B1B̄1Ā1 for imaginary time, A1B1ā1b̄1Ā1B̄1a1b1 resp.
+A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2 for real time,
+A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄1A1B1 for mixed contours) and transformed to
+the requested ordering with `changeordering`.
+"""
+function sysdynamics2_fast_new(lattice::ImagGrassmannLattice, model::AbstractImpurityHamiltonian;
+								trunc::TruncationScheme=DefaultKTruncation)
+	return _fast_new_driver(lattice, model, (:τ,); trunc=trunc)
+end
+
+function sysdynamics2_fast_new(lattice::RealGrassmannLattice, model::AbstractImpurityHamiltonian;
+								branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
+	if isnothing(branch)
+		branches = (:+, :-)
+	else
+		(branch in (:+, :-)) || throw(ArgumentError("branch must be one of :+ or :-"))
+		branches = (branch,)
+	end
+	return _fast_new_driver(lattice, model, branches; trunc=trunc)
+end
+
+function sysdynamics2_fast_new(lattice::MixedGrassmannLattice, model::AbstractImpurityHamiltonian;
+								branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
+	if isnothing(branch)
+		branches = (:+, :-, :τ)
+	elseif branch in (:+, :-, :τ)
+		branches = (branch,)
+	else
+		throw(ArgumentError("branch must be one of :+, :- or :τ"))
+	end
+	return _fast_new_driver(lattice, model, branches; trunc=trunc)
+end
+
+"""
+	baresysdynamics2_fast_new(lattice, model; branch, trunc) -> GrassmannMPS
+
+Fast version of `baresysdynamics2_new`, built by direct tiling of the
+bare propagator windows (see `sysdynamics2_fast_new`). Applying
+`bulkconnection` to its output gives `sysdynamics2_fast_new`.
+"""
+function baresysdynamics2_fast_new(lattice::ImagGrassmannLattice, model::AbstractImpurityHamiltonian;
+									trunc::TruncationScheme=DefaultKTruncation)
+	return _fast_new_driver(lattice, model, (:τ,); bare=true, trunc=trunc)
+end
+
+function baresysdynamics2_fast_new(lattice::RealGrassmannLattice, model::AbstractImpurityHamiltonian;
+									branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
+	if isnothing(branch)
+		branches = (:+, :-)
+	else
+		(branch in (:+, :-)) || throw(ArgumentError("branch must be one of :+ or :-"))
+		branches = (branch,)
+	end
+	return _fast_new_driver(lattice, model, branches; bare=true, trunc=trunc)
+end
+
+function baresysdynamics2_fast_new(lattice::MixedGrassmannLattice, model::AbstractImpurityHamiltonian;
+									branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
+	if isnothing(branch)
+		branches = (:+, :-, :τ)
+	elseif branch in (:+, :-, :τ)
+		branches = (branch,)
+	else
+		throw(ArgumentError("branch must be one of :+, :- or :τ"))
+	end
+	return _fast_new_driver(lattice, model, branches; bare=true, trunc=trunc)
 end

@@ -68,7 +68,8 @@ export boundarycondition!, boundarycondition, boundarycondition_branching
 # impurity model Hamilltonians
 export AbstractImpurityHamiltonian, AndersonIM, IRLM, KanamoriIM
 export systhermalstate, systhermalstate!, sysdynamics, sysdynamics!, sysdynamicsstepper!,
-        sysdynamics2, sysdynamics_fast, sysdynamics2_new, baresysdynamics2_new
+        sysdynamics2, sysdynamics_fast, sysdynamics2_new, sysdynamics2_fast_new,
+        baresysdynamics2_new, baresysdynamics2_fast_new
 # export sysdynamics_forward!, sysdynamics_backward!, sysdynamics_imaginary!
 export ImpurityHamiltonian, FockMatrix, fock_propagator, fock_thermalstate
 export initfockstate, initfockstate2, initthermalstate, initthermalstate2
