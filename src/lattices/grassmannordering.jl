@@ -240,3 +240,15 @@ FockMPS) continuous
 struct Ā3A2B̄3B2Ā2A1B̄2B1_ā1a2Ā2A1b̄1b2B̄2B1ā2a3Ā3A2b̄2b3B̄3B2 <: MixedGrassmannOrdering end
 ConjugationStyle(::Type{Ā3A2B̄3B2Ā2A1B̄2B1_ā1a2Ā2A1b̄1b2B̄2B1ā2a3Ā3A2b̄2b3B̄3B2}) = GeneralConjugation()
 LayoutStyle(::Type{Ā3A2B̄3B2Ā2A1B̄2B1_ā1a2Ā2A1b̄1b2B̄2B1ā2a3Ā3A2b̄2b3B̄3B2}) = GeneralLayout()
+
+"""
+	struct A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄1A1B1
+
+Mixed-time ordering whose imaginary part is A1B1B̄1Ā1 and whose real
+part interleaves the two branches; the propagator windows of one branch
+are disjoint, which makes it the canonical ordering for the fast
+propagator construction (sysdynamics2_fast_new).
+"""
+struct A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄1A1B1 <: MixedGrassmannOrdering end
+ConjugationStyle(::Type{A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄1A1B1}) = GeneralConjugation()
+LayoutStyle(::Type{A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄1A1B1}) = TimeLocalLayout()

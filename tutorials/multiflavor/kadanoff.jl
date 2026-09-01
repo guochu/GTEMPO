@@ -53,7 +53,7 @@ function main(t; β=5, δτ=0.1, δt = 0.1, chi=60)
 	mpsI4 = fillband(lattice, mpsI, band=4)
 
 	trunc2 = truncdimcutoff(D=400, ϵ=1.0e-10, add_back=0)
-	@time mpsK = sysdynamics_fast(lattice, exact_model, trunc=trunc2)
+	@time mpsK = sysdynamics2_fast_new(lattice, exact_model, trunc=trunc2)
 	println("bond dimension of mpsK is ", bond_dimension(mpsK))
 
 	
@@ -114,7 +114,7 @@ function main2(t; β=5, δτ=0.1, δt = 0.1, chi=60, chi2=4*chi)
 
 	println("bond dimension of mpsI is ", bond_dimension(mpsI))
 
-	@time mpsK = sysdynamics_fast(lattice, exact_model, trunc=trunc2)
+	@time mpsK = sysdynamics2_fast_new(lattice, exact_model, trunc=trunc2)
 	# mpsK = boundarycondition!(mpsK, lattice, band=1)
 	println("bond dimension of mpsK is ", bond_dimension(mpsK))
 	mps_adt = mpsK

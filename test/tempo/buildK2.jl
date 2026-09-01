@@ -10,16 +10,10 @@ println("------------------------------------")
 		exact_model = AndersonIM(U=U, μ=ϵ_d)
 		for ordering in imag_grassmann_orderings
 			lattice = GrassmannLattice(δτ=δτ, N=N, bands=2, contour=:imag, ordering=ordering)
-			K1 = sysdynamics(lattice, exact_model)
-			K2 = sysdynamics2(lattice, exact_model)
+			K1 = sysdynamics2_new(lattice, exact_model)
+			K2 = sysdynamics2_fast_new(lattice, exact_model)
 			@test (norm(K1) - norm(K2)) < 1e-9
 			@test _dis(K1, K2) < 1e-7
-
-			if ordering in (A1Ā1B1B̄1(), A1B1B̄1Ā1())
-				K3 = sysdynamics_fast(lattice, exact_model)
-				@test (norm(K2) - norm(K3)) < 1e-9
-				@test _dis(K2, K3) < 1e-7
-			end
 		end
 	end
 end
@@ -30,16 +24,10 @@ end
 		exact_model = AndersonIM(U=U, μ=ϵ_d)
 		for ordering in real_grassmann_orderings
 			lattice = GrassmannLattice(δt=δt, N=N, bands=2, contour=:real, ordering=ordering)
-			K1 = sysdynamics(lattice, exact_model)
-			K2 = sysdynamics2(lattice, exact_model)
+			K1 = sysdynamics2_new(lattice, exact_model)
+			K2 = sysdynamics2_fast_new(lattice, exact_model)
 			@test (norm(K1) - norm(K2)) < 1e-9
 			@test _dis(K1, K2) < 1e-7
-
-			if ordering in (A1Ā1a1ā1B1B̄1b1b̄1(), A1Ā1B1B̄1b̄1B̄1ā1Ā1(), A1B1ā1b̄1Ā1B̄1a1b1(),  A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2(), A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2())
-				K3 = sysdynamics_fast(lattice, exact_model)
-				@test (norm(K2) - norm(K3)) < 1e-9
-				@test _dis(K2, K3) < 1e-7
-			end
 		end
 	end
 end
@@ -50,16 +38,10 @@ end
 		exact_model = AndersonIM(U=U, μ=ϵ_d)
 		for ordering in mixed_grassmann_orderings
 			lattice = GrassmannLattice(δt=δt, Nt=Nt, δτ=δτ, Nτ=Nτ, bands=2, contour=:mixed, ordering=ordering)
-			K1 = sysdynamics(lattice, exact_model)
-			K2 = sysdynamics2(lattice, exact_model)
-			@test (norm(K1) - norm(K2)) < 1e-9
+			K1 = sysdynamics2_new(lattice, exact_model)
+			K2 = sysdynamics2_fast_new(lattice, exact_model)
+			@test (norm(K1) - norm(K2)) < 1e-8
 			@test _dis(K1, K2) < 1e-7
-
-			if ordering in (A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2(), A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2())
-				K3 = sysdynamics_fast(lattice, exact_model)
-				@test (norm(K2) - norm(K3)) < 1e-8
-				@test _dis(K2, K3) < 1e-7
-			end
 		end
 	end
 end
@@ -71,14 +53,10 @@ end
 		exact_model = KanamoriIM(U=U, μ=ϵ_d, J=1.1, norb=norb)
 		for ordering in (A1Ā1B1B̄1(), A1B1B̄1Ā1())
 			lattice = GrassmannLattice(δτ=δτ, N=N, bands=2*norb, contour=:imag, ordering=ordering)
-			K2 = sysdynamics2(lattice, exact_model)
-			K4 = sysdynamics2_new(lattice, exact_model)
-			@test (norm(K2) - norm(K4)) < 1e-8
-			@test _dis(K2, K4) < 1e-7
-
-			K3 = sysdynamics_fast(lattice, exact_model)
-			@test (norm(K2) - norm( K3)) < 1e-9
-			@test _dis(K2, K3) < 1e-7
+			K1 = sysdynamics2_new(lattice, exact_model)
+			K2 = sysdynamics2_fast_new(lattice, exact_model)
+			@test (norm(K1) - norm(K2)) < 1e-8
+			@test _dis(K1, K2) < 1e-7
 		end
 	end
 end
@@ -90,14 +68,10 @@ end
 		exact_model = KanamoriIM(U=U, μ=ϵ_d, J=1.1, norb=norb)
 		for ordering in (A1Ā1a1ā1B1B̄1b1b̄1(), A1Ā1B1B̄1b̄1B̄1ā1Ā1(), A1B1ā1b̄1Ā1B̄1a1b1(),  A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2(), A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2())
 			lattice = GrassmannLattice(δt=δt, N=N, bands=2*norb, contour=:real, ordering=ordering)
-			K2 = sysdynamics2(lattice, exact_model)
-			K4 = sysdynamics2_new(lattice, exact_model)
-			@test (norm(K2) - norm(K4)) < 1e-8
-			@test _dis(K2, K4) < 1e-7
-
-			K3 = sysdynamics_fast(lattice, exact_model)
-			@test (norm(K2) - norm( K3)) < 1e-9
-			@test _dis(K2, K3) < 1e-7
+			K1 = sysdynamics2_new(lattice, exact_model)
+			K2 = sysdynamics2_fast_new(lattice, exact_model)
+			@test (norm(K1) - norm(K2)) < 1e-8
+			@test _dis(K1, K2) < 1e-7
 		end
 	end
 end
@@ -121,14 +95,10 @@ _models = [
 	for exact_model in _models
 		for ordering in (A1Ā1B1B̄1(), A1B1B̄1Ā1())
 			lattice = GrassmannLattice(δτ=δτ, N=N, bands=exact_model.bands, contour=:imag, ordering=ordering)
-			K2 = sysdynamics2(lattice, exact_model)
-			K4 = sysdynamics2_new(lattice, exact_model)
-			@test (norm(K2) - norm(K4)) < 1e-8
-			@test _dis(K2, K4) < 1e-7
-
-			K3 = sysdynamics_fast(lattice, exact_model)
-			@test (norm(K2) - norm( K3)) < 1e-9
-			@test _dis(K2, K3) < 1e-7
+			K1 = sysdynamics2_new(lattice, exact_model)
+			K2 = sysdynamics2_fast_new(lattice, exact_model)
+			@test (norm(K1) - norm(K2)) < 1e-8
+			@test _dis(K1, K2) < 1e-7
 		end
 	end
 end
@@ -141,14 +111,10 @@ end
 	for exact_model in _models
 		for ordering in (A1Ā1a1ā1B1B̄1b1b̄1(), A1Ā1B1B̄1b̄1B̄1ā1Ā1(), A1B1ā1b̄1Ā1B̄1a1b1(),  A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2(), A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2())
 			lattice = GrassmannLattice(δt=δt, N=N, bands=exact_model.bands, contour=:real, ordering=ordering)
-			K2 = sysdynamics2(lattice, exact_model)
-			K4 = sysdynamics2_new(lattice, exact_model)
-			@test (norm(K2) - norm(K4)) < 1e-8
-			@test _dis(K2, K4) < 1e-7
-
-			K3 = sysdynamics_fast(lattice, exact_model)
-			@test (norm(K2) - norm( K3)) < 1e-9
-			@test _dis(K2, K3) < 1e-7
+			K1 = sysdynamics2_new(lattice, exact_model)
+			K2 = sysdynamics2_fast_new(lattice, exact_model)
+			@test (norm(K1) - norm(K2)) < 1e-8
+			@test _dis(K1, K2) < 1e-7
 		end
 	end
 end

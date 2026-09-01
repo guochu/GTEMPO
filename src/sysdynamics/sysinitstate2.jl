@@ -55,88 +55,14 @@ function fockmatrix(m::AndersonIM, bands::Int)
         error("Invalid bands of $bands")
     end
 end
-function fock2grassmann(H::AbstractMatrix; δ::Float64 = 1e-10)
-    M::Int = convert(Int, log2(size(H,1)))
-    coherent_terms = []
-    for row in 1:2^M
-        for col in 1:2^M
-            val = H[row, col]
-            abs(val) < δ && continue
-            m_int = row - 1
-            n_int = col - 1
-            
-            m_bits = reverse(digits(m_int, base=2, pad=M))
-            n_bits = reverse(digits(n_int, base=2, pad=M))
-            
-            bra_indices = [i for i in 1:M if m_bits[i] == 1] # order of 1 -> M
-            ket_indices = [i for i in reverse(1:M) if n_bits[i] == 1]
-            if length(bra_indices) != length(ket_indices)
-                @warn "Ignore non-physical element: $bra_indices $ket_indices => $val"
-                continue
-            end
-            push!(coherent_terms, (
-                value = val, 
-                bra_indices = bra_indices, 
-                ket_indices = ket_indices
-            ))
-        end
-    end
-    return coherent_terms
-end
-
-
-function initfockstate(lattice::RealGrassmannLattice, fockstate::AbstractMatrix; normalize::Bool=true)
-    @assert lattice.bands == convert(Int, log2(size(fockstate,1)))
-    terms = fock2grassmann(fockstate)
-
-    vac = vacuumstate(lattice)
-    states = map(terms) do term
-        v, bind, kind = term.value, term.bra_indices, term.ket_indices
-        bpos = [index(lattice, 1, conj=true, branch=:+, band=i) for i in bind]
-        kpos = [index(lattice, 1, conj=false, branch=:-, band=i) for i in kind]
-        apply!(GTerm(bpos..., kpos..., coeff=v), deepcopy(vac))
-    end
-    state = states[1]
-    for i in 2:length(states)
-        state = state + states[i]
-    end
-
-    alg = Orthogonalize(SVD(), normalize=normalize)
-    open("/dev/null", "w") do devnull # slience the warning
-        redirect_stderr(devnull) do
-            canonicalize!(state, alg=alg)
-        end
-    end
-    return state
-end
-
-function initthermalstate(lattice::RealGrassmannLattice, model, β::Real)
-    H = fockmatrix(model, lattice.bands)
-
-    # direct exp will introduce many non-physcial non-zero elements
-    # rho = exp(-β * H)
-    vals, vecs = eigen(H)
-	if β == Inf
-		rho = vecs[:,1] * vecs[:,1]'
-	else
-		E0 = minimum(vals)
-		exp_vals = exp.(-β .* (vals .- E0))
-		exp_vals = exp_vals ./ sum(exp_vals)
-		rho = vecs * diagm(exp_vals) * vecs'
-	end
-
-    initfockstate(lattice, rho; normalize=true)
-end
-
-
 """
 	initfockstate2(lattice, fockstate::FockMatrix; normalize) -> GrassmannMPS
 
-Same as `initfockstate`, but the Fock-space matrix is converted directly
-into a SparseGMPS (see `_tosparsegmps`), which is multiplied into the
-vacuum state with the sparse `mult!`. The bra variables sit on the
-forward branch and the ket variables on the backward branch at time
-slice 1.
+Convert the Fock-space matrix `fockstate` (an operator in the occupation
+number basis, e.g. a density matrix) directly into a SparseGMPS (see
+`_tosparsegmps`), which is multiplied into the vacuum state with the
+sparse `mult!`. The bra variables sit on the forward branch and the ket
+variables on the backward branch at time slice 1.
 """
 function initfockstate2(lattice::RealGrassmannLattice, fockstate::FockMatrix; normalize::Bool=true)
     (fockstate.bands == lattice.bands) || throw(DimensionMismatch("FockMatrix bands $(fockstate.bands) do not match lattice bands $(lattice.bands)"))
@@ -163,8 +89,9 @@ end
 """
 	initthermalstate2(lattice, model, β) -> GrassmannMPS
 
-Same as `initthermalstate`, but built via `fock_thermalstate` and
-`initfockstate2`.
+The impurity thermal equilibrium state `exp(-βĤ)/tr(exp(-βĤ))` (for
+`β == Inf` the ground state projector) as a GrassmannMPS, built via
+`fock_thermalstate` and `initfockstate2`.
 """
 function initthermalstate2(lattice::RealGrassmannLattice, model, β::Real)
     initfockstate2(lattice, fock_thermalstate(model, β, lattice.bands); normalize=true)

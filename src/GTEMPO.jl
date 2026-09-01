@@ -32,6 +32,7 @@ export Ā2A1B̄2B1, Ā2A1ā1a2B̄2B1b̄1b̄2 #retarded interaction orderings
 export A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2, AĀBB̄_AĀaāBB̄bb̄, A1B1B̄1Ā1_A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2 #mixedtime lattice
 export A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2, AĀBB̄_aāAĀbb̄BB̄
 export Ā3A2B̄3B2Ā2A1B̄2B1_ā1a2Ā2A1b̄1b2B̄2B1ā2a3Ā3A2b̄2b3B̄3B2 #retarded interaction mixedtime ordering
+export A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄1A1B1 #fast propagator mixedtime ordering
 export vacuumstate, makestep, timesteps
 export ImagGrassmannLattice1Order, RealGrassmannLattice1Order, RealGrassmannLattice2Order, GrassmannLattice, index
 
@@ -68,11 +69,10 @@ export boundarycondition!, boundarycondition, boundarycondition_branching
 # impurity model Hamilltonians
 export AbstractImpurityHamiltonian, AndersonIM, IRLM, KanamoriIM
 export systhermalstate, systhermalstate!, sysdynamics, sysdynamics!, sysdynamicsstepper!,
-        sysdynamics2, sysdynamics_fast, sysdynamics2_new, sysdynamics2_fast_new,
-        baresysdynamics2_new, baresysdynamics2_fast_new
+        sysdynamics2_new, sysdynamics2_fast_new, baresysdynamics2_new, baresysdynamics2_fast_new
 # export sysdynamics_forward!, sysdynamics_backward!, sysdynamics_imaginary!
 export ImpurityHamiltonian, FockMatrix, fock_propagator, fock_thermalstate
-export initfockstate, initfockstate2, initthermalstate, initthermalstate2
+export initfockstate2, initthermalstate2
 export baresysdynamics!, baresysdynamics
 
 

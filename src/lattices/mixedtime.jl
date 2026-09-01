@@ -211,6 +211,35 @@ function index(x::MixedGrassmannLattice1Order{<:Ā3A2B̄3B2Ā2A1B̄2B1_ā1a2A
 	end
 end
 
+# A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄1A1B1: imaginary part A1B1B̄1Ā1, real part
+# interleaves the two branches (canonical ordering for the fast propagator)
+function index(x::MixedGrassmannLattice1Order{<:A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄1A1B1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+	@boundscheck begin
+		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
+		(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
+		if i != 0
+			if branch == :τ
+				(1 <= i <= x.Nτ + 1) || throw(BoundsError(1:x.kτ, i))
+			else
+				(1 <= i <= x.Nt + 1) || throw(BoundsError(1:x.kt, i))
+			end
+		end
+	end
+	TL = length(x)
+	bands = x.bands
+	if i == 0
+		ifelse(conj, 2*bands+1-band, band)
+	else
+		if branch == :-
+			ifelse(conj, 4i*bands+2*bands+band, 4i*bands+band) + (x.Nτ)*2*bands
+		elseif branch == :+
+			ifelse(conj, 4i*bands+bands+band, 4i*bands+3*bands+band) + (x.Nτ)*2*bands
+		else
+			ifelse(conj, (x.Nτ+1-i)*2*bands + 2bands+1-band, (x.Nτ+1-i)*2*bands + band) + 2*x.bands
+		end
+	end
+end
+
 # key is timestep, conj, branch, band
 function indexmappings(lattice::MixedGrassmannLattice1Order)
 	r = Dict{Tuple{Int, Bool, Symbol, Int}, Int}()
