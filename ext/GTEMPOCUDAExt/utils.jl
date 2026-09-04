@@ -25,15 +25,8 @@ end
 
 
 
-function Z2TensorsCUDAExt.tocu(t::GrassmannTensorMap)
-	return GrassmannTensorMap(tocu(t.data))
-end
-function Z2TensorsCUDAExt.fromcu(t::GrassmannTensorMap)
-	return GrassmannTensorMap(fromcu(t.data))
-end
-
 function Z2TensorsCUDAExt.tocu(m::GrassmannTransferMatrix)
-    states = map(x->map(i->tocu(i).data, x), m.states)
+    states = map(x->tocu.(x), m.states)
     return GrassmannTransferMatrix(states, m.scaling)
 end
 
@@ -55,9 +48,9 @@ function _cu_rightorth!(psi::GrassmannMPS, alg::SVD, trunc::TruncationScheme, no
 	maxerr = 0.
 	psii = tocu(psi[end])
 	for i in L:-1:2
-		u, s, v, err = stable_tsvd(GrassmannTensorMap(psii), (1,), (2, 3), trunc=trunc)
-		psi[i] = get_data(fromcu(permute(v, (1,2), (3,))))
-		nr = _renormalize!(psi, get_data(s), normalize)
+		u, s, v, err = g_stable_tsvd(psii, (1,), (2, 3), trunc=trunc)
+		psi[i] = fromcu(g_permute(v, (1,2), (3,)))
+		nr = _renormalize!(psi, s, normalize)
 		rerror = sqrt(err * err / (nr * nr + err * err))
 		(verbosity > 1) && println("SVD truncerror at bond $(i): ", rerror)
 		u2 = u * s
@@ -65,9 +58,9 @@ function _cu_rightorth!(psi::GrassmannMPS, alg::SVD, trunc::TruncationScheme, no
 		# (nl ≈ zero(nl)) && @warn "norm of GrassmannMPS is zero"
 		# _rescaling!(psi, nl)
 		# u2 = rmul!(u2, 1/nl)
-		@tensor tmp[-1 -2; -3] := GrassmannTensorMap(tocu(psi[i-1]))[-1, -2, 1] * u2[1, -3]
-		psii = get_data(tmp)
-		psi.s[i] = fromcu(get_data(s))
+		@grassmann tmp[-1 -2; -3] := tocu(psi[i-1])[-1, -2, 1] * u2[1, -3]
+		psii = tmp
+		psi.s[i] = fromcu(s)
 		maxerr = max(maxerr, err)
 	end
 	psi[1] = fromcu(psii)

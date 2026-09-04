@@ -1,18 +1,21 @@
-const MPSTensor{S} = AbstractTensorMap{<:Number, S, 2, 1} where {S<:ElementarySpace}
-const MPOTensor{S} = AbstractTensorMap{<:Number, S, 2, 2} where {S<:ElementarySpace}
-# The bond tensor are just the singlur vector but has to be stored as a general matrix 
+# the space type is fixed to Z2Space in Z2Tensors, hence the tensor types
+# only depend on (scalar type, index ranks)
+const MPSTensor = AbstractTensorMap{<:Number, 2, 1}
+const MPOTensor = AbstractTensorMap{<:Number, 2, 2}
+# The bond tensor are just the singlur vector but has to be stored as a general matrix
 # since TensorKit does not specialize for Diagonal Matrices
-const MPSBondTensor{S} = AbstractTensorMap{<:Number, S, 1, 1} where {S<:ElementarySpace}
-const SiteOperator{S} = Union{MPOTensor{S}, MPSBondTensor{S}}
+const MPSBondTensor = AbstractTensorMap{<:Number, 1, 1}
+const SiteOperator = Union{MPOTensor, MPSBondTensor}
 
 
-mpstensortype(::Type{S}, ::Type{T}) where {S <: ElementarySpace, T} = tensormaptype(S, 2, 1, T)
-mpotensortype(::Type{S}, ::Type{T}) where {S <: ElementarySpace, T} = tensormaptype(S, 2, 2, T)
-function bondtensortype(::Type{S}, ::Type{TorA}) where {S <: ElementarySpace, TorA<:Union{Number, DenseVector}} 
+# the space type argument S is kept for backward compatibility; it is always Z2Space
+mpstensortype(::Type{S}, ::Type{T}) where {S <: ElementarySpace, T} = tensormaptype(2, 1, T)
+mpotensortype(::Type{S}, ::Type{T}) where {S <: ElementarySpace, T} = tensormaptype(2, 2, T)
+function bondtensortype(::Type{S}, ::Type{TorA}) where {S <: ElementarySpace, TorA<:Union{Number, DenseVector}}
     if TorA <: Number
-        return DiagonalTensorMap{TorA,S,Vector{TorA}}
+        return DiagonalTensorMap{TorA,Vector{TorA}}
     elseif TorA <: DenseVector
-        return DiagonalTensorMap{scalartype(TorA),S,TorA}
+        return DiagonalTensorMap{scalartype(TorA),TorA}
     else
         throw(ArgumentError("argument $TorA should specify a scalar type (`<:Number`) or a storage type `<:DenseVector{<:Number}`"))
     end
@@ -93,16 +96,14 @@ function isleftcanonical_r(psij::MPOTensor; kwargs...)
 end
 function isrightcanonical(psij::MPOTensor; kwargs...)
 	@tensor r[-1; -2] := conj(psij[-1,1,2,3]) * psij[-2,1,2,3]
-	return isapprox(r, one(r); kwargs...) 
+	return isapprox(r, one(r); kwargs...)
 end
-
-isstrict(s::ElementarySpace) = isoneunit(s) || (FusionStyle(sectortype(s)) isa UniqueFusion)
 
 
 
 
 """
-	updateright(hold::MPSBondTensor, mpsAj::MPSTensor{S}, mpsBj::MPSTensor{S}) where {S<:ElementarySpace}
+	updateright(hold::MPSBondTensor, mpsAj::MPSTensor, mpsBj::MPSTensor)
 	update storage from right to left for overlap of mps
 """
 function updateright(hold::MPSBondTensor, mpsAj::MPSTensor, mpsBj::MPSTensor) 
@@ -110,7 +111,7 @@ function updateright(hold::MPSBondTensor, mpsAj::MPSTensor, mpsBj::MPSTensor)
 end
 
 """
-	updateleft(hold::MPSBondTensor, mpsAj::MPSTensor{S}, mpsBj::MPSTensor{S}) where {S<:ElementarySpace}
+	updateleft(hold::MPSBondTensor, mpsAj::MPSTensor, mpsBj::MPSTensor)
 	update storage from left to right for overlap of mps
 """
 function updateleft(hold::MPSBondTensor, mpsAj::MPSTensor, mpsBj::MPSTensor) 

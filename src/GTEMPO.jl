@@ -4,7 +4,8 @@ module GTEMPO
 export truncdimcutoff
 
 # GrassmannTensor
-export GrassmannTensorMap, scalartype
+export scalartype
+export @grassmann, GrassmannBackend, g_permute, g_stable_tsvd, g_rightorth
 using Z2Tensors: NoTruncation
 export NoTruncation
 
@@ -50,7 +51,7 @@ export branch, correlationfunction
 export InfluenceFunctionalAlgorithm, PartialIF, TranslationInvariantIF, ExactTranslationInvariantIF, partialif_hybrid, partialif_hybrid_naive
 export influenceoperator, influenceoperatorexponential, differentialinfluencefunctional
 export hybriddynamics, hybriddynamics!, hybriddynamics_naive, hybriddynamics_naive!, hybriddynamicsstepper, hybriddynamicsstepper!
-export retardedinteractdynamics, retardedinteractdynamics!
+export retardedinteractdynamics_naive, retardedinteractdynamics_naive!
 
 # GF and other observables
 export gf, Gτ, parallel_Gτ, Gt, parallel_Gt, Gm, greater, lesser, contour_ordered_gf
@@ -144,6 +145,7 @@ include("mpo/mpo.jl")
 include("grassmanntensor/grassmanntensor.jl")
 include("grassmanntensor/linalg.jl")
 include("grassmanntensor/tensoroperations.jl")
+include("grassmanntensor/grassmannmacro.jl")
 
 # Grassmann MPS operations
 include("grassmannmps/util.jl")

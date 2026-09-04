@@ -22,7 +22,7 @@ function cu_parint_cache(z::GrassmannMPS, xs::GrassmannMPS...; cidx::Vector{Int}
 		rt = @elapsed if insorted(ixs-1, cidx)
             j = ixs ÷ 2
             @assert 2*j == ixs
-			hip1 = (tocu(GrassmannTransferMatrix(j, xs...)) * GrassmannTensorMap(hip1)).data
+			hip1 = tocu(GrassmannTransferMatrix(j, xs...)) * hip1
             # hstorage[iz+1] = hip1
             normalize!(hip1)
             ixs -= 2

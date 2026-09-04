@@ -1,18 +1,18 @@
-function retardedinteractdynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr::ImagCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
+function retardedinteractdynamics_naive!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr::ImagCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
 	(lattice.bands in (1, 2)) || throw(ArgumentError("number of bands should be either 1 or 2"))
 	if lattice.bands == 1
-		return retardedinteractdynamics_1band!(gmps, lattice, corr, trunc=trunc)
+		return retardedinteractdynamics_naive_1band!(gmps, lattice, corr, trunc=trunc)
 	else
-		return retardedinteractdynamics_2band!(gmps, lattice, corr, trunc=trunc)
+		return retardedinteractdynamics_naive_2band!(gmps, lattice, corr, trunc=trunc)
 	end
 end
 
-function retardedinteractdynamics_1band!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr::ImagCorrelationFunction; kwargs...)
+function retardedinteractdynamics_naive_1band!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr::ImagCorrelationFunction; kwargs...)
 	@assert lattice.bands == 1
-	return _retardedinteractdynamics_1band!(gmps, lattice, corr, 1; kwargs...)
+	return _retardedinteractdynamics_naive_1band!(gmps, lattice, corr, 1; kwargs...)
 end 
 
-function _retardedinteractdynamics_1band!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr1::ImagCorrelationFunction, band::Int; trunc::TruncationScheme=DefaultITruncation)
+function _retardedinteractdynamics_naive_1band!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr1::ImagCorrelationFunction, band::Int; trunc::TruncationScheme=DefaultITruncation)
 	corr = corr1.data
 	k = lattice.k-1
 	alg = Orthogonalize(TK.SVD(), trunc)
@@ -36,9 +36,9 @@ function _retardedinteractdynamics_1band!(gmps::GrassmannMPS, lattice::ImagGrass
 	return gmps
 end
 
-function retardedinteractdynamics_2band!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr1::ImagCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
+function retardedinteractdynamics_naive_2band!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr1::ImagCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
 	@assert lattice.bands == 2
-	_retardedinteractdynamics_1band!(gmps, lattice, corr1, 2, trunc=trunc)
+	_retardedinteractdynamics_naive_1band!(gmps, lattice, corr1, 2, trunc=trunc)
 
 	corr = corr1.data
 	k = lattice.k-1
@@ -71,18 +71,18 @@ function retardedinteractdynamics_2band!(gmps::GrassmannMPS, lattice::ImagGrassm
 end
 
 # """
-# 	retardedinteractdynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice, corr::ImagCorrelationFunction; trunc)
+# 	retardedinteractdynamics_naive!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice, corr::ImagCorrelationFunction; trunc)
 
 # imaginary-time MPS-IF for a single band 
 # """
-# function retardedinteractdynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr1::ImagCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
+# function retardedinteractdynamics_naive!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr1::ImagCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
 # 	(lattice.bands in (1, 2)) || throw(ArgumentError("number of bands should be either 1 or 2"))
 # 	corr = corr1.data
 # 	if lattice.bands == 1
-# 		return retardedinteractdynamics_1band!(gmps, lattice, corr1, trunc=trunc)
+# 		return retardedinteractdynamics_naive_1band!(gmps, lattice, corr1, trunc=trunc)
 # 	else
 # 		if LayoutStyle(lattice) isa BandLocalLayout
-# 			return retardedinteractdynamics_2band!(gmps, lattice, corr1, trunc=trunc)
+# 			return retardedinteractdynamics_naive_2band!(gmps, lattice, corr1, trunc=trunc)
 # 		else
 
 # 			k = lattice.k-1
@@ -118,7 +118,7 @@ end
 # end
 
 
-# function retardedinteractdynamics_1band!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr1::ImagCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
+# function retardedinteractdynamics_naive_1band!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr1::ImagCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
 # 	@assert lattice.bands == 1
 # 	corr = corr1.data
 # 	k = lattice.k-1
@@ -141,7 +141,7 @@ end
 # end
 
 # # only applicable for BandLocalLayout
-# function retardedinteractdynamics_2band!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr1::ImagCorrelationFunction; trunc::TruncationScheme=DefaultMPOTruncation)
+# function retardedinteractdynamics_naive_2band!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr1::ImagCorrelationFunction; trunc::TruncationScheme=DefaultMPOTruncation)
 # 	@assert lattice.bands == 2
 # 	(LayoutStyle(lattice) isa BandLocalLayout) || throw(ArgumentError("currently only TimelocalLayout support for this function"))
 # 	corr = corr1.data

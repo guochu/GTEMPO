@@ -31,7 +31,7 @@ println("------------------------------------")
 				end	
 				mult!(mpsa, mps1, trunc=trunc)
 			end
-			mpsb = retardedinteractdynamics(lattice, ImagCorrelationFunction(η), trunc=trunc)
+			mpsb = retardedinteractdynamics_naive(lattice, ImagCorrelationFunction(η), trunc=trunc)
 			@test distance(mpsa, mpsb) / norm(mpsa) <= rtol
 		end
 	end		
@@ -72,7 +72,7 @@ println("------------------------------------")
 				canonicalize!(mpsa, alg=Orthogonalize(TK.SVD(), trunc))
 			end
 
-			mpsb = retardedinteractdynamics(lattice, ImagCorrelationFunction(η), trunc=trunc)
+			mpsb = retardedinteractdynamics_naive(lattice, ImagCorrelationFunction(η), trunc=trunc)
 			@test distance(mpsa, mpsb) / norm(mpsa) <= rtol
 		end
 	end

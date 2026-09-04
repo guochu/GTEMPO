@@ -3,18 +3,17 @@
 # 	return r
 # end
 
-function contract_center(left::GrassmannTensorMap{<:AbstractTensorMap{T, S, 1, N}}, right::GrassmannTensorMap{<:AbstractTensorMap{T, S, N, 1}}) where {T, S, N}
-	@assert space(left.data, 1) == space(right.data, N+1)'
+function contract_center(left::AbstractParityTensorMap{<:Number, 1, N}, right::AbstractParityTensorMap{<:Number, N, 1}) where {N}
+	@assert space(left, 1) == space(right, N+1)'
 
-	# r = GrassmannTensorMap(zeros(scalartype(left.data), space(left.data, 1), space(right.data, N+1)'))
-	s = space(left.data, 1) ← space(right.data, N+1)'
-	r = GrassmannTensorMap( fill!(similar(left.data, s), zero(T)) )
+	s = space(left, 1) ← space(right, N+1)'
+	r = fill!(similar(left, s), zero(scalartype(left)))
 
 	cindA = ntuple(x->x+1, N)
 	cindB = ntuple(x->N-x+1, N)
-	contract!(r, left, ((1,), cindA), right, (cindB, (N+1,)), ((1,), (2,)), true, false, 0, 0)
-	return tr(r.data)
-end 
+	contract!(r, left, ((1,), cindA), right, (cindB, (N+1,)), ((1,), (2,)), true, false)
+	return tr(r)
+end
 
 
 # DMRG.l_LL(x::GrassmannMPS, y::GrassmannMPS, z::GrassmannMPS...) = error("l_LL not implemented for $(2+length(z)) mps")

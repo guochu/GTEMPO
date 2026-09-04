@@ -70,8 +70,8 @@ function Base.:*(x::GrassmannMPS, y::GrassmannMPS)
     out = [g_fuse(_mult_site(x[i], y[i]), 3) for i in 1:length(x)]
     # fusers = PeriodicArray([GrassmannTensorMap(isomorphism(T, space(item, 4)' ⊗ space(item, 5)', fuse(space(item, 4), space(item, 5)) )) for item in get_data.(out)])
     # return GrassmannMPS(get_data.([@tensor tmp[3,4;7] := conj(fusers[i-1][1,2,3]) * out[i][1,2,4,5,6] * fusers[i][5,6,7] for i in 1:length(x)]), scaling=scaling(x) * scaling(y))
-    fusers = [GrassmannTensorMap(isomorphism(T, space(item, 4)' ⊗ space(item, 5)', fuse(space(item, 4), space(item, 5)) )) for item in get_data.(out)]
-    return GrassmannMPS(get_data.([@tensor tmp[3,4;7] := conj(fusers[mod1(i-1, length(x))][1,2,3]) * out[i][1,2,4,5,6] * fusers[i][5,6,7] for i in 1:length(x)]), scaling=scaling(x) * scaling(y))
+    fusers = [isomorphism(T, space(item, 4)' ⊗ space(item, 5)', fuse(space(item, 4), space(item, 5)) ) for item in out]
+    return GrassmannMPS([@grassmann tmp[3,4;7] := conj(fusers[mod1(i-1, length(x))][1,2,3]) * out[i][1,2,4,5,6] * fusers[i][5,6,7] for i in 1:length(x)], scaling=scaling(x) * scaling(y))
 end
 
 function Base.:+(x::GrassmannMPS, y::GrassmannMPS) 
@@ -141,7 +141,7 @@ end
 naive_permute(x::AbstractGMPS, perm::Vector{Int}; kwargs...) = naive_permute!(copy(x), perm; kwargs...)
 
 function _mult_site(xj, yj)
-    @tensor r[1,4,2,5;3,6] := GrassmannTensorMap(xj)[1,2,3] * GrassmannTensorMap(yj)[4,5,6]
+    @grassmann r[1,4,2,5;3,6] := xj[1,2,3] * yj[4,5,6]
     return r
 end
 

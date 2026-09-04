@@ -143,23 +143,23 @@ end
 _cu_svd_guess(x::GrassmannMPS, y::GrassmannMPS, D::Int) = _cu_svd_guess!(copy(x), y, D)
 function _cu_svd_guess!(x::GrassmannMPS, y::GrassmannMPS, D::Int)
     (length(x) == length(y)) || throw(DimensionMismatch())
-    left = GrassmannTensorMap(isomorphism(scalartype(x), fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) ))
+    left = isomorphism(scalartype(x), fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) )
     tmp5 = g_fuse(_mult_site(x[1], y[1]), 3)
-    @tensor tmp4[1,4;5,6] := left[1,2,3] * tmp5[2,3,4,5,6]
+    @grassmann tmp4[1,4;5,6] := left[1,2,3] * tmp5[2,3,4,5,6]
     trunc = truncdim(D)
     tmp4 = tocu(tmp4)
     for i in 1:length(x)-1
         u, s, v = stable_tsvd!(tmp4, trunc=trunc)
-        x[i] = get_data(fromcu(u))
-        _renormalize!(x, get_data(s), false)
+        x[i] = fromcu(u)
+        _renormalize!(x, s, false)
         r = s * v
-        @tensor tmp1[1,5,4;2] := r[1,2,3] * tocu(GrassmannTensorMap(y[i+1]))[3,4,5]
-        @tensor tmp2[1,3,5;6,2] := tmp1[1,2,3,4] * tocu(GrassmannTensorMap(x[i+1]))[4,5,6]
+        @grassmann tmp1[1,5,4;2] := r[1,2,3] * tocu(y[i+1])[3,4,5]
+        @grassmann tmp2[1,3,5;6,2] := tmp1[1,2,3,4] * tocu(x[i+1])[4,5,6]
         tmp4 = g_fuse(tmp2, 2)
 
     end
-    @tensor tmp[1,2;5] := fromcu(tmp4)[1,2,3,4] * conj(left[5,3,4])
-    x[end] = get_data(tmp)
+    @grassmann tmp[1,2;5] := fromcu(tmp4)[1,2,3,4] * conj(left[5,3,4])
+    x[end] = tmp
     _cu_rightorth!(x, SVD(), trunc, false, 0)
     setscaling!(x, 1)
     return x

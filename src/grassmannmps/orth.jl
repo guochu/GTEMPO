@@ -4,15 +4,15 @@ function _leftorth!(psi::GrassmannMPS, alg::QR, trunc::TruncationScheme, normali
 	!isa(trunc, NoTruncation) &&  @warn "truncation has no effect with QR"
 	L = length(psi)
 	for i in 1:L-1
-		q, r = leftorth!(GrassmannTensorMap(psi[i]), alg = alg)
-		psi[i] = get_data(q)
+		q, r = leftorth!(psi[i], alg = alg)
+		psi[i] = q
 		# nr = norm(r)
 		# (nr ≈ zero(nr)) && @warn "norm of GrassmannMPS is zero"
 		# _rescaling!(psi, nr)
 		# r = rmul!(r, 1/nr)
-		_renormalize!(psi, get_data(r), normalize)
-		@tensor tmp[1 3; 4] := r[1,2] * GrassmannTensorMap(psi[i+1])[2,3,4]
-		psi[i + 1] = get_data(tmp)
+		_renormalize!(psi, r, normalize)
+		@grassmann tmp[1 3; 4] := r[1,2] * psi[i+1][2,3,4]
+		psi[i + 1] = tmp
 	end
 	_renormalize!(psi, psi[L], normalize)
 	_renormalize_coeff!(psi, normalize)
@@ -24,15 +24,15 @@ function _leftorth!(psi::GrassmannMPS, alg::SVD, trunc::TruncationScheme, normal
 	# errs = Float64[]
 	maxerr = 0.
 	for i in 1:L-1
-		u, s, v, err = stable_tsvd!(GrassmannTensorMap(psi[i]), trunc=trunc)
-		nr = _renormalize!(psi, get_data(s), normalize)
+		u, s, v, err = stable_tsvd!(psi[i], trunc=trunc)
+		nr = _renormalize!(psi, s, normalize)
 		rerror = sqrt(err * err / (nr * nr + err * err))
 		(verbosity > 1) && println("SVD truncerror at bond $(i): ", rerror)
-		psi[i] = get_data(u)
+		psi[i] = u
 		v2 = s * v
-		@tensor tmp[-1 -2; -3] := v2[-1, 1] * GrassmannTensorMap(psi[i+1])[1,-2,-3]
-		psi[i+1] = get_data(tmp)
-		psi.s[i+1] = get_data(s)
+		@grassmann tmp[-1 -2; -3] := v2[-1, 1] * psi[i+1][1,-2,-3]
+		psi[i+1] = tmp
+		psi.s[i+1] = s
 		# push!(errs, err)
 		maxerr = max(maxerr, rerror)
 	end
@@ -47,15 +47,15 @@ function _rightorth!(psi::GrassmannMPS, alg::QR, trunc::TruncationScheme, normal
 	!isa(trunc, NoTruncation) &&  @warn "truncation has no effect with QR"
 	L = length(psi)
 	for i in L:-1:2
-		l, q = rightorth(GrassmannTensorMap(psi[i]), (1,), (2, 3), alg=LQ())
-		psi[i] = get_data(permute(q, (1,2), (3,)))
+		l, q = g_rightorth(psi[i], (1,), (2, 3), alg=LQ())
+		psi[i] = g_permute(q, (1,2), (3,))
 		# nl = norm(l)
 		# (nl ≈ zero(nl)) && @warn "norm of GrassmannMPS is zero"
 		# _rescaling!(psi, nl)
 		# l = rmul!(l, 1/nl)
-		_renormalize!(psi, get_data(l), normalize)
-		@tensor tmp[1 2; 4] := GrassmannTensorMap(psi[i-1])[1,2,3] * l[3,4] 
-		psi[i-1] = get_data(tmp)
+		_renormalize!(psi, l, normalize)
+		@grassmann tmp[1 2; 4] := psi[i-1][1,2,3] * l[3,4]
+		psi[i-1] = tmp
 	end
 	_renormalize!(psi, psi[1], normalize)
 	_renormalize_coeff!(psi, normalize)
@@ -66,9 +66,9 @@ function _rightorth!(psi::GrassmannMPS, alg::SVD, trunc::TruncationScheme, norma
 	L = length(psi)
 	maxerr = 0.
 	for i in L:-1:2
-		u, s, v, err = stable_tsvd(GrassmannTensorMap(psi[i]), (1,), (2, 3), trunc=trunc)
-		psi[i] = get_data(permute(v, (1,2), (3,)))
-		nr = _renormalize!(psi, get_data(s), normalize)
+		u, s, v, err = g_stable_tsvd(psi[i], (1,), (2, 3), trunc=trunc)
+		psi[i] = g_permute(v, (1,2), (3,))
+		nr = _renormalize!(psi, s, normalize)
 		rerror = sqrt(err * err / (nr * nr + err * err))
 		(verbosity > 1) && println("SVD truncerror at bond $(i): ", rerror)
 		u2 = u * s
@@ -76,9 +76,9 @@ function _rightorth!(psi::GrassmannMPS, alg::SVD, trunc::TruncationScheme, norma
 		# (nl ≈ zero(nl)) && @warn "norm of GrassmannMPS is zero"
 		# _rescaling!(psi, nl)
 		# u2 = rmul!(u2, 1/nl)
-		@tensor tmp[-1 -2; -3] := GrassmannTensorMap(psi[i-1])[-1, -2, 1] * u2[1, -3]
-		psi[i-1] = get_data(tmp)
-		psi.s[i] = get_data(s)
+		@grassmann tmp[-1 -2; -3] := psi[i-1][-1, -2, 1] * u2[1, -3]
+		psi[i-1] = tmp
+		psi.s[i] = s
 		maxerr = max(maxerr, err)
 	end
 	(verbosity > 0) && println("Max SVD truncerror in rightorth: ", maxerr)

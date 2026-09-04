@@ -16,10 +16,9 @@ end
 rightenv(x::TwosideExpectationCache2, j::Int) = x.hright[j+1]
 Base.length(x::TwosideExpectationCache2) = length(x.lattice)
 
-function _normalize!(t::GrassmannTensorMap)
-	data = t.data
-	nt = norm(data)
-	rmul!(data, 1/nt)
+function _normalize!(t::AbstractParityTensorMap)
+	nt = norm(t)
+	rmul!(t, 1/nt)
 	return nt
 end
 function TwosideExpectationCache2(lattice::AbstractGrassmannLattice, As::Tuple; useHCache::Bool=DefaultUseCache)

@@ -20,7 +20,7 @@ println("------------------------------------")
 			bath = bosonicbath(spec, β=β)
 			corr = correlationfunction(bath, lattice)
 
-			mpsI = retardedinteractdynamics(lattice, corr, trunc=trunc)
+			mpsI = retardedinteractdynamics_naive(lattice, corr, trunc=trunc)
 
 			fbath = fermionicbath(semicircular(), β=β, μ=0)
 			exact_model = AndersonIM(U=0., μ=-ϵ_d)
@@ -46,7 +46,7 @@ println("------------------------------------")
 			bath = bosonicbath(spec, β=β)
 			corr = correlationfunction(bath, lattice)
 
-			mpsI = retardedinteractdynamics(lattice, corr, trunc=trunc)
+			mpsI = retardedinteractdynamics_naive(lattice, corr, trunc=trunc)
 
 			fbath = fermionicbath(semicircular(), β=β, μ=0)
 			exact_model = AndersonIM(U=U, μ=-ϵ_d)
@@ -80,7 +80,7 @@ end
 
 		bath = bosonicbath(DiracDelta(ω=1, α=0.5), β=β)
 		corr = correlationfunction(bath, lattice)
-		mpsI = retardedinteractdynamics(lattice, corr, trunc=trunc)
+		mpsI = retardedinteractdynamics_naive(lattice, corr, trunc=trunc)
 
 		fbath = fermionicbath(semicircular(), β=β, μ=0)
 		exact_model = AndersonIM(U=0., μ=-ϵ_d)
@@ -115,7 +115,7 @@ end
 
 		bath = bosonicbath(DiracDelta(ω=1, α=0.5), β=β)
 		corr = correlationfunction(bath, lattice)
-		mpsI = retardedinteractdynamics(lattice, corr, trunc=trunc)
+		mpsI = retardedinteractdynamics_naive(lattice, corr, trunc=trunc)
 
 		fbath = fermionicbath(semicircular(), β=β, μ=0)
 		exact_model = AndersonIM(U=U, μ=-ϵ_d)
@@ -166,7 +166,7 @@ end
 	bath = bosonicbath(spec, β=β)
 	corr = correlationfunction(bath, lattice)
 
-	mpsI = retardedinteractdynamics(lattice, corr, trunc=trunc)
+	mpsI = retardedinteractdynamics_naive(lattice, corr, trunc=trunc)
 
 	fbath = fermionicbath(semicircular(), β=β, μ=0)
 	exact_model = AndersonIM(U=0., μ=-ϵ_d)
@@ -192,7 +192,7 @@ end
 	U = -0.8
 	lattice = GrassmannLattice(Nt=Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed, order=1, bands=2)
 
-	mpsI = retardedinteractdynamics(lattice, corr, trunc=trunc)
+	mpsI = retardedinteractdynamics_naive(lattice, corr, trunc=trunc)
 	
 	fbath = fermionicbath(semicircular(), β=β, μ=0)
 	exact_model = AndersonIM(U=U, μ=-ϵ_d)

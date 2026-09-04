@@ -33,7 +33,7 @@ function mult_cache(z::GrassmannMPS, x::GrassmannMPS, y::GrassmannMPS, lattice::
 		if isnothing(pos2)
             j = ixy ÷ 2
             @assert 2*j == ixy
-			hstorage[iz] = (GrassmannTransferMatrix(j, x, y) * GrassmannTensorMap(hstorage[iz])).data
+			hstorage[iz] = GrassmannTransferMatrix(j, x, y) * hstorage[iz]
             ixy -= 2
 		else
 			iz -= 1
@@ -43,10 +43,8 @@ function mult_cache(z::GrassmannMPS, x::GrassmannMPS, y::GrassmannMPS, lattice::
 		end
 	end
     for j in 1:2:(ixy-1)
-		# tmp = GrassmannTensorMap(permute(hstorage[iz], ((1,), (2,3)))) * GrassmannTransferMatrix(j, x, y)
-        # hstorage[1] = permute(tmp.data, ((1,2), (3,)))
-		tmp = permute(GrassmannTensorMap(hstorage[iz]), ((1,), (2,3))) * GrassmannTransferMatrix(j, x, y)
-        hstorage[1] = permute(tmp, ((1,2), (3,))).data
+		tmp = g_permute(hstorage[iz], (1,), (2,3)) * GrassmannTransferMatrix(j, x, y)
+        hstorage[1] = g_permute(tmp, (1,2), (3,))
     end
 
     return IntegrateBandIterativeMultCache(z, x, y, lattice, band, hstorage)
@@ -109,11 +107,8 @@ function leftsweep!(m::IntegrateBandIterativeMultCache, alg::DMRGMult1)
 
         for i in (mm[site]+1):2:(mm[site+1]-1)
 			j = (i+1) ÷ 2
-			# tmp = GrassmannTensorMap(permute(hstorage[site+1], ((1,), (2,3)))) * GrassmannTransferMatrix(j, x, y)
-			# hstorage[site+1] = permute(tmp.data, ((1,2), (3,)))
-			tmp = permute(GrassmannTensorMap(hstorage[site+1]), ((1,), (2,3))) * GrassmannTransferMatrix(j, x, y)
-			hstorage[site+1] = permute(tmp, ((1,2), (3,))).data
-
+			tmp = g_permute(hstorage[site+1], (1,), (2,3)) * GrassmannTransferMatrix(j, x, y)
+			hstorage[site+1] = g_permute(tmp, (1,2), (3,))
 		end
     end
 	# println(kvals)
@@ -144,15 +139,15 @@ function rightsweep!(m::IntegrateBandIterativeMultCache, alg::DMRGMult1)
         # hstorage[site] = updatemultright(hstorage[site+1], z[site], x[mm[site]], y[mm[site]])
         @tensor tmp[4,5;1] := conj(z[site][1,2,3]) * xy_right[4,5,2,3]
         hstorage[site] = tmp
-        for i in (mm[site]-1):-2:(mm[site-1]+1)
+		for i in (mm[site]-1):-2:(mm[site-1]+1)
 			j = i ÷ 2
-			hstorage[site] = (GrassmannTransferMatrix(j, x, y) * GrassmannTensorMap(hstorage[site])).data
+			hstorage[site] = GrassmannTransferMatrix(j, x, y) * hstorage[site]
 		end
     end
     # println("norm of r is $(norm(r))")
     z[1] = @tensor tmp[1,2;4] := z[1][1,2,3] * r[3,4]
 	# println(kvals)
-    return kvals    
+    return kvals
 end
 
 function rightsweep_final!(m::IntegrateBandIterativeMultCache, alg::DMRGMult1)
@@ -186,11 +181,11 @@ function rightsweep_final!(m::IntegrateBandIterativeMultCache, alg::DMRGMult1)
         hstorage[site] = tmp
 		for i in (mm[site]-1):-2:(mm[site-1]+1)
 			j = i ÷ 2
-			hstorage[site] = (GrassmannTransferMatrix(j, x, y) * GrassmannTensorMap(hstorage[site])).data
+			hstorage[site] = GrassmannTransferMatrix(j, x, y) * hstorage[site]
 		end
     end
     # println("norm of r is $(norm(r))")
-    return kvals    
+    return kvals
 end
 
 
@@ -209,7 +204,7 @@ function _integrateband_svd_guess(lattice::AbstractGrassmannLattice, x::Grassman
 
 	data = similar(x.data, length(lattice2))
     trunc = truncdim(D)
-    fuser = GrassmannTensorMap(isomorphism(scalartype(x), fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) ))
+    fuser = isomorphism(scalartype(x), fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) )
     left = fuser
 
     i = 1
@@ -222,20 +217,20 @@ function _integrateband_svd_guess(lattice::AbstractGrassmannLattice, x::Grassman
 			left = left * GrassmannTransferMatrix(j, x, y)
             i += 2
 		else
-            @tensor tmp1[1,5,4;2] := left[1,2,3] * GrassmannTensorMap(y[i])[3,4,5]
-            @tensor tmp2[1,3,5;6,2] := tmp1[1,2,3,4] * GrassmannTensorMap(x[i])[4,5,6]
+            @grassmann tmp1[1,5,4;2] := left[1,2,3] * y[i][3,4,5]
+            @grassmann tmp2[1,3,5;6,2] := tmp1[1,2,3,4] * x[i][4,5,6]
             tmp3 = g_fuse(tmp2, 2)
-            
+
             u, s, v = stable_tsvd!(tmp3, trunc=trunc)
-			data[idx] = u.data
+			data[idx] = u
 			idx += 1
             left = s * v
-    
+
             i += 1
-		end		
+		end
 	end
-    @tensor tmp[1,2;6] := GrassmannTensorMap(data[end])[1,2,3] * left[3,4,5] * conj(fuser[6,4,5])
-    data[end] = tmp.data
+    @grassmann tmp[1,2;6] := data[end][1,2,3] * left[3,4,5] * conj(fuser[6,4,5])
+    data[end] = tmp
 
     return GrassmannMPS(data)
 end
@@ -278,7 +273,7 @@ function multintegrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y
 	mm = Dict(r1[(j, c, b, ifelse(bj<band, bj, bj+1))]=>pos for ((j, c, b, bj), pos) in r2)
 
 	data = similar(x.data, length(lattice2))
-    fuser = GrassmannTensorMap(isomorphism(scalartype(x), fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) ))
+    fuser = isomorphism(scalartype(x), fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) )
     left = fuser
 
     i = 1
@@ -291,20 +286,20 @@ function multintegrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y
 			left = left * GrassmannTransferMatrix(j, x, y)
             i += 2
 		else
-            @tensor tmp1[1,5,4;2] := left[1,2,3] * GrassmannTensorMap(y[i])[3,4,5]
-            @tensor tmp2[1,3,5;6,2] := tmp1[1,2,3,4] * GrassmannTensorMap(x[i])[4,5,6]
+            @grassmann tmp1[1,5,4;2] := left[1,2,3] * y[i][3,4,5]
+            @grassmann tmp2[1,3,5;6,2] := tmp1[1,2,3,4] * x[i][4,5,6]
             tmp3 = g_fuse(tmp2, 2)
-            
+
             q, r = leftorth!(tmp3, alg=QR())
-			data[idx] = q.data
+			data[idx] = q
 			idx += 1
             left = r
-    
+
             i += 1
-		end		
+		end
 	end
-    @tensor tmp[1,2;6] := GrassmannTensorMap(data[end])[1,2,3] * left[3,4,5] * conj(fuser[6,4,5])
-    data[end] = tmp.data
+    @grassmann tmp[1,2;6] := data[end][1,2,3] * left[3,4,5] * conj(fuser[6,4,5])
+    data[end] = tmp
 
     z = GrassmannMPS(data)
     (verbosity >= 2) && println("bond dimension of intermediate GMPS: ", bond_dimension(z))

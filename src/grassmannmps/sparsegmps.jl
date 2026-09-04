@@ -175,25 +175,25 @@ function mult!(x::GrassmannMPS, y::SparseGMPS; trunc::TruncationScheme=DefaultTr
 
 	tmp5 = g_fuse(_mult_site(x[p₀], ytensor(p₀)), 3)
 	Xl, Yl = space_l(x[p₀]), space_l(ytensor(p₀))
-	leftfuser = GrassmannTensorMap(isomorphism(T, fuse(Xl, Yl), Xl ⊗ Yl))
-	@tensor tmp4[1,4;5,6] := leftfuser[1,2,3] * tmp5[2,3,4,5,6]
+	leftfuser = isomorphism(T, fuse(Xl, Yl), Xl ⊗ Yl)
+	@grassmann tmp4[1,4;5,6] := leftfuser[1,2,3] * tmp5[2,3,4,5,6]
 
-	A = tensormaptype(spacetype(x), 2, 1, T)
+	A = tensormaptype(2, 1, T)
 	res = Vector{A}(undef, p₁ - p₀ + 1)
 	for i in p₀:p₁-1
 		q, r = leftorth!(tmp4, alg = QR())
-		res[i-p₀+1] = get_data(q)
-		_renormalize!(x, get_data(r), false)
+		res[i-p₀+1] = q
+		_renormalize!(x, r, false)
 		(ky <= length(y.data) && y.positions[ky] == i) && (ky += 1)
-		@tensor tmp1[1,5,4;2] := r[1,2,3] * GrassmannTensorMap(ytensor(i+1))[3,4,5]
-		@tensor tmp2[1,3,5;6,2] := tmp1[1,2,3,4] * GrassmannTensorMap(x[i+1])[4,5,6]
+		@grassmann tmp1[1,5,4;2] := r[1,2,3] * ytensor(i+1)[3,4,5]
+		@grassmann tmp2[1,3,5;6,2] := tmp1[1,2,3,4] * x[i+1][4,5,6]
 		tmp4 = g_fuse(tmp2, 2)
 	end
 	# --- last site: fuse the right boundary bonds ---
-	_t4 = get_data(tmp4)
-	rightfuser = GrassmannTensorMap(isomorphism(T, space(_t4,3)' ⊗ space(_t4,4)', fuse(space(_t4,3), space(_t4,4))))
-	@tensor tmp[1,2;5] := tmp4[1,2,3,4] * rightfuser[3,4,5]
-	res[end] = get_data(tmp)
+	_t4 = tmp4
+	rightfuser = isomorphism(T, space(_t4,3)' ⊗ space(_t4,4)', fuse(space(_t4,3), space(_t4,4)))
+	@grassmann tmp[1,2;5] := tmp4[1,2,3,4] * rightfuser[3,4,5]
+	res[end] = tmp
 
 	# --- assemble the new data: x outside the window, res inside ---
 	newdata = Vector{A}(undef, L)
@@ -208,14 +208,14 @@ function mult!(x::GrassmannMPS, y::SparseGMPS; trunc::TruncationScheme=DefaultTr
 
 	# --- local right-to-left SVD sweep with truncation over [p₀, p₁] ---
 	for i in p₁:-1:p₀+1
-		u, s, v, err = stable_tsvd(GrassmannTensorMap(x′[i]), (1,), (2, 3), trunc=trunc)
-		x′[i] = get_data(permute(v, (1,2), (3,)))
-		nr = _renormalize!(x′, get_data(s), false)
+		u, s, v, err = g_stable_tsvd(x′[i], (1,), (2, 3), trunc=trunc)
+		x′[i] = g_permute(v, (1,2), (3,))
+		nr = _renormalize!(x′, s, false)
 		(verbosity > 1) && println("SVD truncerror at bond $(i): ", sqrt(err * err / (nr * nr + err * err)))
 		u2 = u * s
-		@tensor tmp[-1,-2;-3] := GrassmannTensorMap(x′[i-1])[-1,-2,1] * u2[1,-3]
-		x′[i-1] = get_data(tmp)
-		x′.s[i] = get_data(s)
+		@grassmann tmp[-1,-2;-3] := x′[i-1][-1,-2,1] * u2[1,-3]
+		x′[i-1] = tmp
+		x′.s[i] = s
 	end
 	_renormalize!(x′, x′[p₀], false)
 

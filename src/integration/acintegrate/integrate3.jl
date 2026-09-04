@@ -1,5 +1,5 @@
 
-# function update_pair_left(left::GrassmannTensorMap{<:AbstractTensorMap{<:Number, S, 1, 3}}, j::Int, x::Vector, y::Vector, z::Vector) where S
+# function update_pair_left(left::GrassmannTensorMap{<:AbstractTensorMap{<:Number, S, 1, 3}}, j::Int, x::Vector, y::Vector, z::Vector)
 # 	posa = 2*j-1
 
 # 	@tensor tmp1[6,4,5,3;2] := left[6,1,2,3] * x[posa][1,4,5] 
@@ -52,7 +52,7 @@
 # 	return permute(g_trace(left5, 2), (1,), (2,3,4))
 # end
 
-# function update_pair_right(right::GrassmannTensorMap{<:AbstractTensorMap{<:Number, S, 3, 1}}, j::Int, x::Vector, y::Vector, z::Vector) where S
+# function update_pair_right(right::GrassmannTensorMap{<:AbstractTensorMap{<:Number, S, 3, 1}}, j::Int, x::Vector, y::Vector, z::Vector)
 # 	posb = 2 * j
 
 # 	@tensor tmp1[4 ;1 2 5 6] := z[posb][1,2,3] * right[3,4,5,6]
@@ -106,23 +106,23 @@
 
 
 
-function update_pair_left(left::GrassmannTensorMap{<:AbstractTensorMap{<:Number, S, 1, 3}}, j::Int, x::Vector, y::Vector, z::Vector) where S
+function update_pair_left(left::AbstractParityTensorMap{<:Number, 1, 3}, j::Int, x::Vector, y::Vector, z::Vector)
 	posa = 2*j-1
 
-	@tensor tmp1[1,2,5,6; 3] := left[1,2,3,4] * z[posa][4,5,6] 
-	@tensor tmp2[1,5,7,6,8;2] := tmp1[1,2,5,6,3] * y[posa][3,7,8]
+	@grassmann tmp1[1,2,5,6; 3] := left[1,2,3,4] * z[posa][4,5,6]
+	@grassmann tmp2[1,5,7,6,8;2] := tmp1[1,2,5,6,3] * y[posa][3,7,8]
 	tmp3 = g_fuse(tmp2, 2)
 
-	@tensor tmp4[1,57,9,6,8;a] := tmp3[1,57,6,8,2] * x[posa][2,9,a]
+	@grassmann tmp4[1,57,9,6,8;a] := tmp3[1,57,6,8,2] * x[posa][2,9,a]
 	tmp5 = g_fuse(tmp4, 2)
 
 	# \bar{a}
-	@tensor tmp1[1,579,f,g,6;8] := tmp5[1,579,6,8,a] * x[posa+1][a,f,g]
-	@tensor tmp2[1,579,f,d,g,e;6] := tmp1[1,579,f,g,6,8] * y[posa+1][8,d,e]
+	@grassmann tmp1[1,579,f,g,6;8] := tmp5[1,579,6,8,a] * x[posa+1][a,f,g]
+	@grassmann tmp2[1,579,f,d,g,e;6] := tmp1[1,579,f,g,6,8] * y[posa+1][8,d,e]
 	tmp3 = g_fuse(tmp2, 3)
 
-	@tensor tmp4[1,579,fd,b;g,e,c] := tmp3[1,579,fd,g,e,6] * z[posa+1][6,b,c]
-	tmp5 = g_fuse(tmp4, 3)	
+	@grassmann tmp4[1,579,fd,b;g,e,c] := tmp3[1,579,fd,g,e,6] * z[posa+1][6,b,c]
+	tmp5 = g_fuse(tmp4, 3)
 
 	# trace physices
 	left = g_trace(tmp5, 2)
@@ -131,23 +131,23 @@ function update_pair_left(left::GrassmannTensorMap{<:AbstractTensorMap{<:Number,
 end
 
 
-function update_pair_right(right::GrassmannTensorMap{<:AbstractTensorMap{<:Number, S, 3, 1}}, j::Int, x::Vector, y::Vector, z::Vector) where S
+function update_pair_right(right::AbstractParityTensorMap{<:Number, 3, 1}, j::Int, x::Vector, y::Vector, z::Vector)
 	posb = 2 * j
-	@tensor tmp1[2;9 a 3 4] := z[posb][9,a,1] * right[1,2,3,4]
-	@tensor tmp2[3;9 7 a 8 4] := y[posb][7,8,2] * tmp1[2,9,a,3,4]
+	@grassmann tmp1[2;9 a 3 4] := z[posb][9,a,1] * right[1,2,3,4]
+	@grassmann tmp2[3;9 7 a 8 4] := y[posb][7,8,2] * tmp1[2,9,a,3,4]
 	tmp3 = g_fuse(tmp2, 4)
 
-	@tensor tmp4[5;7 9 a8 6 4] := x[posb][5,6,3] * tmp3[3,9,7,a8,4]	
+	@grassmann tmp4[5;7 9 a8 6 4] := x[posb][5,6,3] * tmp3[3,9,7,a8,4]
 	tmp5 = g_fuse(tmp4, 4)
 
-	@tensor tmp1[7;b c 9 a86 4] := x[posb-1][b,c,5] * tmp5[5,7,9,a86,4]
-	@tensor tmp2[9;d b e c a86 4] := y[posb-1][d,e,7] * tmp1[7,b,c,9,a86,4]
+	@grassmann tmp1[7;b c 9 a86 4] := x[posb-1][b,c,5] * tmp5[5,7,9,a86,4]
+	@grassmann tmp2[9;d b e c a86 4] := y[posb-1][d,e,7] * tmp1[7,b,c,9,a86,4]
 	tmp3 = g_fuse(tmp2, 4)
 
-	@tensor tmp4[f,d,b,g,ec,a86;4] := z[posb-1][f,g,9] * tmp3[9,d,b,ec,a86,4]	
+	@grassmann tmp4[f,d,b,g,ec,a86;4] := z[posb-1][f,g,9] * tmp3[9,d,b,ec,a86,4]
 	tmp5 = g_fuse(tmp4, 4)
 
-	right = g_trace(tmp5, 4)	
+	right = g_trace(tmp5, 4)
 
 	return right
 

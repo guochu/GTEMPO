@@ -347,8 +347,7 @@ end
 
 # need to remove the scaling in transfer matrix
 function rescaling(m::GrassmannTransferMatrix)
-    states = map(x -> getproperty.(x, :data), m.states)
-    GrassmannTransferMatrix(states)
+    GrassmannTransferMatrix(m.states)
 end
 # need to reverse the column index, when convert TensorMap to GrassmannTensorMap
 function left_m(left::AbstractParityTensorMap{<:Number, 1, N}, m::GrassmannTransferMatrix) where N
@@ -366,7 +365,7 @@ function left_m(left::AbstractParityTensorMap{<:Number, 1, N}, m::GrassmannTrans
             lmul!(coef, left[f1, f2])
         end
     end
-    left = (GrassmannTensorMap(left) * rescaling(m)).data
+    left = left * rescaling(m)
     for (f1, f2) in fusiontrees(left)
         ns = getproperty.([f1.uncoupled..., dual.(f2.uncoupled)...], :n)
         coef = 1
@@ -382,14 +381,14 @@ function left_m(left::AbstractParityTensorMap{<:Number, 1, N}, m::GrassmannTrans
 
     # another implementation
     # left = permute(left, (ntuple(i->i,N), (N+1,)))
-    # left = permute(GrassmannTensorMap(left), ((1,),ntuple(i->i+1,N)))
+    # left = g_permute(left, (1,), ntuple(i->i+1,N))
     # left = left * m
     # left = permute(left, (ntuple(i->i,N), (N+1,)))
-    # permute(left.data, ((1,),ntuple(i->i+1,N)))
+    # g_permute(left, (1,), ntuple(i->i+1,N))
     # return left
 end
 function m_right(m::GrassmannTransferMatrix, right::AbstractParityTensorMap{<:Number, N, 1}) where N
-    (rescaling(m) * GrassmannTensorMap(right)).data
+    rescaling(m) * right
 end
 
 

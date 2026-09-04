@@ -1,23 +1,22 @@
-const AbstractParityTensorMap{T, N₁, N₂} = AbstractTensorMap{T, S, N₁, N₂} where {S <: GradedSpace{ZNIrrep{2}}}
+const AbstractParityTensorMap{T, N₁, N₂} = AbstractTensorMap{T, N₁, N₂}
 
+"""
+    GrassmannBackend()
 
-struct GrassmannTensorMap{P<:AbstractParityTensorMap}
-	data::P
-end
-
-TK.permute(t::GrassmannTensorMap, p1::IndexTuple, p2::IndexTuple; copy::Bool=false) = permute(t, (p1, p2), copy=copy)
-TK.permute(t::GrassmannTensorMap, p::Index2Tuple; copy::Bool=false) = GrassmannTensorMap(f_permute(t.data, p, copy=copy))
-Base.adjoint(t::GrassmannTensorMap) = GrassmannTensorMap(adjoint(t.data))
-get_data(t::GrassmannTensorMap) = t.data
-
-# Base.convert(::Type{GrassmannTensorMap}, t::AbstractTensorMap) = GrassmannTensorMap(t)
-# Base.convert(::Type{<:AbstractTensorMap}, t::GrassmannTensorMap) = t.data
+TensorOperations backend that implements `tensoradd!`, `tensortrace!` and
+`tensorcontract!` for Z2-graded (parity) `TensorMap`s with the fermionic
+(Grassmann) sign convention: every internal index permutation is carried out
+by the fermionic `f_permute` instead of the bosonic `permute`. It is inserted
+automatically by the [`@grassmann`](@ref) macro, and can equally be passed
+explicitly as `backend = GrassmannBackend()` to the function-based
+TensorOperations API.
+"""
+struct GrassmannBackend <: AbstractBackend end
 
 function f_permute(t::AbstractParityTensorMap, (p₁, p₂)::Index2Tuple{N₁,N₂};
                    copy::Bool=false) where {N₁,N₂}
-	S = spacetype(t)
-    cod = ProductSpace{S,N₁}(map(n -> space(t, n), p₁))
-    dom = ProductSpace{S,N₂}(map(n -> dual(space(t, n)), p₂))
+    cod = ProductSpace{N₁}(map(n -> space(t, n), p₁))
+    dom = ProductSpace{N₂}(map(n -> dual(space(t, n)), p₂))
     # share data if possible
     if (!copy) && (p₁ === codomainind(t) && p₂ === domainind(t)) 
         return t
@@ -52,20 +51,13 @@ end
 end
 
 
-function f_permute(f1::FusionTree{ZNIrrep{2}}, f2::FusionTree{ZNIrrep{2}},
+function f_permute(f1::FusionTree, f2::FusionTree,
                             p1::IndexTuple{N₁}, p2::IndexTuple{N₂}) where {N₁, N₂}
-    # isdual = (f1.isdual..., (!).(f2.isdual)...)
     uncoupled = (f1.uncoupled..., dual.(f2.uncoupled)...)
-    # isdual1′, isdual2′ = TupleTools.getindices(isdual, p1), TupleTools.getindices(isdual, p2)
     uncoupled1′, uncoupled2′ = TupleTools.getindices(uncoupled, p1), TupleTools.getindices(uncoupled, p2)
     uncoupled2′ = ntuple(i->dual(uncoupled2′[i]), Val(N₂))
-    # isdual2′ = (!).(isdual2′)
-    # coupled1′ = first(⊗(ZNIrrep{2}, uncoupled1′...))
-    # coupled2′ = first(⊗(ZNIrrep{2}, uncoupled2′...))
-    # coupled1′ = first(⊗(uncoupled1′...))
-    # coupled2′ = first(⊗(uncoupled2′...))
-    coupled1′ = ⊗(uncoupled1′...)
-    coupled2′ = ⊗(uncoupled2′...)
+    coupled1′ = TK.couple(uncoupled1′)
+    coupled2′ = TK.couple(uncoupled2′)
     f1′ = FusionTree(uncoupled1′, coupled1′)
     f2′ = FusionTree(uncoupled2′, coupled2′)
     # compute the sign

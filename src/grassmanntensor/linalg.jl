@@ -1,19 +1,18 @@
-Base.:*(x::GrassmannTensorMap, y::GrassmannTensorMap) = GrassmannTensorMap(x.data * y.data)
-TK.lmul!(x::Number, t::GrassmannTensorMap) = GrassmannTensorMap(lmul!(x, t.data))
-TK.rmul!(t::GrassmannTensorMap, x::Number) = GrassmannTensorMap(rmul!(t.data, x))
+#---------------------------------------------------------------
+# Grassmann (fermionic-sign) linear algebra helpers on plain parity
+# TensorMaps: the fermionic signs enter through `f_permute`
+# (see grassmanntensor.jl); the decompositions themselves are the
+# ordinary (bosonic) TensorMap ones.
+#---------------------------------------------------------------
 
+# fermionic permute
+g_permute(t::AbstractParityTensorMap, p::Index2Tuple; copy::Bool=false) = f_permute(t, p; copy=copy)
+g_permute(t::AbstractParityTensorMap, p1::IndexTuple, p2::IndexTuple; copy::Bool=false) = f_permute(t, (p1, p2); copy=copy)
 
-function stable_tsvd!(t::GrassmannTensorMap; kwargs...)
-	u, s, v, err = stable_tsvd!(t.data; kwargs...)
-	return GrassmannTensorMap(u), GrassmannTensorMap(s), GrassmannTensorMap(v), err
-end 
-stable_tsvd(t::GrassmannTensorMap, p1::IndexTuple, p2::IndexTuple; kwargs...) = stable_tsvd!(permute(t, p1, p2, copy=true); kwargs...)
-function TK.leftorth!(t::GrassmannTensorMap; kwargs...)
-	q, r = leftorth!(t.data; kwargs...)
-	return GrassmannTensorMap(q), GrassmannTensorMap(r)
+# stable tsvd after a fermionic reordering
+function g_stable_tsvd(t::AbstractParityTensorMap, p1::IndexTuple, p2::IndexTuple; kwargs...)
+	return stable_tsvd!(g_permute(t, p1, p2; copy=true); kwargs...)
 end
-function TK.rightorth!(t::GrassmannTensorMap; kwargs...)
-	l, q = rightorth!(t.data; kwargs...)
-	return GrassmannTensorMap(l), GrassmannTensorMap(q)
-end
-TK.rightorth(t::GrassmannTensorMap, p1::IndexTuple, p2::IndexTuple; kwargs...) = rightorth!(permute(t, p1, p2, copy=true); kwargs...)
+
+# rightorth after a fermionic reordering
+g_rightorth(t::AbstractParityTensorMap, p1::IndexTuple, p2::IndexTuple; kwargs...) = TK.rightorth!(g_permute(t, p1, p2; copy=true); kwargs...)

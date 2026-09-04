@@ -1,15 +1,13 @@
 
-g_fuse(t::GrassmannTensorMap, i::Int) = GrassmannTensorMap(g_fuse(t.data, i))
-
 # fuse i and i+1 into a single index
-function g_fuse(m::AbstractTensorMap{T, S, M, N}, i::Int) where {T<:Number, S, M, N}
+function g_fuse(m::AbstractTensorMap{T, M, N}, i::Int) where {T<:Number, M, N}
 	@assert (i != M) && (i < M+N)
 	@assert space(m, i) == space(m, i+1)
 	# @assert (i < M) || (M <= i < N)
 	local tmp
 	if i < M
 		idx = ntuple(x -> (x <= i) ? x : x+1, M-1)
-		cod = ProductSpace{S,M-1}(map(n -> space(m, n), idx))
+		cod = ProductSpace{M-1}(map(n -> space(m, n), idx))
 		dom = domain(m)
 
 		# tmp = zeros(scalartype(m), cod ← dom) 
@@ -35,7 +33,7 @@ function g_fuse(m::AbstractTensorMap{T, S, M, N}, i::Int) where {T<:Number, S, M
 		i2 = i - M
 		idx = ntuple(x -> (x <= i2) ? x : x+1, N-1)
 		cod = codomain(m)
-		dom = ProductSpace{S,N-1}(map(n->domain(m)[n], idx))
+		dom = ProductSpace{N-1}(map(n->domain(m)[n], idx))
 
 		# tmp = zeros(scalartype(m), cod ← dom) 
 		tmp = fill!(similar(m, cod ← dom), zero(T)) 
@@ -60,15 +58,15 @@ function g_fuse(m::AbstractTensorMap{T, S, M, N}, i::Int) where {T<:Number, S, M
 	return tmp
 end
 
-g_trace(t::GrassmannTensorMap, i::Int) = GrassmannTensorMap(_g_trace(t.data, i))
+g_trace(m::AbstractTensorMap, i::Int) = _g_trace(m, i)
 
-function _g_trace(m::AbstractTensorMap{T, S, M, N}, i::Int) where {T<:Number, S, M, N}
+function _g_trace(m::AbstractTensorMap{T, M, N}, i::Int) where {T<:Number, M, N}
 	@assert (i != M) && (i < M+N)
 	@assert space(m, i) == space(m, i+1)
 	local tmp
 	if i < M
 		idx = ntuple(x -> (x < i) ? x : x+2, M-2)
-		cod = ProductSpace{S,M-2}(map(n -> space(m, n), idx))
+		cod = ProductSpace{M-2}(map(n -> space(m, n), idx))
 		dom = domain(m)
 
 		# tmp = zeros(scalartype(m), cod ← dom) 
@@ -88,7 +86,7 @@ function _g_trace(m::AbstractTensorMap{T, S, M, N}, i::Int) where {T<:Number, S,
 		i2 = i - M
 		idx = ntuple(x -> (x < i2) ? x : x+2, N-2)
 		cod = codomain(m)
-		dom = ProductSpace{S,N-2}(map(n->domain(m)[n], idx))
+		dom = ProductSpace{N-2}(map(n->domain(m)[n], idx))
 
 		# tmp = zeros(scalartype(m), cod ← dom) 
 		tmp = fill!(similar(m, cod ← dom), zero(T)) 

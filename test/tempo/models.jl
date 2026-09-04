@@ -78,7 +78,7 @@ end
 		b2 = discretebath(bath, δw=dw)
 		model = Toulouse(b2, ϵ_d=ϵ_d)
 		g₁ = toulouse_Gτ(model, τs)
-		g₂ = [toulouse_Gτ(spec, τ, β = β, ϵ_d = ϵ_d, μ = μ) for τ in τs]
+                g₂ = [toulouse_Gτ(bath, τ, ϵ_d = ϵ_d) for τ in τs]
 		@test norm(g₁ - g₂) / norm(g₁) < rtol
 
 		exact_model = AndersonIM(μ=ϵ_d, U=0)
@@ -105,8 +105,8 @@ end
 
 		# delta spectrum 
 		spec = DiracDelta(ω=1, α=0.5)
-		bath = fermionicbath(spec, β=β, μ=μ)
-		g₂ = [toulouse_Gτ(spec, τ, β = β, ϵ_d = ϵ_d, μ = μ) for τ in τs]
+                bath = fermionicbath(spec, β=β, μ=μ)
+                g₂ = [toulouse_Gτ(bath, τ, ϵ_d = ϵ_d) for τ in τs]
 
 		exact_model = AndersonIM(μ=ϵ_d, U=0)
 		for ordering in imag_grassmann_orderings
@@ -137,8 +137,8 @@ end
 		
 
 	for spec in (spectrum_func(), DiracDelta())
-		bath = fermionicbath(spec, β=β, μ=0.)
-		gt = [im*toulouse_Gt(spectrum_func(), tj, ϵ_d = ϵ_d, μ = 0.) for tj in ts]
+                bath = fermionicbath(spec, β=β, μ=0.)
+                gt = [im*toulouse_Gt(bath, tj, ϵ_d = ϵ_d) for tj in ts]
 
 		exact_model = AndersonIM(μ=ϵ_d, U=0)
 		corr = Δt(bath, N=N, t=t)

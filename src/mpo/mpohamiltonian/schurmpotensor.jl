@@ -92,7 +92,7 @@ function compute_generic_mpotensor_types(data::AbstractMatrix)
 end
 # the same row should have the same left space
 # the same column should have the same right space
-function compute_mpotensor_data(::Type{S}, ::Type{M}, ::Type{T}, data::AbstractMatrix) where {S<:ElementarySpace, M<:MPOTensor{S}, T<:Number}
+function compute_mpotensor_data(::Type{S}, ::Type{M}, ::Type{T}, data::AbstractMatrix) where {S<:ElementarySpace, M<:MPOTensor, T<:Number}
 	@assert !isempty(data)
 	m, n = size(data)
 	new_data = Array{Union{M, T}, 2}(undef, m, n) 
@@ -176,7 +176,7 @@ function compute_mpotensor_data(::Type{S}, ::Type{M}, ::Type{T}, data::AbstractM
 	return new_data, convert(Vector{S}, leftspaces), convert(Vector{S}, rightspaces), pspace
 end
 
-function compute_mpotensor_data(::Type{M}, ::Type{T}, data::AbstractMatrix, leftspaces::Vector{S}, rightspaces::Vector{S}, pspace::S) where {S<:ElementarySpace, M<:MPOTensor{S}, T<:Number}
+function compute_mpotensor_data(::Type{M}, ::Type{T}, data::AbstractMatrix, leftspaces::Vector{S}, rightspaces::Vector{S}, pspace::S) where {S<:ElementarySpace, M<:MPOTensor, T<:Number}
 	@assert !isempty(data)
 	m, n = size(data)
 	@assert (m == length(leftspaces) ) && (n == length(rightspaces))

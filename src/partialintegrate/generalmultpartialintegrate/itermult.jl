@@ -50,7 +50,7 @@ function parint_cache(z::GrassmannMPS, xs::GrassmannMPS...; cidx::Vector{Int}, v
 		rt = @elapsed if insorted(ixs-1, cidx)
             j = ixs ÷ 2
             @assert 2*j == ixs
-			hstorage[iz+1] = (GrassmannTransferMatrix(j, xs...) * GrassmannTensorMap(hstorage[iz+1])).data
+			hstorage[iz+1] = GrassmannTransferMatrix(j, xs...) * hstorage[iz+1]
             normalize!(hstorage[iz+1])
             ixs -= 2
 		else

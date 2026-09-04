@@ -33,12 +33,12 @@ edgespace(x::AbstractGMPS) = edgespace(typeof(x))
 
 function l_LL(f, vspace::ElementarySpace, x::AbstractGMPS, ys::AbstractGMPS...)
 	T = promote_type(scalartype(x), map(scalartype, ys)...)
-	return GrassmannTensorMap(f(T, vspace, ⊗(space_l(x), map(y->space_l(y), ys)...)))
+	return f(T, vspace, ⊗(space_l(x), map(y->space_l(y), ys)...))
 end
 l_LL(x::AbstractGMPS, ys::AbstractGMPS...) = l_LL(ones, edgespace(x), x, ys...)
 
 function r_RR(f, vspace::ElementarySpace, x::AbstractGMPS, ys::AbstractGMPS...)
 	T = promote_type(scalartype(x), map(scalartype, ys)...)
-	return GrassmannTensorMap(f(T, ⊗(space_r(x)', map(y->space_r(y)', reverse(ys))...), vspace))
+	return f(T, ⊗(space_r(x)', map(y->space_r(y)', reverse(ys))...), vspace)
 end
 r_RR(x::AbstractGMPS, ys::AbstractGMPS...) = r_RR(ones, edgespace(x), x, ys...)
