@@ -11,7 +11,7 @@ function contract_center(left::AbstractParityTensorMap{<:Number, 1, N}, right::A
 
 	cindA = ntuple(x->x+1, N)
 	cindB = ntuple(x->N-x+1, N)
-	contract!(r, left, ((1,), cindA), right, (cindB, (N+1,)), ((1,), (2,)), true, false)
+	contract!(r, left, ((1,), cindA), right, (cindB, (N+1,)), ((1,), (2,)), true, false, GrassmannBackend())
 	return tr(r)
 end
 

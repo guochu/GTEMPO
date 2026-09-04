@@ -10,6 +10,12 @@ by the fermionic `f_permute` instead of the bosonic `permute`. It is inserted
 automatically by the [`@grassmann`](@ref) macro, and can equally be passed
 explicitly as `backend = GrassmannBackend()` to the function-based
 TensorOperations API.
+
+The backend instance is also threaded through the internal helpers
+`trace_permute!`, `contract!` and `_contract!` as their last argument, both
+to supply the sign information and to mark these functions as carrying the
+fermionic convention, in contrast to the sign-free Z2Tensors operations with
+otherwise similar signatures.
 """
 struct GrassmannBackend <: AbstractBackend end
 

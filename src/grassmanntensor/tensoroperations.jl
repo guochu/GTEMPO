@@ -48,14 +48,14 @@ function TO.tensortrace!(C::AbstractTensorMap{<:Number},
                          A::AbstractTensorMap{<:Number},
                          p::Index2Tuple, q::Index2Tuple, conjA::Bool,
                          α::Number, β::Number,
-                         ::GrassmannBackend, allocator)
+                         backend::GrassmannBackend, allocator)
     if conjA
         A′ = adjoint(A)
         p′ = TK.adjointtensorindices(A, _canonicalize(p, C))
         q′ = TK.adjointtensorindices(A, q)
-        trace_permute!(C, A′, p′, q′, α, β)
+        trace_permute!(C, A′, p′, q′, α, β, backend)
     else
-        trace_permute!(C, A, _canonicalize(p, C), q, α, β)
+        trace_permute!(C, A, _canonicalize(p, C), q, α, β, backend)
     end
     return C
 end
@@ -67,24 +67,24 @@ function TO.tensorcontract!(C::AbstractTensorMap{<:Number},
                             B::AbstractTensorMap{<:Number},
                             pB::Index2Tuple, conjB::Bool,
                             pAB::Index2Tuple, α::Number, β::Number,
-                            ::GrassmannBackend, allocator)
+                            backend::GrassmannBackend, allocator)
     pAB′ = _canonicalize(pAB, C)
     if conjA && conjB
         A′ = adjoint(A)
         pA′ = TK.adjointtensorindices(A, pA)
         B′ = adjoint(B)
         pB′ = TK.adjointtensorindices(B, pB)
-        contract!(C, A′, pA′, B′, pB′, pAB′, α, β)
+        contract!(C, A′, pA′, B′, pB′, pAB′, α, β, backend)
     elseif conjA
         A′ = adjoint(A)
         pA′ = TK.adjointtensorindices(A, pA)
-        contract!(C, A′, pA′, B, pB, pAB′, α, β)
+        contract!(C, A′, pA′, B, pB, pAB′, α, β, backend)
     elseif conjB
         B′ = adjoint(B)
         pB′ = TK.adjointtensorindices(B, pB)
-        contract!(C, A, pA, B′, pB′, pAB′, α, β)
+        contract!(C, A, pA, B′, pB′, pAB′, α, β, backend)
     else
-        contract!(C, A, pA, B, pB, pAB′, α, β)
+        contract!(C, A, pA, B, pB, pAB′, α, β, backend)
     end
     return C
 end
@@ -95,12 +95,16 @@ end
 
 # Trace implementation
 #----------------------
+# The `backend::GrassmannBackend` argument marks these helpers as carrying the
+# fermionic (Grassmann) sign convention, in contrast to the sign-free
+# Z2Tensors operations with otherwise similar signatures.
 function trace_permute!(tdst::AbstractParityTensorMap,
                         tsrc::AbstractParityTensorMap,
                         (p₁, p₂)::Index2Tuple{N₁,N₂},
                         (q₁, q₂)::Index2Tuple{N₃,N₃},
                         α::Number,
-                        β::Number) where {N₁,N₂,N₃}
+                        β::Number,
+                        backend::GrassmannBackend) where {N₁,N₂,N₃}
     @boundscheck begin
         all(i -> space(tsrc, p₁[i]) == space(tdst, i), 1:N₁) ||
             throw(SpaceMismatch("trace: tsrc = $(codomain(tsrc))←$(domain(tsrc)),
@@ -146,7 +150,8 @@ function contract!(C::AbstractParityTensorMap,
                    (cindB, oindB)::Index2Tuple{N₃,N₂},
                    (p₁, p₂)::Index2Tuple,
                    α::Number,
-                   β::Number) where {N₁,N₂,N₃}
+                   β::Number,
+                   backend::GrassmannBackend) where {N₁,N₂,N₃}
 
     # find optimal contraction scheme
     hsp = TK.has_shared_permute
@@ -172,9 +177,9 @@ function contract!(C::AbstractParityTensorMap,
                 dB * (!hsp(B, (cindB′′, oindB)))
 
     if memcost1 <= memcost2
-        return _contract!(α, A, B, β, C, oindA, cindA′, oindB, cindB′, p₁, p₂)
+        return _contract!(α, A, B, β, C, oindA, cindA′, oindB, cindB′, p₁, p₂, backend)
     else
-        return _contract!(α, A, B, β, C, oindA, cindA′′, oindB, cindB′′, p₁, p₂)
+        return _contract!(α, A, B, β, C, oindA, cindA′′, oindB, cindB′′, p₁, p₂, backend)
     end
 end
 
@@ -182,7 +187,8 @@ function _contract!(α, A::AbstractParityTensorMap, B::AbstractParityTensorMap,
                     β, C::AbstractParityTensorMap,
                     oindA::IndexTuple{N₁}, cindA::IndexTuple,
                     oindB::IndexTuple{N₂}, cindB::IndexTuple,
-                    p₁::IndexTuple, p₂::IndexTuple) where {N₁,N₂}
+                    p₁::IndexTuple, p₂::IndexTuple,
+                    backend::GrassmannBackend) where {N₁,N₂}
     A′ = f_permute(A, (oindA, cindA))
     B′ = f_permute(B, (cindB, oindB))
     ipC = TupleTools.invperm((p₁..., p₂...))
