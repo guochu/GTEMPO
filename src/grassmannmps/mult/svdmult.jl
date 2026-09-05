@@ -10,7 +10,7 @@ function mult2!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=Defaul
         tmp5 = g_fuse(_mult_site(x[i+1], y[i+1]), 3)
         @grassmann tmp4[1,4;5,6] := r[1,2,3] * tmp5[2,3,4,5,6]
     end
-    @grassmann tmp[1,2;5] := tmp4[1,2,3,4] * conj(left[5,3,4])
+    @tensor tmp[1,2;5] := tmp4[1,2,3,4] * conj(left[5,3,4])
     x[end] = tmp
     _rightorth!(x, SVD(), trunc, false, verbosity)
     setscaling!(x, scaling(x) * scaling(y))
@@ -48,7 +48,7 @@ function mult!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=Default
         # @grassmann tmp4′[1,4;5,6] := r[1,2,3] * tmp5[2,3,4,5,6]
         # println("i=", i, " err=", norm(tmp4 - tmp4′))
     end
-    @grassmann tmp[1,2;5] := tmp4[1,2,3,4] * conj(left[5,3,4])
+    @tensor tmp[1,2;5] := tmp4[1,2,3,4] * conj(left[5,3,4])
     res[end] = tmp
     x[end] = empty_tensor
     x′ = GrassmannMPS(res, copy(x.svectors), scaling(x))

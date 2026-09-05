@@ -125,14 +125,21 @@ function trace_permute!(tdst::AbstractParityTensorMap,
     r₂ = (p₂..., q₂...)
     for (f₁, f₂) in fusiontrees(tsrc)
         for ((f₁′, f₂′), coeff) in f_permute(f₁, f₂, r₁, r₂)
-            f₁′′, g₁ = split(f₁′, N₁)
-            f₂′′, g₂ = split(f₂′, N₂)
+            f₁′′, g₁ = TK.split(f₁′, N₁)
+            f₂′′, g₂ = TK.split(f₂′, N₂)
             g₁ == g₂ || continue
             coeff *= dim(g₁.coupled) / dim(g₁.uncoupled[1])
+            # fermionic U-turn twist (TensorKit-consistent): closing the trace loop,
+            # every traced codomain leg with a non-dual space and odd sector
+            # contributes a factor -1 (g₁.uncoupled[1] is the fused charge)
+            @inbounds for i in 2:length(g₁.uncoupled)
+                (isdual(space(tsrc, q₁[i - 1])) || iseven(g₁.uncoupled[i].n)) && continue
+                coeff = -coeff
+            end
             C = tdst[f₁′′, f₂′′]
             A = tsrc[f₁, f₂]
             α′ = α * coeff
-            TO.tensortrace!(C, (p₁, p₂), A, (q₁, q₂), false, α′, true)
+            TO.tensortrace!(C, A, (p₁, p₂), (q₁, q₂), false, α′, one(α′))
         end
     end
     return tdst
@@ -191,6 +198,16 @@ function _contract!(α, A::AbstractParityTensorMap, B::AbstractParityTensorMap,
                     backend::GrassmannBackend) where {N₁,N₂}
     A′ = f_permute(A, (oindA, cindA))
     B′ = f_permute(B, (cindB, oindB))
+    # fermionic junction twist: permute the contracted pair into the canonical
+    # (a, ā) order before contracting. A contracted pair whose A-side leg is
+    # non-dual (an `a`) against a dual B-side leg (an `ā`) is in the crossed
+    # (ā, a) order; permuting it costs a twist -1 per odd sector, applied on
+    # the A side. This is unconditional, matching the GrassmannTensors /
+    # TensorKit fermionic conventions, and independent of which region cindB
+    # lives in. (space(A′, No+k) = space(A, cindA[k]).)
+    No = length(oindA)
+    inds = Tuple(No + k for k in eachindex(cindA) if !isdual(space(A, cindA[k])))
+    g_twist!(A′, inds)
     ipC = TupleTools.invperm((p₁..., p₂...))
     oindAinC = TupleTools.getindices(ipC, ntuple(n -> n, N₁))
     oindBinC = TupleTools.getindices(ipC, ntuple(n -> n + N₁, N₂))

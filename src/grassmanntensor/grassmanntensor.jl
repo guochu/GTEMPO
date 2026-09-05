@@ -16,6 +16,17 @@ The backend instance is also threaded through the internal helpers
 to supply the sign information and to mark these functions as carrying the
 fermionic convention, in contrast to the sign-free Z2Tensors operations with
 otherwise similar signatures.
+
+In addition to the fermionic `f_permute` reordering signs, the backend applies
+the fermionic twists that put every contracted pair into the canonical
+`(a, ā)` order before contracting, in the same way as the GrassmannTensors /
+TensorKit fermionic conventions:
+* `contract!`: every contracted pair whose A-side leg carries a non-dual
+  space (an `a`, contracted against an `ā` on the B side) contributes a twist
+  of `-1` per odd sector, applied on the A side — independent of which
+  region the B-side legs live in.
+* `trace_permute!`: closing the trace loop, every traced codomain leg with a
+  non-dual space and odd sector contributes a twist of `-1`.
 """
 struct GrassmannBackend <: AbstractBackend end
 
@@ -43,6 +54,28 @@ end
                                         tsrc::AbstractParityTensorMap,
                                         p::Index2Tuple{N₁,N₂}) where {N₁,N₂}
     return add_f_permute!(tdst, tsrc, p, true, false)
+end
+
+"""
+    g_twist!(t, inds)
+
+Apply the fermion-parity (Z2) twist to the legs of the parity tensor `t` at
+linearized positions `inds`: every fusion-tree block is multiplied by
+``(-1)^{\\text{number of odd sectors among the twisted legs}}``, i.e. by
+`-1` for each fermion (odd sector) on the twisted legs.
+"""
+function g_twist!(t::AbstractParityTensorMap, inds)
+    isempty(inds) && return t
+    N₁ = numout(t)
+    for (f₁, f₂) in fusiontrees(t)
+        θ = 1
+        @inbounds for i in inds
+            sect = i <= N₁ ? f₁.uncoupled[i] : f₂.uncoupled[i - N₁]
+            isodd(sect.n) && (θ = -θ)
+        end
+        θ == 1 || lmul!(θ, t[f₁, f₂])
+    end
+    return t
 end
 
 

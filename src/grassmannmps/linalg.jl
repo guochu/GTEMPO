@@ -71,7 +71,7 @@ function Base.:*(x::GrassmannMPS, y::GrassmannMPS)
     # fusers = PeriodicArray([GrassmannTensorMap(isomorphism(T, space(item, 4)' ⊗ space(item, 5)', fuse(space(item, 4), space(item, 5)) )) for item in get_data.(out)])
     # return GrassmannMPS(get_data.([@tensor tmp[3,4;7] := conj(fusers[i-1][1,2,3]) * out[i][1,2,4,5,6] * fusers[i][5,6,7] for i in 1:length(x)]), scaling=scaling(x) * scaling(y))
     fusers = [isomorphism(T, space(item, 4)' ⊗ space(item, 5)', fuse(space(item, 4), space(item, 5)) ) for item in out]
-    return GrassmannMPS([@grassmann tmp[3,4;7] := conj(fusers[mod1(i-1, length(x))][1,2,3]) * out[i][1,2,4,5,6] * fusers[i][5,6,7] for i in 1:length(x)], scaling=scaling(x) * scaling(y))
+    return GrassmannMPS([@tensor tmp[3,4;7] := conj(fusers[mod1(i-1, length(x))][1,2,3]) * out[i][1,2,4,5,6] * fusers[i][5,6,7] for i in 1:length(x)], scaling=scaling(x) * scaling(y))
 end
 
 function Base.:+(x::GrassmannMPS, y::GrassmannMPS) 
@@ -87,14 +87,14 @@ function Base.:+(x::GrassmannMPS, y::GrassmannMPS)
     r = A[]
     for i in 1:length(x)
         if i == 1
-            @tensor m1[-1 -2; -3] := scaling_x * x[i][-1,-2,2] * embedders[i][1][2, -3]
-            @tensor m1[-1 -2; -3] += scaling_y * y[i][-1,-2,2] * embedders[i][2][2, -3]
+            @grassmann m1[-1 -2; -3] := scaling_x * x[i][-1,-2,2] * embedders[i][1][2, -3]
+            @grassmann m1[-1 -2; -3] += scaling_y * y[i][-1,-2,2] * embedders[i][2][2, -3]
         elseif i == length(x)
-            @tensor m1[-1 -2; -3] := scaling_x * (embedders[i-1][1])'[-1, 1] * x[i][1,-2,-3] 
-            @tensor m1[-1 -2; -3] += scaling_y * (embedders[i-1][2])'[-1, 1] * y[i][1,-2,-3] 
+            @grassmann m1[-1 -2; -3] := scaling_x * (embedders[i-1][1])'[-1, 1] * x[i][1,-2,-3] 
+            @grassmann m1[-1 -2; -3] += scaling_y * (embedders[i-1][2])'[-1, 1] * y[i][1,-2,-3] 
         else          
-            @tensor m1[-1 -2; -3] := scaling_x * (embedders[i-1][1])'[-1, 1] * x[i][1,-2,2] * embedders[i][1][2, -3]
-            @tensor m1[-1 -2; -3] += scaling_y * (embedders[i-1][2])'[-1, 1] * y[i][1,-2,2] * embedders[i][2][2, -3]
+            @grassmann m1[-1 -2; -3] := scaling_x * (embedders[i-1][1])'[-1, 1] * x[i][1,-2,2] * embedders[i][1][2, -3]
+            @grassmann m1[-1 -2; -3] += scaling_y * (embedders[i-1][2])'[-1, 1] * y[i][1,-2,2] * embedders[i][2][2, -3]
         end
         push!(r, m1)
     end

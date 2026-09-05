@@ -307,7 +307,8 @@ function _swap_gate(svectorj1, m1, svectorj2, m2; trunc::TruncationScheme)
 	# println(space(svectorj1, 2), " ", space(m1, 1))
 	@grassmann twositemps1[-1 -2; -3 -4] := svectorj1[-1, 1] * twositemps[1, -2, -3, -4]
 	u, s, v, err = stable_tsvd!(twositemps1, trunc=trunc)
-	@grassmann u[-1 -2; -3] = twositemps[-1,-2,1,2] * conj(v[-3,1,2])
+	# ket-bra (coefficient) contraction: bosonic, no fermionic twist
+	@tensor u[-1 -2; -3] = twositemps[-1,-2,1,2] * conj(v[-3,1,2])
 	return u, s, g_permute(v, (1,2), (3,))
 end
 

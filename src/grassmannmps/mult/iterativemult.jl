@@ -274,7 +274,7 @@ function _svd_guess!(x::GrassmannMPS, y::GrassmannMPS, D::Int)
         tmp4 = g_fuse(tmp2, 2)
 
     end
-    @grassmann tmp[1,2;5] := tmp4[1,2,3,4] * conj(left[5,3,4])
+    @tensor tmp[1,2;5] := tmp4[1,2,3,4] * conj(left[5,3,4])
     x[end] = tmp
     _rightorth!(x, SVD(), trunc, false, 0)
     setscaling!(x, 1)

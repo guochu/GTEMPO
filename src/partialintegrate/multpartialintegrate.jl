@@ -229,7 +229,7 @@ function _integrateband_svd_guess(lattice::AbstractGrassmannLattice, x::Grassman
             i += 1
 		end
 	end
-    @grassmann tmp[1,2;6] := data[end][1,2,3] * left[3,4,5] * conj(fuser[6,4,5])
+    @tensor tmp[1,2;6] := data[end][1,2,3] * left[3,4,5] * conj(fuser[6,4,5])
     data[end] = tmp
 
     return GrassmannMPS(data)
@@ -298,7 +298,7 @@ function multintegrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y
             i += 1
 		end
 	end
-    @grassmann tmp[1,2;6] := data[end][1,2,3] * left[3,4,5] * conj(fuser[6,4,5])
+    @tensor tmp[1,2;6] := data[end][1,2,3] * left[3,4,5] * conj(fuser[6,4,5])
     data[end] = tmp
 
     z = GrassmannMPS(data)
