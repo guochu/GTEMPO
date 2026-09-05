@@ -59,6 +59,55 @@ ExactTTIIF(; algexpan::ExponentialExpansionAlgorithm=PronyExpansion(n=15, tol=1.
 # :αSM, α small first, the default
 # :no, no order
 
+"""
+	struct TDVPIF
+
+Construct the influence functional with a second-order single-site TDVP
+imaginary-time flow: the influence functional is viewed as the "equilibrium
+state" IF = exp(H) of the influence operator H (the MPO form returned by
+`influenceoperator`), and is computed by evolving the identity influence
+functional (β = 0) along the flow dz/dτ = H·z from τ = 0 to τ = 1.
+
+Each flow step is one forward-backward TDVP sweep: the center tensor AC is
+evolved by +δτ/2 (Krylov exponentiation of the local effective map) and the
+bond matrix C by -δτ/2, with a full +δτ step at the turning site. The state
+is zero-padded to bond dimension `trunc.D` before the flow, so the bond
+dimension grows with the correlations up to `trunc.D`.
+
+# Fields
+- `algexpan::ExponentialExpansionAlgorithm`: exponential (Prony) expansion algorithm for the bath correlation function.
+- `trunc::TruncationDimCutoff`: bond dimension of the flow manifold / final influence functional.
+- `δ::Float64`: imaginary-time step of the flow (0 < δ ≤ 1, adjusted so that 1/δ is an integer).
+- `verbosity::Int`: verbosity level of the output.
+- `callback::Function`: callback function invoked after the flow.
+
+On real-time lattices the influence operator driving the flow is the sum of
+the 4 branch MPOs returned by `influenceoperator` ((+,+), (+,−), (−,+),
+(−,−)), since the site-wise product algebra satisfies e^a∘e^b = e^{a+b}.
+"""
+struct TDVPIF <: InfluenceFunctionalAlgorithm
+	algexpan::ExponentialExpansionAlgorithm
+	trunc::TruncationDimCutoff      # bond dimension of the flow manifold / final IF
+	δ::Float64                      # imaginary-time step of the flow (0 < δ ≤ 1, adjusted so that 1/δ is an integer)
+	verbosity::Int
+	callback::Function
+end
+"""
+	TDVPIF(; algexpan, trunc, δ, verbosity, callback)
+
+Keyword constructor for `TDVPIF`; all parameters have default values and usually need not be passed explicitly.
+"""
+function TDVPIF(; algexpan::ExponentialExpansionAlgorithm=PronyExpansion(n=15, tol=1.0e-4, verbosity=0),
+				trunc::TruncationDimCutoff=DefaultITruncation,
+				δ::Real=0.1,
+				verbosity::Int=0,
+				callback::Function=Returns(nothing))
+	(0 < δ <= 1) || throw(ArgumentError("δ must be a real number in (0, 1], got $δ"))
+	# adjust δ so that 1/δ is an integer number of steps
+	n = max(round(Int, 1 / δ), 1)
+	return TDVPIF(algexpan, trunc, 1 / n, verbosity, callback)
+end
+
 # temporary solution
 changetrunc(x::DMRG1; trunc=x.trunc) = similar(x, trunc=trunc)
 changetrunc(x::DMRG2; trunc=x.trunc) = similar(x, trunc=trunc)

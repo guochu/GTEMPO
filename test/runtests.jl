@@ -36,6 +36,7 @@ include("tempo/partialif_hybrid.jl")
 include("tempo/retardedinteract.jl")
 include("tempo/influenceoperator.jl")
 include("tempo/hybriddynamics.jl")
+include("tempo/tdvpif.jl")
 include("tempo/sysinitstate.jl")
 
 include("tempo/gf.jl")
