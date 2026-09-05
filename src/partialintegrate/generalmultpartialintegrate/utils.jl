@@ -7,75 +7,75 @@
 function get_left_below(left::AbstractParityTensorMap{<:Number, 1, 2}, xj::MPSTensor, yj::MPSTensor)
     @tensor tmp1[1 5 4;2] := left[1 2 3] * yj[3 4 5]
     @tensor tmp2[1 4 6;7 5] := tmp1[1 5 4 2] * xj[2 6 7]
-    compensate_twist!(tmp2, 2, 4)
+    compensate_twists!(tmp2, (2, 4))
     tmp3 = g_fuse(tmp2, 2)
     return tmp3
 end
 function get_left_below(left::AbstractParityTensorMap{<:Number, 1, 3}, xj::MPSTensor, yj::MPSTensor, zj::MPSTensor)
     @tensor tmp1[1 2 5 6;3] := left[1 2 3 4] * zj[4 5 6]
     @tensor tmp2[1 5 7 8 6;2] := tmp1[1 2 5 6 3] * yj[3 7 8]
-    compensate_twist!(tmp2, 2, 4)
+    compensate_twists!(tmp2, (2, 4))
     tmp3 = g_fuse(tmp2, 2)
 
     @tensor tmp4[1 57 9;a 8 6] := tmp3[1 57 8 6 2] * xj[2 9 a]
-    compensate_twist!(tmp4, 2, 4)
+    compensate_twists!(tmp4, (2, 4))
     tmp5 = g_fuse(tmp4, 2)
     return tmp5
 end
 function get_left_below(left::AbstractParityTensorMap{<:Number, 1, 4}, xj::MPSTensor, yj::MPSTensor, zj::MPSTensor, mj::MPSTensor)
     @tensor tmp1[1 2 3 6 7;4] := left[1 2 3 4 5] * mj[5 6 7]
     @tensor tmp2[1 2 8 6 9 7;3] := tmp1[1 2 3 6 7 4] * zj[4 8 9]
-    compensate_twist!(tmp2, 4, 5)
+    compensate_twists!(tmp2, (4, 5))
     tmp3 = g_fuse(tmp2, 3)
 
     @tensor tmp4[1 a 86 b 9 7;2] := tmp3[1 2 86 9 7 3] * yj[3 a b]
-    compensate_twist!(tmp4, 3, 4)
+    compensate_twists!(tmp4, (3, 4))
     tmp5 = g_fuse(tmp4, 2)
 
     @tensor tmp6[1 c a86;d b 9 7] := tmp5[1 a86 b 9 7 2] * xj[2 c d]
-    compensate_twist!(tmp6, 3, 4)
+    compensate_twists!(tmp6, (3, 4))
     tmp7 = g_fuse(tmp6, 2)
     return tmp7
 end
 function get_left_below(left::AbstractParityTensorMap{<:Number, 1, 5}, xj::MPSTensor, yj::MPSTensor, zj::MPSTensor, mj::MPSTensor, nj::MPSTensor)
     @tensor tmp1[1 2 3 4 7 8;5] := left[1 2 3 4 5 6] * nj[6 7 8]
     @tensor tmp2[1 2 3 9 7 a 8;4] := tmp1[1 2 3 4 7 8 5] * mj[5 9 a]
-    compensate_twist!(tmp2, 5, 6)
+    compensate_twists!(tmp2, (5, 6))
     tmp3 = g_fuse(tmp2, 4)
 
     @tensor tmp4[1 2 b 97 c a 8;3] := tmp3[1 2 3 97 a 8 4] * zj[4 b c]
-    compensate_twist!(tmp4, 4, 5)
+    compensate_twists!(tmp4, (4, 5))
     tmp5 = g_fuse(tmp4, 3)
 
     @tensor tmp6[1 d b97 e c a 8;2] := tmp5[1 2 b97 c a 8 3] * yj[3 d e]
-    compensate_twist!(tmp6, 3, 4)
+    compensate_twists!(tmp6, (3, 4))
     tmp7 = g_fuse(tmp6, 2)
 
     @tensor tmp8[1 f db97;g e c a 8] := tmp7[1 db97 e c a 8 2] * xj[2 f g]
-    compensate_twist!(tmp8, 3, 4)
+    compensate_twists!(tmp8, (3, 4))
     tmp9 = g_fuse(tmp8, 2)
     return tmp9
 end
 function get_left_below(left::AbstractParityTensorMap{<:Number, 1, 6}, xj::MPSTensor, yj::MPSTensor, zj::MPSTensor, mj::MPSTensor, nj::MPSTensor, pj::MPSTensor)
     @tensor tmp1[1 2 3 4 5 8 9;6] := left[1 2 3 4 5 6 7] * pj[7 8 9]
     @tensor tmp2[1 2 3 4 a 8 b 9;5] := tmp1[1 2 3 4 5 8 9 6] * nj[6 a b]
-    compensate_twist!(tmp2, 6, 7)
+    compensate_twists!(tmp2, (6, 7))
     tmp3 = g_fuse(tmp2, 5)
 
     @tensor tmp4[1 2 3 c a8 d b 9;4] := tmp3[1 2 3 4 a8 b 9 5] * mj[5 c d]
-    compensate_twist!(tmp4, 5, 6)
+    compensate_twists!(tmp4, (5, 6))
     tmp5 = g_fuse(tmp4, 4)
 
     @tensor tmp6[1 2 e ca8 f d b 9;3] := tmp5[1 2 3 ca8 d b 9 4] * zj[4 e f]
-    compensate_twist!(tmp6, 4, 5)
+    compensate_twists!(tmp6, (4, 5))
     tmp7 = g_fuse(tmp6, 3)
 
     @tensor tmp8[1 g eca8 h f d b 9;2] := tmp7[1 2 eca8 f d b 9 3] * yj[3 g h]
-    compensate_twist!(tmp8, 3, 4)
+    compensate_twists!(tmp8, (3, 4))
     tmp9 = g_fuse(tmp8, 2)
 
     @tensor tmp10[1 i geca8;j h f d b 9] := tmp9[1 geca8 h f d b 9 2] * xj[2 i j]
-    compensate_twist!(tmp10, 3, 4)
+    compensate_twists!(tmp10, (3, 4))
     tmp11 = g_fuse(tmp10, 2)
     return tmp11
 end
@@ -85,75 +85,75 @@ end
 function get_below_right(right::AbstractParityTensorMap{<:Number, 2, 1}, xj::MPSTensor, yj::MPSTensor)
     @tensor tmp1[2; 4 5 3] := yj[4 5 1] * right[1 2 3]
     @tensor tmp2[4 6; 7 5 3] := xj[6 7 2] * tmp1[2 4 5 3]
-    compensate_twist!(tmp2, 2, 4)
+    compensate_twists!(tmp2, (2, 4))
     tmp3 = g_fuse(tmp2, 3)
     return tmp3
 end
 function get_below_right(right::AbstractParityTensorMap{<:Number, 3, 1}, xj::MPSTensor, yj::MPSTensor, zj::MPSTensor)
     @tensor tmp1[2; 5 6 3 4] := zj[5 6 1] * right[1 2 3 4]
     @tensor tmp2[3;5 7 6 8 4] := yj[7 8 2] * tmp1[2 5 6 3 4]
-    compensate_twist!(tmp2, 3, 4)
+    compensate_twists!(tmp2, (3, 4))
     tmp3 = g_fuse(tmp2, 4)
 
     @tensor tmp4[5 7 9; 68 a 4] := xj[9 a 3] * tmp3[3 5 7 68 4]
-    compensate_twist!(tmp4, 3, 4)
+    compensate_twists!(tmp4, (3, 4))
     tmp5 = g_fuse(tmp4, 4)
     return tmp5
 end
 function get_below_right(right::AbstractParityTensorMap{<:Number, 4, 1}, xj::MPSTensor, yj::MPSTensor, zj::MPSTensor, mj::MPSTensor)
     @tensor tmp1[2; 6 7 3 4 5] := mj[6 7 1] * right[1 2 3 4 5]
     @tensor tmp2[3;6 8 7 9 4 5] := zj[8 9 2] * tmp1[2 6 7 3 4 5]
-    compensate_twist!(tmp2, 3, 4)
+    compensate_twists!(tmp2, (3, 4))
     tmp3 = g_fuse(tmp2, 4)
 
     @tensor tmp4[4; 6 8 a 79 b 5] := yj[a b 3] * tmp3[3 6 8 79 4 5]
-    compensate_twist!(tmp4, 4, 5)
+    compensate_twists!(tmp4, (4, 5))
     tmp5 = g_fuse(tmp4, 5)
 
     @tensor tmp6[6 8 a c; b79 d 5] := xj[c d 4] * tmp5[4 6 8 a b79 5]
-    compensate_twist!(tmp6, 4, 5)
+    compensate_twists!(tmp6, (4, 5))
     tmp7 = g_fuse(tmp6, 5)
     return tmp7
 end
 function get_below_right(right::AbstractParityTensorMap{<:Number, 5, 1}, xj::MPSTensor, yj::MPSTensor, zj::MPSTensor, mj::MPSTensor, nj::MPSTensor)
     @tensor tmp1[2;7 8 3 4 5 6] := nj[7 8 1] * right[1 2 3 4 5 6]
     @tensor tmp2[3;7 9 8 a 4 5 6] := mj[9 a 2] * tmp1[2 7 8 3 4 5 6]
-    compensate_twist!(tmp2, 3, 4)
+    compensate_twists!(tmp2, (3, 4))
     tmp3 = g_fuse(tmp2, 4)
 
     @tensor tmp4[4;7 9 b a8 c 5 6] := zj[b c 3] * tmp3[3 7 9 a8 4 5 6]
-    compensate_twist!(tmp4, 4, 5)
+    compensate_twists!(tmp4, (4, 5))
     tmp5 = g_fuse(tmp4, 5)
 
     @tensor tmp6[5;7 9 b d ca8 e 6] := yj[d e 4] * tmp5[4 7 9 b ca8 5 6]
-    compensate_twist!(tmp6, 5, 6)
+    compensate_twists!(tmp6, (5, 6))
     tmp7 = g_fuse(tmp6, 6)
 
     @tensor tmp8[7 9 b d f;eca8 g 6] := xj[f g 5] * tmp7[5 7 9 b d eca8 6]
-    compensate_twist!(tmp8, 5, 6)
+    compensate_twists!(tmp8, (5, 6))
     tmp9 = g_fuse(tmp8, 6)
     return tmp9
 end
 function get_below_right(right::AbstractParityTensorMap{<:Number, 6, 1}, xj::MPSTensor, yj::MPSTensor, zj::MPSTensor, mj::MPSTensor, nj::MPSTensor, pj::MPSTensor)
     @tensor tmp1[2;8 9 3 4 5 6 7] := pj[8 9 1] * right[1 2 3 4 5 6 7]
     @tensor tmp2[3;8 a 9 b 4 5 6 7] := nj[a b 2] * tmp1[2 8 9 3 4 5 6 7]
-    compensate_twist!(tmp2, 3, 4)
+    compensate_twists!(tmp2, (3, 4))
     tmp3 = g_fuse(tmp2, 4)
 
     @tensor tmp4[4;8 a c b9 d 5 6 7] := mj[c d 3] * tmp3[3 8 a b9 4 5 6 7]
-    compensate_twist!(tmp4, 4, 5)
+    compensate_twists!(tmp4, (4, 5))
     tmp5 = g_fuse(tmp4, 5)
 
     @tensor tmp6[5;8 a c e db9 f 6 7] := zj[e f 4] * tmp5[4 8 a c db9 5 6 7]
-    compensate_twist!(tmp6, 5, 6)
+    compensate_twists!(tmp6, (5, 6))
     tmp7 = g_fuse(tmp6, 6)
 
     @tensor tmp8[6;8 a c e g fdb9 h 7] := yj[g h 5] * tmp7[5 8 a c e fdb9 6 7]
-    compensate_twist!(tmp8, 6, 7)
+    compensate_twists!(tmp8, (6, 7))
     tmp9 = g_fuse(tmp8, 7)
 
     @tensor tmp10[8 a c e g i;hfdb9 j 7] := xj[i j 6] * tmp9[6 8 a c e g hfdb9 7]
-    compensate_twist!(tmp10, 6, 7)
+    compensate_twists!(tmp10, (6, 7))
     tmp11 = g_fuse(tmp10, 7)
     return tmp11
 end

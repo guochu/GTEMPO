@@ -5,7 +5,7 @@ export truncdimcutoff
 
 # GrassmannTensor
 export scalartype
-export @grassmann, GrassmannBackend
+export @grassmann
 using Z2Tensors: NoTruncation
 export NoTruncation
 
@@ -13,7 +13,7 @@ export NoTruncation
 export AbstractGTerm, GTerm, ExpGTerm, z2space
 export AbstractGMPS, AbstractFiniteGMPS, GrassmannMPS, SparseGMPS, togmps, scaling, setscaling!, randomgmps, increase_bond!
 export iscanonical, isleftcanonical, isrightcanonical
-export mult!, mult, DMRGMult1, DMRGMult2, DMRGMultAlgorithm
+export mult!, mult, DMRG1, DMRG2, DMRGMultAlgorithm
 export GrassmannTransferMatrix
 export randomfockmps
 
@@ -100,7 +100,6 @@ export ExponentialExpansionAlgorithm, DMRGAlgorithm
 export timeevompo, WI, WII, ComplexStepper, FirstOrderStepper, complex_stepper
 export bond_dimension, bond_dimensions, distance, space_l, space_r, l_LL, r_RR, bondtensortype
 export Orthogonalize
-export stable_tsvd, stable_tsvd!
 export ExponentialExpansionAlgorithm, AbstractPronyExpansion, DeterminedPronyExpansion, PronyExpansion
 export PronyExpansion2, LsqExpansion2
 
@@ -108,7 +107,7 @@ export PronyExpansion2, LsqExpansion2
 
 using Base: @boundscheck, @propagate_inbounds
 using Logging: @warn
-using Permutations, Reexport, TupleTools, Strided, Statistics
+using Reexport, TupleTools, Strided
 using Serialization
 using Z2Tensors
 using Z2Tensors: Z2Tensors, QR, SVD, LQ, AdjointTensorMap, NoTruncation, TruncationDimCutoff

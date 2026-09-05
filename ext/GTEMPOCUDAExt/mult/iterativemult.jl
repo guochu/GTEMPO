@@ -42,12 +42,12 @@ cu_compute!(env::GMPSIterativeMultCache, alg::CuDMRGMultAlgorithm) = iterative_c
 
 GTEMPO.sweep!(m::GMPSIterativeMultCache, alg::CuDMRGMultAlgorithm) = vcat(leftsweep!(m, alg), rightsweep!(m, alg))
 
-function GTEMPO.finalize!(m::GMPSIterativeMultCache, alg::CuDMRGMult1)
+function GTEMPO.finalize!(m::GMPSIterativeMultCache, alg::CuDMRG1)
     leftsweep!(m, alg)
     rightsweep_final!(m, alg)
     # rightsweep!(m, alg)
 end
-function leftsweep!(m::GMPSIterativeMultCache, alg::CuDMRGMult1)
+function leftsweep!(m::GMPSIterativeMultCache, alg::CuDMRG1)
     z, x, y = m.z, m.x, m.y
     hstorage = m.hstorage
     L = length(z)
@@ -72,7 +72,7 @@ function leftsweep!(m::GMPSIterativeMultCache, alg::CuDMRGMult1)
     return kvals    
 end
 
-function rightsweep!(m::GMPSIterativeMultCache, alg::CuDMRGMult1)
+function rightsweep!(m::GMPSIterativeMultCache, alg::CuDMRG1)
     z, x, y = m.z, m.x, m.y
     hstorage = m.hstorage
     L = length(z)
@@ -102,7 +102,7 @@ function rightsweep!(m::GMPSIterativeMultCache, alg::CuDMRGMult1)
     return kvals    
 end
 
-function rightsweep_final!(m::GMPSIterativeMultCache, alg::CuDMRGMult1)
+function rightsweep_final!(m::GMPSIterativeMultCache, alg::CuDMRG1)
     z, x, y = m.z, m.x, m.y
     hstorage = m.hstorage
     L = length(z)
@@ -118,7 +118,7 @@ function rightsweep_final!(m::GMPSIterativeMultCache, alg::CuDMRGMult1)
         push!(kvals, norm(mpsj))
         (alg.verbosity >= 3) && println("residual is $(kvals[end])...")
 
-        u, s, v = stable_tsvd(mpsj, (1,), (2,3), trunc=trunc)
+        u, s, v, _ = tsvd(mpsj, (1,), (2,3); alg=SDD(), trunc=trunc)
         v = permute(v, (1,2), (3,))
         z[site] = fromcu(v)
         if site == 2
@@ -149,7 +149,7 @@ function _cu_svd_guess!(x::GrassmannMPS, y::GrassmannMPS, D::Int)
     trunc = truncdim(D)
     tmp4 = tocu(tmp4)
     for i in 1:length(x)-1
-        u, s, v = stable_tsvd!(tmp4, trunc=trunc)
+        u, s, v, _ = tsvd(tmp4; alg=SDD(), trunc=trunc)
         x[i] = fromcu(u)
         _renormalize!(x, s, false)
         r = s * v

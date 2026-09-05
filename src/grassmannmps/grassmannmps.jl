@@ -241,7 +241,7 @@ end
 # 		end
 # 	end
 # 	@tensor twositemps1[1,3;4,5] := x.data.s[bond][1,2] * twositemps[2,3,4,5]
-# 	u, s, v, err = stable_tsvd!(twositemps1; trunc=trunc)
+# 	u, s, v, err = tsvd(twositemps1; alg=SDD(), trunc=trunc)
 # 	x.data.s[bond+1] = s
 # 	x[bond] = twositemps * v' 
 # 	x[bond+1] = permute(v, (1,2), (3,))
@@ -297,7 +297,7 @@ end
 
 function _swap_gate(m1, m2; trunc)
 	@grassmann twositemps[1,4;2,5] := m1[1,2,3] * m2[3,4,5]
-	u, s, v, err = stable_tsvd!(twositemps; trunc=trunc)
+	u, s, v, err = tsvd(twositemps; alg=SDD(), trunc=trunc)
 	# restore the site tensor: single permute does not cancel (no pre-twist),
 	# hence the fermionic permute must be kept (via @grassmann)
 	@grassmann v2[1 2; 3] := v[1,2,3]
@@ -308,7 +308,7 @@ function _swap_gate(svectorj1, m1, svectorj2, m2; trunc::TruncationScheme)
 	@grassmann twositemps[1,4;2,5] := m1[1,2,3] * m2[3,4,5]
 	# println(space(svectorj1, 2), " ", space(m1, 1))
 	@grassmann twositemps1[-1 -2; -3 -4] := svectorj1[-1, 1] * twositemps[1, -2, -3, -4]
-	u, s, v, err = stable_tsvd!(twositemps1, trunc=trunc)
+	u, s, v, err = tsvd(twositemps1; alg=SDD(), trunc=trunc)
 	# ket-bra (coefficient) contraction: bosonic, no fermionic twist
 	@tensor u[-1 -2; -3] = twositemps[-1,-2,1,2] * conj(v[-3,1,2])
 	# restore the site tensor: single permute does not cancel (no pre-twist),

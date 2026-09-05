@@ -60,8 +60,8 @@ ExactTranslationInvariantIF(; algexpan::ExponentialExpansionAlgorithm=PronyExpan
 # :no, no order
 
 # temporary solution
-changetrunc(x::DMRGMult1; trunc=x.trunc) = similar(x, trunc=trunc)
-changetrunc(x::DMRGMult2; trunc=x.trunc) = similar(x, trunc=trunc)
+changetrunc(x::DMRG1; trunc=x.trunc) = similar(x, trunc=trunc)
+changetrunc(x::DMRG2; trunc=x.trunc) = similar(x, trunc=trunc)
 changetrunc(x::SVDCompression; trunc=x.trunc) = similar(x, D=trunc.D, tol=trunc.ϵ)
 
 

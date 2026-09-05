@@ -89,7 +89,7 @@ function main2(t; β=5, δτ=0.1, δt = 0.1, chi=60, chi2=4*chi)
 
 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
 	trunc2 = truncdimcutoff(D=chi2, ϵ=1.0e-10, add_back=0)
-	algmult = DMRGMult1(trunc=trunc2)
+	algmult = DMRG1(trunc=trunc2)
 
 	lattice = GrassmannLattice(Nτ=Nτ, δτ=δτ, Nt=Nt, δt=δt, bands=2*norb, contour=:Kadanoff)
 	lattice1 = similar(lattice, bands=1)

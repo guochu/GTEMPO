@@ -96,8 +96,8 @@ end
 
 			Z = integrate(lattice, mpsK, mpsI)
 
-			n1 = [occupation(lattice, i, mpsK, mpsI, Z=Z) for i in 1:lattice.k-1]
-			n2 = [occupation2(lattice, i, mpsK, mpsI, Z=Z) for i in 1:lattice.k-1]
+			n1 = [occupation2(lattice, i, mpsK, mpsI, Z=Z) for i in 1:lattice.k-1]
+			n2 = [occupation(lattice, i, mpsK, mpsI, Z=Z) for i in 1:lattice.k-1]
 			@test norm(n1 - n2) / norm(n1) < rtol
 
 
@@ -155,7 +155,7 @@ end
 			@test norm(g2) / length(g2) < rtol
 
 			n1 = [cached_occupation(lattice, i, mpsK, mpsI, cache=cache) for i in 1:lattice.k-1]
-			n2 = [occupation2(lattice, i, mpsK, mpsI, branch=:+, Z=Zvalue(cache)) for i in 1:lattice.k-1]
+			n2 = [occupation(lattice, i, mpsK, mpsI, branch=:+, Z=Zvalue(cache)) for i in 1:lattice.k-1]
 			@test norm(n1 - n2) / norm(n1) < rtol
 
 			n1 = [real(cached_nn2(lattice, i, 2, mpsK, mpsI, b1=:+, b2=:-, cache=cache)) for i in 1:lattice.k-1]
@@ -291,7 +291,7 @@ end
 			for band in 1:lattice.bands
 				n1 = 1-Gτ(lattice, 1, mpsKs, band=band)
 				for i in 1:lattice_r.N
-					n2 = occupation(lattice_r, i, mps, band=band)
+					n2 = occupation2(lattice_r, i, mps, band=band)
 					@test abs((n2-n1)/n1) < 1.0e-2
 				end
 			end
@@ -329,7 +329,7 @@ end
 			for band in 1:lattice.bands
 				n1 = 1-Gτ(lattice, 1, mpsKs, band=band)
 				for i in 1:lattice_r.N
-					n2 = occupation(lattice_r, i, mps, band=band)
+					n2 = occupation2(lattice_r, i, mps, band=band)
 					@test abs((n2-n1)/n1) < 1.0e-2
 				end
 			end
@@ -370,7 +370,7 @@ end
 		for band in 1:lattice.bands
 			n1 = 1-Gτ(lattice, 1, mpsKs, band=band)
 			for i in 1:lattice_r.N
-				n2 = occupation(lattice_r, i, mps, band=band)
+				n2 = occupation2(lattice_r, i, mps, band=band)
 				@test abs((n2-n1)/n1) < 1.0e-2
 			end
 		end
@@ -436,7 +436,7 @@ end
 			mpsI = boundarycondition(mpsI, lattice)
 			mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
 
-			ns2 = occupation(lattice, mpsK, mpsI)
+			ns2 = occupation2(lattice, mpsK, mpsI)
 			currents2 = electriccurrent(lattice, corr, mpsK, mpsI)
 			@test norm(ns-ns2) / norm(ns) < rtol
 			@test norm(currents - currents2) / norm(currents) < rtol
@@ -459,7 +459,7 @@ end
 				mpsI = hybriddynamicsstepper(mpsI, lattice, corr, trunc=trunc)
 				mpsI′ = boundarycondition(mpsI, lattice)
 				mpsK = sysdynamicsstepper!(mpsK, lattice, exact_model, trunc=trunc)
-				ns2[k-1] = occupation(lattice, k-1, mpsK, mpsI′)
+				ns2[k-1] = occupation2(lattice, k-1, mpsK, mpsI′)
 				currents2[k-1] = electriccurrent_fast(lattice, corr, k, mpsK, mpsI′)
 			end
 			@test norm(ns-ns2) / norm(ns) < rtol
@@ -525,7 +525,7 @@ end
 	mpsI = boundarycondition(boundarycondition(mpsI, lattice, band=1), lattice, band=2)
 	mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
 
-	ns = occupation(lattice, mpsK, mpsI)
+	ns = occupation2(lattice, mpsK, mpsI)
 	currents_left = [electriccurrent(lattice, leftcorr, k+1, mpsK, mpsI) for k in 1:N]
 	currents_right = [electriccurrent(lattice, rightcorr, k+1, mpsK, mpsI) for k in 1:N]
 	# TEMPO, order AĀBB̄

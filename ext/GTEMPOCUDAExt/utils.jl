@@ -8,15 +8,15 @@ CuSVDCompression(args...; kwargs...) = Cu(SVDCompression(args...; kwargs...))
 
 abstract type CuDMRGMultAlgorithm <: DMRGAlgorithm end
 
-struct CuDMRGMult1 <: CuDMRGMultAlgorithm
-    parent::DMRGMult1
-	CuDMRGMult1(alg::DMRGMult1) = new(alg)
+struct CuDMRG1 <: CuDMRGMultAlgorithm
+    parent::DMRG1
+	CuDMRG1(alg::DMRG1) = new(alg)
 end
-Cu(alg::DMRGMult1) = CuDMRGMult1(alg)
-CuDMRGMult1(args...; kwargs...) = Cu(DMRGMult1(args...; kwargs...))
+Cu(alg::DMRG1) = CuDMRG1(alg)
+CuDMRG1(args...; kwargs...) = Cu(DMRG1(args...; kwargs...))
 
 
-CuAlgs = Union{CuSVDCompression, CuDMRGMult1}
+CuAlgs = Union{CuSVDCompression, CuDMRG1}
 function Base.getproperty(x::CuAlgs, s::Symbol)
 	return s === :parent ? getfield(x, s) : getproperty(getfield(x, :parent), s)
 end
@@ -49,8 +49,8 @@ function _cu_rightorth!(psi::GrassmannMPS, alg::SVD, trunc::TruncationScheme, no
 	psii = tocu(psi[end])
 	for i in L:-1:2
 		# single-site operation: fermionic twist + restore cancel exactly,
-		# so the plain bosonic stable_tsvd! on the permuted tensor is identical
-		u, s, v, err = stable_tsvd!(permute(psii, (1,), (2, 3); copy=true), trunc=trunc)
+		# so the plain bosonic tsvd on the permuted tensor is identical
+		u, s, v, err = tsvd(permute(psii, (1,), (2, 3); copy=true); alg=SDD(), trunc=trunc)
 		psi[i] = fromcu(permute(v, (1, 2), (3,); copy=true))
 		nr = _renormalize!(psi, s, normalize)
 		rerror = sqrt(err * err / (nr * nr + err * err))

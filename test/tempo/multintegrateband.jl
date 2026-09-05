@@ -15,7 +15,7 @@ println("------------------------------------")
 	trunc = truncdimcutoff(D=300, ϵ=1.0e-6, add_back=0)
 
 	trunc2 = truncdimcutoff(D=300, ϵ=1.0e-10, add_back=0)
-	algmults = [SVDCompression(trunc2), DMRGMult1(trunc=trunc2, verbosity=1, maxiter=5)]
+	algmults = [SVDCompression(trunc2), DMRG1(trunc=trunc2, verbosity=1, maxiter=5)]
 
 	bath1 = fermionicbath(spectrum_func(), β=β, μ=0)
 	corr1 = Δτ(bath1, N=N, δτ=δτ)
@@ -47,7 +47,7 @@ end
 	trunc = truncdimcutoff(D=100, ϵ=1.0e-10, add_back=0)
 	
 	trunc2 = truncdimcutoff(D=300, ϵ=1.0e-10, add_back=0)
-	algmults = [SVDCompression(trunc2), DMRGMult1(trunc=trunc2, verbosity=1, maxiter=5)]
+	algmults = [SVDCompression(trunc2), DMRG1(trunc=trunc2, verbosity=1, maxiter=5)]
 
 	bath1 = fermionicbath(spectrum_func(), β=β, μ=0.)
 	corr1 = Δt(bath1, N=N, t=t)
@@ -85,7 +85,7 @@ end
 	trunc = truncdimcutoff(D=100, ϵ=1.0e-10, add_back=0)
 	
 	trunc2 = truncdimcutoff(D=300, ϵ=1.0e-10, add_back=0)
-	algmults = [SVDCompression(trunc2), DMRGMult1(trunc=trunc2, verbosity=1, maxiter=5)]
+	algmults = [SVDCompression(trunc2), DMRG1(trunc=trunc2, verbosity=1, maxiter=5)]
 
 	bath1 = fermionicbath(spectrum_func(), β=β, μ=0)
 	corr1 = Δm(bath1, Nτ=N, Nt=Nt, t=t)

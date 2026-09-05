@@ -52,13 +52,9 @@ function stable_svd!(a::StridedArray{T, 2}, workspace::AbstractVector{T}) where 
     end
     ac = reshape(view(workspace, 1:length(a)), size(a))
     copy!(ac, a)
-    try
-        # return TK.MatrixAlgebra.svd!(ac, TK.SDD())
-        return TK._svd!(ac, TK.SDD())
-    catch
-        # return TK.MatrixAlgebra.svd!(a, SVD())
-        return TK._svd!(a, SVD())
-    end
+    # SDD is SafeDivideAndConquer in Z2Tensors: it falls back to the QR
+    # iteration algorithm internally, no try/catch needed here
+    return TK._svd!(ac, TK.SDD())
 end
 
 function TK.tsvd!(a::StridedArray{T, 2}, workspace::AbstractVector{T}=similar(a, length(a)); trunc::TruncationScheme=NoTruncation()) where {T}

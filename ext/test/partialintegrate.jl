@@ -19,7 +19,7 @@ end
 	trunc1 = truncdimcutoff(D=1024, ϵ=1.0e-10)
 	trunc2 = truncdimcutoff(D=500, ϵ=1.0e-10)
     alg1 = CuSVDCompression(trunc2)
-    alg2 = CuDMRGMult1(trunc2, initguess=:svd, maxiter=5, verbosity=0)
+    alg2 = CuDMRG1(trunc2, initguess=:svd, maxiter=5, verbosity=0)
     algs = [alg1, alg2]
     algs = [alg2,]
 

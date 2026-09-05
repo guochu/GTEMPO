@@ -27,8 +27,7 @@ function GTerm(positions::NTuple{N, Int}; coeff::Number) where {N}
 	(N % 2 == 0) || throw(ArgumentError("only support even number of grassmann variables"))
 	p = sortperm([positions...])
 	positions = positions[p]
-	p = Permutation(p)
-	coeff *= sign(p)
+	coeff *= isodd(length(TK.permutation2swaps(p))) ? -1 : 1
 	new{N, typeof(coeff)}(positions, coeff)
 end
 end

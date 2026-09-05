@@ -89,14 +89,14 @@ function parint_iterativemult(xs::GrassmannMPS...; cidx::Vector{Int}, alg::DMRGM
     return z
 end
 
-compute!(env::PartialIntegrateIterativeMultCache, alg::DMRGMult1) = iterative_compute!(env, alg)
-sweep!(m::PartialIntegrateIterativeMultCache, alg::DMRGMult1) = vcat(leftsweep!(m, alg), rightsweep!(m, alg))
-function finalize!(m::PartialIntegrateIterativeMultCache, alg::DMRGMult1)
+compute!(env::PartialIntegrateIterativeMultCache, alg::DMRG1) = iterative_compute!(env, alg)
+sweep!(m::PartialIntegrateIterativeMultCache, alg::DMRG1) = vcat(leftsweep!(m, alg), rightsweep!(m, alg))
+function finalize!(m::PartialIntegrateIterativeMultCache, alg::DMRG1)
     leftsweep!(m, alg)
     rightsweep_final!(m, alg)
 end
 
-function leftsweep!(m::PartialIntegrateIterativeMultCache, alg::DMRGMult1)
+function leftsweep!(m::PartialIntegrateIterativeMultCache, alg::DMRG1)
     z, xs, cidx, hstorage = m.o, m.xs, m.cidx, m.hstorage
 
     Lxs = length(xs[1])
@@ -133,7 +133,7 @@ function leftsweep!(m::PartialIntegrateIterativeMultCache, alg::DMRGMult1)
     return kvals    
 end
 
-function rightsweep!(m::PartialIntegrateIterativeMultCache, alg::DMRGMult1)
+function rightsweep!(m::PartialIntegrateIterativeMultCache, alg::DMRG1)
     z, xs, cidx, hstorage = m.o, m.xs, m.cidx, m.hstorage
     Lxs = length(xs[1])
     ixs = findlast(x->!insorted(x, cidx), 1:2:Lxs) * 2
@@ -171,7 +171,7 @@ function rightsweep!(m::PartialIntegrateIterativeMultCache, alg::DMRGMult1)
 end
 
 # TODO; check svectors
-function rightsweep_final!(m::PartialIntegrateIterativeMultCache, alg::DMRGMult1)
+function rightsweep_final!(m::PartialIntegrateIterativeMultCache, alg::DMRG1)
     z, xs, cidx, hstorage = m.o, m.xs, m.cidx, m.hstorage
     trunc = alg.trunc
 
@@ -194,7 +194,7 @@ function rightsweep_final!(m::PartialIntegrateIterativeMultCache, alg::DMRGMult1
     
             push!(kvals, norm(mpsj))
             (alg.verbosity >= 3) && println("residual is $(kvals[end])...")
-            u, s, v = stable_tsvd(mpsj, (1,), (2,3), trunc=trunc)
+            u, s, v, _ = tsvd(mpsj, (1,), (2,3); alg=SDD(), trunc=trunc)
             z[iz] = permute(v, (1,2), (3,))
             z.s[iz] = normalize!(s)
 
@@ -242,7 +242,7 @@ function _parint_svd_guess(xs::GrassmannMPS...; cidx::Vector{Int}, trunc::Trunca
 		else
             tmp = get_left_below(left, getindex.(xs, ixs)...)
             # z[iz], left = leftorth!(tmp, alg=QR())
-            z[iz], s, v = stable_tsvd!(tmp, trunc=trunc)
+            z[iz], s, v, _ = tsvd(tmp; alg=SDD(), trunc=trunc)
             left = s * v
             iz += 1
             ixs += 1

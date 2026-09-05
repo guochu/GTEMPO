@@ -177,7 +177,7 @@ function swap_left(a::AbstractParityTensorMap{<:Number, 3, 1}, b::AbstractParity
 	# 	end
 	# end
 	tmp3 = g_fuse(tmp2, 2)
-	u, s, v, err = stable_tsvd!(tmp3; trunc=trunc)
+	u, s, v, err = tsvd(tmp3; alg=SDD(), trunc=trunc)
 	sv = s * v
 	# restore the site tensor: single fermionic permute (via @grassmann)
 	@grassmann v2[1 2; 3] := sv[1,2,3]

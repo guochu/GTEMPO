@@ -7,9 +7,9 @@ println("------------------------------------")
 	chi = 20
 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10)
 	alg1 = CuSVDCompression(trunc)
-	alg2 = CuDMRGMult1(trunc, initguess=:svd)
-	alg3 = CuDMRGMult1(trunc, initguess=:rand, maxiter=10)
-	alg4 = CuDMRGMult1(trunc, initguess=:pre, maxiter=10)
+	alg2 = CuDMRG1(trunc, initguess=:svd)
+	alg3 = CuDMRG1(trunc, initguess=:rand, maxiter=10)
+	alg4 = CuDMRG1(trunc, initguess=:pre, maxiter=10)
 	algs = [alg1, alg2, alg3, alg4]
 	tol = 1.0e-7
 	for T in (Float64, ComplexF64)

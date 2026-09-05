@@ -256,7 +256,7 @@ end
 	for band in 1:lattice.bands
 		K = boundarycondition(K, lattice, band=band)
 	end
-	n0 = occupation(lattice, K, band=1)
+	n0 = occupation2(lattice, K, band=1)
 
 	for ordering in [A1Ā1a1ā1B1B̄1b1b̄1(), A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2(), A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2()]
 		lattice = GrassmannLattice(δt=δt, N=N, bands=2, contour=:real, ordering=ordering)
@@ -266,7 +266,7 @@ end
 			K = boundarycondition(K, lattice, band=band)
 		end
 		for band in 1:lattice.bands
-			n2 = occupation(lattice, K, band=band)	
+			n2 = occupation2(lattice, K, band=band)	
 			@test norm(n2-n0) / norm(n0) < tol
 		end		
 	end

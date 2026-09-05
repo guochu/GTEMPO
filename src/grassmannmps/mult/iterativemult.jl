@@ -5,7 +5,7 @@ abstract type DMRGMultAlgorithm <: DMRGAlgorithm end
 
 const AllowedInitGuesses = (:svd, :pre, :rand)
 
-struct DMRGMult1 <: DMRGMultAlgorithm
+struct DMRG1 <: DMRGMultAlgorithm
     trunc::TruncationDimCutoff 
     maxiter::Int
     tol::Float64 
@@ -13,16 +13,16 @@ struct DMRGMult1 <: DMRGMultAlgorithm
     verbosity::Int 
     callback::Function
 end
-function DMRGMult1(trunc::TruncationDimCutoff; maxiter::Int=5, tol::Float64=1.0e-12, initguess::Symbol=:svd, verbosity::Int=0, callback::Function=Returns(nothing))
+function DMRG1(trunc::TruncationDimCutoff; maxiter::Int=5, tol::Float64=1.0e-12, initguess::Symbol=:svd, verbosity::Int=0, callback::Function=Returns(nothing))
     (initguess in AllowedInitGuesses) || throw(ArgumentError("initguess must be one of $(AllowedInitGuesses)"))
-    return DMRGMult1(trunc, maxiter, tol, initguess, verbosity, callback)
+    return DMRG1(trunc, maxiter, tol, initguess, verbosity, callback)
 end 
-DMRGMult1(; trunc::TruncationDimCutoff=DefaultITruncation, kwargs...) = DMRGMult1(trunc; kwargs...)
-Base.similar(x::DMRGMult1; trunc::TruncationDimCutoff=x.trunc, maxiter::Int=x.maxiter, tol::Float64=x.tol, initguess::Symbol=x.initguess, verbosity::Int=x.verbosity, callback=x.callback) = DMRGMult1(
+DMRG1(; trunc::TruncationDimCutoff=DefaultITruncation, kwargs...) = DMRG1(trunc; kwargs...)
+Base.similar(x::DMRG1; trunc::TruncationDimCutoff=x.trunc, maxiter::Int=x.maxiter, tol::Float64=x.tol, initguess::Symbol=x.initguess, verbosity::Int=x.verbosity, callback=x.callback) = DMRG1(
             trunc=trunc, maxiter=maxiter, tol=tol, initguess=initguess, verbosity=verbosity, callback=callback)
 
 
-struct DMRGMult2 <: DMRGMultAlgorithm
+struct DMRG2 <: DMRGMultAlgorithm
     trunc::TruncationDimCutoff 
     maxiter::Int
     tol::Float64 
@@ -30,12 +30,12 @@ struct DMRGMult2 <: DMRGMultAlgorithm
     verbosity::Int 
 end
 
-function DMRGMult2(trunc::TruncationDimCutoff; maxiter::Int=5, tol::Float64=1.0e-12, initguess::Symbol=:svd, verbosity::Int=0)
+function DMRG2(trunc::TruncationDimCutoff; maxiter::Int=5, tol::Float64=1.0e-12, initguess::Symbol=:svd, verbosity::Int=0)
     (initguess in AllowedInitGuesses) || throw(ArgumentError("initguess must be one of $(AllowedInitGuesses)"))
-    return DMRGMult2(trunc, maxiter, tol, initguess, verbosity)
+    return DMRG2(trunc, maxiter, tol, initguess, verbosity)
 end 
-DMRGMult2(; trunc::TruncationDimCutoff=DefaultITruncation, kwargs...) = DMRGMult2(trunc; kwargs...)
-Base.similar(x::DMRGMult2; trunc::TruncationDimCutoff=x.trunc, maxiter::Int=x.maxiter, tol::Float64=x.tol, initguess::Symbol=x.initguess, verbosity::Int=x.verbosity) = DMRGMult2(
+DMRG2(; trunc::TruncationDimCutoff=DefaultITruncation, kwargs...) = DMRG2(trunc; kwargs...)
+Base.similar(x::DMRG2; trunc::TruncationDimCutoff=x.trunc, maxiter::Int=x.maxiter, tol::Float64=x.tol, initguess::Symbol=x.initguess, verbosity::Int=x.verbosity) = DMRG2(
             trunc=trunc, maxiter=maxiter, tol=tol, initguess=initguess, verbosity=verbosity)
 
 
@@ -123,16 +123,20 @@ function iterative_compute!(m, alg)
     finalize!(m ,alg)
     return kvals
 end
-iterative_error_2(m::AbstractVector) = std(m) / abs(mean(m))
+function iterative_error_2(m::AbstractVector)
+    μ = sum(m) / length(m)
+    σ = sqrt(sum(abs2(x - μ) for x in m) / (length(m) - 1))
+    return σ / abs(μ)
+end
 
 sweep!(m::GMPSIterativeMultCache, alg::DMRGMultAlgorithm) = vcat(leftsweep!(m, alg), rightsweep!(m, alg))
 
 function finalize!(m::GMPSIterativeMultCache, alg::DMRGMultAlgorithm) end
-function finalize!(m::GMPSIterativeMultCache, alg::DMRGMult1)
+function finalize!(m::GMPSIterativeMultCache, alg::DMRG1)
     leftsweep!(m, alg)
     rightsweep_final!(m, alg)
 end
-function leftsweep!(m::GMPSIterativeMultCache, alg::DMRGMult1)
+function leftsweep!(m::GMPSIterativeMultCache, alg::DMRG1)
     z, x, y = m.z, m.x, m.y
     hstorage = m.hstorage
     L = length(z)
@@ -155,7 +159,7 @@ function leftsweep!(m::GMPSIterativeMultCache, alg::DMRGMult1)
     return kvals    
 end
 
-function rightsweep!(m::GMPSIterativeMultCache, alg::DMRGMult1)
+function rightsweep!(m::GMPSIterativeMultCache, alg::DMRG1)
     z, x, y = m.z, m.x, m.y
     hstorage = m.hstorage
     L = length(z)
@@ -183,7 +187,7 @@ function rightsweep!(m::GMPSIterativeMultCache, alg::DMRGMult1)
     return kvals    
 end
 
-function rightsweep_final!(m::GMPSIterativeMultCache, alg::DMRGMult1)
+function rightsweep_final!(m::GMPSIterativeMultCache, alg::DMRG1)
     z, x, y = m.z, m.x, m.y
     hstorage = m.hstorage
     L = length(z)
@@ -199,14 +203,14 @@ function rightsweep_final!(m::GMPSIterativeMultCache, alg::DMRGMult1)
         push!(kvals, norm(mpsj))
         (alg.verbosity >= 3) && println("residual is $(kvals[end])...")
 
-        u, s, v = stable_tsvd(mpsj, (1,), (2,3), trunc=trunc)
+        u, s, v, _ = tsvd(mpsj, (1,), (2,3); alg=SDD(), trunc=trunc)
         z[site] = permute(v, (1,2), (3,))
         if site == 2
             r = u * s
             z[1] = @tensor tmp[1,2;4] := z[1][1,2,3] * r[3,4]
         end
         z.s[site] = normalize!(s)
-        
+
         # hstorage[site] = updatemultright(hstorage[site+1], z[site], x[site], y[site])
         @tensor tmp[4,5;1] := conj(z[site][1,2,3]) * xy_right[4,5,2,3]
         hstorage[site] = tmp
@@ -215,7 +219,7 @@ function rightsweep_final!(m::GMPSIterativeMultCache, alg::DMRGMult1)
     return kvals    
 end
 
-function leftsweep!(m::GMPSIterativeMultCache, alg::DMRGMult2)
+function leftsweep!(m::GMPSIterativeMultCache, alg::DMRG2)
     z, x, y = m.z, m.x, m.y
     hstorage = m.hstorage
     L = length(z)
@@ -226,14 +230,14 @@ function leftsweep!(m::GMPSIterativeMultCache, alg::DMRGMult2)
         twositemps = g_ac_prime2(x[site], x[site+1], y[site], y[site+1], hstorage[site], hstorage[site+2])
         push!(kvals, norm(twositemps))
         (alg.verbosity >= 3) && println("residual is $(kvals[end])...")
-        u, s, v = stable_tsvd!(twositemps, trunc=trunc)
+        u, s, v, _ = tsvd(twositemps; alg=SDD(), trunc=trunc)
         z[site] = u
         hstorage[site+1] = updatemultleft(hstorage[site], z[site], x[site], y[site])
     end
     return kvals    
 end
 
-function rightsweep!(m::GMPSIterativeMultCache, alg::DMRGMult2)
+function rightsweep!(m::GMPSIterativeMultCache, alg::DMRG2)
     z, x, y = m.z, m.x, m.y
     hstorage = m.hstorage
     L = length(z)
@@ -244,7 +248,7 @@ function rightsweep!(m::GMPSIterativeMultCache, alg::DMRGMult2)
         twositemps = g_ac_prime2(x[site], x[site+1], y[site], y[site+1], hstorage[site], hstorage[site+2])
         push!(kvals, norm(twositemps))
         (alg.verbosity >= 3) && println("residual is $(kvals[end])...")
-        u, s, v = stable_tsvd!(twositemps, trunc=trunc)
+        u, s, v, _ = tsvd(twositemps; alg=SDD(), trunc=trunc)
         z[site+1] = permute(v, (1,2), (3,))
         if site == 1
             z[1] = u * s
@@ -265,7 +269,7 @@ function _svd_guess!(x::GrassmannMPS, y::GrassmannMPS, D::Int)
     @grassmann tmp4[1,4;5,6] := left[1,2,3] * tmp5[2,3,4,5,6]
     trunc = truncdim(D)
     for i in 1:length(x)-1
-        u, s, v = stable_tsvd!(tmp4, trunc=trunc)
+        u, s, v, _ = tsvd(tmp4; alg=SDD(), trunc=trunc)
         x[i] = u
         _renormalize!(x, s, false)
         r = s * v
@@ -283,13 +287,9 @@ end
 
 function g_ac_prime(xj::MPSTensor, yj::MPSTensor, left::MPSTensor, right::MPSTensor)
     @tensor tmp1[1,5,4;2] := left[1,2,3] * yj[3,4,5]
-    compensate_twist!(tmp1, 2, 4)
-    compensate_twist!(tmp1, 3, 4)
-    compensate_twist!(tmp1, 2, 3)
+    compensate_twists!(tmp1, (2, 4), (3, 4), (2, 3))
     @tensor tmp2[1,3,5;6,2] := tmp1[1,2,3,4] * xj[4,5,6]
-    compensate_twist!(tmp2, 2, 5)
-    compensate_twist!(tmp2, 3, 5)
-    compensate_twist!(tmp2, 4, 5)
+    compensate_twists!(tmp2, (2, 5), (3, 5), (4, 5))
     tmp3 = g_fuse(tmp2, 2)
     @tensor tmp2[1,2;5] := tmp3[1,2,3,4] * right[4,3,5]
     return tmp2
@@ -301,23 +301,17 @@ end
 
 function g_ac_prime2(xj1::MPSTensor, xj2::MPSTensor, yj1::MPSTensor, yj2::MPSTensor, left::MPSTensor, right::MPSTensor)
     @tensor tmp1[1,5,4;2] := left[1,2,3] * yj1[3,4,5]
-    compensate_twist!(tmp1, 2, 4)
-    compensate_twist!(tmp1, 3, 4)
-    compensate_twist!(tmp1, 2, 3)
+    compensate_twists!(tmp1, (2, 4), (3, 4), (2, 3))
     @tensor tmp2[1,3,5;6,2] := tmp1[1,2,3,4] * xj1[4,5,6]
-    compensate_twist!(tmp2, 2, 5)
-    compensate_twist!(tmp2, 3, 5)
-    compensate_twist!(tmp2, 4, 5)
+    compensate_twists!(tmp2, (2, 5), (3, 5), (4, 5))
 
     tmp3 = g_fuse(tmp2, 2)
 
 
     @tensor tmp4[4; 1 2 5] := yj2[1,2,3] * right[3,4,5]
-    compensate_twist!(tmp4, 1, 2)
-    compensate_twist!(tmp4, 1, 3)
+    compensate_twists!(tmp4, (1, 2), (1, 3))
     @tensor tmp5[4 1 2 5; 6] := xj2[1,2,3] * tmp4[3,4,5,6]
-    compensate_twist!(tmp5, 1, 2)
-    compensate_twist!(tmp5, 1, 3)
+    compensate_twists!(tmp5, (1, 2), (1, 3))
     tmp4 = g_fuse(tmp5, 3)
 
 
@@ -327,13 +321,9 @@ end
 
 function updatemultleft(left::MPSTensor, zj::MPSTensor, xj::MPSTensor, yj::MPSTensor)
     @tensor tmp1[1,5,4;2] := left[1,2,3] * yj[3,4,5]
-    compensate_twist!(tmp1, 2, 4)
-    compensate_twist!(tmp1, 3, 4)
-    compensate_twist!(tmp1, 2, 3)
+    compensate_twists!(tmp1, (2, 4), (3, 4), (2, 3))
     @tensor tmp2[1,3,5;6,2] := tmp1[1,2,3,4] * xj[4,5,6]
-    compensate_twist!(tmp2, 2, 5)
-    compensate_twist!(tmp2, 3, 5)
-    compensate_twist!(tmp2, 4, 5)
+    compensate_twists!(tmp2, (2, 5), (3, 5), (4, 5))
     tmp3 = g_fuse(tmp2, 2)
     @tensor tmp2[5,3;4] := tmp3[1,2,3,4] * conj(zj[1,2,5])
     # for (f1, f2) in fusiontrees(tmp2)
@@ -350,11 +340,9 @@ end
 
 function updatemultright(right::MPSTensor, zj::MPSTensor, xj::MPSTensor, yj::MPSTensor)
     @tensor tmp1[4; 1 2 5] := yj[1,2,3] * right[3,4,5]
-    compensate_twist!(tmp1, 1, 2)
-    compensate_twist!(tmp1, 1, 3)
+    compensate_twists!(tmp1, (1, 2), (1, 3))
     @tensor tmp2[4 1 2 5; 6] := xj[1,2,3] * tmp1[3,4,5,6]
-    compensate_twist!(tmp2, 1, 2)
-    compensate_twist!(tmp2, 1, 3)
+    compensate_twists!(tmp2, (1, 2), (1, 3))
     tmp3 = g_fuse(tmp2, 3)
     @tensor tmp2[4,5;1] := conj(zj[1,2,3]) * tmp3[4,5,2,3]
     

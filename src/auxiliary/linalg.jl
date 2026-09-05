@@ -11,23 +11,6 @@ end
 _distance(x, y) = sqrt(_distance2(x, y))
 
 
-function stable_tsvd(m::AbstractTensorMap, args...; trunc::TruncationScheme=NoTruncation())
-	try
-		return tsvd(m, args...; trunc=trunc, alg=TK.SDD())
-	catch
-		return tsvd(m, args...; trunc=trunc, alg=TK.SVD())
-	end
-end
-
-function stable_tsvd!(m::AbstractTensorMap; trunc::TruncationScheme=NoTruncation())
-	try
-		return tsvd!(copy(m), trunc=trunc, alg=TK.SDD())
-	catch
-		return tsvd!(m, trunc=trunc, alg=TK.SVD())
-	end
-end
-
-
 # loose_isometry(cod::TensorSpace, dom::TensorSpace) =
 #     loose_isometry(Matrix{Float64}, cod, dom)
 # loose_isometry(P::TensorSpace) = loose_isometry(codomain(P), domain(P))

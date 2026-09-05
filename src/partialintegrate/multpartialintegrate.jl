@@ -75,9 +75,9 @@ function multintegrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y
 end
 
 
-compute!(env::IntegrateBandIterativeMultCache, alg::DMRGMult1) = iterative_compute!(env, alg)
-sweep!(m::IntegrateBandIterativeMultCache, alg::DMRGMult1) = vcat(leftsweep!(m, alg), rightsweep!(m, alg))
-function finalize!(m::IntegrateBandIterativeMultCache, alg::DMRGMult1)
+compute!(env::IntegrateBandIterativeMultCache, alg::DMRG1) = iterative_compute!(env, alg)
+sweep!(m::IntegrateBandIterativeMultCache, alg::DMRG1) = vcat(leftsweep!(m, alg), rightsweep!(m, alg))
+function finalize!(m::IntegrateBandIterativeMultCache, alg::DMRG1)
     leftsweep!(m, alg)
     rightsweep_final!(m, alg)
 end
@@ -85,7 +85,7 @@ end
 
 
 
-function leftsweep!(m::IntegrateBandIterativeMultCache, alg::DMRGMult1)
+function leftsweep!(m::IntegrateBandIterativeMultCache, alg::DMRG1)
     z, x, y = m.z, m.x, m.y
     hstorage = m.hstorage
 
@@ -121,7 +121,7 @@ function leftsweep!(m::IntegrateBandIterativeMultCache, alg::DMRGMult1)
     return kvals    
 end
 
-function rightsweep!(m::IntegrateBandIterativeMultCache, alg::DMRGMult1)
+function rightsweep!(m::IntegrateBandIterativeMultCache, alg::DMRG1)
     z, x, y = m.z, m.x, m.y
     hstorage = m.hstorage
 
@@ -156,7 +156,7 @@ function rightsweep!(m::IntegrateBandIterativeMultCache, alg::DMRGMult1)
     return kvals
 end
 
-function rightsweep_final!(m::IntegrateBandIterativeMultCache, alg::DMRGMult1)
+function rightsweep_final!(m::IntegrateBandIterativeMultCache, alg::DMRG1)
     z, x, y = m.z, m.x, m.y
     hstorage = m.hstorage
 
@@ -175,7 +175,7 @@ function rightsweep_final!(m::IntegrateBandIterativeMultCache, alg::DMRGMult1)
         push!(kvals, norm(mpsj))
         (alg.verbosity > 1) && println("residual is $(kvals[end])...")
 
-        u, s, v = stable_tsvd(mpsj, (1,), (2,3), trunc=trunc)
+        u, s, v, _ = tsvd(mpsj, (1,), (2,3); alg=SDD(), trunc=trunc)
         z[site] = permute(v, (1,2), (3,))
         if site == 2
             r = u * s
@@ -227,7 +227,7 @@ function _integrateband_svd_guess(lattice::AbstractGrassmannLattice, x::Grassman
             @grassmann tmp2[1,3,5;6,2] := tmp1[1,2,3,4] * x[i][4,5,6]
             tmp3 = g_fuse(tmp2, 2)
 
-            u, s, v = stable_tsvd!(tmp3, trunc=trunc)
+            u, s, v, _ = tsvd(tmp3; alg=SDD(), trunc=trunc)
 			data[idx] = u
 			idx += 1
             left = s * v

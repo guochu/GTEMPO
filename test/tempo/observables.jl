@@ -18,7 +18,7 @@ println("------------------------------------")
 				Z = integrate(lattice, A, B)
 				for i in 1:lattice.k
 					for band in 1:lattice.bands
-						g1 = occupation(lattice, i, A, B, band=band, Z=Z)
+						g1 = occupation2(lattice, i, A, B, band=band, Z=Z)
 						g2 = cached_occupation(lattice, i, A, B, cache=cache, band=band)
 						@test abs(g1-g2)/abs(g1) < rtol
 					end
@@ -36,7 +36,7 @@ println("------------------------------------")
 				cache = environments(lattice, A, B)
 				Z = integrate(lattice, A, B)
 				for band in 1:lattice.bands
-					g1 = occupation(lattice, A, B, band=band, Z=Z)
+					g1 = occupation2(lattice, A, B, band=band, Z=Z)
 					g2 = cached_occupation(lattice, A, B, cache=cache, band=band)
 					@test abs(g1-g2)/abs(g1) < rtol
 				end
@@ -56,7 +56,7 @@ println("------------------------------------")
 				Z = integrate(lattice, A, B, C)
 				for i in 1:lattice.k
 					for band in 1:lattice.bands
-						g1 = occupation(lattice, i, AB, C, band=band, Z=Z)
+						g1 = occupation2(lattice, i, AB, C, band=band, Z=Z)
 						g2 = cached_occupation(lattice, i, A, B, C, cache=cache, band=band)
 						@test abs(g1-g2)/abs(g1) < rtol
 					end
@@ -76,7 +76,7 @@ println("------------------------------------")
 				cache = environments(lattice, A, B, C)
 				Z = integrate(lattice, A, B, C)
 				for band in 1:lattice.bands
-					g1 = occupation(lattice, C, AB, band=band, Z=Z)
+					g1 = occupation2(lattice, C, AB, band=band, Z=Z)
 					g2 = cached_occupation(lattice, A, B, C, cache=cache, band=band)
 					@test abs(g1-g2)/abs(g1) < rtol
 				end

@@ -189,8 +189,8 @@ end
 
 		# SVD split
 		@grassmann tf2[1; 2 3] := t[1,2,3]
-		uf, sf, vf, _ = stable_tsvd!(tf2)
-		u, s, v, _ = stable_tsvd!(permute(t, (1,), (2, 3); copy=true))
+		uf, sf, vf, _ = tsvd(tf2; alg=SDD())
+		u, s, v, _ = tsvd(permute(t, (1,), (2, 3); copy=true); alg=SDD())
 		@test s ≈ sf
 		@grassmann vf2[1 2; 3] := vf[1,2,3]
 		@test permute(v, (1, 2), (3,); copy=true) ≈ vf2

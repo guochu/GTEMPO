@@ -121,8 +121,7 @@ function _permute!(x::AbstractGMPS, perm::Vector{Int}; trunc::TruncationScheme=D
     if svectors_uninitialized(x)
         canonicalize!(x, alg=Orthogonalize(trunc=trunc, normalize=false))
     end
-    p = CoxeterDecomposition(Permutation(perm))
-    for i in p.terms
+    for i in TK.permutation2swaps(perm)
         easy_swap!(x, i, trunc=trunc)
     end
     return x
@@ -132,8 +131,7 @@ TK.permute(x::AbstractGMPS, perm::Vector{Int}; kwargs...) = permute!(deepcopy(x)
 
 function naive_permute!(x::AbstractGMPS, perm::Vector{Int}; trunc::TruncationScheme=DefaultIntegrationTruncation)
     @assert length(x) == length(perm)
-    p = CoxeterDecomposition(Permutation(perm))
-    for i in p.terms
+    for i in TK.permutation2swaps(perm)
         naive_swap!(x, i, trunc=trunc)
     end
     return x

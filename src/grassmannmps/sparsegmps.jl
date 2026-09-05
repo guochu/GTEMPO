@@ -209,8 +209,8 @@ function mult!(x::GrassmannMPS, y::SparseGMPS; trunc::TruncationScheme=DefaultTr
 	# --- local right-to-left SVD sweep with truncation over [p₀, p₁] ---
 	for i in p₁:-1:p₀+1
 		# single-site operation: fermionic twist + restore cancel exactly,
-		# so the plain bosonic stable_tsvd! on the permuted tensor is identical
-		u, s, v, err = stable_tsvd!(permute(x′[i], (1,), (2, 3); copy=true), trunc=trunc)
+		# so the plain bosonic tsvd on the permuted tensor is identical
+		u, s, v, err = tsvd(permute(x′[i], (1,), (2, 3); copy=true); alg=SDD(), trunc=trunc)
 		x′[i] = permute(v, (1, 2), (3,); copy=true)
 		nr = _renormalize!(x′, s, false)
 		(verbosity > 1) && println("SVD truncerror at bond $(i): ", sqrt(err * err / (nr * nr + err * err)))

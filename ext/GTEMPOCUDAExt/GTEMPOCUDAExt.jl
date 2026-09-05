@@ -2,7 +2,7 @@
 module GTEMPOCUDAExt
 
 
-export tocu, fromcu, Cu, CuSVDCompression, CuDMRGMultAlgorithm, CuDMRGMult1, CuAlgs
+export tocu, fromcu, Cu, CuSVDCompression, CuDMRGMultAlgorithm, CuDMRG1, CuAlgs
 export cu_environments, cu_cached_Gt_fast, cu_cached_greater_fast, cu_cached_lesser_fast, 
         cu_cached_gf_fast, cu_cached_gf_fast_normal_order, cu_cached_gf_fast_reverse_order
 

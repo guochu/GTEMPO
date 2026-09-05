@@ -30,7 +30,7 @@ end
 	trunc1 = truncdimcutoff(D=1024, ϵ=1.0e-10)
 	trunc2 = truncdimcutoff(D=500, ϵ=1.0e-10)
     alg1 = SVDCompression(trunc2)
-    alg2 = DMRGMult1(trunc2, initguess=:svd, maxiter=5, verbosity=0)
+    alg2 = DMRG1(trunc2, initguess=:svd, maxiter=5, verbosity=0)
     algs = [alg1, alg2]
 
     branchs = (:τ,)

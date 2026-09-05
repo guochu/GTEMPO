@@ -98,7 +98,7 @@ end
 	mpsI = boundarycondition(mpsI, lattice, band=1)
 	mpsI = boundarycondition(mpsI, lattice, band=2)	
 	mpsK = sysdynamics(lattice, exact_model, trunc=trunc)
-	ns2 = occupation(lattice, mpsK, mpsI)
+	ns2 = occupation2(lattice, mpsK, mpsI)
 
 	currents_left2 = electriccurrent(lattice, leftcorr, mpsK, mpsI)
 	currents_right2 = electriccurrent(lattice, rightcorr, mpsK, mpsI)

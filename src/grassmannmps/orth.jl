@@ -24,7 +24,7 @@ function _leftorth!(psi::GrassmannMPS, alg::SVD, trunc::TruncationScheme, normal
 	# errs = Float64[]
 	maxerr = 0.
 	for i in 1:L-1
-		u, s, v, err = stable_tsvd!(psi[i], trunc=trunc)
+		u, s, v, err = tsvd(psi[i]; alg=SDD(), trunc=trunc)
 		nr = _renormalize!(psi, s, normalize)
 		rerror = sqrt(err * err / (nr * nr + err * err))
 		(verbosity > 1) && println("SVD truncerror at bond $(i): ", rerror)
@@ -69,8 +69,8 @@ function _rightorth!(psi::GrassmannMPS, alg::SVD, trunc::TruncationScheme, norma
 	maxerr = 0.
 	for i in L:-1:2
 		# single-site operation: fermionic twist + restore cancel exactly,
-		# so the plain bosonic stable_tsvd! on the permuted tensor is identical
-		u, s, v, err = stable_tsvd!(permute(psi[i], (1,), (2, 3); copy=true), trunc=trunc)
+		# so the plain bosonic tsvd on the permuted tensor is identical
+		u, s, v, err = tsvd(permute(psi[i], (1,), (2, 3); copy=true); alg=SDD(), trunc=trunc)
 		psi[i] = permute(v, (1, 2), (3,); copy=true)
 		nr = _renormalize!(psi, s, normalize)
 		rerror = sqrt(err * err / (nr * nr + err * err))

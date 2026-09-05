@@ -81,13 +81,13 @@ function g_twist!(t::AbstractParityTensorMap, inds)
 end
 
 """
-    compensate_twist!(t, i, j)
+    compensate_twists!(t, (i₁, j₁), (i₂, j₂), ...)
 
-Apply the fermion-pair twist to the two legs `i`, `j` of the parity tensor
-`t`: every fusion-tree block for which both legs sit in an odd sector is
-multiplied by `-1` (i.e. a factor `(-1)^{p_i p_j}`, with `p_i, p_j ∈ {0,1}`
-the parities of the two legs). Legs are numbered linearly, codomain legs
-`1:N₁` first and then domain legs `N₁+1:N₁+N₂`.
+Apply one or several fermion-pair twists to the tensor `t` in a single
+pass over its fusion trees: every block is multiplied by the product of
+the factors `(-1)^{p_i p_j}` of all given index pairs, with `p_i, p_j ∈
+{0,1}` the parities of the two legs of each pair. Legs are numbered
+linearly, codomain legs `1:N₁` first and then domain legs `N₁+1:N₁+N₂`.
 
 This replaces the repetitive hand-written loops
 
@@ -99,12 +99,17 @@ This replaces the repetitive hand-written loops
 (equivalently with both legs on `f₁` or both on `f₂`) that manually
 compensate a missing fermionic sign after a bosonic `@tensor` contraction.
 """
-function compensate_twist!(t::AbstractParityTensorMap, i::Int, j::Int)
+function compensate_twists!(t::AbstractParityTensorMap, pairs::Vararg{Tuple{Int,Int}})
+    isempty(pairs) && return t
     N₁ = numout(t)
     for (f₁, f₂) in fusiontrees(t)
-        pᵢ = i <= N₁ ? f₁.uncoupled[i].n : f₂.uncoupled[i - N₁].n
-        pⱼ = j <= N₁ ? f₁.uncoupled[j].n : f₂.uncoupled[j - N₁].n
-        (isodd(pᵢ) && isodd(pⱼ)) && lmul!(-1, t[f₁, f₂])
+        coef = 1
+        for (i, j) in pairs
+            pᵢ = i <= N₁ ? f₁.uncoupled[i].n : f₂.uncoupled[i - N₁].n
+            pⱼ = j <= N₁ ? f₁.uncoupled[j].n : f₂.uncoupled[j - N₁].n
+            (isodd(pᵢ) && isodd(pⱼ)) && (coef = -coef)
+        end
+        coef == 1 || lmul!(coef, t[f₁, f₂])
     end
     return t
 end
