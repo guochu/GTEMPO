@@ -7,7 +7,7 @@
 # are inherited from the Z2Tensors implementations for plain
 # `AbstractTensorMap`s. Only the three execution methods `tensoradd!`,
 # `tensortrace!` and `tensorcontract!` carry fermionic signs, entering
-# through `f_permute` (see grassmanntensor.jl).
+# through `gpermute` (see grassmanntensor.jl).
 #
 # Plain `@tensor` expressions (without `GrassmannBackend`) are unaffected and
 # keep the bosonic (sign-free) Z2Tensors semantics.
@@ -36,9 +36,9 @@ function TO.tensoradd!(C::AbstractTensorMap{<:Number},
     if conjA
         A′ = adjoint(A)
         pA′ = TK.adjointtensorindices(A, _canonicalize(pA, C))
-        add_f_permute!(C, A′, pA′, α, β)
+        add_gpermute!(C, A′, pA′, α, β)
     else
-        add_f_permute!(C, A, _canonicalize(pA, C), α, β)
+        add_gpermute!(C, A, _canonicalize(pA, C), α, β)
     end
     return C
 end
@@ -124,7 +124,7 @@ function trace_permute!(tdst::AbstractParityTensorMap,
     r₁ = (p₁..., q₁...)
     r₂ = (p₂..., q₂...)
     for (f₁, f₂) in fusiontrees(tsrc)
-        for ((f₁′, f₂′), coeff) in f_permute(f₁, f₂, r₁, r₂)
+        for ((f₁′, f₂′), coeff) in gpermute(f₁, f₂, r₁, r₂)
             f₁′′, g₁ = TK.split(f₁′, N₁)
             f₂′′, g₂ = TK.split(f₂′, N₂)
             g₁ == g₂ || continue
@@ -196,8 +196,8 @@ function _contract!(α, A::AbstractParityTensorMap, B::AbstractParityTensorMap,
                     oindB::IndexTuple{N₂}, cindB::IndexTuple,
                     p₁::IndexTuple, p₂::IndexTuple,
                     backend::GrassmannBackend) where {N₁,N₂}
-    A′ = f_permute(A, (oindA, cindA))
-    B′ = f_permute(B, (cindB, oindB))
+    A′ = gpermute(A, (oindA, cindA))
+    B′ = gpermute(B, (cindB, oindB))
     # fermionic junction twist: permute the contracted pair into the canonical
     # (a, ā) order before contracting. A contracted pair whose A-side leg is
     # non-dual (an `a`) against a dual B-side leg (an `ā`) is in the crossed
@@ -212,11 +212,11 @@ function _contract!(α, A::AbstractParityTensorMap, B::AbstractParityTensorMap,
     oindAinC = TupleTools.getindices(ipC, ntuple(n -> n, N₁))
     oindBinC = TupleTools.getindices(ipC, ntuple(n -> n + N₁, N₂))
     if TK.has_shared_permute(C, (oindAinC, oindBinC))
-        C′ = f_permute(C, (oindAinC, oindBinC))
+        C′ = gpermute(C, (oindAinC, oindBinC))
         mul!(C′, A′, B′, α, β)
     else
         C′ = A′ * B′
-        add_f_permute!(C, C′, (p₁, p₂), α, β)
+        add_gpermute!(C, C′, (p₁, p₂), α, β)
     end
     return C
 end

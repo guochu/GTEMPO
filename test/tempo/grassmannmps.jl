@@ -8,8 +8,8 @@ println("------------------------------------")
 	for T in (Float64, ComplexF64)
 		psi = randomgmps(T, L, D=D)
 		@test scalartype(psi) == T
-		@test space_l(psi) == oneunit(grassmannpspace())
-		@test space_r(psi) == oneunit(grassmannpspace())'
+		@test space_l(psi) == oneunit(z2space())
+		@test space_r(psi) == oneunit(z2space())'
 
 		@test bond_dimension(psi) <= D
 		psi1 = leftorth!(deepcopy(psi), alg = Orthogonalize(QR(), normalize=false))

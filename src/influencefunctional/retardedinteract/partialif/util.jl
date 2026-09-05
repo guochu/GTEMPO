@@ -13,7 +13,7 @@ function partialmpo_retardedinteract(row::Tuple{Int, Int}, cols::Vector{Tuple{In
 	end
 	# I2 = one(JW)
 
-	ph = grassmannpspace()
+	ph = z2space()
 	f = isomorphism(eltype(coefs), fuse(ph, ph), ph ⊗ ph)
 	@tensor abar_a[1,7;9,8] := σ₊[1,2,3,4] * σ₋'[3,5,9,6] * f[7,2,5] * conj(f[8,4,6])
 	@tensor I4[5,6] := I2[1,2] * I2[3,4] * f[5,1,3] * conj(f[6,2,4])

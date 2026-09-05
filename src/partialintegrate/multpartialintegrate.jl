@@ -43,8 +43,11 @@ function mult_cache(z::GrassmannMPS, x::GrassmannMPS, y::GrassmannMPS, lattice::
 		end
 	end
     for j in 1:2:(ixy-1)
-		tmp = g_permute(hstorage[iz], (1,), (2,3)) * GrassmannTransferMatrix(j, x, y)
-        hstorage[1] = g_permute(tmp, (1,2), (3,))
+		# single fermionic permutes bracketing the transfer-matrix product (via @grassmann)
+		@grassmann tmp0[1; 2 3] := hstorage[iz][1,2,3]
+		tmp = tmp0 * GrassmannTransferMatrix(j, x, y)
+		@grassmann tmp1[1 2; 3] := tmp[1,2,3]
+        hstorage[1] = tmp1
     end
 
     return IntegrateBandIterativeMultCache(z, x, y, lattice, band, hstorage)
@@ -107,8 +110,11 @@ function leftsweep!(m::IntegrateBandIterativeMultCache, alg::DMRGMult1)
 
         for i in (mm[site]+1):2:(mm[site+1]-1)
 			j = (i+1) ÷ 2
-			tmp = g_permute(hstorage[site+1], (1,), (2,3)) * GrassmannTransferMatrix(j, x, y)
-			hstorage[site+1] = g_permute(tmp, (1,2), (3,))
+			# single fermionic permutes bracketing the transfer-matrix product (via @grassmann)
+			@grassmann tmp0[1; 2 3] := hstorage[site+1][1,2,3]
+			tmp = tmp0 * GrassmannTransferMatrix(j, x, y)
+			@grassmann tmp1[1 2; 3] := tmp[1,2,3]
+			hstorage[site+1] = tmp1
 		end
     end
 	# println(kvals)

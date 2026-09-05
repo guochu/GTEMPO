@@ -5,12 +5,12 @@ export truncdimcutoff
 
 # GrassmannTensor
 export scalartype
-export @grassmann, GrassmannBackend, g_permute, g_stable_tsvd, g_rightorth
+export @grassmann, GrassmannBackend
 using Z2Tensors: NoTruncation
 export NoTruncation
 
 # Grassmann MPS
-export AbstractGTerm, GTerm, ExpGTerm, grassmannpspace
+export AbstractGTerm, GTerm, ExpGTerm, z2space
 export AbstractGMPS, AbstractFiniteGMPS, GrassmannMPS, SparseGMPS, togmps, scaling, setscaling!, randomgmps, increase_bond!
 export iscanonical, isleftcanonical, isrightcanonical
 export mult!, mult, DMRGMult1, DMRGMult2, DMRGMultAlgorithm
@@ -130,11 +130,11 @@ using LinearAlgebra: LinearAlgebra, Symmetric, eigen, qr, pinv, eigvals, Diagona
 
 
 include("auxiliary/CachedVectors.jl")
-include("auxiliary/defaults.jl") # default constants
+include("defaults.jl") # default constants
 include("auxiliary/linalg.jl")
 include("auxiliary/mpstensors.jl")
 include("auxiliary/orth.jl")
-include("auxiliary/mpsalgs.jl")
+include("algorithms.jl")
 
 include("mpo/mpo.jl")
 
@@ -143,7 +143,6 @@ include("mpo/mpo.jl")
 
 # GrassmannTensor
 include("grassmanntensor/grassmanntensor.jl")
-include("grassmanntensor/linalg.jl")
 include("grassmanntensor/tensoroperations.jl")
 include("grassmanntensor/grassmannmacro.jl")
 

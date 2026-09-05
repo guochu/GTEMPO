@@ -71,7 +71,7 @@ function _fit_to_lattice(lattice::ImagGrassmannLattice, mpo::MPO, _JW::MPSBondTe
 	u_right, v_right = split_mpotensor(mpo[3], trunc)
 	L = length(lattice)
 	data2 = Vector{typeof(u_middle)}(undef, L)
-	leftspace = oneunit(grassmannpspace())
+	leftspace = oneunit(z2space())
 
 	posa, posb = band_boundary(lattice, 0)
 	for pos in posa:posb

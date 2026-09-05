@@ -48,8 +48,10 @@ function _cu_rightorth!(psi::GrassmannMPS, alg::SVD, trunc::TruncationScheme, no
 	maxerr = 0.
 	psii = tocu(psi[end])
 	for i in L:-1:2
-		u, s, v, err = g_stable_tsvd(psii, (1,), (2, 3), trunc=trunc)
-		psi[i] = fromcu(g_permute(v, (1,2), (3,)))
+		# single-site operation: fermionic twist + restore cancel exactly,
+		# so the plain bosonic stable_tsvd! on the permuted tensor is identical
+		u, s, v, err = stable_tsvd!(permute(psii, (1,), (2, 3); copy=true), trunc=trunc)
+		psi[i] = fromcu(permute(v, (1, 2), (3,); copy=true))
 		nr = _renormalize!(psi, s, normalize)
 		rerror = sqrt(err * err / (nr * nr + err * err))
 		(verbosity > 1) && println("SVD truncerror at bond $(i): ", rerror)

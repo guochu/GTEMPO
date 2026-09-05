@@ -47,8 +47,10 @@ function _rightorth!(psi::GrassmannMPS, alg::QR, trunc::TruncationScheme, normal
 	!isa(trunc, NoTruncation) &&  @warn "truncation has no effect with QR"
 	L = length(psi)
 	for i in L:-1:2
-		l, q = g_rightorth(psi[i], (1,), (2, 3), alg=LQ())
-		psi[i] = g_permute(q, (1,2), (3,))
+		# single-site operation: fermionic twist + restore cancel exactly,
+		# so the plain bosonic rightorth! on the permuted tensor is identical
+		l, q = TK.rightorth!(permute(psi[i], (1,), (2, 3); copy=true); alg=LQ())
+		psi[i] = permute(q, (1, 2), (3,); copy=true)
 		# nl = norm(l)
 		# (nl ≈ zero(nl)) && @warn "norm of GrassmannMPS is zero"
 		# _rescaling!(psi, nl)
@@ -66,8 +68,10 @@ function _rightorth!(psi::GrassmannMPS, alg::SVD, trunc::TruncationScheme, norma
 	L = length(psi)
 	maxerr = 0.
 	for i in L:-1:2
-		u, s, v, err = g_stable_tsvd(psi[i], (1,), (2, 3), trunc=trunc)
-		psi[i] = g_permute(v, (1,2), (3,))
+		# single-site operation: fermionic twist + restore cancel exactly,
+		# so the plain bosonic stable_tsvd! on the permuted tensor is identical
+		u, s, v, err = stable_tsvd!(permute(psi[i], (1,), (2, 3); copy=true), trunc=trunc)
+		psi[i] = permute(v, (1, 2), (3,); copy=true)
 		nr = _renormalize!(psi, s, normalize)
 		rerror = sqrt(err * err / (nr * nr + err * err))
 		(verbosity > 1) && println("SVD truncerror at bond $(i): ", rerror)

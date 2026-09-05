@@ -6,7 +6,7 @@ const AbstractParityTensorMap{T, N₁, N₂} = AbstractTensorMap{T, N₁, N₂}
 TensorOperations backend that implements `tensoradd!`, `tensortrace!` and
 `tensorcontract!` for Z2-graded (parity) `TensorMap`s with the fermionic
 (Grassmann) sign convention: every internal index permutation is carried out
-by the fermionic `f_permute` instead of the bosonic `permute`. It is inserted
+by the fermionic `gpermute` instead of the bosonic `permute`. It is inserted
 automatically by the [`@grassmann`](@ref) macro, and can equally be passed
 explicitly as `backend = GrassmannBackend()` to the function-based
 TensorOperations API.
@@ -17,7 +17,7 @@ to supply the sign information and to mark these functions as carrying the
 fermionic convention, in contrast to the sign-free Z2Tensors operations with
 otherwise similar signatures.
 
-In addition to the fermionic `f_permute` reordering signs, the backend applies
+In addition to the fermionic `gpermute` reordering signs, the backend applies
 the fermionic twists that put every contracted pair into the canonical
 `(a, ā)` order before contracting, in the same way as the GrassmannTensors /
 TensorKit fermionic conventions:
@@ -30,8 +30,8 @@ TensorKit fermionic conventions:
 """
 struct GrassmannBackend <: AbstractBackend end
 
-function f_permute(t::AbstractParityTensorMap, (p₁, p₂)::Index2Tuple{N₁,N₂};
-                   copy::Bool=false) where {N₁,N₂}
+function gpermute(t::AbstractParityTensorMap, (p₁, p₂)::Index2Tuple{N₁,N₂};
+                  copy::Bool=false) where {N₁,N₂}
     cod = ProductSpace{N₁}(map(n -> space(t, n), p₁))
     dom = ProductSpace{N₂}(map(n -> dual(space(t, n)), p₂))
     # share data if possible
@@ -40,20 +40,22 @@ function f_permute(t::AbstractParityTensorMap, (p₁, p₂)::Index2Tuple{N₁,N�
     end
     # general case
     @inbounds begin
-        return f_permute!(similar(t, cod ← dom), t, (p₁, p₂))
+        return gpermute!(similar(t, cod ← dom), t, (p₁, p₂))
     end
 end
-function f_permute(t::AdjointTensorMap, (p₁, p₂)::Index2Tuple; copy::Bool=false) 
+function gpermute(t::AdjointTensorMap, (p₁, p₂)::Index2Tuple; copy::Bool=false) 
     p₁′ = TK.adjointtensorindices(t, p₂)
     p₂′ = TK.adjointtensorindices(t, p₁)
-    return adjoint(f_permute(adjoint(t), (p₁′, p₂′); copy=copy))
+    return adjoint(gpermute(adjoint(t), (p₁′, p₂′); copy=copy))
 end
+# convenience: two separate leg-index tuples
+gpermute(t::AbstractParityTensorMap, p1::IndexTuple, p2::IndexTuple; kwargs...) = gpermute(t, (p1, p2); kwargs...)
 
 
-@propagate_inbounds function f_permute!(tdst::AbstractParityTensorMap{<:Number, N₁, N₂},
-                                        tsrc::AbstractParityTensorMap,
-                                        p::Index2Tuple{N₁,N₂}) where {N₁,N₂}
-    return add_f_permute!(tdst, tsrc, p, true, false)
+@propagate_inbounds function gpermute!(tdst::AbstractParityTensorMap{<:Number, N₁, N₂},
+                                       tsrc::AbstractParityTensorMap,
+                                       p::Index2Tuple{N₁,N₂}) where {N₁,N₂}
+    return add_gpermute!(tdst, tsrc, p, true, false)
 end
 
 """
@@ -78,19 +80,48 @@ function g_twist!(t::AbstractParityTensorMap, inds)
     return t
 end
 
+"""
+    compensate_twist!(t, i, j)
 
-@propagate_inbounds function add_f_permute!(tdst::AbstractParityTensorMap{<:Number, N₁, N₂},
+Apply the fermion-pair twist to the two legs `i`, `j` of the parity tensor
+`t`: every fusion-tree block for which both legs sit in an odd sector is
+multiplied by `-1` (i.e. a factor `(-1)^{p_i p_j}`, with `p_i, p_j ∈ {0,1}`
+the parities of the two legs). Legs are numbered linearly, codomain legs
+`1:N₁` first and then domain legs `N₁+1:N₁+N₂`.
+
+This replaces the repetitive hand-written loops
+
+    for (f₁, f₂) in fusiontrees(t)
+        coef = (isodd(f₁.uncoupled[i].n) && isodd(f₂.uncoupled[j].n)) ? -1 : 1
+        coef != 1 && lmul!(coef, t[f₁, f₂])
+    end
+
+(equivalently with both legs on `f₁` or both on `f₂`) that manually
+compensate a missing fermionic sign after a bosonic `@tensor` contraction.
+"""
+function compensate_twist!(t::AbstractParityTensorMap, i::Int, j::Int)
+    N₁ = numout(t)
+    for (f₁, f₂) in fusiontrees(t)
+        pᵢ = i <= N₁ ? f₁.uncoupled[i].n : f₂.uncoupled[i - N₁].n
+        pⱼ = j <= N₁ ? f₁.uncoupled[j].n : f₂.uncoupled[j - N₁].n
+        (isodd(pᵢ) && isodd(pⱼ)) && lmul!(-1, t[f₁, f₂])
+    end
+    return t
+end
+
+
+@propagate_inbounds function add_gpermute!(tdst::AbstractParityTensorMap{<:Number, N₁, N₂},
                                           	tsrc::AbstractParityTensorMap,
                                          	p::Index2Tuple{N₁,N₂},
                                          	α::Number,
                                          	β::Number,
                                          	backend::AbstractBackend...) where {N₁,N₂}
-    treepermuter(f₁, f₂) = f_permute(f₁, f₂, p[1], p[2])
+    treepermuter(f₁, f₂) = gpermute(f₁, f₂, p[1], p[2])
     return TK.add_transform!(tdst, tsrc, p, treepermuter, α, β, backend...)
 end
 
 
-function f_permute(f1::FusionTree, f2::FusionTree,
+function gpermute(f1::FusionTree, f2::FusionTree,
                             p1::IndexTuple{N₁}, p2::IndexTuple{N₂}) where {N₁, N₂}
     uncoupled = (f1.uncoupled..., dual.(f2.uncoupled)...)
     uncoupled1′, uncoupled2′ = TupleTools.getindices(uncoupled, p1), TupleTools.getindices(uncoupled, p2)

@@ -33,7 +33,9 @@ function update_pair_left(left::AbstractParityTensorMap{<:Number, 1, 5}, j::Int,
 	tmp3 = g_fuse(tmp2, 3)
 
 	left = g_trace(tmp3, 2)
-	return g_permute(left, (1,), (2,3,4,5,6))
+	# restore the accumulated left environment: single fermionic permute (via @grassmann)
+	@grassmann lout[1; 2 3 4 5 6] := left[1,2,3,4,5,6]
+	return lout
 end
 
 function update_pair_right(right::AbstractParityTensorMap{<:Number, 5, 1}, j::Int, x::Vector, y::Vector, z::Vector, u::Vector, v::Vector)
@@ -68,6 +70,7 @@ function update_pair_right(right::AbstractParityTensorMap{<:Number, 5, 1}, j::In
 	tmp3 = g_fuse(tmp2, 6)
 
 	right = g_trace(tmp3, 6)
-
-	return g_permute(right, (1,2,3,4,5), (6,))
+	# restore the accumulated right environment: single fermionic permute (via @grassmann)
+	@grassmann rout[1 2 3 4 5; 6] := right[1,2,3,4,5,6]
+	return rout
 end

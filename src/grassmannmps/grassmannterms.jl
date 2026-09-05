@@ -40,7 +40,7 @@ GTerm(a::Vararg{Int}; kwargs...) = GTerm(a; kwargs...)
 function Base.convert(::Type{<:PartialMPO}, x::GTerm)
 	n = x.positions[end] - x.positions[1] + 1
 	pos = collect(x.positions[1]:x.positions[end])
-	A = mpotensortype(grassmannpspacetype(), scalartype(x))
+	A = mpotensortype(z2spacetype(), scalartype(x))
 	ops = Vector{A}(undef, n)
 	ops[1] = σ₊
 	ops[end] = adjoint(σ₋)

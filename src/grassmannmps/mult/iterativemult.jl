@@ -283,27 +283,13 @@ end
 
 function g_ac_prime(xj::MPSTensor, yj::MPSTensor, left::MPSTensor, right::MPSTensor)
     @tensor tmp1[1,5,4;2] := left[1,2,3] * yj[3,4,5]
-    for (f1, f2) in fusiontrees(tmp1)
-        coef1 = (isodd(f1.uncoupled[2].n) && isodd(f2.uncoupled[1].n)) ? -1 : 1
-        coef2 = (isodd(f1.uncoupled[3].n) && isodd(f2.uncoupled[1].n)) ? -1 : 1
-        coef3 = (isodd(f1.uncoupled[3].n) && isodd(f1.uncoupled[2].n)) ? -1 : 1
-        # println(coef1, " ", coef2, " ", coef3, " ", coef4, " ", coef5)
-        coef = coef1 * coef2 * coef3
-        if coef != 1
-            lmul!(coef, tmp1[f1, f2])
-        end
-    end
+    compensate_twist!(tmp1, 2, 4)
+    compensate_twist!(tmp1, 3, 4)
+    compensate_twist!(tmp1, 2, 3)
     @tensor tmp2[1,3,5;6,2] := tmp1[1,2,3,4] * xj[4,5,6]
-    for (f1, f2) in fusiontrees(tmp2)
-        coef1 = (isodd(f2.uncoupled[2].n) && isodd(f1.uncoupled[2].n)) ? -1 : 1
-        coef2 = (isodd(f2.uncoupled[2].n) && isodd(f1.uncoupled[3].n)) ? -1 : 1
-        coef3 = (isodd(f2.uncoupled[2].n) && isodd(f2.uncoupled[1].n)) ? -1 : 1
-        # println(coef1, " ", coef2, " ", coef3, " ", coef4, " ", coef5)
-        coef = coef1 * coef2 * coef3
-        if coef != 1
-            lmul!(coef, tmp2[f1, f2])
-        end
-    end
+    compensate_twist!(tmp2, 2, 5)
+    compensate_twist!(tmp2, 3, 5)
+    compensate_twist!(tmp2, 4, 5)
     tmp3 = g_fuse(tmp2, 2)
     @tensor tmp2[1,2;5] := tmp3[1,2,3,4] * right[4,3,5]
     return tmp2
@@ -315,51 +301,23 @@ end
 
 function g_ac_prime2(xj1::MPSTensor, xj2::MPSTensor, yj1::MPSTensor, yj2::MPSTensor, left::MPSTensor, right::MPSTensor)
     @tensor tmp1[1,5,4;2] := left[1,2,3] * yj1[3,4,5]
-    for (f1, f2) in fusiontrees(tmp1)
-        coef1 = (isodd(f1.uncoupled[2].n) && isodd(f2.uncoupled[1].n)) ? -1 : 1
-        coef2 = (isodd(f1.uncoupled[3].n) && isodd(f2.uncoupled[1].n)) ? -1 : 1
-        coef3 = (isodd(f1.uncoupled[3].n) && isodd(f1.uncoupled[2].n)) ? -1 : 1
-        # println(coef1, " ", coef2, " ", coef3, " ", coef4, " ", coef5)
-        coef = coef1 * coef2 * coef3
-        if coef != 1
-            lmul!(coef, tmp1[f1, f2])
-        end
-    end
+    compensate_twist!(tmp1, 2, 4)
+    compensate_twist!(tmp1, 3, 4)
+    compensate_twist!(tmp1, 2, 3)
     @tensor tmp2[1,3,5;6,2] := tmp1[1,2,3,4] * xj1[4,5,6]
-    for (f1, f2) in fusiontrees(tmp2)
-        coef1 = (isodd(f2.uncoupled[2].n) && isodd(f1.uncoupled[2].n)) ? -1 : 1
-        coef2 = (isodd(f2.uncoupled[2].n) && isodd(f1.uncoupled[3].n)) ? -1 : 1
-        coef3 = (isodd(f2.uncoupled[2].n) && isodd(f2.uncoupled[1].n)) ? -1 : 1
-        # println(coef1, " ", coef2, " ", coef3, " ", coef4, " ", coef5)
-        coef = coef1 * coef2 * coef3
-        if coef != 1
-            lmul!(coef, tmp2[f1, f2])
-        end
-    end
+    compensate_twist!(tmp2, 2, 5)
+    compensate_twist!(tmp2, 3, 5)
+    compensate_twist!(tmp2, 4, 5)
 
     tmp3 = g_fuse(tmp2, 2)
 
 
     @tensor tmp4[4; 1 2 5] := yj2[1,2,3] * right[3,4,5]
-    for (f1, f2) in fusiontrees(tmp4)
-        coef1 = (isodd(f2.uncoupled[1].n) && isodd(f1.uncoupled[1].n)) ? -1 : 1
-        coef2 = (isodd(f2.uncoupled[2].n) && isodd(f1.uncoupled[1].n)) ? -1 : 1
-
-        coef = coef1 * coef2 
-        if coef != 1
-            lmul!(coef, tmp4[f1, f2])
-        end
-    end 
+    compensate_twist!(tmp4, 1, 2)
+    compensate_twist!(tmp4, 1, 3)
     @tensor tmp5[4 1 2 5; 6] := xj2[1,2,3] * tmp4[3,4,5,6]
-    for (f1, f2) in fusiontrees(tmp5)
-        coef1 = (isodd(f1.uncoupled[2].n) && isodd(f1.uncoupled[1].n)) ? -1 : 1
-        coef2 = (isodd(f1.uncoupled[3].n) && isodd(f1.uncoupled[1].n)) ? -1 : 1
-
-        coef = coef1 * coef2 
-        if coef != 1
-            lmul!(coef, tmp5[f1, f2])
-        end
-    end 
+    compensate_twist!(tmp5, 1, 2)
+    compensate_twist!(tmp5, 1, 3)
     tmp4 = g_fuse(tmp5, 3)
 
 
@@ -369,27 +327,13 @@ end
 
 function updatemultleft(left::MPSTensor, zj::MPSTensor, xj::MPSTensor, yj::MPSTensor)
     @tensor tmp1[1,5,4;2] := left[1,2,3] * yj[3,4,5]
-    for (f1, f2) in fusiontrees(tmp1)
-        coef1 = (isodd(f1.uncoupled[2].n) && isodd(f2.uncoupled[1].n)) ? -1 : 1
-        coef2 = (isodd(f1.uncoupled[3].n) && isodd(f2.uncoupled[1].n)) ? -1 : 1
-        coef3 = (isodd(f1.uncoupled[3].n) && isodd(f1.uncoupled[2].n)) ? -1 : 1
-        # println(coef1, " ", coef2, " ", coef3, " ", coef4, " ", coef5)
-        coef = coef1 * coef2 * coef3
-        if coef != 1
-            lmul!(coef, tmp1[f1, f2])
-        end
-    end    
+    compensate_twist!(tmp1, 2, 4)
+    compensate_twist!(tmp1, 3, 4)
+    compensate_twist!(tmp1, 2, 3)
     @tensor tmp2[1,3,5;6,2] := tmp1[1,2,3,4] * xj[4,5,6]
-    for (f1, f2) in fusiontrees(tmp2)
-        coef1 = (isodd(f2.uncoupled[2].n) && isodd(f1.uncoupled[2].n)) ? -1 : 1
-        coef2 = (isodd(f2.uncoupled[2].n) && isodd(f1.uncoupled[3].n)) ? -1 : 1
-        coef3 = (isodd(f2.uncoupled[2].n) && isodd(f2.uncoupled[1].n)) ? -1 : 1
-
-        coef = coef1 * coef2 * coef3 
-        if coef != 1
-            lmul!(coef, tmp2[f1, f2])
-        end
-    end
+    compensate_twist!(tmp2, 2, 5)
+    compensate_twist!(tmp2, 3, 5)
+    compensate_twist!(tmp2, 4, 5)
     tmp3 = g_fuse(tmp2, 2)
     @tensor tmp2[5,3;4] := tmp3[1,2,3,4] * conj(zj[1,2,5])
     # for (f1, f2) in fusiontrees(tmp2)
@@ -406,25 +350,11 @@ end
 
 function updatemultright(right::MPSTensor, zj::MPSTensor, xj::MPSTensor, yj::MPSTensor)
     @tensor tmp1[4; 1 2 5] := yj[1,2,3] * right[3,4,5]
-    for (f1, f2) in fusiontrees(tmp1)
-        coef1 = (isodd(f2.uncoupled[1].n) && isodd(f1.uncoupled[1].n)) ? -1 : 1
-        coef2 = (isodd(f2.uncoupled[2].n) && isodd(f1.uncoupled[1].n)) ? -1 : 1
-
-        coef = coef1 * coef2 
-        if coef != 1
-            lmul!(coef, tmp1[f1, f2])
-        end
-    end 
+    compensate_twist!(tmp1, 1, 2)
+    compensate_twist!(tmp1, 1, 3)
     @tensor tmp2[4 1 2 5; 6] := xj[1,2,3] * tmp1[3,4,5,6]
-    for (f1, f2) in fusiontrees(tmp2)
-        coef1 = (isodd(f1.uncoupled[2].n) && isodd(f1.uncoupled[1].n)) ? -1 : 1
-        coef2 = (isodd(f1.uncoupled[3].n) && isodd(f1.uncoupled[1].n)) ? -1 : 1
-
-        coef = coef1 * coef2 
-        if coef != 1
-            lmul!(coef, tmp2[f1, f2])
-        end
-    end 
+    compensate_twist!(tmp2, 1, 2)
+    compensate_twist!(tmp2, 1, 3)
     tmp3 = g_fuse(tmp2, 3)
     @tensor tmp2[4,5;1] := conj(zj[1,2,3]) * tmp3[4,5,2,3]
     

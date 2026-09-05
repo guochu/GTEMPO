@@ -267,10 +267,10 @@ end
 # 	p2 = (3,6)
 #     cod = ProductSpace{S}(map(n->space(zj, n), p1))
 #     dom = ProductSpace{S}(map(n->dual(space(zj, n)), p2))
-# 	return TK._add!(true, zj, false, similar(zj, cod←dom), p1, p2, (f1, f2)->f_permute(f1, f2, p1, p2))
+# 	return TK._add!(true, zj, false, similar(zj, cod←dom), p1, p2, (f1, f2)->gpermute(f1, f2, p1, p2))
 # end
 # # f2 is empty
-# function f_permute(f1, f2, p1, p2)
+# function gpermute(f1, f2, p1, p2)
 # 	ft, coeff = first(permute(f1, f2, p1, p2))
 # 	t4 = (isodd(f1.uncoupled[5].n) && isodd(f1.uncoupled[3].n)) ? -1 : 1
 # 	return TK.SingletonDict(ft=>coeff*t4)
@@ -298,8 +298,10 @@ end
 function _swap_gate(m1, m2; trunc)
 	@grassmann twositemps[1,4;2,5] := m1[1,2,3] * m2[3,4,5]
 	u, s, v, err = stable_tsvd!(twositemps; trunc=trunc)
-	# return u, permute(s * v, (1,2), (3,))
-	return u * s, g_permute(v, (1,2), (3,))
+	# restore the site tensor: single permute does not cancel (no pre-twist),
+	# hence the fermionic permute must be kept (via @grassmann)
+	@grassmann v2[1 2; 3] := v[1,2,3]
+	return u * s, v2
 end
 
 function _swap_gate(svectorj1, m1, svectorj2, m2; trunc::TruncationScheme)
@@ -309,6 +311,9 @@ function _swap_gate(svectorj1, m1, svectorj2, m2; trunc::TruncationScheme)
 	u, s, v, err = stable_tsvd!(twositemps1, trunc=trunc)
 	# ket-bra (coefficient) contraction: bosonic, no fermionic twist
 	@tensor u[-1 -2; -3] = twositemps[-1,-2,1,2] * conj(v[-3,1,2])
-	return u, s, g_permute(v, (1,2), (3,))
+	# restore the site tensor: single permute does not cancel (no pre-twist),
+	# hence the fermionic permute must be kept (via @grassmann)
+	@grassmann v2[1 2; 3] := v[1,2,3]
+	return u, s, v2
 end
 

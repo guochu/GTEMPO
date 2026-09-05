@@ -63,7 +63,7 @@ function partialmpo(row::Int, cols::Vector{Int}, coefs::Vector{<:Number})
 	# I2 = one(JW)
 
     virtual = isomorphism(eltype(coefs), Z2Space(1=>1), Z2Space(1=>1))
-    pspace = grassmannpspace()
+    pspace = z2space()
     T = scalartype(virtual)
     @tensor m22I[1,3;2,4] := virtual[1,2] * I2[3,4] 
 	if row < cols[1]
@@ -152,7 +152,7 @@ end
 
 
 function split_mpotensor(mpoj::MPOTensor, trunc)
-	ph = grassmannpspace()
+	ph = z2space()
 	f = isomorphism(scalartype(mpoj), fuse(ph, ph), ph ⊗ ph)
 	@tensor mpoj6[1,5,7;6,3,8] := mpoj[1,2,3,4] * conj(f[2,5,6]) * f[4,7,8]
 	u, s, v = tsvd!(mpoj6, trunc=trunc)

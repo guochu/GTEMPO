@@ -30,7 +30,7 @@
 # focktograssmann(o::GrassmannOrdering, lattice::AbstractFockLattice, mps::FockMPS; kwargs...) = focktograssmann(typeof(o), lattice, mps; kwargs...)
 
 # function focktograssmann_one_step!(lattice2::AbstractGrassmannLattice, mps2::GrassmannMPS, lattice::AbstractFockLattice, mps::FockMPS, j::Int, band::Int, b::Symbol)
-# 	ph = grassmannpspace()
+# 	ph = z2space()
 # 	pos = index(lattice, j, band=band, branch=b)
 # 	t = mps[pos]
 # 	if b == :-
@@ -119,7 +119,7 @@ function mult_f_g_tensor(g::AbstractParityTensorMap, f::AbstractArray{<:Number, 
 	sl, sr = space_l(g), space_r(g)'
 	sl′ = spacetype(sl)(0=>dim(sl, Z2Irrep(0))*al, 1=>dim(sl, Z2Irrep(1))*al)
 	sr′ = spacetype(sr)(0=>dim(sr, Z2Irrep(0))*ar, 1=>dim(sr, Z2Irrep(1))*ar)
-	g′ = zeros(scalartype(g), sl′ ⊗ grassmannpspace() ← sr′)
+	g′ = zeros(scalartype(g), sl′ ⊗ z2space() ← sr′)
 	for (fl, fr) in fusiontrees(g′)
 		if isodd(fl.uncoupled[2].n)
 			g′[fl, fr] = kron(g[fl, fr], f[:, 1:1, :])

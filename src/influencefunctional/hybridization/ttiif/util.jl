@@ -1,6 +1,6 @@
 # build the translationally invariant MPOTensor of IF
 function ti_mpotensor(corr::CorrelationMatrix, alg::ExponentialExpansionAlgorithm)
-	ph = grassmannpspace()
+	ph = z2space()
 	f = isomorphism(fuse(ph, ph), ph ⊗ ph)
 	_JW = JW
 	@tensor a[1,7;3,8] := σ₊[1,2,3,4] * _JW[5,6] * f[7,2,5] * conj(f[8,4,6])

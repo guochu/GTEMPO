@@ -59,7 +59,7 @@ SparseGMPS(data::AbstractVector{A}, positions::AbstractVector{Int}) where {A <: 
 	SparseGMPS(convert(Vector{A}, data), convert(Vector{Int}, positions))
 
 SparseGMPS(::Type{A}) where {A <: MPSTensor} = SparseGMPS(A[], Int[])
-SparseGMPS() = SparseGMPS(mpstensortype(grassmannpspacetype(), Float64))
+SparseGMPS() = SparseGMPS(mpstensortype(z2spacetype(), Float64))
 
 TK.scalartype(::Type{<:SparseGMPS{A}}) where {A <: MPSTensor} = scalartype(A)
 TK.scalartype(x::SparseGMPS) = scalartype(typeof(x))
@@ -94,7 +94,7 @@ All sites outside the span are the trivial unit tensor.
 """
 function SparseGMPS(x::GTerm{N}) where {N}
 	T = scalartype(x)
-	A = mpstensortype(grassmannpspacetype(), T)
+	A = mpstensortype(z2spacetype(), T)
 	pos = collect(positions(x))
 	pmin, pmax = pos[1], pos[end]
 
@@ -208,8 +208,10 @@ function mult!(x::GrassmannMPS, y::SparseGMPS; trunc::TruncationScheme=DefaultTr
 
 	# --- local right-to-left SVD sweep with truncation over [p₀, p₁] ---
 	for i in p₁:-1:p₀+1
-		u, s, v, err = g_stable_tsvd(x′[i], (1,), (2, 3), trunc=trunc)
-		x′[i] = g_permute(v, (1,2), (3,))
+		# single-site operation: fermionic twist + restore cancel exactly,
+		# so the plain bosonic stable_tsvd! on the permuted tensor is identical
+		u, s, v, err = stable_tsvd!(permute(x′[i], (1,), (2, 3); copy=true), trunc=trunc)
+		x′[i] = permute(v, (1, 2), (3,); copy=true)
 		nr = _renormalize!(x′, s, false)
 		(verbosity > 1) && println("SVD truncerror at bond $(i): ", sqrt(err * err / (nr * nr + err * err)))
 		u2 = u * s
