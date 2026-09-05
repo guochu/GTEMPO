@@ -1,5 +1,5 @@
 
-function differentialinfluencefunctional(lattice::RealGrassmannLattice{O}, corr::RealCorrelationFunction, alg::ExactTranslationInvariantIF) where O
+function differentialinfluencefunctional(lattice::RealGrassmannLattice{O}, corr::RealCorrelationFunction, alg::ExactTTIIF) where O
 	if !(OrderingStyle(lattice) isa _AllowedRealGrassmannOrdering)
 		lattice2 = similar(lattice, ordering = A1Ā1a1ā1B1B̄1b1b̄1())
 		mps = _differentialinfluencefunctional(lattice2, corr, alg)
@@ -11,7 +11,7 @@ function differentialinfluencefunctional(lattice::RealGrassmannLattice{O}, corr:
 end
 
 
-function _differentialinfluencefunctional(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction, alg::ExactTranslationInvariantIF)
+function _differentialinfluencefunctional(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction, alg::ExactTTIIF)
 	@assert lattice.bands == 1
 	ηs = _get_signed_corr(lattice, corr, 1)
 

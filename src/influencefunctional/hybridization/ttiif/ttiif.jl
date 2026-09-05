@@ -4,12 +4,12 @@ include("util.jl")
 include("imaginarytime.jl")
 include("realtime.jl")
 
-function hybriddynamics!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::TranslationInvariantIF; band::Int=1)
+function hybriddynamics!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::XTRGIF; band::Int=1)
 	mps = hybriddynamics(lattice, corr, alg, band=band)
 	return mult!(gmps, mps, alg.algmult)
 end
 
-function hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::TranslationInvariantIF; band::Int=1)
+function hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::XTRGIF; band::Int=1)
 	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	if alg.fast
 		(alg.verbosity > 1) && println("Tree bipartition scheme using $(alg.k) multiplications")
@@ -20,7 +20,7 @@ function hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrela
 	end
 end
 
-function _hybriddynamics_fast(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::TranslationInvariantIF; band::Int=1)
+function _hybriddynamics_fast(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::XTRGIF; band::Int=1)
 	algmult = alg.algmult
 	if alg.verbosity > 1
 		t = @elapsed mps = differentialinfluencefunctional(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
@@ -40,7 +40,7 @@ function _hybriddynamics_fast(lattice::AbstractGrassmannLattice, corr::AbstractC
 	return mps
 end
 
-function _hybriddynamics_slow(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::TranslationInvariantIF; band::Int=1)
+function _hybriddynamics_slow(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::XTRGIF; band::Int=1)
 	algmult = alg.algmult
 	if alg.verbosity > 1
 		t = @elapsed mps0 = differentialinfluencefunctional(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
@@ -61,7 +61,7 @@ function _hybriddynamics_slow(lattice::AbstractGrassmannLattice, corr::AbstractC
 	return mps
 end
 
-# function _hybriddynamics_fast(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::TranslationInvariantIF; band::Int=1)
+# function _hybriddynamics_fast(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::XTRGIF; band::Int=1)
 # 	algmult0 = alg.algmult
 # 	trunc0 = algmult0.trunc
 # 	D, ϵ0 = trunc0.D, trunc0.ϵ
@@ -94,7 +94,7 @@ end
 # 	return mps
 # end
 
-# function _hybriddynamics_slow(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::TranslationInvariantIF; band::Int=1)
+# function _hybriddynamics_slow(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::XTRGIF; band::Int=1)
 # 	algmult0 = alg.algmult
 # 	trunc0 = algmult0.trunc
 # 	D, ϵ0 = trunc0.D, trunc0.ϵ

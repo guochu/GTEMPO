@@ -221,7 +221,7 @@ function mult!(x::GrassmannMPS, y::SparseGMPS; trunc::TruncationScheme=DefaultTr
 	end
 	_renormalize!(x′, x′[p₀], false)
 
-	destory_copy!(x.data, x′.data)
+	copy!(x.data, x′.data)
 	copy!(x.svectors, x′.svectors)
 	setscaling!(x, scaling(x′))
 	return x

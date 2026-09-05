@@ -13,7 +13,7 @@ println("------------------------------------")
 	trunc = truncdimcutoff(D=300, ϵ=1.0e-6, add_back=0)
 
 	base_alg = PartialIF(trunc=trunc)
-	algs = [TranslationInvariantIF(k=5, fast=true), TranslationInvariantIF(k=5, fast=false), ExactTranslationInvariantIF()]
+	algs = [XTRGIF(k=5, fast=true), XTRGIF(k=5, fast=false), ExactTTIIF()]
 		
 	for μ in (-5, 0, 5)
 		# println("μ = ", μ)
@@ -50,14 +50,14 @@ end
 	trunc = truncdimcutoff(D=100, ϵ=1.0e-6, add_back=0)
 
 	base_alg = PartialIF(trunc=trunc)
-	alg2 = TranslationInvariantIF(k=5, algevo=WII(), algmult=SVDCompression(trunc))
-	alg3 = TranslationInvariantIF(k=5, algmult=DMRG1(trunc=trunc, initguess=:svd))
-	alg4 = TranslationInvariantIF(k=5, algmult=DMRG1(trunc=trunc, initguess=:pre))
-	alg5 = TranslationInvariantIF(k=5, algmult=DMRG1(trunc=trunc, initguess=:rand, maxiter=10))
-	alg6 = TranslationInvariantIF(k=5, algmult=DMRG1(trunc=trunc), fast=false)
-	alg7 = TranslationInvariantIF(k=5, algevo=ComplexStepper(WII()), algmult=DMRG2(trunc=trunc, initguess=:svd))
-	alg8 = ExactTranslationInvariantIF(algmult=DMRG1(trunc=trunc, initguess=:rand))
-	alg9 = ExactTranslationInvariantIF(algmult=SVDCompression(trunc))
+	alg2 = XTRGIF(k=5, algevo=WII(), algmult=SVDCompression(trunc))
+	alg3 = XTRGIF(k=5, algmult=DMRG1(trunc=trunc, initguess=:svd))
+	alg4 = XTRGIF(k=5, algmult=DMRG1(trunc=trunc, initguess=:pre))
+	alg5 = XTRGIF(k=5, algmult=DMRG1(trunc=trunc, initguess=:rand, maxiter=10))
+	alg6 = XTRGIF(k=5, algmult=DMRG1(trunc=trunc), fast=false)
+	alg7 = XTRGIF(k=5, algevo=ComplexStepper(WII()), algmult=DMRG2(trunc=trunc, initguess=:svd))
+	alg8 = ExactTTIIF(algmult=DMRG1(trunc=trunc, initguess=:rand))
+	alg9 = ExactTTIIF(algmult=SVDCompression(trunc))
 
 	algs = [alg2, alg3, alg4, alg5, alg6, alg7, alg8, alg9]
 

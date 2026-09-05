@@ -8,7 +8,7 @@ GTEMPO.mult!(x::GrassmannMPS, y::GrassmannMPS, alg::CuDMRGMultAlgorithm) = cu_it
 
 
 
-function cumult!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=DefaultTruncation, verbosity::Int=0, useHCache::Bool=DefaultUseCache)
+function cumult!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=DefaultTruncation, verbosity::Int=0)
     (length(x) == length(y)) || throw(DimensionMismatch())
     left = isomorphism(scalartype(x), fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) )
     tmp5 = g_fuse(_mult_site(x[1], y[1]), 3)
@@ -16,7 +16,7 @@ function cumult!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=Defau
 
     stype = scalartype(tmp5)
     ttype = tensormaptype(2, 1, Vector{stype})
-    res = useHCache ? CachedVector{ttype}(undef, length(x)) : Vector{ttype}(undef, length(x))
+    res = Vector{ttype}(undef, length(x))
     empty_tensor = empty(ttype)
 
 	tmp4 = tocu(tmp4)
@@ -41,7 +41,7 @@ function cumult!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=Defau
     x′ = GrassmannMPS(res, copy(x.svectors), scaling(x))
 
     _cu_rightorth!(x′, SVD(), trunc, false, verbosity)
-    destory_copy!(x.data, x′.data)
+    copy!(x.data, x′.data)
     copy!(x.svectors, x′.svectors)
     setscaling!(x, scaling(x′) * scaling(y))
     return x

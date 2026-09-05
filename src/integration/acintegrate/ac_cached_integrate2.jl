@@ -21,14 +21,14 @@ function _normalize!(t::AbstractParityTensorMap)
 	rmul!(t, 1/nt)
 	return nt
 end
-function TwosideExpectationCache2(lattice::AbstractGrassmannLattice, As::Tuple; useHCache::Bool=DefaultUseCache)
+function TwosideExpectationCache2(lattice::AbstractGrassmannLattice, As::Tuple)
 	(ConjugationStyle(lattice.ordering) isa AdjacentConjugation) || throw(ArgumentError("only AdjacentConjugation supported for cached evaluation"))
 	# (length(A) == length(B) == length(lattice)) || throw(DimensionMismatch())
 	(all(v->length(v)==length(lattice), As)) || throw(DimensionMismatch())
 	Lhalf = div(length(lattice), 2)
 	xs = As
 	left = l_LL(xs...)
-	hleft = useHCache ? CachedVector{typeof(left)}(undef, Lhalf+1) : Vector{typeof(left)}(undef, Lhalf+1)
+	hleft = Vector{typeof(left)}(undef, Lhalf+1)
 	hleft_scaling = Vector{Float64}(undef, Lhalf+1)
 	hleft_scaling[1] = _normalize!(left)
 	hleft[1] = left
@@ -40,7 +40,7 @@ function TwosideExpectationCache2(lattice::AbstractGrassmannLattice, As::Tuple; 
 	end
 
 	right = r_RR(xs...)
-	hright = useHCache ? CachedVector{typeof(right)}(undef, Lhalf+1) : Vector{typeof(right)}(undef, Lhalf+1)
+	hright = Vector{typeof(right)}(undef, Lhalf+1)
 	hright_scaling = Vector{Float64}(undef, Lhalf+1)
 	hright_scaling[Lhalf+1] = _normalize!(right)
 	hright[Lhalf+1] = right

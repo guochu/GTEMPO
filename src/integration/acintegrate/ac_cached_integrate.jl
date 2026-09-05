@@ -38,14 +38,14 @@ end
 rightenv(x::TwosideExpectationCache, j::Int) = x.hright[j+1]
 Base.length(x::TwosideExpectationCache) = length(x.lattice)
 
-function TwosideExpectationCache(lattice::AbstractGrassmannLattice, As::Tuple; useHCache::Bool=DefaultUseCache)
+function TwosideExpectationCache(lattice::AbstractGrassmannLattice, As::Tuple)
 	(ConjugationStyle(lattice.ordering) isa AdjacentConjugation) || throw(ArgumentError("only AdjacentConjugation supported for cached evaluation"))
 	# (length(A) == length(B) == length(lattice)) || throw(DimensionMismatch())
 	(all(v->length(v)==length(lattice), As)) || throw(DimensionMismatch())
 	Lhalf = div(length(lattice), 2)
 	xs = As
 	left = l_LL(xs...)
-	hleft = useHCache ? CachedVector{typeof(left)}(undef, Lhalf+1) : Vector{typeof(left)}(undef, Lhalf+1)
+	hleft = Vector{typeof(left)}(undef, Lhalf+1)
 	hleft[1] = left
 	for i in 1:Lhalf
 		left = left * GrassmannTransferMatrix(i, xs...)
@@ -54,7 +54,7 @@ function TwosideExpectationCache(lattice::AbstractGrassmannLattice, As::Tuple; u
 	end
 
 	right = r_RR(xs...)
-	hright = useHCache ? CachedVector{typeof(right)}(undef, Lhalf+1) : Vector{typeof(right)}(undef, Lhalf+1)
+	hright = Vector{typeof(right)}(undef, Lhalf+1)
 	hright[Lhalf+1] = right
 	for i in Lhalf:-1:1
 		right = GrassmannTransferMatrix(i, xs...) * right

@@ -4,14 +4,14 @@
 cu_environments2(lattice::AbstractGrassmannLattice, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
 						alg::IntegrationAlgorithm=ExactIntegrate()) = cuTwosideExpectationCache2(lattice, (A, B...))
 
-function cuTwosideExpectationCache2(lattice::AbstractGrassmannLattice, As::Tuple; useHCache::Bool=DefaultUseCache)
+function cuTwosideExpectationCache2(lattice::AbstractGrassmannLattice, As::Tuple)
 	(ConjugationStyle(lattice.ordering) isa AdjacentConjugation) || throw(ArgumentError("only AdjacentConjugation supported for cached evaluation"))
 	# (length(A) == length(B) == length(lattice)) || throw(DimensionMismatch())
 	(all(v->length(v)==length(lattice), As)) || throw(DimensionMismatch())
 	Lhalf = div(length(lattice), 2)
 	xs = As
 	left = l_LL(xs...)
-	hleft = useHCache ? CachedVector{typeof(left)}(undef, Lhalf+1) : Vector{typeof(left)}(undef, Lhalf+1)
+	hleft = Vector{typeof(left)}(undef, Lhalf+1)
 	hleft_scaling = Vector{Float64}(undef, Lhalf+1)
 	hleft_scaling[1] = _normalize!(left)
 	hleft[1] = left
@@ -24,7 +24,7 @@ function cuTwosideExpectationCache2(lattice::AbstractGrassmannLattice, As::Tuple
 	end
 
 	right = r_RR(xs...)
-	hright = useHCache ? CachedVector{typeof(right)}(undef, Lhalf+1) : Vector{typeof(right)}(undef, Lhalf+1)
+	hright = Vector{typeof(right)}(undef, Lhalf+1)
 	hright_scaling = Vector{Float64}(undef, Lhalf+1)
 	hright_scaling[Lhalf+1] = _normalize!(right)
 	hright[Lhalf+1] = right

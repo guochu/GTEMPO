@@ -1,7 +1,7 @@
 
 
 
-function hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::ExactTranslationInvariantIF; band::Int=1)
+function hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::ExactTTIIF; band::Int=1)
 	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	if lattice.bands == 1
 		return differentialinfluencefunctional(lattice, corr, alg)

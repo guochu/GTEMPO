@@ -48,7 +48,7 @@ export my_mult, my_mult2
 export branch, correlationfunction
 
 # influence functional
-export InfluenceFunctionalAlgorithm, PartialIF, TranslationInvariantIF, ExactTranslationInvariantIF, partialif_hybrid, partialif_hybrid_naive
+export InfluenceFunctionalAlgorithm, PartialIF, XTRGIF, ExactTTIIF, partialif_hybrid, partialif_hybrid_naive
 export influenceoperator, influenceoperatorexponential, differentialinfluencefunctional
 export hybriddynamics, hybriddynamics!, hybriddynamics_naive, hybriddynamics_naive!, hybriddynamicsstepper, hybriddynamicsstepper!
 export retardedinteractdynamics_naive, retardedinteractdynamics_naive!
@@ -108,7 +108,6 @@ export PronyExpansion2, LsqExpansion2
 using Base: @boundscheck, @propagate_inbounds
 using Logging: @warn
 using Reexport, TupleTools, Strided
-using Serialization
 using Z2Tensors
 using Z2Tensors: Z2Tensors, QR, SVD, LQ, AdjointTensorMap, NoTruncation, TruncationDimCutoff
 const TK = Z2Tensors
@@ -128,7 +127,6 @@ using Parameters, Polynomials, KrylovKit, LsqFit
 using LinearAlgebra: LinearAlgebra, Symmetric, eigen, qr, pinv, eigvals, Diagonal, diagm
 
 
-include("auxiliary/CachedVectors.jl")
 include("defaults.jl") # default constants
 include("auxiliary/linalg.jl")
 include("auxiliary/mpstensors.jl")

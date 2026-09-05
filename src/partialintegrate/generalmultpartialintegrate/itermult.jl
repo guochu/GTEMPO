@@ -29,7 +29,7 @@ struct PartialIntegrateIterativeMultCache{M<:GrassmannMPS, G<:Tuple, H}
     cidx::Vector{Int}
     hstorage::H
 end
-function parint_cache(z::GrassmannMPS, xs::GrassmannMPS...; cidx::Vector{Int}, verbosity::Int=0, useHCache::Bool=DefaultUseCache)
+function parint_cache(z::GrassmannMPS, xs::GrassmannMPS...; cidx::Vector{Int}, verbosity::Int=0)
     Lxs = length(xs[1])
     (unique(length.(xs)) == [Lxs,]) || throw(DimensionMismatch("unique($(length.(xs))) != [$Lxs,]"))
     @assert Lxs == length(z) + 2*length(cidx)
@@ -38,8 +38,7 @@ function parint_cache(z::GrassmannMPS, xs::GrassmannMPS...; cidx::Vector{Int}, v
     Lz = length(z)
     left = isomorphism(scalartype(xs[1]), space_l(z), ⊗(space_l.(xs)...) )
     right = isomorphism(scalartype(z), ⊗(space_r.(xs)...)', space_r(z)')
-    # hstorage = Vector{Union{typeof(left),typeof(right)}}(undef, Lz+1)
-    hstorage = useHCache ? CachedVector{Union{typeof(left),typeof(right)}}(undef, Lz+1) : Vector{Union{typeof(left),typeof(right)}}(undef, Lz+1)
+    hstorage = Vector{Union{typeof(left),typeof(right)}}(undef, Lz+1)
 
     hstorage[1] = left
     hstorage[Lz+1] = right

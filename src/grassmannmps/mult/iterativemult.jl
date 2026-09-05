@@ -58,12 +58,12 @@ struct GMPSIterativeMultCache{_O, _A, _B, _H}
     hstorage::_H
 end
 
-function mult_cache(z::GrassmannMPS, x::GrassmannMPS, y::GrassmannMPS; useHCache::Bool=DefaultUseCache)
+function mult_cache(z::GrassmannMPS, x::GrassmannMPS, y::GrassmannMPS)
     @assert length(z) == length(x) == length(y)
     # initialize Hstorage
     L = length(z)
     right = ones(scalartype(z), space_r(y)' ⊗ space_r(x)', space_r(z)')
-    hstorage = useHCache ? CachedVector{typeof(right)}(undef, L+1) : Vector{typeof(right)}(undef, L+1)
+    hstorage = Vector{typeof(right)}(undef, L+1)
 
     hstorage[1] = ones( scalartype(z), space_l(z) ⊗ space_l(x)', space_l(y) )
     hstorage[L+1] = right

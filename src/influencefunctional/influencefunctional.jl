@@ -11,12 +11,12 @@ struct PartialIF <: InfluenceFunctionalAlgorithm
 end
 PartialIF(; trunc::TruncationDimCutoff=DefaultITruncation, verbosity::Int=0) = PartialIF(trunc, verbosity)
 """
-	struct TranslationInvariantIF
+	struct XTRGIF
 
 Build the IF as a translational variant MPO
 see [SciPost Phys. Core 7, 063 (2024)]
 """
-struct TranslationInvariantIF{T<:ExponentialExpansionAlgorithm, E<:TimeEvoMPOAlgorithm, M<:DMRGAlgorithm} <: InfluenceFunctionalAlgorithm 
+struct XTRGIF{T<:ExponentialExpansionAlgorithm, E<:TimeEvoMPOAlgorithm, M<:DMRGAlgorithm} <: InfluenceFunctionalAlgorithm 
 	algexpan::T
 	algevo::E
 	algmult::M
@@ -25,14 +25,14 @@ struct TranslationInvariantIF{T<:ExponentialExpansionAlgorithm, E<:TimeEvoMPOAlg
 	fast::Bool
 	verbosity::Int
 end
-TranslationInvariantIF(; algexpan::ExponentialExpansionAlgorithm=PronyExpansion(n=15, tol=1.0e-4, verbosity=0), 
+XTRGIF(; algexpan::ExponentialExpansionAlgorithm=PronyExpansion(n=15, tol=1.0e-4, verbosity=0), 
 						 algevo::TimeEvoMPOAlgorithm=WII(), 
 						 algmult::DMRGAlgorithm=DefaultMultAlg,
 						 k::Int=5, 
 						 fast::Bool=true,
-						 verbosity::Int=0) = TranslationInvariantIF(algexpan, algevo, algmult, k, fast, verbosity)
+						 verbosity::Int=0) = XTRGIF(algexpan, algevo, algmult, k, fast, verbosity)
 
-function Base.getproperty(x::TranslationInvariantIF, s::Symbol)
+function Base.getproperty(x::XTRGIF, s::Symbol)
 	if s == :trunc
 		return x.algmult.trunc
 	else
@@ -41,18 +41,18 @@ function Base.getproperty(x::TranslationInvariantIF, s::Symbol)
 end
 
 
-struct ExactTranslationInvariantIF{T<:ExponentialExpansionAlgorithm, M<:DMRGAlgorithm, M2<:DMRGAlgorithm} <: InfluenceFunctionalAlgorithm 
+struct ExactTTIIF{T<:ExponentialExpansionAlgorithm, M<:DMRGAlgorithm, M2<:DMRGAlgorithm} <: InfluenceFunctionalAlgorithm 
 	algexpan::T
 	algmult::M
 	algmult2::M2 # only used in iGTEMPO._differentialinfluencefunctional2
 	multorder::Symbol
 	verbosity::Int
 end
-ExactTranslationInvariantIF(; algexpan::ExponentialExpansionAlgorithm=PronyExpansion(n=15, tol=1.0e-4, verbosity=0), 
+ExactTTIIF(; algexpan::ExponentialExpansionAlgorithm=PronyExpansion(n=15, tol=1.0e-4, verbosity=0), 
 						 algmult::DMRGAlgorithm=DefaultMultAlg, algmult2::DMRGAlgorithm=algmult,
 						 multorder::Symbol = :αSM,
-						 verbosity::Int=0) = ExactTranslationInvariantIF(algexpan, algmult, algmult2, multorder, verbosity)
-# allowed order: 
+						 verbosity::Int=0) = ExactTTIIF(algexpan, algmult, algmult2, multorder, verbosity)
+# allowed order:
 # :λLM, λ large first
 # :λSM, λ small first
 # :αLM, α large first
