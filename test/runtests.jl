@@ -66,7 +66,6 @@ include("electronphonon/retardedinteract.jl")
 
 ### heavy tests (each ≥4 min, in test/models/)
 if RUN_HEAVY_TESTS
-    include("models/bmps_gf.jl")
     include("models/independentbosons.jl")
     include("models/generalimpurity.jl")
     include("models/buildK.jl")

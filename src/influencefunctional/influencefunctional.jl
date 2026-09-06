@@ -82,7 +82,7 @@ dimension grows with the correlations up to `trunc.D`.
 - `callback::Function`: callback function invoked after the flow.
 
 On real-time lattices the influence operator driving the flow is the sum of
-the 4 branch MPOs returned by `influenceoperator` ((+,+), (+,−), (−,+),
+the 4 branch MPOs returned by `influenceoperators` ((+,+), (+,−), (−,+),
 (−,−)), since the site-wise product algebra satisfies e^a∘e^b = e^{a+b}.
 """
 struct TDVPIF <: InfluenceFunctionalAlgorithm

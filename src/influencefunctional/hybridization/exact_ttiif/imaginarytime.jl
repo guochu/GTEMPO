@@ -1,16 +1,16 @@
 
-function differentialinfluencefunctional(lattice::ImagGrassmannLattice1Order{O}, corr::ImagCorrelationFunction, alg::ExactTTIIF) where O
+function influencefunctional(lattice::ImagGrassmannLattice1Order{O}, corr::ImagCorrelationFunction, alg::ExactTTIIF) where O
 	if !(LayoutStyle(lattice) isa TimeLocalLayout)
 		lattice2 = similar(lattice, ordering = A1Ā1B1B̄1())
-		mps = _differentialinfluencefunctional(lattice2, corr, alg)
+		mps = _influencefunctional(lattice2, corr, alg)
 		_, mps2 = changeordering(O, lattice2, mps, trunc=alg.algmult.trunc)
 		return mps2
 	else
-		return _differentialinfluencefunctional(lattice, corr, alg)
+		return _influencefunctional(lattice, corr, alg)
 	end
 end
 
-function _differentialinfluencefunctional(lattice::ImagGrassmannLattice1Order, corr::ImagCorrelationFunction, alg::ExactTTIIF)
+function _influencefunctional(lattice::ImagGrassmannLattice1Order, corr::ImagCorrelationFunction, alg::ExactTTIIF)
 	@assert lattice.bands == 1
 
 	# get WII for each exponential decay term

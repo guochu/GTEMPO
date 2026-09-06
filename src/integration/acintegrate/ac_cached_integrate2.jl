@@ -68,7 +68,7 @@ function expectationvalue(m::PartialMPO, cache::TwosideExpectationCache2)
 	return contract_center(left, right) * scaling / contract_center(left, rightenv(cache, j-1))
 end
 
-leftscaling(cache::TwosideExpectationCache2, i) = cache,hleft_scaling[i]
+leftscaling(cache::TwosideExpectationCache2, i) = cache.hleft_scaling[i]
 rightscaling(cache::TwosideExpectationCache2, i) = cache.hright_scaling[i+1]
 
 

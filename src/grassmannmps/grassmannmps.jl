@@ -12,8 +12,8 @@ should be multiplied by "scaling"
 # 	svectors::Vector{Union{Missing, B}}
 # 	scaling::Ref{Float64}
 # end
-struct GrassmannMPS{A <: MPSTensor, B <: MPSBondTensor, VA<:AbstractVector{A}} <: AbstractFiniteGMPS{A}
-	data::VA
+struct GrassmannMPS{A <: MPSTensor, B <: MPSBondTensor} <: AbstractFiniteGMPS{A}
+	data::Vector{A}
 	svectors::Vector{Union{Missing, B}}
 	scaling::Ref{Float64}
 end
@@ -29,12 +29,12 @@ function GrassmannMPS(data::Vector{A}; scaling::Real=1) where {A <: MPSTensor}
 	svectors[1] = DiagonalTensorMap{Float64}(ones, space_l(data[1]) )
 	svectors[end] = DiagonalTensorMap{Float64}(ones, space_r(data[end])' )
 	return GrassmannMPS(data, svectors, Ref(convert(Float64, scaling)))
-end 
+end
 function GrassmannMPS(data::AbstractVector{A}, svectors::Vector, scaling::Real=1) where {A <: MPSTensor}
 	# @assert iseven(length(data))
 	# isoneunit(space_r(data[end])) || throw(ArgumentError("input data must be in the even sector"))
-	return GrassmannMPS(data, svectors, Ref(convert(Float64, scaling)))
-end 
+	return GrassmannMPS(convert(Vector{A}, data), svectors, Ref(convert(Float64, scaling)))
+end
 
 function GrassmannMPS(::Type{T}, L::Int) where {T <: Number}
 	@assert iseven(L)

@@ -3,7 +3,7 @@
 # TDVPIF is an influence functional construction algorithm on the same footing
 # as XTRGIF and PartialIF. It views the influence functional
 # as the "equilibrium state" IF = exp(H) of the influence operator H (the MPO
-# form returned by `influenceoperator`), and computes it with a second-order
+# form returned by `influenceoperators`), and computes it with a second-order
 # single-site TDVP imaginary-time flow
 #
 #     dz/dτ = H·z ,   τ : 0 → 1 ,
@@ -30,28 +30,28 @@
 
 
 # the influence operator H driving the flow, in fused-leg GrassmannMPS form:
-# `influenceoperator` returns the MPO; multiplying it onto the identity
+# `influenceoperators` returns the MPO; multiplying it onto the identity
 # influence functional (vacuumstate) fuses its legs into the MPO-as-MPS form
 # used by the flow. On lattices whose ordering is not time-local the operator
 # is built on the canonical ordering and rotated back with `changeordering`,
-# exactly as in `differentialinfluencefunctional`.
+# exactly as in `influenceoperatorstepper`.
 function _tdvpif_hamiltonian(lattice::ImagGrassmannLattice1Order{O}, corr::ImagCorrelationFunction, alg::TDVPIF; band::Int=1) where O
 	T = scalartype(corr)
 	if LayoutStyle(lattice) isa TimeLocalLayout
-		H = influenceoperator(lattice, corr, band=band, algexpan=alg.algexpan)
+		H = only(influenceoperators(lattice, corr, band=band, algexpan=alg.algexpan))
 		return H * vacuumstate(T, lattice)
 	else
 		lattice2 = similar(lattice, ordering=A1Ā1B1B̄1())
-		H = influenceoperator(lattice2, corr, band=band, algexpan=alg.algexpan) * vacuumstate(T, lattice2)
+		H = only(influenceoperators(lattice2, corr, band=band, algexpan=alg.algexpan)) * vacuumstate(T, lattice2)
 		_, H2 = changeordering(O, lattice2, H, trunc=alg.trunc)
 		return H2
 	end
 end
 
-# on real-time lattices `influenceoperator` returns 4 branch MPOs
+# on real-time lattices `influenceoperators` returns 4 branch MPOs
 # ((+,+), (+,−), (−,+), (−,−)); the total influence operator driving the
 # flow is their SUM (MPS/MPO direct sum, bond dimensions add up). Indeed the
-# differential IF built by `differentialinfluencefunctional` is the Hadamard
+# differential IF built by `influenceoperatorstepper` is the Hadamard
 # (site-wise) product e^{dt·h1}∘e^{dt·h2}∘e^{dt·h3}∘e^{dt·h4}, and in the
 # element-wise algebra of ADT/PT products e^a∘e^b = e^{a+b}, so the generator
 # of the full IF is h1+h2+h3+h4 (NOT the Hadamard product h1∘h2∘h3∘h4).
@@ -74,7 +74,7 @@ function _tdvpif_hamiltonian(lattice::RealGrassmannLattice{O}, corr::RealCorrela
 end
 
 function _tdvpif_hamiltonian_timelocal(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction, alg::TDVPIF, T; band::Int=1)
-	h1, h2, h3, h4 = influenceoperator(lattice, corr, band=band, algexpan=alg.algexpan)
+	h1, h2, h3, h4 = influenceoperators(lattice, corr, band=band, algexpan=alg.algexpan)
 	orth = Orthogonalize(SVD(), DefaultMPOTruncation; normalize=false)
 	H = h1 * vacuumstate(T, lattice)
 	H = H + h2 * vacuumstate(T, lattice)
@@ -103,6 +103,8 @@ function _tdvpif_hybriddynamics!(z::GrassmannMPS, H::GrassmannMPS, alg::TDVPIF)
 	increase_bond!(z, alg.trunc.D)
 	canonicalize!(z, alg=Orthogonalize(SVD(), NoTruncation(); normalize=false))
 	_tdvpif_flow!(z, H, alg)
+	# after the flow, a final canonicalization sweep compresses z with SVD
+	# truncation to the target bond dimension
 	canonicalize!(z, alg=Orthogonalize(SVD(), alg.trunc; normalize=false))
 	alg.callback(Float64[])
 	return z

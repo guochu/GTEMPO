@@ -23,10 +23,10 @@ end
 function _hybriddynamics_fast(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::XTRGIF; band::Int=1)
 	algmult = alg.algmult
 	if alg.verbosity > 1
-		t = @elapsed mps = differentialinfluencefunctional(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
+		t = @elapsed mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
 		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bond_dimension(mps))
 	else
-		mps = differentialinfluencefunctional(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
+		mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
 	end
 	
 	for i in 1:alg.k
@@ -43,10 +43,10 @@ end
 function _hybriddynamics_slow(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::XTRGIF; band::Int=1)
 	algmult = alg.algmult
 	if alg.verbosity > 1
-		t = @elapsed mps0 = differentialinfluencefunctional(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
+		t = @elapsed mps0 = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
 		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bond_dimension(mps))
 	else
-		mps0 = differentialinfluencefunctional(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
+		mps0 = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
 	end
 	mps = mps0
 
@@ -66,12 +66,12 @@ end
 # 	trunc0 = algmult0.trunc
 # 	D, ϵ0 = trunc0.D, trunc0.ϵ
 # 	algmult = changetrunc(algmult0, trunc=truncdimcutoff(D=D, ϵ=ϵ0/2^(alg.k)))
-# 	# mps = differentialinfluencefunctional(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
+# 	# mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
 # 	if alg.verbosity > 1
-# 		t = @elapsed mps = differentialinfluencefunctional(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
+# 		t = @elapsed mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
 # 		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bond_dimension(mps))
 # 	else
-# 		mps = differentialinfluencefunctional(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
+# 		mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
 # 	end
 	
 
@@ -99,12 +99,12 @@ end
 # 	trunc0 = algmult0.trunc
 # 	D, ϵ0 = trunc0.D, trunc0.ϵ
 # 	algmult = changetrunc(algmult0, trunc=truncdimcutoff(D=D, ϵ=ϵ0/2^(alg.k)))
-# 	# mps = differentialinfluencefunctional(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
+# 	# mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
 # 	if alg.verbosity > 1
-# 		t = @elapsed mps0 = differentialinfluencefunctional(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
+# 		t = @elapsed mps0 = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
 # 		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bond_dimension(mps))
 # 	else
-# 		mps0 = differentialinfluencefunctional(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
+# 		mps0 = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
 # 	end
 # 	mps = mps0
 

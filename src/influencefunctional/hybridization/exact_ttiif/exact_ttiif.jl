@@ -4,10 +4,10 @@
 function hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::ExactTTIIF; band::Int=1)
 	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	if lattice.bands == 1
-		return differentialinfluencefunctional(lattice, corr, alg)
+		return influencefunctional(lattice, corr, alg)
 	else
 		lattice1 = similar(lattice, bands=1)
-		mps = differentialinfluencefunctional(lattice1, corr, alg)
+		mps = influencefunctional(lattice1, corr, alg)
 		return fillband(lattice, mps; band=band)
 	end
 end

@@ -17,7 +17,7 @@ println("------------------------------------")
 				lattice = GrassmannLattice(N=N, δτ=δτ, bands=bands, contour=:imag, ordering=ordering)
 				corr = correlationfunction(bath, lattice)
 				for band in 1:lattice.bands
-					mpo1 = influenceoperator(lattice, corr, band=band, algexpan=algexpan)
+					mpo1 = only(influenceoperators(lattice, corr, band=band, algexpan=algexpan))
 					mps1 = mpo1 * vacuumstate(lattice)
 					canonicalize!(mps1, alg=Orthogonalize(trunc=trunc))
 
@@ -42,17 +42,17 @@ println("------------------------------------")
 					dt = 0.01
 
 					mps1 = dt * mps1 + vacuumstate(lattice)
-					mpo2 = influenceoperatorexponential(lattice, corr, dt, WII(), band=band, algexpan=algexpan)
+					mpo2 = only(influenceoperatorsteppers(lattice, corr, dt, WII(), band=band, algexpan=algexpan))
 					mps0 = mpo2 * vacuumstate(lattice)
 
 					@test distance(mps1, mps0) / norm(mps0) < dt
 
 					for algmult in (SVDCompression(D=50), DMRG1(trunc=truncdimcutoff(D=50,ϵ=1.0e-6)), DMRG2(trunc=truncdimcutoff(D=50,ϵ=1.0e-6)))
-						mps1 = differentialinfluencefunctional(lattice, corr, dt, WII(), algmult, band=band, algexpan=algexpan)
+						mps1 = influenceoperatorstepper(lattice, corr, dt, WII(), algmult, band=band, algexpan=algexpan)
 						_n = norm(mps1)
-						mps2 = differentialinfluencefunctional(lattice, corr, dt, WI(), algmult, band=band, algexpan=algexpan)
-						mps3 = differentialinfluencefunctional(lattice, corr, dt, ComplexStepper(WI()), algmult, band=band, algexpan=algexpan)
-						mps4 = differentialinfluencefunctional(lattice, corr, dt, ComplexStepper(WII()), algmult, band=band, algexpan=algexpan)
+						mps2 = influenceoperatorstepper(lattice, corr, dt, WI(), algmult, band=band, algexpan=algexpan)
+						mps3 = influenceoperatorstepper(lattice, corr, dt, ComplexStepper(WI()), algmult, band=band, algexpan=algexpan)
+						mps4 = influenceoperatorstepper(lattice, corr, dt, ComplexStepper(WII()), algmult, band=band, algexpan=algexpan)
 						@test distance(mps1, mps0) / _n < dt
 						@test distance(mps1, mps0) / _n < dt
 						@test distance(mps1, mps0) / _n < dt
@@ -84,7 +84,7 @@ end
 			corr = correlationfunction(bath, lattice)
 			for band in 1:lattice.bands
 
-				h_pp, h_pm, h_mp, h_mm = influenceoperator(lattice, corr, band=band, algexpan=algexpan)
+				h_pp, h_pm, h_mp, h_mm = influenceoperators(lattice, corr, band=band, algexpan=algexpan)
 				mps_pp = h_pp * vacuumstate(lattice)
 				canonicalize!(mps_pp, alg=Orthogonalize(trunc=trunc))
 
@@ -179,7 +179,7 @@ end
 				mps_mm = dt * mps_mm + vacuumstate(lattice)
 
 
-				h_pp, h_pm, h_mp, h_mm = influenceoperatorexponential(lattice, corr, dt, WII(), band=band, algexpan=algexpan)
+				h_pp, h_pm, h_mp, h_mm = influenceoperatorsteppers(lattice, corr, dt, WII(), band=band, algexpan=algexpan)
 				mps2_pp = h_pp * vacuumstate(lattice)
 				mps2_pm = h_pm * vacuumstate(lattice)
 				mps2_mp = h_mp * vacuumstate(lattice)
@@ -195,11 +195,11 @@ end
 				mps0 = mult!(mps0, mps2_mm, trunc=trunc)
 
 				for algmult in (SVDCompression(D=50), DMRG1(trunc=truncdimcutoff(D=50,ϵ=1.0e-6)), DMRG2(trunc=truncdimcutoff(D=50,ϵ=1.0e-6)))
-					mps1 = differentialinfluencefunctional(lattice, corr, dt, WII(), algmult, band=band, algexpan=algexpan)
+					mps1 = influenceoperatorstepper(lattice, corr, dt, WII(), algmult, band=band, algexpan=algexpan)
 					_n = norm(mps1)
-					mps2 = differentialinfluencefunctional(lattice, corr, dt, WI(), algmult, band=band, algexpan=algexpan)
-					mps3 = differentialinfluencefunctional(lattice, corr, dt, ComplexStepper(WI()), algmult, band=band, algexpan=algexpan)
-					mps4 = differentialinfluencefunctional(lattice, corr, dt, ComplexStepper(WII()), algmult, band=band, algexpan=algexpan)
+					mps2 = influenceoperatorstepper(lattice, corr, dt, WI(), algmult, band=band, algexpan=algexpan)
+					mps3 = influenceoperatorstepper(lattice, corr, dt, ComplexStepper(WI()), algmult, band=band, algexpan=algexpan)
+					mps4 = influenceoperatorstepper(lattice, corr, dt, ComplexStepper(WII()), algmult, band=band, algexpan=algexpan)
 					@test distance(mps1, mps0) / _n < dt
 					@test distance(mps2, mps0) / _n < dt
 					@test distance(mps3, mps0) / _n < dt

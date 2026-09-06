@@ -299,20 +299,10 @@ function indexmappings(lattice::RealGrassmannLattice)
 	return r
 end
 
-function band_boundary(lattice::RealGrassmannLattice{<:A1Ā1B1B̄1b̄1B̄1ā1Ā1}, j::Int)
-    if j == 0
-        posa = index(lattice, j, conj=false, band=1)
-        posb = index(lattice, j, conj=true, band=1)     
-    else
-        posa = index(lattice, j, conj=false, branch=:+, band=1)
-        posb = index(lattice, j, conj=true, branch=:+, band=1)
-    end
-    return posa, posb
-end
 function band_boundary(lattice::RealGrassmannLattice{<:A1Ā1a1ā1B1B̄1b1b̄1}, j::Int)
     if j == 0
         posa = index(lattice, j, conj=false, band=1)
-        posb = index(lattice, j, conj=true, band=lattice.bands)     
+        posb = index(lattice, j, conj=true, band=lattice.bands)
     else
         posa = index(lattice, j, conj=false, branch=:+, band=1)
         posb = index(lattice, j, conj=true, branch=:-, band=lattice.bands)
@@ -322,40 +312,10 @@ end
 function band_boundary(lattice::RealGrassmannLattice{<:A1Ā1B1B̄1a1ā1b1b̄1}, j::Int)
     if j == 0
         posa = index(lattice, j, conj=false, band=1)
-        posb = index(lattice, j, conj=true, band=lattice.bands)     
+        posb = index(lattice, j, conj=true, band=lattice.bands)
     else
         posa = index(lattice, j, conj=false, branch=:+, band=1)
         posb = index(lattice, j, conj=true, branch=:-, band=lattice.bands)
-    end
-    return posa, posb
-end
-function band_boundary(lattice::RealGrassmannLattice{<:A1B1ā1b̄1Ā1B̄1a1b1}, j::Int)
-    if j == 0
-        posa = index(lattice, j, conj=false, band=1)
-        posb = index(lattice, j, conj=true, band=lattice.bands)     
-    else
-        posa = index(lattice, j, conj=false, branch=:+, band=1)
-        posb = index(lattice, j, conj=false, branch=:-, band=lattice.bands)
-    end
-    return posa, posb
-end
-function band_boundary(lattice::RealGrassmannLattice{<:A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2}, j::Int; branch::Symbol=:+)
-    if j == 0
-        posa = index(lattice, j, conj=false, band=1)
-        posb = index(lattice, j, conj=true, band=1)   
-    else
-        posa = index(lattice, j, conj=false, band=1, branch=branch)
-        posb = index(lattice, j, conj=true, band=1, branch=branch) 
-    end
-    return posa, posb
-end
-function band_boundary(lattice::RealGrassmannLattice{<:A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2}, j::Int; branch::Symbol=:+)
-    if j == 0
-        posa = index(lattice, j, conj=false, band=1)
-        posb = index(lattice, j, conj=true, band=lattice.bands)   
-    else
-        posa = index(lattice, j, conj=false, band=1, branch=branch)
-        posb = index(lattice, j, conj=true, band=lattice.bands, branch=branch) 
     end
     return posa, posb
 end

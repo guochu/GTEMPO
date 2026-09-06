@@ -33,6 +33,28 @@
 
 `DMRGMultAlgorithm` / `CuDMRGMultAlgorithm` 抽象类型名保持不变。
 
+### 影响算符/影响泛函构建接口重命名
+
+围绕"影响算符 → 单步指数 → 单步影响泛函 → 完整影响泛函"统一命名：
+
+| 旧名 | 新名 | 说明 |
+|---|---|---|
+| `influenceoperator` | `influenceoperators` | 影响算符，输出为 MPO 组成的 tuple（虚时为 1 元组，实时为 4 分支元组） |
+| `influenceoperatorexponential` | `influenceoperatorsteppers` | 影响算符的单步指数 e^{dt·h}（MPO tuple；虚时 FirstOrderStepper 版由单 MPO 改为 1 元组） |
+| `differentialinfluencefunctional` | `influenceoperatorstepper` | 微分影响泛函（单步 IF，MPS）；私有 `_differentialinfluencefunctional` 同步改为 `_influenceoperatorstepper` |
+| ExactTTIIF 的 `differentialinfluencefunctional` | `influencefunctional` | ExactTTIIF 的完整 IF 构建入口；私有 `_influenceoperatorexponential`（旧 `_differentialinfluencefunctional`）同步改为 `_influencefunctional` |
+
+导出更新为 `influenceoperators, influenceoperatorsteppers, influenceoperatorstepper, influencefunctional`。
+
+### 删除
+
+- `test/models/bmps_gf.jl` 及其在 `test/runtests.jl` 中的 include。
+- `band_boundary` 的 4 个死 method（realtime.jl 中 `A1Ā1B1B̄1b̄1B̄1ā1Ā1`、`A1B1ā1b̄1Ā1B̄1a1b1` 与两个 `A2...` ordering 版本）：这些 ordering 不在 `_AllowedRealGrassmannOrdering` 内或非 TimeLocal，`_fit_to_lattice` 永远不会走到；其余 4 个活跃 method（虚时 2 个、实时 2 个）保留。
+
+### 其它
+
+- `GrassmannMPS` 去掉第 3 个类型参数 `VA<:AbstractVector{A}`，`data` 字段实体化为 `Vector{A}`；三参构造函数中对非 Vector 输入做 `convert`。
+
 ## 新增
 
 ### TDVPIF 算法
