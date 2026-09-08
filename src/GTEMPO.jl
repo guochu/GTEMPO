@@ -121,7 +121,7 @@ import QuAPI: branch, index
 
 
 using ExpExp
-using KrylovKit: KrylovKit, Arnoldi, exponentiate
+using KrylovKit: Arnoldi, exponentiate
 using LinearAlgebra: LinearAlgebra, Symmetric, eigen, qr, pinv, eigvals, Diagonal, diagm
 
 
