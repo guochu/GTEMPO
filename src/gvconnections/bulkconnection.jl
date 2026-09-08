@@ -5,7 +5,19 @@ Similar to boundarycondition, but applies the bulk connection terms instead of
 the boundary connection term
 """
 bulkconnection(lattice::AbstractGrassmannLattice; kwargs...) = bulkconnection!(vacuumstate(lattice), lattice; kwargs...)
+"""
+	bulkconnection!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice; band=1, trunc=DefaultIntegrationTruncation)
+
+In-place version of `bulkconnection`: applies the bulk connection terms onto
+`gmps` directly and returns it.
+"""
 # imaginary-time
+"""
+	bulkconnection!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice; band=1, trunc=DefaultIntegrationTruncation)
+
+In-place version of `bulkconnection`: applies the bulk connection terms onto
+`gmps` directly and returns it.
+"""
 function bulkconnection!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice; band::Int=1, trunc::TruncationScheme=DefaultIntegrationTruncation)
 	return bulkconnection_util!(gmps, lattice, lattice.Nτ, band, :τ, trunc)
 end

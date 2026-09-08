@@ -53,6 +53,12 @@ function TwosideExpectationCache2(lattice::AbstractGrassmannLattice, As::Tuple)
 	return TwosideExpectationCache2(first(As), Base.tail(As), lattice, hleft, hleft_scaling, hright, hright_scaling)
 end
 
+"""
+	expectationvalue(m::PartialMPO, cache::TwosideExpectationCache2)
+
+Evaluate the expectation value of a partial MPO `m` using the precomputed
+two-side environments in `cache`.
+"""
 function expectationvalue(m::PartialMPO, cache::TwosideExpectationCache2)
 	j, k = positions(m)[1], positions(m)[end]
 	j, k = pos2pairindex(j), pos2pairindex(k)

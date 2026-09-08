@@ -1,3 +1,12 @@
+# local helper: the ⟨aᵢ bⱼ⟩ Green's function built on gf with contour indices
+function _gf_ij(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
+                b1::Symbol, b2::Symbol, c1::Bool, c2::Bool, band::Union{Int, Tuple{Int, Int}}=1, kwargs...)
+    band isa Int && (band = (band, band))
+    a = ContourIndex(i, conj=c1, branch=b1, band=band[1])
+    b = ContourIndex(j, conj=c2, branch=b2, band=band[2])
+    return gf(lattice, (a, b), A, B...; kwargs...)
+end
+
 """
     electriccurrent(lattice::RealGrassmannLattice1Order, corr, k::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
                          alg::IntegrationAlgorithm=ExactIntegrate(),
@@ -12,8 +21,8 @@ function electriccurrent(lattice::RealGrassmannLattice1Order, corr::RealCorrelat
     curr = complex(0.)
     η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
     for j in 1:k-1
-        curr += η⁺⁺[k, j] * Gt(lattice, k, j, A, B...; b1=:+, b2=:+, Z=Z, band=band, alg=alg, c1=true, c2=false)
-        curr += η⁺⁻[k, j] * Gt(lattice, k, j, A, B...; b1=:+, b2=:-, Z=Z, band=band, alg=alg, c1=true, c2=false)
+        curr += η⁺⁺[k, j] * _gf_ij(lattice, k, j, A, B...; b1=:+, b2=:+, Z=Z, band=band, alg=alg, c1=true, c2=false)
+        curr += η⁺⁻[k, j] * _gf_ij(lattice, k, j, A, B...; b1=:+, b2=:-, Z=Z, band=band, alg=alg, c1=true, c2=false)
     end
     return 2 * curr / lattice.δt
 end
@@ -43,6 +52,12 @@ electriccurrent_fast(lattice::RealGrassmannLattice1Order, corr::RealCorrelationF
 
 
 
+"""
+	heatcorrelationfunction(bath::AbstractFermionicNormalBath, lattice::RealGrassmannLattice)
+
+Build the correlation function with the bath spectrum weighted by `ω`
+(the weight factor for heat currents), i.e. `J(ω) -> ω J(ω)`.
+"""
 function heatcorrelationfunction(bath::AbstractFermionicNormalBath, lattice::RealGrassmannLattice)
     bath2 = similar(bath, _mult_w(bath.spectrum))
     corr = correlationfunction(bath2, lattice)
@@ -60,6 +75,12 @@ _mult_w(x::DiracDelta) = similar(x, α=x.ω*x.α)
 # the only change one needs to make is to replace the spectrum function
 # as J(w) to w -> w * J(w)
 # """
+"""
+	heatcurrent_fast(lattice::RealGrassmannLattice1Order, bath::AbstractFermionicNormalBath, args...; kwargs...)
+
+Heat current computed with the MPO-based (fast) current evaluation, using the
+`ω`-weighted correlation function built by `heatcorrelationfunction`.
+"""
 heatcurrent_fast(lattice::RealGrassmannLattice1Order, bath::AbstractFermionicNormalBath, args...; kwargs...) = electriccurrent_fast(
                     lattice, heatcorrelationfunction(bath, lattice), args...; kwargs...)
 
@@ -73,14 +94,14 @@ function electriccurrent(lattice::RealGrassmannLattice2Order, corr::RealCorrelat
     η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
     @assert  lattice.N <= div(size(η⁺⁺,1)-1, 2) 
     k = lattice.k
-    curr -= η⁺⁺[2*k-1, 1] * Gt(lattice, k, 1, A, B...; b1=:-, b2=:+, Z=Z, band=band, alg=alg, c1=true, c2=false)
-    curr -= η⁺⁻[2*k-1, 1] * Gt(lattice, k, 1, A, B..., b1=:-, b2=:-, Z=Z, band=band, alg=alg, c1=true, c2=false)
+    curr -= η⁺⁺[2*k-1, 1] * _gf_ij(lattice, k, 1, A, B...; b1=:-, b2=:+, Z=Z, band=band, alg=alg, c1=true, c2=false)
+    curr -= η⁺⁻[2*k-1, 1] * _gf_ij(lattice, k, 1, A, B..., b1=:-, b2=:-, Z=Z, band=band, alg=alg, c1=true, c2=false)
     for j in 2:k-1
-        curr -= (η⁺⁺[2*k-1, 2*j-2] + η⁺⁺[2*k-1, 2*j-1]) * Gt(lattice, k, j, A, B..., b1=:-, b2=:+, Z=Z, band=band, alg=alg, c1=true, c2=false)
-        curr -= (η⁺⁻[2*k-1, 2*j-2] + η⁺⁻[2*k-1, 2*j-1])  * Gt(lattice, k, j, A, B..., b1=:-, b2=:-, Z=Z, band=band, alg=alg, c1=true, c2=false)
+        curr -= (η⁺⁺[2*k-1, 2*j-2] + η⁺⁺[2*k-1, 2*j-1]) * _gf_ij(lattice, k, j, A, B..., b1=:-, b2=:+, Z=Z, band=band, alg=alg, c1=true, c2=false)
+        curr -= (η⁺⁻[2*k-1, 2*j-2] + η⁺⁻[2*k-1, 2*j-1])  * _gf_ij(lattice, k, j, A, B..., b1=:-, b2=:-, Z=Z, band=band, alg=alg, c1=true, c2=false)
     end
-    curr -= η⁺⁺[2*k-1, 2*k-2] * Gt(lattice, k, k, A, B..., b1=:-, b2=:+, Z=Z, band=band, alg=alg, c1=true, c2=false)
-    curr -= η⁺⁻[2*k-1, 2*k-2] * Gt(lattice, k, k, A, B..., b1=:-, b2=:-, Z=Z, band=band, alg=alg, c1=true, c2=false)
+    curr -= η⁺⁺[2*k-1, 2*k-2] * _gf_ij(lattice, k, k, A, B..., b1=:-, b2=:+, Z=Z, band=band, alg=alg, c1=true, c2=false)
+    curr -= η⁺⁻[2*k-1, 2*k-2] * _gf_ij(lattice, k, k, A, B..., b1=:-, b2=:-, Z=Z, band=band, alg=alg, c1=true, c2=false)
     return 2 * curr / (0.5*lattice.δt)
 end
 
@@ -93,8 +114,8 @@ function electriccurrent_fast(lattice::RealGrassmannLattice2Order, corr::RealCor
     curr = integrate(lattice, A2, B..., alg=alg) / Z
 
     η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
-    curr -= η⁺⁺[2*k-1, 2*k-2] * Gt(lattice, k, k, A, B..., b1=:-, b2=:+, Z=Z, band=band, alg=alg, c1=true, c2=false)
-    curr -= η⁺⁻[2*k-1, 2*k-2] * Gt(lattice, k, k, A, B..., b1=:-, b2=:-, Z=Z, band=band, alg=alg, c1=true, c2=false)
+    curr -= η⁺⁺[2*k-1, 2*k-2] * _gf_ij(lattice, k, k, A, B..., b1=:-, b2=:+, Z=Z, band=band, alg=alg, c1=true, c2=false)
+    curr -= η⁺⁻[2*k-1, 2*k-2] * _gf_ij(lattice, k, k, A, B..., b1=:-, b2=:-, Z=Z, band=band, alg=alg, c1=true, c2=false)
     return 2 * curr / (0.5*lattice.δt)
 end
 

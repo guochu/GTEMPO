@@ -2,6 +2,41 @@
 
 本轮重构涉及的接口更改汇总。所有更改均已通过全量测试验证（行为不变或数值等价）。
 
+## 第二批更新
+
+### 指数展开算法外包至 ExpExp.jl
+
+- 删除 `src/mpo/mpohamiltonian/schurmpo/exponentialexpansion.jl` 与 `exponentialexpansion2.jl`（Prony/最小二乘拟合、自动步长选择、`first_period`、`cut` 等全部实现），改为依赖独立包 **ExpExp.jl**（path 依赖）。
+- 算法类型重命名：
+
+| 旧名（已删除） | 新名（ExpExp 导出，GTEMPO re-export） | 说明 |
+|---|---|---|
+| `PronyExpansion` | `OverDeterminedProny` | 超定最小二乘 Prony；`stepsize` 为 `Int` 或 `nothing`（自动步长选择） |
+| `DeterminedPronyExpansion` | `DeterminedProny` | 方程数恰好确定的经典 Prony |
+| `PronyExpansion2` | 由 `OverDeterminedProny(stepsize=nothing)` 覆盖 | 自动步长级联 + 剪枝（`cut`） |
+| `LsqExpansion2` | `LeastSquareProny` | Prony 初值 + (norm, phase) 实参数化阻尼 Gauss–Newton 精修 |
+| — | `MatrixPencil`（新增） | 矩阵束算法 |
+
+- `ExponentialExpansionAlgorithm`、`AbstractPronyExpansion`、`exponential_expansion`、`expansion_error` 由 ExpExp 提供；GTEMPO 不再扩展 ExpExp 的 `exponential_expansion`，对 `GenericDecayTerm` 的转换函数重命名为 `expand_decayterm`。
+- 依赖变化：新增 `ExpExp`；移除 `LsqFit`、`Polynomials`（仅被删除的实现使用）。
+- `XTRGIF`/`ExactTTIIF`/`TDVPIF` 的默认 `algexpan` 与各 `influenceoperators`/`hybriddynamics` 入口的默认展开算法同步改为 `OverDeterminedProny`。
+
+### 观测函数接口精简
+
+- 删除 `Gτ`、`Gt`、`Gm` 及其全格点批量版本、`parallel_Gτ`；一律改用 `gf(lattice, (ContourIndex(...), ContourIndex(...)), A, B...; Z, alg)`。
+- 删除 `cached_Gτ`、`cached_Gt`、`cached_Gm`、`cached_contour_ordered_Gm`；改用 `cached_gf`。
+- 删除 `cached_Gτ_fast`、`cached_Gt_fast`、`cached_Gm_fast`；改用 `cached_gf_fast`（等时端点修正 `r[end] = 1 - r[1]` 在 imag 轮廓由 `cached_gf_fast` 内部处理，mixed 轮廓需调用方显式执行）。
+- `cached_greater`/`cached_lesser` 重写为直接构造 `ContourIndex` 调用 `cached_gf`：不再接受 `c1/c2/b1/b2` 关键字（语义固定为 greater/lesser），仅保留 `band` 与缓存相关关键字。
+- `parallel_run`、`parallel_integrate`（与 `parallel_Gτ` 一起）整文件注释停用（`src/integration/parallelintegrate.jl`）。
+- `occupation2`（等时 Green 函数路径的占据数实现）已注释停用：与 Toulouse ED 严格解对比，Keldysh 轮廓略优于 `occupation`（0.35% vs 0.53%，均为离散化/截断噪声量级），但虚时轮廓在 i ≥ 2 存在约 6% 的错误跳变（仅 i = 1 恰好正确，边界 Grassmann 迹贡献未正确计入）。保留 `occupation`（insert_n 路径）与 `cached_occupation`。
+
+### 其它
+
+- `_normalize!(psi::GrassmannMPS)` 改为重载 `LinearAlgebra.normalize!`，不再导出私有名。
+- 项目根目录生成 `Manifest.toml`（此前缺失导致缓存失效后 path 依赖解析失败）；`.gitignore` 加入 `Manifest.toml` 与 `CVTemporaryFiles`，并删除遗留的 `CVTemporaryFiles/` 运行时缓存目录。
+- `tutorials/` 移至 `docs/tutorials/`；新增 Documenter 文档结构（`docs/make.jl`、`docs/Project.toml`、`docs/src/`）与 `README.md`。
+- 为 `ContourIndex`、`environments`、`hybriddynamics`、`occupation`、`sysdynamicsstepper!` 补充英文 docstring。
+
 ## 删除
 
 ### CachedVector 磁盘缓存机制

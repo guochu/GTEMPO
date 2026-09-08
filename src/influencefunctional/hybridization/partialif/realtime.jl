@@ -1,7 +1,17 @@
 """
-	hybriddynamics(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction; band::Int, trunc)
+    hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; band=1, trunc=DefaultITruncation)
+    hybriddynamics(lattice::AbstractGrassmannLattice, corr, alg::InfluenceFunctionalAlgorithm; band=1)
+    hybriddynamics!(gmps, lattice, corr; band=1, trunc=DefaultITruncation)
 
-real-time MPS-IF for a single band 
+Build the Grassmann MPS representation `I` of the hybridization influence
+functional from the discretized bath correlation function `corr` on `lattice`.
+
+- The plain methods (and `hybriddynamics!` acting in place on `gmps`) use the
+  default `PartialIF` algorithm (product of bond-dimension-2 partial MPOs,
+  [SciPost Phys. Core 7, 063 (2024)]).
+- Passing an explicit algorithm (`PartialIF`, `XTRGIF`, `ExactTTIIF`, `TDVPIF`)
+  as the third positional argument selects that construction algorithm; see the
+  docstrings of the individual algorithm types for the available options.
 """
 function hybriddynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
 	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))

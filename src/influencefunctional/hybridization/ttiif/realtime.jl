@@ -2,7 +2,7 @@ const _AllowedRealGrassmannOrdering = Union{A1Ā1a1ā1B1B̄1b1b̄1, A1Ā1B1B�
 
 # full influence operator, only works for ordering A1Ā1a1ā1B1B̄1b1b̄1 and A1Ā1B1B̄1a1ā1b1b̄1
 function influenceoperators(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction; 
-							band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
+							band::Int=1, algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr, band)
 	mpoj1, mpoj2, mpoj3, mpoj4 = ti_mpotensor(η⁺⁺, algexpan), ti_mpotensor(η⁺⁻, algexpan), ti_mpotensor(η⁻⁺, algexpan), ti_mpotensor(η⁻⁻, algexpan)
 	# η⁺⁻ = CorrelationMatrix(η⁺⁻.ηₖⱼ, η⁺⁻.ηⱼₖ)
@@ -18,7 +18,7 @@ function influenceoperators(lattice::RealGrassmannLattice{<:_AllowedRealGrassman
 end
 
 function influenceoperatorsteppers(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction, dt::Real, alg::FirstOrderStepper; 
-										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
+										band::Int=1, algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr, band)
 	mpoj1, mpoj2, mpoj3, mpoj4 = ti_mpotensor(η⁺⁺, algexpan), ti_mpotensor(η⁺⁻, algexpan), ti_mpotensor(η⁻⁺, algexpan), ti_mpotensor(η⁻⁻, algexpan)
 	mpoj1, mpoj2, mpoj3, mpoj4 = timeevompo(mpoj1, dt, alg), timeevompo(mpoj2, dt, alg), timeevompo(mpoj3, dt, alg), timeevompo(mpoj4, dt, alg)
@@ -32,7 +32,7 @@ function influenceoperatorsteppers(lattice::RealGrassmannLattice{<:_AllowedRealG
 	return mpo1, mpo2, mpo3, mpo4
 end
 function influenceoperatorsteppers(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction, dt::Real, alg::ComplexStepper; 
-										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
+										band::Int=1, algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr, band)
 	mpoj1, mpoj2, mpoj3, mpoj4 = ti_mpotensor(η⁺⁺, algexpan), ti_mpotensor(η⁺⁻, algexpan), ti_mpotensor(η⁻⁺, algexpan), ti_mpotensor(η⁻⁻, algexpan)
 	mpoj1a, mpoj1b = timeevompo(mpoj1, dt, alg)
@@ -52,7 +52,7 @@ function influenceoperatorsteppers(lattice::RealGrassmannLattice{<:_AllowedRealG
 	return (mpo1a, mpo1b), (mpo2a, mpo2b), (mpo3a, mpo3b), (mpo4a, mpo4b)
 end
 function influenceoperatorstepper(lattice::RealGrassmannLattice{O}, corr::RealCorrelationFunction, dt::Real, alg::TimeEvoMPOAlgorithm, algmult::DMRGAlgorithm;
-										band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion()) where O
+										band::Int=1, algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny()) where O
 	if !(OrderingStyle(lattice) isa _AllowedRealGrassmannOrdering)
 		lattice2 = similar(lattice, ordering = A1Ā1a1ā1B1B̄1b1b̄1())
 		mps = _influenceoperatorstepper(lattice2, corr, dt, alg, algmult; band=band, algexpan=algexpan)
@@ -64,7 +64,7 @@ function influenceoperatorstepper(lattice::RealGrassmannLattice{O}, corr::RealCo
 end
 
 function _influenceoperatorstepper(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction, dt::Real, alg::FirstOrderStepper, 
-											algmult::DMRGAlgorithm; band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
+											algmult::DMRGAlgorithm; band::Int=1, algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	h1, h2, h3, h4 = influenceoperatorsteppers(lattice, corr, dt, alg, band=band, algexpan=algexpan)
 	mps = h1 * vacuumstate(lattice)
 	tmp = h2 * vacuumstate(lattice)
@@ -76,7 +76,7 @@ function _influenceoperatorstepper(lattice::RealGrassmannLattice{<:_AllowedRealG
 	return mps
 end
 function _influenceoperatorstepper(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction, dt::Real, alg::ComplexStepper, 
-											algmult::DMRGAlgorithm; band::Int=1, algexpan::ExponentialExpansionAlgorithm=PronyExpansion())
+											algmult::DMRGAlgorithm; band::Int=1, algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny())
 	(h1a, h1b), (h2a, h2b), (h3a, h3b), (h4a, h4b) = influenceoperatorsteppers(lattice, corr, dt, alg, band=band, algexpan=algexpan)
 	mps1 = h1a * vacuumstate(lattice)
 	tmp = h1b * vacuumstate(lattice)

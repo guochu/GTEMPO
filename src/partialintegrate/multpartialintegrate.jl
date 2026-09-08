@@ -58,6 +58,13 @@ end
 
 
 # multiply x and y, integrate out band
+"""
+	multintegrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS, alg; band=1)
+
+Multiply the two GMPSs `x` and `y` while integrating out the Grassmann
+variables on `band`, compressing the result with the DMRG-mult algorithm
+`alg` (see also `partialintegrate`).
+"""
 function multintegrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS, alg::DMRGMultAlgorithm; band::Int=1)
     if alg.initguess == :svd
         z = _integrateband_svd_guess(lattice, x, y, alg.D; band=band)

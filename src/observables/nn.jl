@@ -31,6 +31,14 @@ function get_nn_contour_pos(lattice::AbstractGrassmannLattice, j::Int, band::Int
 end
 
 
+"""
+	nn(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
+		b1=:τ, b2=b1, band=1, alg=ExactIntegrate(), Z=integrate(lattice, A, B..., alg=alg))
+
+Density-density correlation `⟨n̂(i) n̂(j)⟩` obtained by inserting number
+operators at time steps `i` and `j` before integrating. `b1`/`b2` select the
+contour branches and `band` (an `Int` or a 2-tuple) the bands.
+"""
 function nn(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
 			b1::Symbol=:τ, b2::Symbol=b1, band::Union{Int, Tuple{Int, Int}}=1, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Number = integrate(lattice, A, B..., alg=alg))
 	if isa(band, Int)

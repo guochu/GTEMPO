@@ -41,17 +41,17 @@ PowerlawDecayTerm(a::M, b::M; α::Number=1., kwargs...) where {M<:SiteOperator} 
 # L is the number of sites
 
 """
-    exponential_expansion(x::GenericDecayTerm{M, T, F}; len::Int, alg)
+    expand_decayterm(x::GenericDecayTerm{M, T, F}; len::Int, alg)
 
 Convert a GenericDecayTerm into a list of ExponentialDecayTerm
 """
-function exponential_expansion(x::GenericDecayTerm{M1, M, M2, F, T}; len::Union{Int, Nothing}=nothing, alg::ExponentialExpansionAlgorithm=PronyExpansion()) where {M1, M, M2, F, T}
+function expand_decayterm(x::GenericDecayTerm{M1, M, M2, F, T}; len::Union{Int, Nothing}=nothing, alg::ExponentialExpansionAlgorithm=OverDeterminedProny()) where {M1, M, M2, F, T}
     if F <: AbstractVector
-        xs, lambdas = exponential_expansion(x.f, alg=alg)
+        xs, lambdas = ExpExp.exponential_expansion(x.f, alg=alg)
         isa(len, Int) && println("key len ignored")
     else
         isa(len, Int) || throw(ArgumentError("key len should be Int when F is not a vector"))
-        xs, lambdas = exponential_expansion(x.f, len-1, alg=alg)
+        xs, lambdas = ExpExp.exponential_expansion(x.f, len-1, alg=alg)
     end
     r = ExponentialDecayTerm{M1, M, M2, eltype(lambdas)}[]
     for (c, alpha) in zip(xs, lambdas)

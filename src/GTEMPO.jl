@@ -23,7 +23,6 @@ export AbstractGrassmannLattice, ImagGrassmannLattice, RealGrassmannLattice, Mix
 export branches, matchindices, indexmappings, swapbandperm, swapband!, swapband, fillband
 export OrderingStyle, ConjugationStyle, AdjacentConjugation, GeneralConjugation
 export LayoutStyle, TimeLocalLayout, BandLocalLayout, BranchLocalLayout, GeneralLayout
-export _normalize!
 # export TimeOrderingStyle, ImaginaryTimeOrderingStyle, RealTimeOrderingStyle, TimeAscending, TimeDscending
 export A1Ā1B1B̄1, AĀBB̄, A1B1B̄1Ā1, ABB̄Ā, A2Ā2A1Ā1B2B̄2B1B̄1
 export A1Ā1B1B̄1a1ā1b1b̄1, AĀBB̄aābb̄, A1Ā1a1ā1B1B̄1b1b̄1, AĀaāBB̄bb̄
@@ -41,8 +40,7 @@ export ImagGrassmannLattice1Order, RealGrassmannLattice1Order, RealGrassmannLatt
 export integrate, integrateband, integratebands, partialintegrate, multintegrateband
 export IntegrationAlgorithm, ExactIntegrate, BMPSIntegrate, Zvalue
 export changeordering, toadjacentordering
-export environments, environments2
-export my_mult, my_mult2
+export environments
 
 # correlation functions
 export branch, correlationfunction
@@ -54,11 +52,11 @@ export hybriddynamics, hybriddynamics!, hybriddynamics_naive, hybriddynamics_nai
 export retardedinteractdynamics_naive, retardedinteractdynamics_naive!
 
 # GF and other observables
-export gf, Gτ, parallel_Gτ, Gt, parallel_Gt, Gm, greater, lesser, contour_ordered_gf
-export occupation, occupation2, electriccurrent, electriccurrent_fast, heatcorrelationfunction, heatcurrent_fast
-export cached_gf, cached_Gτ, cached_Gt, cached_Gm, cached_greater, cached_lesser, cached_contour_ordered_gf
+export gf, greater, lesser, contour_ordered_gf
+export occupation, electriccurrent, electriccurrent_fast, heatcorrelationfunction, heatcurrent_fast
+export cached_gf, cached_greater, cached_lesser, cached_contour_ordered_gf
 export cached_occupation, cached_electriccurrent, cached_electriccurrent_fast, cached_heatcurrent_fast
-export cached_gf_fast, cached_Gτ_fast, cached_Gt_fast, cached_Gm_fast
+export cached_gf_fast
 export cached_greater_fast, cached_lesser_fast
 export nn, cached_nn, insert_n!, insert_n, nn2, cached_nn2
 
@@ -96,12 +94,11 @@ export canonicalize, canonicalize!, physical_spaces, environments, expectationva
 export ophysical_space, iphysical_space
 export svectors_uninitialized, unset_svectors!, mpotensortype, mpstensortype
 export SVDCompression
-export ExponentialExpansionAlgorithm, DMRGAlgorithm
+export DMRGAlgorithm
 export timeevompo, WI, WII, ComplexStepper, FirstOrderStepper, complex_stepper
 export bond_dimension, bond_dimensions, distance, space_l, space_r, l_LL, r_RR, bondtensortype
 export Orthogonalize
-export ExponentialExpansionAlgorithm, AbstractPronyExpansion, DeterminedPronyExpansion, PronyExpansion
-export PronyExpansion2, LsqExpansion2
+export AbstractPronyExpansion, OverDeterminedProny, DeterminedProny, MatrixPencil, LeastSquareProny
 
 
 
@@ -123,7 +120,8 @@ import QuAPI: branch, index
 
 
 
-using Parameters, Polynomials, KrylovKit, LsqFit
+using ExpExp
+using KrylovKit: KrylovKit, Arnoldi, exponentiate
 using LinearAlgebra: LinearAlgebra, Symmetric, eigen, qr, pinv, eigvals, Diagonal, diagm
 
 

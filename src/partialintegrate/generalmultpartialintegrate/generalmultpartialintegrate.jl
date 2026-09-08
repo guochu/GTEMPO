@@ -17,6 +17,13 @@ partialintegrate(alg::DMRGMultAlgorithm, xs::GrassmannMPS...; cidx::Vector{Int})
 partialintegrate(alg::SVDCompression, xs::GrassmannMPS...; cidx::Vector{Int}) = parint_mult(xs...; cidx=cidx, trunc=alg.trunc, verbosity=alg.verbosity)
 partialintegrate(xs::GrassmannMPS...; cidx::Vector{Int}, trunc::TruncationScheme, verbosity::Int=0) = parint_mult(xs...; cidx=cidx, trunc=trunc, verbosity=verbosity)
 
+"""
+	partialintegrate(lattice::AbstractGrassmannLattice, alg, xs::GrassmannMPS...; branchs::Tuple, bands::Tuple)
+
+Integrate out all Grassmann variables on the given `branchs` and `bands`
+(e.g. the bath branches `(:+, :)` on band 1), leaving only the system GVs.
+`alg` selects the compression algorithm (`SVDCompression`, `BMPSIntegrate`, ...).
+"""
 function partialintegrate(lattice::AbstractGrassmannLattice, alg, xs::GrassmannMPS...; branchs::Tuple, bands::Tuple)
     unique(length.(xs)) == [length(lattice),] || throw(DimensionMismatch("unique($(length.(xs))) != [$(length(lattice)),]"))
     cidx = sort(unique([index(lattice, i; conj=false, band=band, branch=branch) for i in 0:lattice.k for band in bands for branch in branchs]))

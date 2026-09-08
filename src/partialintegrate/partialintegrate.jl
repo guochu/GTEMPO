@@ -64,6 +64,12 @@ end
 
 
 
+"""
+	integratebands(lattice::AbstractGrassmannLattice, x::GrassmannMPS, bands::Tuple)
+
+Integrate out several bands at once. The bands are integrated one by one
+(from the highest index down) and the lattice is shrunk accordingly.
+"""
 function integratebands(lattice::AbstractGrassmannLattice, x::GrassmannMPS, bands::Tuple)
     bands = sort(collect(bands))
     for i in length(bands):-1:1

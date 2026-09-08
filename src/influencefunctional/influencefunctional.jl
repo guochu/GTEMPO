@@ -1,3 +1,8 @@
+"""
+	abstract type InfluenceFunctionalAlgorithm
+
+Supertype of all influence functional (IF) construction algorithms.
+"""
 abstract type InfluenceFunctionalAlgorithm end
 """
 	struct PartialIF
@@ -25,7 +30,7 @@ struct XTRGIF{T<:ExponentialExpansionAlgorithm, E<:TimeEvoMPOAlgorithm, M<:DMRGA
 	fast::Bool
 	verbosity::Int
 end
-XTRGIF(; algexpan::ExponentialExpansionAlgorithm=PronyExpansion(n=15, tol=1.0e-4, verbosity=0), 
+XTRGIF(; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny(n=15, tol=1.0e-4, verbosity=0), 
 						 algevo::TimeEvoMPOAlgorithm=WII(), 
 						 algmult::DMRGAlgorithm=DefaultMultAlg,
 						 k::Int=5, 
@@ -41,14 +46,21 @@ function Base.getproperty(x::XTRGIF, s::Symbol)
 end
 
 
-struct ExactTTIIF{T<:ExponentialExpansionAlgorithm, M<:DMRGAlgorithm, M2<:DMRGAlgorithm} <: InfluenceFunctionalAlgorithm 
+"""
+	struct ExactTTIIF <: InfluenceFunctionalAlgorithm
+
+Build the IF as a translationally invariant MPO by exactly exponentiating the
+Trotter decomposition of the quadratic IF kernel. `multorder` controls the
+ordering of the exponential decay terms (`:αSM` by default).
+"""
+struct ExactTTIIF{T<:ExponentialExpansionAlgorithm, M<:DMRGAlgorithm, M2<:DMRGAlgorithm} <: InfluenceFunctionalAlgorithm
 	algexpan::T
 	algmult::M
 	algmult2::M2 # only used in iGTEMPO._differentialinfluencefunctional2
 	multorder::Symbol
 	verbosity::Int
 end
-ExactTTIIF(; algexpan::ExponentialExpansionAlgorithm=PronyExpansion(n=15, tol=1.0e-4, verbosity=0), 
+ExactTTIIF(; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny(n=15, tol=1.0e-4, verbosity=0), 
 						 algmult::DMRGAlgorithm=DefaultMultAlg, algmult2::DMRGAlgorithm=algmult,
 						 multorder::Symbol = :αSM,
 						 verbosity::Int=0) = ExactTTIIF(algexpan, algmult, algmult2, multorder, verbosity)
@@ -97,7 +109,7 @@ end
 
 Keyword constructor for `TDVPIF`; all parameters have default values and usually need not be passed explicitly.
 """
-function TDVPIF(; algexpan::ExponentialExpansionAlgorithm=PronyExpansion(n=15, tol=1.0e-4, verbosity=0),
+function TDVPIF(; algexpan::ExponentialExpansionAlgorithm=OverDeterminedProny(n=15, tol=1.0e-4, verbosity=0),
 				trunc::TruncationDimCutoff=DefaultITruncation,
 				δ::Real=0.1,
 				verbosity::Int=0,

@@ -3,11 +3,12 @@ abstract type DMRGAlgorithm <: MPSAlgorithm end
 
 
 
-@with_kw struct SVDCompression <: DMRGAlgorithm
-	D::Int = Defaults.D
-	tol::Float64 = Defaults.tol
-	verbosity::Int = 0
+struct SVDCompression <: DMRGAlgorithm
+	D::Int
+	tol::Float64
+	verbosity::Int
 end
+SVDCompression(; D::Int=Defaults.D, tol::Float64=Defaults.tol, verbosity::Int=0) = SVDCompression(D, tol, verbosity)
 
 # @with_kw struct Deparallelise <: DMRGAlgorithm
 # 	tol::Float64 = DeparalleliseTol

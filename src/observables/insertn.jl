@@ -20,4 +20,11 @@ function insert_n!(lattice::AbstractGrassmannLattice, gmps::GrassmannMPS, j::Int
  	return gmps
 end 
 
+"""
+	insert_n(lattice::AbstractGrassmannLattice, gmps::GrassmannMPS, j::Int; band=1, branch=:τ)
+
+Return a copy of `gmps` with a number operator `n̂` inserted at time step `j`
+(the zero-temperature vacuum projector at that site is removed). Used to
+measure occupations and density correlations. See also `insert_n!`.
+"""
 insert_n(lattice::AbstractGrassmannLattice, gmps::GrassmannMPS, j::Int; kwargs...) = insert_n!(lattice, copy(gmps), j; kwargs...)

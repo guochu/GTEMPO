@@ -1,0 +1,5 @@
+println("========== Electron-phonon path tests ==========")
+# shared reference helpers (normalbath/util.jl also included by the normalbath part)
+include(joinpath(@__DIR__, "..", "normalbath", "util.jl"))
+include("fewmodesbath/runtests.jl")
+include("continuousbath/runtests.jl")

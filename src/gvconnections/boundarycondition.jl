@@ -20,7 +20,21 @@ function boundarycondition_branching(x0::Vector{<:GrassmannMPS}, lattice::Abstra
 	return r
 end
 
+"""
+	boundarycondition!(x::GrassmannMPS, lattice::AbstractGrassmannLattice; band=1, trunc=DefaultIntegrationTruncation)
+
+In-place version of `boundarycondition`: applies the boundary connection term
+onto `x` directly and returns it.
+
+Note that we have different boundary conditions for different contours
+"""
 # imaginary-time
+"""
+	boundarycondition!(x::GrassmannMPS, lattice::AbstractGrassmannLattice; band=1, trunc=DefaultIntegrationTruncation)
+
+In-place version of `boundarycondition`: applies the boundary connection term
+onto `x` directly and returns it.
+"""
 function boundarycondition!(x::GrassmannMPS, lattice::ImagGrassmannLattice; band::Int=1, trunc::TruncationScheme=DefaultIntegrationTruncation)
 	pos1, pos2 = index(lattice, 0, conj=true, band=band), index(lattice, lattice.k, conj=false, band=band)
 	apply!(exp(GTerm(pos1, pos2, coeff=-1)), x)
@@ -30,6 +44,15 @@ function boundarycondition!(x::GrassmannMPS, lattice::ImagGrassmannLattice; band
 	canonicalize!(x, alg=Orthogonalize(trunc=trunc))
 	return x
 end
+
+"""
+	boundarycondition_branching(x0::GrassmannMPS, lattice::AbstractGrassmannLattice; band=1, trunc=DefaultIntegrationTruncation)
+
+Like `boundarycondition`, but instead of summing the connection terms it
+returns a vector of GMPSs, one per branching, whose sum equals the result of
+`boundarycondition`. The sum can then be performed on the fly for efficiency
+[see PRB 109, 165113 (2024)].
+"""
 function boundarycondition_branching(x0::GrassmannMPS, lattice::ImagGrassmannLattice; band::Int=1, trunc::TruncationScheme=DefaultIntegrationTruncation)
 	pos1, pos2 = index(lattice, 0, conj=true, band=band), index(lattice, lattice.k, conj=false, band=band)
 	t = exp(GTerm(pos1, pos2, coeff=-1))

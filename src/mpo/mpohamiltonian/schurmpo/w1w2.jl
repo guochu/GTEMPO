@@ -3,15 +3,17 @@ abstract type TimeEvoMPOAlgorithm <: MPSAlgorithm end
 abstract type FirstOrderStepper <: TimeEvoMPOAlgorithm end
 abstract type SecondOrderStepper <: TimeEvoMPOAlgorithm end
 
-@with_kw struct WI <: FirstOrderStepper
-	tol::Float64 = Defaults.tol
-	maxiter::Int = Defaults.maxiter
+struct WI <: FirstOrderStepper
+	tol::Float64
+	maxiter::Int
 end
+WI(; tol::Float64=Defaults.tol, maxiter::Int=Defaults.maxiter) = WI(tol, maxiter)
 
-@with_kw struct WII <: FirstOrderStepper
-	tol::Float64 = Defaults.tol
-	maxiter::Int = Defaults.maxiter
+struct WII <: FirstOrderStepper
+	tol::Float64
+	maxiter::Int
 end
+WII(; tol::Float64=Defaults.tol, maxiter::Int=Defaults.maxiter) = WII(tol, maxiter)
 
 struct ComplexStepper{F<:FirstOrderStepper} <: SecondOrderStepper
 	stepper::F

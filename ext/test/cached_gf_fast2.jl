@@ -16,7 +16,7 @@ println("------------------------------------")
 					for band in 1:lattice.bands
 						for f1 in (:+, ), f2 in (:+, :-), c1 in (true, false), c2 in (true, false)
 							if !((f1 == f2) && (c1 == c2))
-								g1 = [cached_Gt(lattice, i, idx0, A, cache=cache, c1=c1, c2=c2, b1=f1, b2=f2, band=band) for i in idx0:lattice.k]
+								g1 = [cached_gf(lattice, (ContourIndex(i, conj=c1, branch=f1, band=band), ContourIndex(idx0, conj=c2, branch=f2, band=band)), A; cache=cache) for i in idx0:lattice.k]
 								g2 = cu_cached_Gt_fast(idx0, lattice, A, cache=cache, c1=c1, c2=c2, b1=f1, b2=f2, band=band)
 								@test norm(g1-g2)/norm(g1) < rtol
 							end
@@ -37,7 +37,7 @@ println("------------------------------------")
 					for band in 1:lattice.bands
 						for f1 in (:+, ), f2 in (:+, :-), c1 in (true, false), c2 in (true, false)
 							if !((f1 == f2) && (c1 == c2))
-								g1 = [cached_Gt(lattice, i, idx0, A, B, cache=cache, c1=c1, c2=c2, b1=f1, b2=f2, band=band) for i in idx0:lattice.k]
+								g1 = [cached_gf(lattice, (ContourIndex(i, conj=c1, branch=f1, band=band), ContourIndex(idx0, conj=c2, branch=f2, band=band)), A, B; cache=cache) for i in idx0:lattice.k]
 								g2 = cu_cached_Gt_fast(idx0, lattice, A, B, cache=cache, c1=c1, c2=c2, b1=f1, b2=f2, band=band)
 								@test norm(g1-g2)/norm(g1) < rtol
 							end

@@ -1,6 +1,23 @@
+"""
+	abstract type IntegrationAlgorithm
+
+Supertype of algorithms used to contract (integrate) the Grassmann lattice
+with a GMPS.
+"""
 abstract type IntegrationAlgorithm end
+"""
+	struct ExactIntegrate <: IntegrationAlgorithm
+
+Integrate the lattice exactly, keeping all intermediate states (no truncation).
+"""
 struct ExactIntegrate <: IntegrationAlgorithm end
-struct BMPSIntegrate{T<:TruncationScheme} <: IntegrationAlgorithm 
+"""
+	struct BMPSIntegrate{T<:TruncationScheme} <: IntegrationAlgorithm
+
+Integrate the lattice bond by bond, compressing intermediate boundary MPSs
+with the truncation scheme `trunc`.
+"""
+struct BMPSIntegrate{T<:TruncationScheme} <: IntegrationAlgorithm
 	trunc::T
 end
 BMPSIntegrate(; trunc::TruncationScheme=DefaultIntegrationTruncation) = BMPSIntegrate(trunc)

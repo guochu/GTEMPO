@@ -1,0 +1,6 @@
+println("---------- continuous bath (Toulouse model) ----------")
+include("imagtime.jl")
+include("realtime.jl")
+include("mixedtime.jl")
+include("current.jl")
+include("stepwise.jl")

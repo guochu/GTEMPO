@@ -2,9 +2,6 @@
 # add idx0 for RealGrassmannLattice. based on cached_gf_fast.jl
 
 
-cached_Gt_fast(idx0::Int, lattice::RealGrassmannLattice, A::GrassmannMPS, B::Vararg{GrassmannMPS}; c1::Bool=true, c2::Bool=false, kwargs...) = cached_gf_fast(
-				idx0, lattice, A, B...; c1=c1, c2=c2, kwargs...)
-
 cached_greater_fast(idx0::Int, lattice::RealGrassmannLattice, A::GrassmannMPS, B::Vararg{GrassmannMPS}; kwargs...) = cached_gf_fast(
 	idx0, lattice, A, B...; b1=:+, b2=:+, c1=false, c2=true, kwargs...)
 cached_lesser_fast(idx0::Int, lattice::RealGrassmannLattice, A::GrassmannMPS, B::Vararg{GrassmannMPS}; kwargs...) = -cached_gf_fast(

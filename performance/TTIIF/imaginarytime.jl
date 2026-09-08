@@ -66,7 +66,7 @@ for (name, alg) in algs
 
 	t_obs = @elapsed begin
 		mpsK = sysdynamics(lattice, AndersonIM(μ = ϵ_d, U = 0), trunc = trunc)
-		g = Gτ(lattice, mpsK, mpsI)
+		g = cached_gf_fast(lattice, mpsK, mpsI; c1=false, c2=true, b1=:τ, b2=:τ)
 	end
 
 	err = _relative_error(g, exactGτ)

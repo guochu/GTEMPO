@@ -19,6 +19,14 @@ include("realtime.jl")
 include("mixedtime.jl")
 
 
+"""
+	FockLattice(; contour::Symbol, kwargs...)
+
+Constructor for electron-phonon (Fock space) lattices. `contour` selects the
+time contour: `:imag`, `:real` (equivalently `:Keldysh`) or `:mixed`
+(equivalently `:Kadanoff`), returning an `ImagFockLattice`,
+`RealFockLattice` or `MixedFockLattice` respectively.
+"""
 function FockLattice(; contour::Symbol, kwargs...)
 	(contour in (:real, :imag, :Keldysh, :mixed, :Kadanoff)) || throw(ArgumentError("contour must be :real (equivalentlt :Keldysh), :imag or :mixed (equivalentlt :KadanoffBaym)"))
 	if (contour == :real) || (contour == :Keldysh)

@@ -311,6 +311,14 @@ function si_sysdynamics_stepper!(gmps::GrassmannMPS, lattice::RealGrassmannLatti
 	canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
 	return gmps
 end
+"""
+    sysdynamicsstepper!(gmps, lattice::RealGrassmannLattice, model::AndersonIM; trunc=DefaultKTruncation)
+
+Single-step version of `sysdynamics` for the Anderson impurity model: apply the
+free (and, for two bands, the interaction) propagator of the current time step
+`lattice.k - 1` onto `gmps` in place. Intended for online/stepwise evolutions
+combined with `makestep` and `hybriddynamicsstepper!`.
+"""
 sysdynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::AndersonIM; kwargs...) = si_sysdynamics_stepper!(gmps, lattice; μ=model.μ, U=model.U, kwargs...)
 
 

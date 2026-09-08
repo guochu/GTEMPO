@@ -1,0 +1,5 @@
+# Part 2: functional tests — GTEMPO against exact references (ED / analytic)
+println("========== Part 2: functional model tests ==========")
+include("util.jl")
+include("fewmodesbath/runtests.jl")
+include("continuousbath/runtests.jl")

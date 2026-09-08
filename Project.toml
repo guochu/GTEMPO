@@ -4,13 +4,11 @@ authors = ["Guo Chu <guochu604b@gmail.com>", "Sun Zhijie <zjsun@mail.ustc.edu.cn
 version = "0.0.1"
 
 [deps]
+ExpExp = "05571471-befe-4da2-8d73-f7916647c25f"
 ImpurityModelBase = "a5817ebb-6d84-46c1-a17a-d25f868e249e"
 KrylovKit = "0b1a1467-8014-51b9-945f-bf0ae24f4b77"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
-LsqFit = "2fda8390-95c7-5789-9bda-21331edee243"
-Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
-Polynomials = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
 QuAPI = "49288508-9298-4753-b2e7-d320e8956d6c"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 Strided = "5e0ebb24-38b0-5f93-81fe-25c709ecae67"

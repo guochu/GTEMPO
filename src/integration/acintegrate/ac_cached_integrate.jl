@@ -20,7 +20,16 @@ Cache at the right of the j-th time step
 """
 rightenv(x::AbstractExpectationCache, j::Int) = error("rightenv not implemented for cache type $(typeof(x))")
 
-environments(lattice::AbstractGrassmannLattice, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
+"""
+    environments(lattice::AbstractGrassmannLattice, A, B...; alg=ExactIntegrate())
+
+Precompute the left/right environment tensors for the product `A * B * ...` on
+`lattice` and return them as an `AbstractExpectationCache`. The cache carries
+the partition function (`Zvalue`) and allows cheap evaluation of local
+observables and Green's functions through `expectationvalue` / `cached_gf`
+without repeating the contraction.
+"""
+environments(lattice::AbstractGrassmannLattice, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
 						alg::IntegrationAlgorithm=ExactIntegrate()) = _environments(alg, lattice, A, B...)
 
 # cached_integrate_util(lattice::AbstractGrassmannLattice, j::Int, k::Int, cache::AbstractExpectationCache, A::Union{GrassmannMPS, Vector}, Bs::GrassmannMPS...; kwargs...) = _cached_integrate_util(

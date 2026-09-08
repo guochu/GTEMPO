@@ -12,8 +12,8 @@ function ti_mpotensor(corr::CorrelationMatrix, alg::ExponentialExpansionAlgorith
 	@tensor abar[1,7;3,8] := I2[2,4] * σ₊[1,5,3,6] * f[7,2,5] * conj(f[8,4,6])
 	m2 = GenericDecayTerm(abar, a, corr.ηⱼₖ[2:end], middle = JW4)
 
-	m1s = exponential_expansion(m1, alg=alg)
-	m2s = exponential_expansion(m2, alg=alg)
+	m1s = expand_decayterm(m1, alg=alg)
+	m2s = expand_decayterm(m2, alg=alg)
 	@tensor abar_a[7;8] := σ₊[1,2,3,4] * σ₋'[3,5,1,6] * f[7,2,5] * conj(f[8,4,6])
 
 	coef = corr.ηⱼₖ[1] + corr.ηₖⱼ[1]

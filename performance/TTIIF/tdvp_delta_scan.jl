@@ -19,7 +19,7 @@ for δ in (0.1, 0.05, 0.02)
 	mpsI = boundarycondition(mpsI, lattice)
 	tobs = @elapsed begin
 		mpsK = sysdynamics(lattice, AndersonIM(μ = ϵ_d, U = 0), trunc = trunc)
-		g = Gτ(lattice, mpsK, mpsI)
+		g = cached_gf_fast(lattice, mpsK, mpsI; c1=false, c2=true, b1=:τ, b2=:τ)
 	end
 	err = norm(g - exactGτ) / norm(exactGτ)
 	println(@sprintf("δ=%.2f  IF构建: %6.1f s, 观测量: %5.1f s, 最大键维: %3d, 相对误差: %.3e",

@@ -1,3 +1,11 @@
+"""
+	hybriddynamicsstepper!(gmps, lattice, corr; band=1, trunc=DefaultITruncation)
+
+In-place single time step of the influence functional dynamics: applies the
+IF terms connecting the current time step to all previous steps onto `gmps`
+and moves it forward by one step. The non-mutating version
+`hybriddynamicsstepper` operates on a copy.
+"""
 function hybriddynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
 	@assert size(η⁺⁺) == size(η⁺⁻) == size(η⁻⁺) == size(η⁻⁻)

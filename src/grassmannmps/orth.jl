@@ -128,7 +128,7 @@ function _renormalize_coeff!(psi, normalize::Bool)
 	normalize && setscaling!(psi, 1)
 end
 
-function _normalize!(psi::GrassmannMPS)
+function LinearAlgebra.normalize!(psi::GrassmannMPS)
     alg = Orthogonalize(SVD(), normalize=true)
     open("/dev/null", "w") do devnull # slience the warning
         redirect_stderr(devnull) do
