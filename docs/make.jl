@@ -1,5 +1,5 @@
-using GTEMPO
 using Documenter
+using GTEMPO
 
 DocMeta.setdocmeta!(GTEMPO, :DocTestSetup, :(using GTEMPO); recursive=true)
 
@@ -15,12 +15,12 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
-        "Manual" => [
-            "Grassmann numbers and lattices" => "grassmann_lattice.md",
-            "Tensor and Grassmann conventions" => "tensor_and_grassmann_conventions.md",
-        ],
+        "Manual" => "manual.md",
+        "Practice guide" => "practice.md",
+        "Grassmann lattices" => "grassmann_lattice.md",
+        "Tensor and Grassmann conventions" => "tensor_and_grassmann_conventions.md",
+        "Internals" => "internals.md",
         "Tutorials" => "tutorials.md",
-        "Examples" => "examples.md",
         "API Reference" => "api.md",
     ],
 )

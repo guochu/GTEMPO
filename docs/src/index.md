@@ -50,6 +50,6 @@ gt = [-im * cached_greater(lattice, k, K, I; cache = cache) for k in 1:lattice.k
 ## Contents
 
 ```@contents
-Pages = ["grassmann_lattice.md", "tensor_and_grassmann_conventions.md", "tutorials.md", "examples.md", "api.md"]
+Pages = ["manual.md", "practice.md", "grassmann_lattice.md", "tensor_and_grassmann_conventions.md", "internals.md", "tutorials.md", "api.md"]
 Depth = 2
 ```

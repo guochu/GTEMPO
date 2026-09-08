@@ -1,8 +1,8 @@
 # Tutorials
 
-Scenario-based short snippets (imaginary time, real time, mixed contour,
-currents, stepping, multi-orbital, electron–phonon) are collected in
-[Examples](@ref "Examples by scenario"). Working, self-contained tutorials live in
+Detailed scenario-based walkthroughs (normal bath, BCS bath, electron–phonon,
+multi-orbital; each in imaginary, real and mixed time) are collected in the
+[Practice guide](@ref "Practice guide"). Working, self-contained tutorials live in
 `docs/tutorials/`. Run them with
 
 ```julia
