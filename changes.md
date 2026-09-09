@@ -2,6 +2,42 @@
 
 本轮重构涉及的接口更改汇总。所有更改均已通过全量测试验证（行为不变或数值等价）。
 
+## 第三批更新
+
+### 杂质哈密顿量类型层级与接口
+
+- 新增抽象类型层级（`src/sysdynamics/sysdynamics.jl`）：
+  - `AbstractImpurityHamiltonian`：所有杂质哈密顿量的根类型
+  - `ConstImpurityHamiltonian <: AbstractImpurityHamiltonian`：常数哈密顿量（quench 模型属于此类）；**只有 `ConstImpurityHamiltonian` 支持 `sysdynamics_fast`**
+  - `AbstractTdImpurityHamiltonian <: AbstractImpurityHamiltonian`：含时哈密顿量（原 `GeneralTdImpurityHamiltonian` 更名）
+- 接口函数（`AbstractImpurityHamiltonian` 的两个必须实现）：
+  - `fock_propagator(model, branch, dt) -> FockMatrix`：`ConstImpurityHamiltonian` 的接口，`branch ∈ {:+, :-, :τ}`
+  - `fock_thermalstate(model, β) -> FockMatrix`：设置 real 轮廓初态时需要；时变模型返回 `hτ` 的热态
+  - `fock_propagator(model, branch, dt, t) -> FockMatrix`：`AbstractTdImpurityHamiltonian` 的接口，`t` 为该步所在物理时间区间的左端点（forward: `(idx-1)δt`；backward: `(Nt-idx)δt`）；`Const` 模型提供同签名委托方法（忽略 `t`），内部统一按 4 参调用
+  - `num_bands(model) -> Int`：默认读取 `model.bands` 字段；无该字段的模型单独定义（`AndersonIM` → 2，`ToulouseIM` → 1）
+- 移除显式传 bands 的旧方法：`fock_propagator(model, branch, dt, bands)`（4 参泛型）与 `fock_thermalstate(model, β, bands)`（3 参泛型）；传播子缓存键加入分支时间 `t`（时变模型每步不复用）。
+
+### 预定义模型
+
+- `AndersonIM`：**固定为两带**（每自旋一带，`H = μ(n₁+n₂) + U n₁n₂`），移除 `bands` 字段与 `bands` 关键字；用于两带 lattice 时不再需要（也不能再传）`bands=2`。
+- 新增 `ToulouseIM(μ)`：单带、`U = 0` 的 Anderson 情形（原 `AndersonIM(U=0)` 在单带 lattice 上的角色），`num_bands = 1`。
+- 在单带 lattice 上做 `U = 0` 计算的代码需改用 `ToulouseIM`；`AndersonIM(U=0)` 只能用于两带 lattice。
+
+### Quench 与时变模型
+
+- `QuenchImpurityHamiltonian` 更名为 `QuenchedImpurityHamiltonian`，字段 `h0/h1` 更名为 `hτ/ht`（语义不变：τ 分支用 `hτ`，实分支用 `ht`，热态取 `hτ`）；仅能通过构造器构建，无 `push!`。
+- 新增 `TdImpurityOp(data, f; bands)`：系数随时间变化的 `NormalTerm` 集合，`t` 时刻贡献 `f(t)·data`。
+- 新增 `TdImpurityHamiltonian(hτ, ht, htt; bands)`：时变杂质哈密顿量。
+  - τ 分支与热态：常量 `hτ`
+  - 实分支 `t` 时刻：`ht + Σ op(t)`，即调用 `model(t)` 得到该时刻的 `ImpurityHamiltonian`
+  - `sysdynamics`/`baresysdynamics` 在全部三种轮廓上可用；`sysdynamics_fast` 不支持（仅 Const）
+- `systhermalstate!`/`systhermalstate` 的 model 签名放宽为 `AbstractImpurityHamiltonian`；`sysdynamics`/`baresysdynamics` 同样放宽（支持 Const 与 Td），`sysdynamics_fast`/`baresysdynamics_fast` 保持 `ConstImpurityHamiltonian`。
+
+### 测试与文档
+
+- 单模 bath 的 quench（`QuenchedImpurityHamiltonian`）与时变（`TdImpurityHamiltonian`）测试覆盖 imag/real/mixed 三种 lattice，ED 参考采用与 GTEMPO 相同的逐步常数哈密顿量离散化。
+- 原单模 bath 测试中 `AndersonIM(U=0)`（单带 lattice）全部改为 `ToulouseIM`；两带 lattice 的 `AndersonIM` 去掉 `bands=2` 关键字。
+
 ## 第二批更新
 
 ### 指数展开算法外包至 ExpExp.jl

@@ -58,6 +58,13 @@ positions(x::AbstractTerm) = x.positions
 # Base.:*(s::InteractionTerm, m::Number) = InteractionTerm(positions(s), coeff=s.coeff * m)
 
 
+"""
+	struct ImpurityHamiltonian <: ConstImpurityHamiltonian
+
+Generic constant impurity Hamiltonian built from a list of `NormalTerm`s
+(`tunneling` / `interaction`), with `bands` impurity bands. Terms can be
+appended with `push!` or set through the constructor.
+"""
 struct ImpurityHamiltonian <: ConstImpurityHamiltonian
 	data::Vector{NormalTerm}
 	bands::Int

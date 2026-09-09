@@ -118,6 +118,35 @@ mpsI2 = boundarycondition(mpsI2, lattice)
 mpsI  = hybriddynamicsstepper!(mpsI, lattice, corr, finalize=false, trunc=trunc)
 ```
 
+### 1.6 Quench and time-dependent impurities
+
+`QuenchedImpurityHamiltonian(hτ, ht)` evolves the impurity with `hτ` on the
+imaginary-time branch (and builds the thermal state from it) and with `ht`
+on the real-time branches:
+
+```julia
+model = QuenchedImpurityHamiltonian([tunneling(1, 1, coeff=μ0)],   # τ leg:  μ0
+                                    [tunneling(1, 1, coeff=μ1)])   # real:   μ1
+```
+
+`TdImpurityHamiltonian(hτ, ht, htt)` supports explicit time dependence on
+the real-time branches: `htt` is a list of `TdImpurityOp` terms whose
+coefficients are arbitrary functions of time, so the real branches evolve
+with `ht + Σ op(t)` while the τ leg keeps the constant `hτ`:
+
+```julia
+model = TdImpurityHamiltonian([tunneling(1, 1, coeff=μ0)],           # τ leg:  μ0
+                              [tunneling(1, 1, coeff=μ1)],           # real:   μ1
+                              [TdImpurityOp([tunneling(1, 1)],       # real:  + A·sin(ωt)
+                                            t -> A * sin(ω * t))])
+```
+
+Both work with `sysdynamics` on all three contours (`sysdynamics_fast`
+requires constant models). On the real contour the initial state is the
+thermal state of `hτ`; on the mixed contour the τ leg builds it
+automatically. Terms are set through the constructor only — there is no
+`push!`.
+
 ## 2. BCS bath
 
 A superconducting (BCS) bath couples through an anomalous pair term; the

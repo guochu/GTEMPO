@@ -72,14 +72,18 @@ All of them take the exponential expansion algorithm (`algexpan`, an
 ## Impurity dynamics
 
 `sysdynamics(lattice, model, trunc=trunc)` evolves the impurity operator `K`.
-`AndersonIM` (two bands, interacting), `ToulouseIM` (single band, `U = 0`),
-`IRLM` and `KanamoriIM` are predefined; custom models subtype
-`ConstImpurityHamiltonian` (or `GeneralTdImpurityHamiltonian` for
-time-dependent Hamiltonians) and implement the `fock_propagator` interface
-(plus `fock_thermalstate` if the thermal initial state is needed), with the
-number of bands reported by `num_bands`. On the mixed contour the τ leg of
-`K` builds the thermal density matrix, so no separate thermal state is needed;
-on the real contour use `systhermalstate!` (or start from `vacuumstate`).
+Predefined models: `AndersonIM` (two bands, `H = μ(n₁+n₂) + U n₁n₂`),
+`ToulouseIM` (single band, `U = 0`), `IRLM` and `KanamoriIM`. Custom models
+subtype `ConstImpurityHamiltonian` (constant; also the quench model
+`QuenchedImpurityHamiltonian`) or `AbstractTdImpurityHamiltonian`
+(time-dependent, e.g. `TdImpurityHamiltonian`) and implement the
+`fock_propagator` interface — `fock_propagator(model, branch, dt)` for
+constant models, `fock_propagator(model, branch, dt, t)` on the real-time
+branches for time-dependent ones — plus `fock_thermalstate(model, β)` if a
+thermal initial state is needed; the number of bands is reported by
+`num_bands`. On the mixed contour the τ leg of `K` builds the thermal density
+matrix, so no separate thermal state is needed; on the real contour use
+`systhermalstate!` (or start from `vacuumstate`).
 
 ## Observables
 

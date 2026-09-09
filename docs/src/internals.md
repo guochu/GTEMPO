@@ -19,7 +19,9 @@ src/
 ├── integration/              lattice contraction, TwosideExpectationCache
 ├── partialintegrate/         partialintegrate, integrateband(s), multintegrateband
 ├── influencefunctional/      PartialIF / XTRGIF / ExactTTIIF / TDVPIF
-├── sysdynamics/              impurity models (AndersonIM, IRLM, KanamoriIM, ...)
+├── sysdynamics/              impurity models (AndersonIM, ToulouseIM, IRLM,
+│                             KanamoriIM, ImpurityHamiltonian, Quenched/
+│                             TdImpurityHamiltonian, ...)
 ├── observables/              gf / cached_* / *_fast, occupations, currents
 ├── gvconnections/            boundarycondition, bulkconnection
 ├── bcsinfluencefunctional/   BCS bath influence functionals

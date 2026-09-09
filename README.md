@@ -19,8 +19,10 @@ bosonic (electron–phonon) and superconducting (BCS) baths.
 - **Observables**: Matsubara/real-time Green's functions, greater/lesser GFs,
   occupations, particle and heat currents (also in cached and fast MPO
   variants), with cached evaluation via environment tensors.
-- **Impurities**: single-orbital Anderson, multi-orbital Kanamori, IRLM,
-  electron–phonon (Fock-lattice) impurities, BCS baths.
+- **Impurities**: single-orbital Anderson (two bands) and Toulouse (single
+  band) impurities, quenched and explicitly time-dependent Hamiltonians,
+  multi-orbital Kanamori, IRLM, electron–phonon (Fock-lattice) impurities,
+  BCS baths.
 - **Reference solvers**: exact-diagonalization references (`Toulouse`,
   `BoundaryDriving`, free-fermion solutions) from
   [ImpurityModelBase.jl](https://github.com/example/ImpurityModelBase.jl).

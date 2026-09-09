@@ -1,10 +1,28 @@
-# interface
-# only the impurity Hamiltonian, no bath
+"""
+	AbstractImpurityHamiltonian
+
+Supertype of all impurity Hamiltonians. Interface: `fock_propagator`
+(both subtypes) and `fock_thermalstate` (needed to set the thermal
+initial state on real-time lattices); the number of impurity bands is
+reported by `num_bands`.
+"""
 abstract type AbstractImpurityHamiltonian end
-# constant Hamiltonian (quench hamiltonian belongs to ConstImpurityHamiltonian)
-# Only ConstImpurityHamiltonian supports sysdynamics_fast 
+"""
+	ConstImpurityHamiltonian <: AbstractImpurityHamiltonian
+
+Constant (time-independent) impurity Hamiltonian; quench Hamiltonians
+belong here. Only `ConstImpurityHamiltonian` supports `sysdynamics_fast`.
+Interface: `fock_propagator(model, branch, dt)`.
+"""
 abstract type ConstImpurityHamiltonian <: AbstractImpurityHamiltonian end
-# time-dependent Hamiltonian, only supports sysdynamics
+"""
+	AbstractTdImpurityHamiltonian <: AbstractImpurityHamiltonian
+
+Time-dependent impurity Hamiltonian; only `sysdynamics` is supported.
+Interface: `fock_propagator(model, branch, dt, t)` on the real-time
+branches (`:+`/`:-`), with `t` the left endpoint of the physical time
+interval of the step.
+"""
 abstract type AbstractTdImpurityHamiltonian <: AbstractImpurityHamiltonian end
 
 # interface for AbstractImpurityHamiltonian 
@@ -15,6 +33,13 @@ fock_propagator(model::AbstractTdImpurityHamiltonian, branch::Symbol, dt::Real, 
 # the branch time t is ignored
 fock_propagator(model::ConstImpurityHamiltonian, branch::Symbol, dt::Real, t::Real) = fock_propagator(model, branch, dt)
 
+"""
+	num_bands(h) -> Int
+
+Number of impurity bands of the model. Defaults to the `bands` field of
+the model; models without such a field define their own method (e.g.
+`AndersonIM` reports 2 and `ToulouseIM` reports 1).
+"""
 num_bands(h::AbstractImpurityHamiltonian) = h.bands
 
 # hybriddynamics(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::AbstractImpurityModel) = error("hybriddynamics not implemented for model $(typeof(model))")

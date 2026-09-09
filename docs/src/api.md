@@ -74,6 +74,14 @@ AndersonIM
 ToulouseIM
 KanamoriIM
 IRLM
+ImpurityHamiltonian
+QuenchedImpurityHamiltonian
+TdImpurityHamiltonian
+TdImpurityOp
+AbstractImpurityHamiltonian
+ConstImpurityHamiltonian
+AbstractTdImpurityHamiltonian
+num_bands
 ```
 
 ## Boundary and bulk connections
