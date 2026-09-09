@@ -11,8 +11,12 @@ J(D, ε) = sqrt(D^2-ε^2)/pi
 spectrum_func(D=1) = spectrum(ω -> J(D, ω), lb = -D, ub = D)
 
 
-# this function is very expensive, main2 will be more efficient in general
-function main(t; β=5, δt = 0.1, chi=60)
+# The implementation below builds the environment on the full 4-band lattice,
+# which is very memory hungry; the iterative variant `main` further below
+# (band-by-band contraction with `multintegrateband`) is more efficient in
+# general and is the recommended entry point.
+#
+#= function main(t; β=5, δt = 0.1, chi=60)
 	# β = 5.
 	norb = 2
 	U = 2.
@@ -39,6 +43,7 @@ function main(t; β=5, δt = 0.1, chi=60)
 	exact_model = KanamoriIM(U=U, J=J, μ=-μ, norb=norb)
 
 	mpspath = "data/tkeldysh_norb$(norb)_beta$(β)_N$(N)_chi$(chi).mps"
+	mkpath("data"); mkpath("result")
 	if ispath(mpspath)
 		println("load MPS-IF from path ", mpspath)
 		mpsI = Serialization.deserialize(mpspath)
@@ -75,6 +80,7 @@ function main(t; β=5, δt = 0.1, chi=60)
 	@time lt = cached_lesser_fast(lattice, mpsK, mpsI1, mpsI2, mpsI3, mpsI4, cache=cache)
 
 	data_path = "result/keldysh_norb$(norb)_beta$(β)_t$(t)_U$(U)_J$(J)_mu$(μ)_N$(N)_chi$(chi).json"
+	mkpath("data"); mkpath("result")
 
 	results = Dict("ts"=>ts, "gt_real" => real(gt), "gt_imag" => imag(gt), "lt_real"=>real(lt), "lt_imag"=>imag(lt))
 
@@ -83,13 +89,13 @@ function main(t; β=5, δt = 0.1, chi=60)
 	end
 
 
-end
+end =#
 
 
 # more efficient variant: instead of building a 4-band environment, the bands
 # are iteratively contracted away (K × one band IF per step) until only a
 # single band remains, which makes the final observable evaluation much cheaper
-function main2(t; β=5, δt = 0.1, chi=60, chi2=4*chi)
+function main(t; β=5, δt = 0.1, chi=60, chi2=4*chi)
 	# β = 5.
 	norb = 2
 	U = 2.
@@ -120,6 +126,7 @@ function main2(t; β=5, δt = 0.1, chi=60, chi2=4*chi)
 	exact_model = KanamoriIM(U=U, J=J, μ=-μ, norb=norb)
 
 	mpspath = "data/tkeldysh_norb$(norb)_beta$(β)_N$(N)_chi$(chi).mps"
+	mkpath("data"); mkpath("result")
 	if ispath(mpspath)
 		println("load MPS-IF from path ", mpspath)
 		mpsI = Serialization.deserialize(mpspath)
@@ -167,6 +174,7 @@ function main2(t; β=5, δt = 0.1, chi=60, chi2=4*chi)
 	@time lt = cached_lesser_fast(lattice1, mps_adt, mpsI, cache=cache)
 
 	data_path = "result/keldysh2_norb$(norb)_beta$(β)_t$(t)_U$(U)_J$(J)_mu$(μ)_N$(N)_chi$(chi)_chi2$(chi2).json"
+	mkpath("data"); mkpath("result")
 
 	results = Dict("ts"=>ts, "gt_real" => real(gt), "gt_imag" => imag(gt), "lt_real"=>real(lt), "lt_imag"=>imag(lt))
 

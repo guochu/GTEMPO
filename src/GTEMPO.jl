@@ -66,11 +66,12 @@ export boundarycondition!, boundarycondition, boundarycondition_branching
 
 # utilities for TEMPO
 # impurity model Hamilltonians
-export AbstractImpurityHamiltonian, AndersonIM, IRLM, KanamoriIM
+export AbstractImpurityHamiltonian, ConstImpurityHamiltonian, GeneralTdImpurityHamiltonian, num_bands
+export AndersonIM, ToulouseIM, IRLM, KanamoriIM
 export sysdynamics, sysdynamics_fast, sysdynamicsstepper!
 export sysdynamics_imaginary!, sysdynamics_forward!, sysdynamics_backward!
 export sysinitialstate, sysinitialstate!, systhermalstate, systhermalstate!
-export ImpurityHamiltonian, FockMatrix, fock_propagator, fock_thermalstate
+export ImpurityHamiltonian, QuenchImpurityHamiltonian, FockMatrix, fock_propagator, fock_thermalstate
 export baresysdynamics, baresysdynamics_fast
 export baresysdynamics_imaginary!, baresysdynamics_forward!, baresysdynamics_backward!
 export sysdynamics_deprecated, sysdynamics_deprecated!

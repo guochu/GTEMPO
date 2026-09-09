@@ -58,7 +58,7 @@ positions(x::AbstractTerm) = x.positions
 # Base.:*(s::InteractionTerm, m::Number) = InteractionTerm(positions(s), coeff=s.coeff * m)
 
 
-struct ImpurityHamiltonian <: AbstractImpurityHamiltonian
+struct ImpurityHamiltonian <: ConstImpurityHamiltonian
 	data::Vector{NormalTerm}
 	bands::Int
 
@@ -93,6 +93,51 @@ end
 function TK.scalartype(h::ImpurityHamiltonian)
 	T = Float64
 	for f in h.data
+		T = promote_type(T, eltype(f))
+	end
+	return T
+end
+
+"""
+	struct QuenchImpurityHamiltonian <: ConstImpurityHamiltonian
+
+Impurity Hamiltonian with a quench protocol: the impurity evolves with the
+pre-quench Hamiltonian `h0` on the imaginary-time branch (`:τ`, and for the
+thermal initial state) and with the post-quench Hamiltonian `h1` on the
+real-time branches (`:+`/`:-`). The terms can only be set through the
+constructor, there is no `push!`.
+"""
+struct QuenchImpurityHamiltonian <: ConstImpurityHamiltonian
+	h0::Vector{NormalTerm}
+	h1::Vector{NormalTerm}
+	bands::Int
+
+function QuenchImpurityHamiltonian(h0::Vector{<:NormalTerm}, h1::Vector{<:NormalTerm}, bands::Int)
+	@boundscheck begin
+		for f in h0
+			for j in positions(f)
+				(1 <= j <= bands) || throw(BoundsError(1:bands, j))
+			end
+		end
+		for f in h1
+			for j in positions(f)
+				(1 <= j <= bands) || throw(BoundsError(1:bands, j))
+			end
+		end
+	end
+	new(convert(Vector{NormalTerm}, h0), convert(Vector{NormalTerm}, h1), bands)
+end
+
+end
+QuenchImpurityHamiltonian(h0::Vector{<:NormalTerm}, h1::Vector{<:NormalTerm}; bands::Int=1) =
+	QuenchImpurityHamiltonian(h0, h1, bands)
+
+function TK.scalartype(h::QuenchImpurityHamiltonian)
+	T = Float64
+	for f in h.h0
+		T = promote_type(T, eltype(f))
+	end
+	for f in h.h1
 		T = promote_type(T, eltype(f))
 	end
 	return T

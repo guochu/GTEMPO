@@ -15,7 +15,7 @@
 		mpsI′ = hybriddynamics_naive(flat, corr, trunc=trunc)
 		@test distance(mpsI, mpsI′) / norm(mpsI) < 1.0e-5
 
-		model = AndersonIM(U=U, μ=μ)
+		model = (U == 0) ? ToulouseIM(μ=μ) : AndersonIM(U=U, μ=μ)
 		mpsK = sysdynamics(lattice, model, trunc=trunc)
 		adt = reweighting!(lattice, mpsK, flat, mpsI, trunc=trunc)
 		for band in 1:bands
@@ -32,7 +32,7 @@
 	bath = bosonicbath(spec, β=β)
 	corr = correlationfunction(bath, lattice)
 	mpsI = retardedinteractdynamics_naive(lattice, corr, trunc=trunc)
-	model = AndersonIM(U=0, μ=μ)
+	model = ToulouseIM(μ=μ)
 	mpsK = sysdynamics(lattice, model, trunc=trunc)
 	for band in 1:lattice.bands
 		mpsK = boundarycondition!(mpsK, lattice, band=band, trunc=trunc)
@@ -70,7 +70,7 @@ end
 		pcorr = correlationfunction(pbath, flat)
 		mpsI_p = hybriddynamics(flat, pcorr, trunc=trunc)
 
-		model = AndersonIM(U=U, μ=μ)
+		model = (U == 0) ? ToulouseIM(μ=μ) : AndersonIM(U=U, μ=μ)
 		mpsK = sysdynamics(lattice, model, trunc=trunc)
 		adt = reweighting!(lattice, mpsK, flat, mpsI_p, trunc=trunc)
 		for band in 1:bands

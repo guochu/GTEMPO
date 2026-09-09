@@ -56,7 +56,7 @@ function main(t; β=10, δτ=0.1, δt=0.1, chi=60,  U=1, ϵ_d=-U/2)
 	gt = cached_greater_fast(lattice, mpsK, mpsI1, mpsI2, cache=cache)
 	lt = cached_lesser_fast(lattice, mpsK, mpsI1, mpsI2, cache=cache)
 
-	ts = [i*δt for i in 1:N]
+	ts = [i*δt for i in 1:Nt]
 
 	results = Dict("ts"=>ts, "gt"=>gt, "lt"=>lt)
 	# open(data_path, "w") do f

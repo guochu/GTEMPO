@@ -10,8 +10,8 @@ standard workflow; the scenario-specific walkthroughs live in the
 
 ```julia
 bath  = fermionicbath(spectrum, β=β, μ=μ)      # 1. bath
-model = AndersonIM(U=U, μ=ϵ_d)                 # 2. impurity Hamiltonian
-lat   = GrassmannLattice(N=N, δτ=δτ, contour=:imag)   # 3. discretized contour
+model = AndersonIM(U=U, μ=ϵ_d)                 # 2. impurity Hamiltonian (two bands)
+lat   = GrassmannLattice(N=N, δτ=δτ, contour=:imag, bands=2)   # 3. discretized contour
 corr  = correlationfunction(bath, lat)         # 4. discretized hybridization
 mpsI  = hybriddynamics(lat, corr, trunc=trunc) # 5. influence functional (IF)
 mpsK  = sysdynamics(lat, model, trunc=trunc)   # 6. impurity dynamics (K)
@@ -72,8 +72,12 @@ All of them take the exponential expansion algorithm (`algexpan`, an
 ## Impurity dynamics
 
 `sysdynamics(lattice, model, trunc=trunc)` evolves the impurity operator `K`.
-`AndersonIM`, `IRLM` and `KanamoriIM` are predefined; custom models implement
-the `AbstractImpurityHamiltonian` interface. On the mixed contour the τ leg of
+`AndersonIM` (two bands, interacting), `ToulouseIM` (single band, `U = 0`),
+`IRLM` and `KanamoriIM` are predefined; custom models subtype
+`ConstImpurityHamiltonian` (or `GeneralTdImpurityHamiltonian` for
+time-dependent Hamiltonians) and implement the `fock_propagator` interface
+(plus `fock_thermalstate` if the thermal initial state is needed), with the
+number of bands reported by `num_bands`. On the mixed contour the τ leg of
 `K` builds the thermal density matrix, so no separate thermal state is needed;
 on the real contour use `systhermalstate!` (or start from `vacuumstate`).
 

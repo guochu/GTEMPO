@@ -13,7 +13,7 @@
 	g_analytic = [toulouse_Gτ(bath, τ; ϵ_d=μ) for τ in 0:δτ:β]
 	@test relerr(g_ed, g_analytic) < 1.0e-2
 
-	model = AndersonIM(U=0, μ=μ)
+	model = ToulouseIM(μ=μ)
 	for ordering in imag_orderings
 		lat = GrassmannLattice(N=N, δτ=δτ, contour=:imag, ordering=ordering)
 		corr = correlationfunction(bath, lat)
@@ -46,7 +46,7 @@ end
 	spec = DiscreteSpectrum([s[1] for s in specs], [s[2] for s in specs])
 	corr = correlationfunction(fermionicbath(spec, β=β), lat)
 	mpsI = hybriddynamics(lat, corr, trunc=trunc)
-	mpsK = sysdynamics(lat, AndersonIM(U=0, μ=μ), trunc=trunc)
+	mpsK = sysdynamics(lat, ToulouseIM(μ=μ), trunc=trunc)
 	mpsK = boundarycondition!(mpsK, lat)
 	g = gτ_series(lat, mpsK, mpsI)
 	@test relerr(g, g_ed) < 2.0e-2
@@ -74,4 +74,26 @@ end
 	ρ = exp(-β * H) / tr(exp(-β * H))
 	n_exact = real(tr(ρ * adag * a))
 	@test abs(n_gtempo[1] - n_exact) < 1.0e-2
+end
+
+@testset "Few-mode bath, imaginary time: quench Hamiltonian" begin
+	# on the imaginary axis only the pre-quench h0 enters (the :τ branch
+	# propagator); h1 is deliberately very different and must not matter
+	μ0 = 0.7; μ1 = -1.3; ω = 1.0; α = 0.5
+	δτ = 0.1; N = 8; β = N * δτ
+	trunc = truncdimcutoff(D=60, ϵ=1.0e-10)
+
+	H, a, adag, H0 = singlemode_ed(μ=μ0, U=0, bathspecs=[(ω, α)])
+	g_ed = gτ_ed(H, a, adag, 0:δτ:β, β)
+
+	bath = fermionicbath(DiracDelta(ω=ω, α=α), β=β)
+	model = QuenchImpurityHamiltonian([tunneling(1, 1, coeff=μ0)],
+										[tunneling(1, 1, coeff=μ1)]; bands=1)
+	lat = GrassmannLattice(N=N, δτ=δτ, contour=:imag)
+	corr = correlationfunction(bath, lat)
+	mpsI = hybriddynamics(lat, corr, trunc=trunc)
+	mpsK = sysdynamics(lat, model, trunc=trunc)
+	mpsK = boundarycondition!(mpsK, lat)
+	g = gτ_series(lat, mpsK, mpsI)
+	@test relerr(g, g_ed) < 1.0e-2
 end

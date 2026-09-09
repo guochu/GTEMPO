@@ -183,7 +183,7 @@ pbath = bosonicbath(DiracDelta(ω=1.0, α=0.5), β=β)
 corr  = correlationfunction(pbath, flat)
 mpsI  = hybriddynamics(flat, corr, trunc=trunc)
 
-model = AndersonIM(U=U, μ=μ)
+model = (U == 0 ? ToulouseIM(μ=μ) : AndersonIM(U=U, μ=μ))  # AndersonIM is always two-band
 mpsK  = sysdynamics(lattice, model, trunc=trunc)
 adt   = reweighting!(lattice, mpsK, flat, mpsI, trunc=trunc)
 for band in 1:bands

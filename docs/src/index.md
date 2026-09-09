@@ -34,7 +34,7 @@ A minimal real-time example:
 using GTEMPO
 
 bath  = fermionicbath(semicircular(5.0), β = 1.0, μ = 0.0)
-model = AndersonIM(U = 0.0, μ = 1.25π)
+model = ToulouseIM(μ = 1.25π)
 lattice = GrassmannLattice(N = 10, δt = 0.05, contour = :real)
 trunc = truncdimcutoff(D = 100, ϵ = 1e-10)
 

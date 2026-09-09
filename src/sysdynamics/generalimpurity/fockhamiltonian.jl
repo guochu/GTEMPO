@@ -47,15 +47,13 @@ function fockstate(ni::Int...)
     return res
 end
 
-function fockmatrix(m::AndersonIM, bands::Int)
-    adag, a = jw_operators(bands)
-    if bands == 1
-        return m.μ * adag[1]*a[1]
-    elseif bands == 2
-        return m.μ * (adag[1]*a[1] + adag[2]*a[2]) + m.U * adag[1]*a[1] * adag[2]*a[2]
-    else
-        error("Invalid bands of $bands")
-    end
+function fockmatrix(m::AndersonIM)
+    adag, a = jw_operators(2)
+    return m.μ * (adag[1]*a[1] + adag[2]*a[2]) + m.U * adag[1]*a[1] * adag[2]*a[2]
+end
+
+function fockmatrix(m::ToulouseIM)
+    return fockmatrix([tunneling(1, 1, coeff=m.μ)], 1)
 end
 
 function jw_operators(term::AdagATerm, N::Int)
@@ -66,10 +64,19 @@ function jw_operators(term::QuarticTerm, N::Int)
 	adag, a = jw_operators(N)
 	return term.coeff * adag[term.positions[1]] * adag[term.positions[2]] * a[term.positions[3]] * a[term.positions[4]]
 end
+function fockmatrix(data::Vector{<:NormalTerm}, bands::Int)
+	isempty(data) && return zeros(2^bands, 2^bands)
+	T = Float64
+	for f in data
+		T = promote_type(T, eltype(f))
+	end
+	H = zeros(T, 2^bands, 2^bands)
+	for f in data
+		H += jw_operators(f, bands)
+	end
+	return H
+end
 function fockmatrix(h::ImpurityHamiltonian, bands::Int)
 	@assert bands == h.bands
-	adag, a = jw_operators(h.bands)
-	sum(h.data) do data
-		jw_operators(data, h.bands)
-	end
+	return fockmatrix(h.data, h.bands)
 end

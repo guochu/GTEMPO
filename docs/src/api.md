@@ -71,6 +71,7 @@ sysdynamics_imaginary!
 systhermalstate!
 sysinitialstate
 AndersonIM
+ToulouseIM
 KanamoriIM
 IRLM
 ```

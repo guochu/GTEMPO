@@ -16,7 +16,7 @@
 		corr = correlationfunction(bath, flat)
 		mpsI = hybriddynamics(flat, corr, trunc=trunc)
 
-		model = AndersonIM(U=U, μ=μ)
+		model = (U == 0) ? ToulouseIM(μ=μ) : AndersonIM(U=U, μ=μ)
 		mpsK = sysdynamics(lattice, model, trunc=trunc)
 		mpsK = systhermalstate!(mpsK, lattice, model, trunc=trunc, β=β)
 		for band in 1:bands
@@ -58,7 +58,7 @@ end
 		pcorr = correlationfunction(pbath, flat)
 		mpsI_p = hybriddynamics(flat, pcorr, trunc=trunc)
 
-		model = AndersonIM(U=U, μ=μ)
+		model = (U == 0) ? ToulouseIM(μ=μ) : AndersonIM(U=U, μ=μ)
 		mpsK = sysdynamics(lattice, model, trunc=trunc)
 		mpsK = systhermalstate!(mpsK, lattice, model, trunc=trunc, β=β)
 		for band in 1:bands

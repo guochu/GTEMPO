@@ -50,6 +50,6 @@
 
 	# thermal state on the impurity: partition function over the 2-band space
 	β = 1.7
-	ρ = fock_thermalstate(model, β, 2)
+	ρ = fock_thermalstate(model, β)
 	@test tr(ρ.data) ≈ 1 atol=1.0e-10
 end

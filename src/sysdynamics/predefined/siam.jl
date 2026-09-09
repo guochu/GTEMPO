@@ -1,13 +1,31 @@
 """
-	struct AndersonIM{B <: AbstractFermionicBath}
+	struct AndersonIM
 
-Single-orbital Anderson impurity model with one bath
+Single-orbital Anderson impurity model with one bath:
+H = μ (n₁ + n₂) + U n₁ n₂ on two bands (one per spin direction).
 """
-struct AndersonIM <: AbstractImpurityHamiltonian
+struct AndersonIM <: ConstImpurityHamiltonian
 	U::Float64
 	μ::Float64
 end
-AndersonIM(; U::Real, μ::Real) = AndersonIM(convert(Float64, U), convert(Float64, μ))
+AndersonIM(U::Real, μ::Real) = AndersonIM(convert(Float64, U), convert(Float64, μ))
+AndersonIM(; U::Real, μ::Real) = AndersonIM(U, μ)
+
+num_bands(::AndersonIM) = 2
+
+"""
+	struct ToulouseIM
+
+Toulouse impurity model: the noninteracting (`U = 0`) single-band case of
+`AndersonIM`, H = μ n̂ on a single band.
+"""
+struct ToulouseIM <: ConstImpurityHamiltonian
+	μ::Float64
+end
+ToulouseIM(μ::Real) = ToulouseIM(convert(Float64, μ))
+ToulouseIM(; μ::Real) = ToulouseIM(μ)
+
+num_bands(::ToulouseIM) = 1
 
 # function hybriddynamics(gmps::GrassmannMPS, lattice::ImagGrassmannLattice, model::AndersonIM; 
 # 					corr::Union{Nothing, <:ImagCorrelationFunction}=nothing, trunc::TruncationScheme=DefaultITruncation)
@@ -342,7 +360,7 @@ ground state projector is built via the generic Fock-space construction.
 function systhermalstate!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::AndersonIM; β::Real, trunc::TruncationScheme=DefaultKTruncation)
 	μ, U = model.μ, model.U
 	if β == Inf
-		return sysinitialstate!(gmps, lattice, fock_thermalstate(model, β, lattice.bands); trunc=trunc)
+		return sysinitialstate!(gmps, lattice, fock_thermalstate(model, β); trunc=trunc)
 	end
 	a, b = siam_coeffs(μ, U, -β)
 	for band in 1:lattice.bands

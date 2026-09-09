@@ -51,8 +51,8 @@ using GTEMPO
 bath  = fermionicbath(semicircular(5.0), β = 10.0, μ = 0.0)
 model = AndersonIM(U = 2.0, μ = -1.0)
 
-# Grassmann lattice on the Keldysh contour
-lattice = GrassmannLattice(N = 10, δt = 0.05, contour = :real)
+# Grassmann lattice on the Keldysh contour (two bands: one per spin)
+lattice = GrassmannLattice(N = 10, δt = 0.05, contour = :real, bands = 2)
 
 # bath correlation function and influence functional
 corr = correlationfunction(bath, lattice)

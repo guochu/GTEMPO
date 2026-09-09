@@ -36,43 +36,16 @@ Base.getindex(x::FockMatrix, i::Int, j::Int) = getindex(x.data, i, j)
 TK.scalartype(::Type{FockMatrix{T}}) where {T <: Number} = T
 TK.scalartype(x::FockMatrix) = scalartype(typeof(x))
 
-"""
-	fock_propagator(h, branch, dt) -> FockMatrix
-
-The impurity propagator `exp(coeff·Ĥ)` in the Fock basis, where the
-coefficient is determined by the Keldysh branch and the time step:
-`-im·dt` for `:+`, `im·dt` for `:-` and `-dt` for `:τ`. For a generic
-`AbstractImpurityHamiltonian` the number of bands must be passed
-explicitly via the four-argument method.
-"""
-function fock_propagator(h::ImpurityHamiltonian, branch::Symbol, dt::Real)
-	return fock_propagator(h, branch, dt, h.bands)
-end
-
-function fock_propagator(model::AbstractImpurityHamiltonian, branch::Symbol, dt::Real, bands::Int)
+# internal helpers: exact propagator / thermal state from the Fock-space
+# Hamiltonian matrix of a model with `bands` bands
+function _fock_propagator(H::AbstractMatrix, bands::Int, branch::Symbol, dt::Real)
 	(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
 	coeff = branch == :+ ? - im * dt : branch == :- ? im * dt : - dt
-	H = fockmatrix(model, bands)
 	vals, vecs = eigen(H)
 	return FockMatrix(vecs * Diagonal(exp.(coeff .* vals)) * vecs', bands)
 end
 
-"""
-	fock_thermalstate(h, β) -> FockMatrix
-
-The normalized thermal equilibrium state `exp(-βĤ)/tr(exp(-βĤ))` of the
-impurity in the Fock basis — consistent with the analytical solution
-returned by `systhermalstate!` for `AndersonIM`. For `β == Inf` the
-(normalized) ground state projector is returned. For a generic
-`AbstractImpurityHamiltonian` the number of bands must be passed
-explicitly via the three-argument method.
-"""
-function fock_thermalstate(h::ImpurityHamiltonian, β::Real)
-	return fock_thermalstate(h, β, h.bands)
-end
-
-function fock_thermalstate(model::AbstractImpurityHamiltonian, β::Real, bands::Int)
-	H = fockmatrix(model, bands)
+function _fock_thermalstate(H::AbstractMatrix, bands::Int, β::Real)
 	vals, vecs = eigen(H)
 	if β == Inf
 		rho = vecs[:,1] * vecs[:,1]'
@@ -86,6 +59,51 @@ function fock_thermalstate(model::AbstractImpurityHamiltonian, β::Real, bands::
 	end
 	return FockMatrix(rho, bands)
 end
+
+"""
+	fock_propagator(h, branch, dt) -> FockMatrix
+
+The impurity propagator `exp(coeff·Ĥ)` in the Fock basis, where the
+coefficient is determined by the Keldysh branch and the time step:
+`-im·dt` for `:+`, `im·dt` for `:-` and `-dt` for `:τ`. Interface
+function of `ConstImpurityHamiltonian`: the model carries its own
+`bands` field (see `num_bands`).
+"""
+fock_propagator(h::ImpurityHamiltonian, branch::Symbol, dt::Real) =
+	_fock_propagator(fockmatrix(h, h.bands), h.bands, branch, dt)
+
+fock_propagator(m::AndersonIM, branch::Symbol, dt::Real) =
+	_fock_propagator(fockmatrix(m), num_bands(m), branch, dt)
+
+fock_propagator(m::ToulouseIM, branch::Symbol, dt::Real) =
+	_fock_propagator(fockmatrix(m), num_bands(m), branch, dt)
+
+# quench protocol: the imaginary-time branch evolves with the pre-quench h0,
+# the real-time branches with the post-quench h1
+fock_propagator(h::QuenchImpurityHamiltonian, branch::Symbol, dt::Real) =
+	_fock_propagator(fockmatrix(branch == :τ ? h.h0 : h.h1, h.bands), h.bands, branch, dt)
+
+"""
+	fock_thermalstate(h, β) -> FockMatrix
+
+The normalized thermal equilibrium state `exp(-βĤ)/tr(exp(-βĤ))` of the
+impurity in the Fock basis — the second interface function of
+`AbstractImpurityHamiltonian`, needed to set the initial state on
+real-time lattices. For `β == Inf` the (normalized) ground state
+projector is returned.
+"""
+fock_thermalstate(h::ImpurityHamiltonian, β::Real) =
+	_fock_thermalstate(fockmatrix(h, h.bands), h.bands, β)
+
+fock_thermalstate(m::AndersonIM, β::Real) =
+	_fock_thermalstate(fockmatrix(m), num_bands(m), β)
+
+fock_thermalstate(m::ToulouseIM, β::Real) =
+	_fock_thermalstate(fockmatrix(m), num_bands(m), β)
+
+# the quench starts from the thermal equilibrium of the pre-quench h0
+fock_thermalstate(h::QuenchImpurityHamiltonian, β::Real) =
+	fock_thermalstate(ImpurityHamiltonian(h.h0, h.bands), β)
 
 # Fock matrix -> SparseGMPS
 # -------------------------

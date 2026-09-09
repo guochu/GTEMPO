@@ -10,7 +10,7 @@
 
 	spec = DiracDelta(ω=ω, α=α)
 	bath = fermionicbath(spec, β=β)
-	model = AndersonIM(U=0, μ=μ)
+	model = ToulouseIM(μ=μ)
 	for ordering in real_orderings
 		lat = GrassmannLattice(N=Nt, δt=δt, contour=:real, ordering=ordering)
 		corr = correlationfunction(bath, lat)
@@ -43,6 +43,34 @@ end
 	bath = fermionicbath(DiracDelta(ω=ω, α=α), β=β)
 	mpsK, Is = fermionic_setup(lat, bath, AndersonIM(U=U, μ=μ), trunc, β=β)
 	gt, lt = gtlt_series(lat, mpsK, Is...)
+	@test relerr(gt, gt_ed) < 3.0e-2
+	@test relerr(lt, lt_ed) < 3.0e-2
+end
+
+@testset "Few-mode bath, real time: quench Hamiltonian" begin
+	# the impurity is thermalized with the pre-quench h0 (μ0, also used by the
+	# separable thermal initial state) and evolves with h1 (μ1) for t > 0
+	μ0 = 0.7; μ1 = -0.5; ω = 1.0; α = 0.5
+	β = 1.0; δt = 0.05; Nt = 8
+	ts = 0:δt:(Nt*δt)
+	trunc = truncdimcutoff(D=60, ϵ=1.0e-10)
+
+	# ED: separable initial state from the decoupled μ0 Hamiltonian, real-time
+	# evolution under the coupled μ1 Hamiltonian
+	_, a, adag, H0 = singlemode_ed(μ=μ0, U=0, bathspecs=[(ω, α)])
+	H, = singlemode_ed(μ=μ1, U=0, bathspecs=[(ω, α)])
+	gt_ed, lt_ed = greater_lesser_ed(H, a, adag, H0, ts, β)
+
+	bath = fermionicbath(DiracDelta(ω=ω, α=α), β=β)
+	model = QuenchImpurityHamiltonian([tunneling(1, 1, coeff=μ0)],
+										[tunneling(1, 1, coeff=μ1)]; bands=1)
+	lat = GrassmannLattice(N=Nt, δt=δt, contour=:real)
+	corr = correlationfunction(bath, lat)
+	mpsI = hybriddynamics(lat, corr, trunc=trunc)
+	mpsK = sysdynamics(lat, model, trunc=trunc)
+	mpsK = boundarycondition!(mpsK, lat)
+	mpsK = systhermalstate!(mpsK, lat, model, trunc=trunc, β=β)
+	gt, lt = gtlt_series(lat, mpsK, mpsI)
 	@test relerr(gt, gt_ed) < 3.0e-2
 	@test relerr(lt, lt_ed) < 3.0e-2
 end

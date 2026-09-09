@@ -12,7 +12,7 @@
 	g_disc = toulouse_Gτ(Toulouse(discretebath(bath, δw=0.2), ϵ_d=μ), τs)
 	@test relerr(g_disc, g_ana) < 1.0e-2
 
-	model = AndersonIM(U=0, μ=μ)
+	model = ToulouseIM(μ=μ)
 	lat = GrassmannLattice(N=N, δτ=δτ, contour=:imag)
 	corr = correlationfunction(bath, lat)
 	for (name, alg) in if_algs(trunc)

@@ -29,7 +29,3 @@ include("influencefunctional/influencefunctional.jl")
 
 # convert FockMPS into GrassmannMPS
 include("conversion.jl")
-
-
-# predefined models
-# include("models/models.jl")

@@ -1,7 +1,7 @@
 @testset "API: observables" begin
 	# free impurity (U = 0) coupled to a semicircular bath
 	trunc = truncdimcutoff(D=50, ϵ=1.0e-10)
-	model = AndersonIM(U=0, μ=-0.5)
+	model = ToulouseIM(μ=-0.5)
 	bath = fermionicbath(spectrum_func(), β=1.0, μ=0)
 
 	# imaginary time
