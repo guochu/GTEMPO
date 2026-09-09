@@ -42,7 +42,7 @@ In-place: multiply the normalized impurity thermal equilibrium state
 `exp(-βĤ)/tr(exp(-βĤ))` (for `β == Inf` the ground state projector, see
 `fock_thermalstate`) into the GrassmannMPS `gmps`.
 """
-function systhermalstate!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::ConstImpurityHamiltonian;
+function systhermalstate!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::AbstractImpurityHamiltonian;
 							β::Real, trunc::TruncationScheme=DefaultKTruncation)
     return sysinitialstate!(gmps, lattice, fock_thermalstate(model, β); trunc=trunc)
 end
@@ -53,5 +53,5 @@ end
 The impurity thermal equilibrium state as a GrassmannMPS on `lattice`,
 built by applying `systhermalstate!` to the vacuum state.
 """
-systhermalstate(lattice::RealGrassmannLattice, model::ConstImpurityHamiltonian; kwargs...) =
+systhermalstate(lattice::RealGrassmannLattice, model::AbstractImpurityHamiltonian; kwargs...) =
 	systhermalstate!(vacuumstate(lattice), lattice, model; kwargs...)

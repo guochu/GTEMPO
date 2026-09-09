@@ -99,47 +99,124 @@ function TK.scalartype(h::ImpurityHamiltonian)
 end
 
 """
-	struct QuenchImpurityHamiltonian <: ConstImpurityHamiltonian
+	struct QuenchedImpurityHamiltonian <: ConstImpurityHamiltonian
 
 Impurity Hamiltonian with a quench protocol: the impurity evolves with the
-pre-quench Hamiltonian `h0` on the imaginary-time branch (`:τ`, and for the
-thermal initial state) and with the post-quench Hamiltonian `h1` on the
+pre-quench Hamiltonian `hτ` on the imaginary-time branch (`:τ`, and for the
+thermal initial state) and with the post-quench Hamiltonian `ht` on the
 real-time branches (`:+`/`:-`). The terms can only be set through the
 constructor, there is no `push!`.
 """
-struct QuenchImpurityHamiltonian <: ConstImpurityHamiltonian
-	h0::Vector{NormalTerm}
-	h1::Vector{NormalTerm}
+struct QuenchedImpurityHamiltonian <: ConstImpurityHamiltonian
+	hτ::Vector{NormalTerm}
+	ht::Vector{NormalTerm}
 	bands::Int
 
-function QuenchImpurityHamiltonian(h0::Vector{<:NormalTerm}, h1::Vector{<:NormalTerm}, bands::Int)
-	@boundscheck begin
-		for f in h0
-			for j in positions(f)
-				(1 <= j <= bands) || throw(BoundsError(1:bands, j))
+	function QuenchedImpurityHamiltonian(hτ::Vector{<:NormalTerm}, ht::Vector{<:NormalTerm}, bands::Int)
+		@boundscheck begin
+			for f in hτ
+				for j in positions(f)
+					(1 <= j <= bands) || throw(BoundsError(1:bands, j))
+				end
+			end
+			for f in ht
+				for j in positions(f)
+					(1 <= j <= bands) || throw(BoundsError(1:bands, j))
+				end
 			end
 		end
-		for f in h1
-			for j in positions(f)
-				(1 <= j <= bands) || throw(BoundsError(1:bands, j))
-			end
-		end
+		new(convert(Vector{NormalTerm}, hτ), convert(Vector{NormalTerm}, ht), bands)
 	end
-	new(convert(Vector{NormalTerm}, h0), convert(Vector{NormalTerm}, h1), bands)
-end
 
 end
-QuenchImpurityHamiltonian(h0::Vector{<:NormalTerm}, h1::Vector{<:NormalTerm}; bands::Int=1) =
-	QuenchImpurityHamiltonian(h0, h1, bands)
+QuenchedImpurityHamiltonian(hτ::Vector{<:NormalTerm}, ht::Vector{<:NormalTerm}; bands::Int=1) =
+	QuenchedImpurityHamiltonian(hτ, ht, bands)
 
-function TK.scalartype(h::QuenchImpurityHamiltonian)
+function TK.scalartype(h::QuenchedImpurityHamiltonian)
 	T = Float64
-	for f in h.h0
+	for f in h.hτ
 		T = promote_type(T, eltype(f))
 	end
-	for f in h.h1
+	for f in h.ht
 		T = promote_type(T, eltype(f))
 	end
 	return T
 end
 
+"""
+	struct TdImpurityOp
+
+Time-dependent collection of `NormalTerm`s: `data` multiplied by the scalar
+`f(t)` gives the `ImpurityHamiltonian` contribution of this term at time `t`.
+"""
+struct TdImpurityOp
+	data::Vector{NormalTerm}
+	f::Function
+	bands::Int
+
+	function TdImpurityOp(data::Vector{<:NormalTerm}, f::Function, bands::Int)
+		@boundscheck begin
+			for term in data
+				for j in positions(term)
+					(1 <= j <= bands) || throw(BoundsError(1:bands, j))
+				end
+			end
+		end
+		new(convert(Vector{NormalTerm}, data), f, bands)
+	end
+
+end
+TdImpurityOp(data::Vector{<:NormalTerm}, f::Function; bands::Int=1) = TdImpurityOp(data, f, bands)
+
+function (x::TdImpurityOp)(t::Real)
+	c = x.f(t)
+	data = [item * c for item in x.data]
+	return ImpurityHamiltonian(data, x.bands)
+end
+
+# hτ	is used for the imaginary-time branch of the contour
+# ht	is used for the constant part of the real-time branch of the contour
+# htt	is used for the time-dependent part of the real-time branch of the contour
+"""
+	struct TdImpurityHamiltonian <: AbstractTdImpurityHamiltonian
+
+Time-dependent impurity Hamiltonian. `hτ` is used for the imaginary-time
+branch of the contour (and for the thermal initial state), while the
+real-time branches (`:+`/`:-`) evolve with the time-dependent Hamiltonian
+`ht + Σ htt(t)`: calling the model with a time `t` returns the constant
+`ImpurityHamiltonian` of the real-time branches at `t`.
+"""
+struct TdImpurityHamiltonian <: AbstractTdImpurityHamiltonian
+	hτ::Vector{NormalTerm}
+	ht::Vector{NormalTerm}
+	htt::Vector{TdImpurityOp}
+	bands::Int
+
+	function TdImpurityHamiltonian(hτ::Vector{<:NormalTerm}, ht::Vector{<:NormalTerm},
+									htt::Vector{<:TdImpurityOp}, bands::Int)
+		@boundscheck begin
+			for f in (hτ..., ht...)
+				for j in positions(f)
+					(1 <= j <= bands) || throw(BoundsError(1:bands, j))
+				end
+			end
+			for op in htt
+				(op.bands == bands) || throw(DimensionMismatch("TdImpurityOp bands $(op.bands) do not match model bands $bands"))
+			end
+		end
+		new(convert(Vector{NormalTerm}, hτ), convert(Vector{NormalTerm}, ht),
+			convert(Vector{TdImpurityOp}, htt), bands)
+	end
+
+end
+TdImpurityHamiltonian(hτ::Vector{<:NormalTerm}, ht::Vector{<:NormalTerm},
+						htt::Vector{<:TdImpurityOp}; bands::Int=1) =
+	TdImpurityHamiltonian(hτ, ht, htt, bands)
+
+function (x::TdImpurityHamiltonian)(t::Real)
+	ht = copy(x.ht)
+	for op in x.htt
+		append!(ht, op(t).data)
+	end
+	return ImpurityHamiltonian(ht, x.bands)
+end

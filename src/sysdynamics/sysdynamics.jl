@@ -4,13 +4,16 @@ abstract type AbstractImpurityHamiltonian end
 # constant Hamiltonian (quench hamiltonian belongs to ConstImpurityHamiltonian)
 # Only ConstImpurityHamiltonian supports sysdynamics_fast 
 abstract type ConstImpurityHamiltonian <: AbstractImpurityHamiltonian end
-# time-dependent Hamiltonian
-abstract type GeneralTdImpurityHamiltonian <: AbstractImpurityHamiltonian end
+# time-dependent Hamiltonian, only supports sysdynamics
+abstract type AbstractTdImpurityHamiltonian <: AbstractImpurityHamiltonian end
 
 # interface for AbstractImpurityHamiltonian 
 fock_propagator(model::ConstImpurityHamiltonian, branch::Symbol, dt::Real) = error("fock_propagator not implemented for model $(typeof(model))")
 fock_thermalstate(h::AbstractImpurityHamiltonian, β::Real) = error("fock_thermalstate not implemented for model $(typeof(h))")
-fock_propagator(model::GeneralTdImpurityHamiltonian, branch::Symbol, dt::Real, t::Real) = error("fock_propagator not implemented for model $(typeof(model))")
+fock_propagator(model::AbstractTdImpurityHamiltonian, branch::Symbol, dt::Real, t::Real) = error("fock_propagator not implemented for model $(typeof(model))")
+# constant models: the propagator on the real-time branches is time-independent,
+# the branch time t is ignored
+fock_propagator(model::ConstImpurityHamiltonian, branch::Symbol, dt::Real, t::Real) = fock_propagator(model, branch, dt)
 
 num_bands(h::AbstractImpurityHamiltonian) = h.bands
 

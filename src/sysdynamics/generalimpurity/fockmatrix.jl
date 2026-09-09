@@ -78,10 +78,22 @@ fock_propagator(m::AndersonIM, branch::Symbol, dt::Real) =
 fock_propagator(m::ToulouseIM, branch::Symbol, dt::Real) =
 	_fock_propagator(fockmatrix(m), num_bands(m), branch, dt)
 
-# quench protocol: the imaginary-time branch evolves with the pre-quench h0,
-# the real-time branches with the post-quench h1
-fock_propagator(h::QuenchImpurityHamiltonian, branch::Symbol, dt::Real) =
-	_fock_propagator(fockmatrix(branch == :τ ? h.h0 : h.h1, h.bands), h.bands, branch, dt)
+# quench protocol: the imaginary-time branch evolves with the pre-quench hτ,
+# the real-time branches with the post-quench ht
+fock_propagator(h::QuenchedImpurityHamiltonian, branch::Symbol, dt::Real) =
+	_fock_propagator(fockmatrix(branch == :τ ? h.hτ : h.ht, h.bands), h.bands, branch, dt)
+
+# time-dependent model: the τ branch evolves with the constant hτ
+function fock_propagator(h::TdImpurityHamiltonian, branch::Symbol, dt::Real)
+	(branch == :τ) || throw(ArgumentError("the propagator of a time-dependent model on the real-time branches requires the branch time t: use fock_propagator(model, branch, dt, t)"))
+	return _fock_propagator(fockmatrix(h.hτ, h.bands), h.bands, :τ, dt)
+end
+
+# time-dependent model: the real-time branches evolve with ht + Σ htt(t)
+function fock_propagator(h::TdImpurityHamiltonian, branch::Symbol, dt::Real, t::Real)
+	(branch in (:+, :-)) || throw(ArgumentError("branch must be one of :+ or :- for the time-dependent propagator"))
+	return _fock_propagator(fockmatrix(h(t), h.bands), h.bands, branch, dt)
+end
 
 """
 	fock_thermalstate(h, β) -> FockMatrix
@@ -101,9 +113,13 @@ fock_thermalstate(m::AndersonIM, β::Real) =
 fock_thermalstate(m::ToulouseIM, β::Real) =
 	_fock_thermalstate(fockmatrix(m), num_bands(m), β)
 
-# the quench starts from the thermal equilibrium of the pre-quench h0
-fock_thermalstate(h::QuenchImpurityHamiltonian, β::Real) =
-	fock_thermalstate(ImpurityHamiltonian(h.h0, h.bands), β)
+# the quench starts from the thermal equilibrium of the pre-quench hτ
+fock_thermalstate(h::QuenchedImpurityHamiltonian, β::Real) =
+	_fock_thermalstate(fockmatrix(h.hτ, h.bands), h.bands, β)
+
+# the thermal state of a time-dependent model is that of the constant hτ
+fock_thermalstate(h::TdImpurityHamiltonian, β::Real) =
+	_fock_thermalstate(fockmatrix(h.hτ, h.bands), h.bands, β)
 
 # Fock matrix -> SparseGMPS
 # -------------------------

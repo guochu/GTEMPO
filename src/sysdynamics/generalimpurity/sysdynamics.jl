@@ -16,7 +16,7 @@
 # branch and the relative
 # layout of the variables, since the propagator is the same at every step.
 function _propagator_sparsegmps(lattice::AbstractGrassmannLattice, fm::FockMatrix, idx::Int, branch::Symbol,
-								cache::Union{Nothing, Dict})
+								cache::Union{Nothing, Dict}, t::Union{Nothing, Real}=nothing)
 	M = lattice.bands
 	ib, ik = branch == :- ? (idx, idx+1) : (idx+1, idx)
 	bpos = [index(lattice, ib, conj=true, branch=branch, band=i) for i in 1:M]
@@ -27,10 +27,12 @@ function _propagator_sparsegmps(lattice::AbstractGrassmannLattice, fm::FockMatri
 	if isnothing(cache)
 		return _tosparsegmps(lattice, fm, bpos, kpos)
 	end
-	cached = get(cache, (branch, brel, krel), nothing)
+	# the cache key carries the branch time t: for time-dependent models the
+	# propagator differs from step to step
+	cached = get(cache, (branch, t, brel, krel), nothing)
 	if isnothing(cached)
 		sparse = _tosparsegmps(lattice, fm, bpos, kpos)
-		cache[(branch, brel, krel)] = (sparse.data, sparse.positions .- pmin)
+		cache[(branch, t, brel, krel)] = (sparse.data, sparse.positions .- pmin)
 		return sparse
 	end
 	data, relpos = cached
@@ -41,8 +43,12 @@ function _sysdynamics_util(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice
 								idx::Int=1, branch::Symbol=:+, trunc::TruncationScheme=DefaultKTruncation,
 								cache::Union{Nothing, Dict}=nothing)
 	dt = branch == :τ ? lattice.δτ : lattice.δt
-	fm = fock_propagator(model, branch, dt)
-	sparse = _propagator_sparsegmps(lattice, fm, idx, branch, cache)
+	# left endpoint of the physical time interval of this step (only used by
+	# time-dependent models): the forward branch runs from t = 0 to t = T,
+	# the backward branch runs back from t = T to t = 0
+	t = (branch == :+) ? (idx - 1) * dt : (branch == :- ? (lattice.Nt - idx) * dt : nothing)
+	fm = (branch == :τ) ? fock_propagator(model, branch, dt) : fock_propagator(model, branch, dt, t)
+	sparse = _propagator_sparsegmps(lattice, fm, idx, branch, cache, t)
 	return mult!(gmps, sparse, trunc=trunc)
 end
 
@@ -79,13 +85,13 @@ the Fock-space propagator (`fock_propagator`) is converted directly
 into a SparseGMPS (`_tosparsegmps`) which is multiplied into the
 accumulating state with the sparse `mult!`.
 """
-function sysdynamics(lattice::ImagGrassmannLattice, model::ConstImpurityHamiltonian;
+function sysdynamics(lattice::ImagGrassmannLattice, model::AbstractImpurityHamiltonian;
 							trunc::TruncationScheme=DefaultKTruncation)
 	gmps = vacuumstate(lattice)
 	return sysdynamics_imaginary!(gmps, lattice, model; trunc=trunc)
 end
 
-function sysdynamics(lattice::RealGrassmannLattice, model::ConstImpurityHamiltonian;
+function sysdynamics(lattice::RealGrassmannLattice, model::AbstractImpurityHamiltonian;
 							branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
 	gmps = vacuumstate(lattice)
 	if isnothing(branch)
@@ -98,7 +104,7 @@ function sysdynamics(lattice::RealGrassmannLattice, model::ConstImpurityHamilton
 	end
 end
 
-function sysdynamics(lattice::MixedGrassmannLattice, model::ConstImpurityHamiltonian;
+function sysdynamics(lattice::MixedGrassmannLattice, model::AbstractImpurityHamiltonian;
 							branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
 	gmps = vacuumstate(lattice)
 	if isnothing(branch)
@@ -153,7 +159,7 @@ function _bare_window_sparsegmps(lattice::AbstractGrassmannLattice, fm::FockMatr
 end
 
 function _bare_propagator_sparsegmps(lattice::AbstractGrassmannLattice, fm::FockMatrix, idx::Int,
-									branch::Symbol, cache::Union{Nothing, Dict})
+									branch::Symbol, cache::Union{Nothing, Dict}, t::Union{Nothing, Real}=nothing)
 	M = lattice.bands
 	ib, ik = branch == :- ? (idx, idx+1) : (idx+1, idx)
 	bpos = [index(lattice, ib, conj=true, branch=branch, band=i) for i in 1:M]
@@ -166,10 +172,12 @@ function _bare_propagator_sparsegmps(lattice::AbstractGrassmannLattice, fm::Fock
 		sparse = _bare_window_sparsegmps(lattice, fm, bwin, kwin, pmax - pmin + 1)
 		return SparseGMPS(sparse.data, sparse.positions .+ (pmin - 1))
 	end
-	cached = get(cache, (branch, bwin, kwin), nothing)
+	# the cache key carries the branch time t: for time-dependent models the
+	# propagator differs from step to step
+	cached = get(cache, (branch, t, bwin, kwin), nothing)
 	if isnothing(cached)
 		sparse = _bare_window_sparsegmps(lattice, fm, bwin, kwin, pmax - pmin + 1)
-		cache[(branch, bwin, kwin)] = (sparse.data, sparse.positions)
+		cache[(branch, t, bwin, kwin)] = (sparse.data, sparse.positions)
 		return SparseGMPS(sparse.data, sparse.positions .+ (pmin - 1))
 	end
 	data, relpos = cached
@@ -180,8 +188,12 @@ function _baresysdynamics_util(gmps::GrassmannMPS, lattice::AbstractGrassmannLat
 									idx::Int=1, branch::Symbol=:+, trunc::TruncationScheme=DefaultKTruncation,
 									cache::Union{Nothing, Dict}=nothing)
 	dt = branch == :τ ? lattice.δτ : lattice.δt
-	fm = fock_propagator(model, branch, dt)
-	sparse = _bare_propagator_sparsegmps(lattice, fm, idx, branch, cache)
+	# left endpoint of the physical time interval of this step (only used by
+	# time-dependent models): the forward branch runs from t = 0 to t = T,
+	# the backward branch runs back from t = T to t = 0
+	t = (branch == :+) ? (idx - 1) * dt : (branch == :- ? (lattice.Nt - idx) * dt : nothing)
+	fm = (branch == :τ) ? fock_propagator(model, branch, dt) : fock_propagator(model, branch, dt, t)
+	sparse = _bare_propagator_sparsegmps(lattice, fm, idx, branch, cache, t)
 	return mult!(gmps, sparse, trunc=trunc)
 end
 
@@ -236,13 +248,13 @@ coherent-state bra-ket overlaps (see `_bare_window_sparsegmps`).
 Applying `bulkconnection` to its output gives `sysdynamics`, exactly
 as `bulkconnection` on `baresysdynamics` gives `sysdynamics`.
 """
-function baresysdynamics(lattice::ImagGrassmannLattice, model::ConstImpurityHamiltonian;
+function baresysdynamics(lattice::ImagGrassmannLattice, model::AbstractImpurityHamiltonian;
 								trunc::TruncationScheme=DefaultKTruncation)
 	gmps = vacuumstate(lattice)
 	return baresysdynamics_imaginary!(gmps, lattice, model; trunc=trunc)
 end
 
-function baresysdynamics(lattice::RealGrassmannLattice, model::ConstImpurityHamiltonian;
+function baresysdynamics(lattice::RealGrassmannLattice, model::AbstractImpurityHamiltonian;
 								branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
 	gmps = vacuumstate(lattice)
 	if isnothing(branch)
@@ -255,7 +267,7 @@ function baresysdynamics(lattice::RealGrassmannLattice, model::ConstImpurityHami
 	end
 end
 
-function baresysdynamics(lattice::MixedGrassmannLattice, model::ConstImpurityHamiltonian;
+function baresysdynamics(lattice::MixedGrassmannLattice, model::AbstractImpurityHamiltonian;
 								branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
 	gmps = vacuumstate(lattice)
 	if isnothing(branch)

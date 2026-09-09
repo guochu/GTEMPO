@@ -87,8 +87,32 @@ end
 	g_ed = gτ_ed(H, a, adag, 0:δτ:β, β)
 
 	bath = fermionicbath(DiracDelta(ω=ω, α=α), β=β)
-	model = QuenchImpurityHamiltonian([tunneling(1, 1, coeff=μ0)],
+	model = QuenchedImpurityHamiltonian([tunneling(1, 1, coeff=μ0)],
 										[tunneling(1, 1, coeff=μ1)]; bands=1)
+	lat = GrassmannLattice(N=N, δτ=δτ, contour=:imag)
+	corr = correlationfunction(bath, lat)
+	mpsI = hybriddynamics(lat, corr, trunc=trunc)
+	mpsK = sysdynamics(lat, model, trunc=trunc)
+	mpsK = boundarycondition!(mpsK, lat)
+	g = gτ_series(lat, mpsK, mpsI)
+	@test relerr(g, g_ed) < 1.0e-2
+end
+
+@testset "Few-mode bath, imaginary time: time-dependent Hamiltonian" begin
+	# on the imaginary axis only the constant hτ enters; ht/htt are
+	# deliberately very different and must not matter
+	μ0 = 0.7; μ1 = -1.3; A = 5.0; ωt = 1.0
+	ω = 1.0; α = 0.5
+	δτ = 0.1; N = 8; β = N * δτ
+	trunc = truncdimcutoff(D=60, ϵ=1.0e-10)
+
+	H, a, adag, H0 = singlemode_ed(μ=μ0, U=0, bathspecs=[(ω, α)])
+	g_ed = gτ_ed(H, a, adag, 0:δτ:β, β)
+
+	bath = fermionicbath(DiracDelta(ω=ω, α=α), β=β)
+	model = TdImpurityHamiltonian([tunneling(1, 1, coeff=μ0)],
+									[tunneling(1, 1, coeff=μ1)],
+									[TdImpurityOp([tunneling(1, 1)], t -> A * sin(ωt * t))])
 	lat = GrassmannLattice(N=N, δτ=δτ, contour=:imag)
 	corr = correlationfunction(bath, lat)
 	mpsI = hybriddynamics(lat, corr, trunc=trunc)
