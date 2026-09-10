@@ -38,6 +38,18 @@
 - 单模 bath 的 quench（`QuenchedImpurityHamiltonian`）与时变（`TdImpurityHamiltonian`）测试覆盖 imag/real/mixed 三种 lattice，ED 参考采用与 GTEMPO 相同的逐步常数哈密顿量离散化。
 - 原单模 bath 测试中 `AndersonIM(U=0)`（单带 lattice）全部改为 `ToulouseIM`；两带 lattice 的 `AndersonIM` 去掉 `bands=2` 关键字。
 
+## 第四批更新
+
+### ExactTTIIF 原地构建接口（in-place）
+
+- **删除** `influencefunctional` 与 `influencefunctional!`（`src/influencefunctional/hybridization/exact_ttiif/`）：与 `hybriddynamics`/`hybriddynamics!` 完全等价，导出去重，导出列表移除 `influencefunctional, influencefunctional!`。
+- **唯一入口**：`hybriddynamics(lattice, corr, alg::ExactTTIIF; band)`（从真空态构建完整 IF）与 `hybriddynamics!(gmps, lattice, corr, alg::ExactTTIIF; band)`（把 IF 逐 term 原地乘入已有 `GrassmannMPS`，原 `influencefunctional!` 的 `mult!` 循环内联至 `hybriddynamics!`）。
+- **推荐工作流**：`gmps = sysdynamics(lat, model, trunc=trunc)` 得到杂质动力学后，`hybriddynamics!(gmps, lat, corr, ExactTTIIF())` 直接在同一个状态上合并 bath 影响；后续观测只需单状态（`gτ_series`/`gtlt_series` 等不再需要单独的 `mpsI` 参数）。
+- **多带处理移入 `_influencefunctional`**：`lattice.bands > 1` 时先 `similar(lattice, bands=1)` 建单带格点（`_influencefunctional_util` 仅支持 `bands == 1`），再对每个 term 用 `fillband(lattice, mps, band=band)` 扩充回全格点。
+- 测试固化：
+  - `test/api/hybriddynamics.jl`：in-place 与分开构造一致（`hybriddynamics!(vacuumstate(...), ...) == hybriddynamics(...)` 位级一致；`sysdynamics → hybriddynamics!` 与 `mult(sysdynamics, hybriddynamics(...))` 一致，实时容差 1e-3 为截断顺序噪声）；多带 lattice 的内部 `fillband` 路径校验（1e-12）。
+  - `test/normalbath/fewmodesbath/imagtime.jl` 与 `realtime.jl`：新增 "in-place ExactTTIIF hybriddynamics!" testset，完整工作流 `sysdynamics → boundarycondition! →（实时加 systhermalstate!）→ hybriddynamics!` 的 GF 与 ED 参考对比（imag 1e-2 / real 3e-2），并与标准分开构造流程一致（1e-3）。
+
 ## 第二批更新
 
 ### 指数展开算法外包至 ExpExp.jl

@@ -1,16 +1,26 @@
-
-function influencefunctional(lattice::ImagGrassmannLattice1Order{O}, corr::ImagCorrelationFunction, alg::ExactTTIIF) where O
+function _influencefunctional(lattice::ImagGrassmannLattice1Order{O}, corr::ImagCorrelationFunction, alg::ExactTTIIF; band::Int=1) where O
+	if lattice.bands > 1
+		# the terms are built on a single-band lattice and expanded to the
+		# full lattice afterwards (influencefunctional_util only supports one band)
+		lattice1 = similar(lattice, bands=1)
+		mpss = _influencefunctional(lattice1, corr, alg)
+		return [fillband(lattice, mps, band=band) for mps in mpss]
+	end
 	if !(LayoutStyle(lattice) isa TimeLocalLayout)
-		lattice2 = similar(lattice, ordering = A1Ā1B1B̄1())
-		mps = _influencefunctional(lattice2, corr, alg)
-		_, mps2 = changeordering(O, lattice2, mps, trunc=alg.algmult.trunc)
-		return mps2
+		lattice2 = similar(lattice, ordering = A1Ā1B1B̄1())
+		mpss = _influencefunctional_util(lattice2, corr, alg)
+		# change the ordering of all mpss
+		mpss2 = similar(mpss)
+		for i in 1:length(mpss)
+			_, mpss2[i] = changeordering(O, lattice2, mpss[i], trunc=alg.algmult.trunc)
+		end
+		return mpss2
 	else
-		return _influencefunctional(lattice, corr, alg)
+		return _influencefunctional_util(lattice, corr, alg)
 	end
 end
 
-function _influencefunctional(lattice::ImagGrassmannLattice1Order, corr::ImagCorrelationFunction, alg::ExactTTIIF)
+function _influencefunctional_util(lattice::ImagGrassmannLattice1Order, corr::ImagCorrelationFunction, alg::ExactTTIIF)
 	@assert lattice.bands == 1
 
 	# get WII for each exponential decay term
@@ -33,7 +43,7 @@ function _influencefunctional(lattice::ImagGrassmannLattice1Order, corr::ImagCor
 
 	(alg.verbosity >= 1) && println(length(mpss), " terms to be multiply...")
 
-	# multiply together
+	# order of the exponential decay terms
 	multorder = alg.multorder
 	if multorder == :no
 		p = collect(eachindex(mpss))
@@ -51,10 +61,5 @@ function _influencefunctional(lattice::ImagGrassmannLattice1Order, corr::ImagCor
 	(alg.verbosity >= 2) && println("Reorder: ", p)
 	mpss = map(i->mpss[i][1], p)
 
-	mps = mpss[1]
-	for i in 2:length(mpss)
-		t = @elapsed mps = mult!(mps, mpss[i], alg.algmult)
-		(alg.verbosity >= 2) && println("$i of $(length(mpss)) takes $t seconds, result mps of bond dimension: ", bond_dimension(mps))
-	end
-	return mps
+	return mpss
 end

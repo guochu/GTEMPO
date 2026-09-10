@@ -1,17 +1,39 @@
 
 
+"""
+    hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::ExactTTIIF; band::Int=1)
 
-function hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::ExactTTIIF; band::Int=1)
+Construct the influence functional with the `ExactTTIIF` algorithm on
+`lattice` (starting from the vacuum state). Equivalently the in-place
+[`hybriddynamics!`](@ref), see its docstring for the workflow of merging the
+influence functional into an existing `GrassmannMPS` such as the impurity
+dynamics from `sysdynamics`.
+"""
+hybriddynamics(lattice::AbstractGrassmannLattice, 
+corr::AbstractCorrelationFunction, alg::ExactTTIIF; kwargs...) = hybriddynamics!(vacuumstate(lattice), lattice, corr, alg; kwargs...)
+
+"""
+    hybriddynamics!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::ExactTTIIF; band::Int=1)
+
+In-place version of the `ExactTTIIF` algorithm: the influence functional is
+multiplied onto `gmps` directly (term by term), so that `gmps` carries both
+the impurity dynamics and the bath influence. A typical workflow is
+
+    gmps = sysdynamics(lat, model, trunc=trunc)     # impurity dynamics
+    hybriddynamics!(gmps, lat, corr, ExactTTIIF())  # merge the IF in place
+
+For `lattice.bands > 1` the influence functional terms are built on a
+single-band lattice and expanded to the given `band` via `fillband`.
+"""
+function hybriddynamics!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::ExactTTIIF; band::Int=1)
 	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
-	if lattice.bands == 1
-		return influencefunctional(lattice, corr, alg)
-	else
-		lattice1 = similar(lattice, bands=1)
-		mps = influencefunctional(lattice1, corr, alg)
-		return fillband(lattice, mps; band=band)
+	mpss = _influencefunctional(lattice, corr, alg; band=band)
+	for i in 1:length(mpss)
+		t = @elapsed gmps = mult!(gmps, mpss[i], alg.algmult)
+		(alg.verbosity >= 2) && println("$i of $(length(mpss)) takes $t seconds, result mps of bond dimension: ", bond_dimension(gmps))
 	end
+	return gmps
 end
-
 
 
 # get exact WII

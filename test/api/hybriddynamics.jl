@@ -28,6 +28,19 @@
 		@test relerr(mpsI6, mpsI) < 1.0e-6
 	end
 
+	# in-place ExactTTIIF (default ordering): the IF is merged into the state
+	# passed in, e.g. the impurity dynamics obtained from sysdynamics
+	lat = GrassmannLattice(N=N, δτ=β/N, contour=:imag)
+	corr = correlationfunction(bath, lat)
+	alg = ExactTTIIF(algmult=SVDCompression(trunc), verbosity=0)
+	mpsI4 = hybriddynamics(lat, corr, alg)
+	@test relerr(hybriddynamics!(vacuumstate(lat), lat, corr, alg), mpsI4) < 1.0e-12
+	model = ToulouseIM(μ=0.5)
+	mpsK = sysdynamics(lat, model, trunc=trunc)
+	mpsK = hybriddynamics!(mpsK, lat, corr, alg)
+	mpsK_ref = mult(sysdynamics(lat, model, trunc=trunc), mpsI4, trunc=trunc)
+	@test relerr(mpsK, mpsK_ref) < 1.0e-6
+
 	# multi-band: construct on a single-band lattice, then fillband
 	lat = GrassmannLattice(N=N, δτ=β/N, contour=:imag, bands=2)
 	lat1 = similar(lat, bands=1)
@@ -37,6 +50,12 @@
 	mpsI2 = fillband(lat, mpsI, band=2)
 	@test length(mpsI1) == length(lat)
 	@test relerr(mpsI2, swapband(mpsI1, lat, 1, 2, trunc=trunc)) < 1.0e-8
+
+	# ExactTTIIF builds its terms on a single-band lattice internally and
+	# expands them to the full lattice via fillband
+	mpsI3 = hybriddynamics(lat, corr, ExactTTIIF(algmult=SVDCompression(trunc), verbosity=0))
+	mpsI3_ref = fillband(lat, hybriddynamics(lat1, corr, ExactTTIIF(algmult=SVDCompression(trunc), verbosity=0)), band=1)
+	@test relerr(mpsI3, mpsI3_ref) < 1.0e-12
 end
 
 @testset "API: hybriddynamics (real time)" begin
@@ -61,6 +80,19 @@ end
 			@test relerr(mps, mpsI) < 5.0e-2
 		end
 	end
+
+	# in-place ExactTTIIF (default ordering): merge the IF into a K obtained
+	# from sysdynamics, on the real-time (Keldysh) contour
+	lat = GrassmannLattice(N=N, δt=δt, contour=:real)
+	corr = correlationfunction(bath, lat)
+	alg = ExactTTIIF(algmult=SVDCompression(trunc), verbosity=0)
+	mpsI4 = hybriddynamics(lat, corr, alg)
+	@test relerr(hybriddynamics!(vacuumstate(lat), lat, corr, alg), mpsI4) < 1.0e-12
+	model = ToulouseIM(μ=0.5)
+	mpsK = sysdynamics(lat, model, trunc=trunc)
+	mpsK = hybriddynamics!(mpsK, lat, corr, alg)
+	mpsK_ref = mult(sysdynamics(lat, model, trunc=trunc), mpsI4, trunc=trunc)
+	@test relerr(mpsK, mpsK_ref) < 1.0e-3
 end
 
 @testset "API: hybriddynamics (mixed time)" begin

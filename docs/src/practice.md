@@ -34,6 +34,21 @@ println("Z = ", Zvalue(cache))
 gtau = cached_gf_fast(lat, mpsK, mpsI; c1=false, c2=true, b1=:τ, b2=:τ, cache=cache)
 ```
 
+The influence functional can instead be merged directly into the dynamics
+state. `hybriddynamics!(mpsK, lat, corr, alg)` multiplies the IF into `mpsK`
+in place (supported by `PartialIF`, `XTRGIF`, `ExactTTIIF`, `TDVPIF`), so the
+observables take a single GMPS:
+
+```julia
+mpsK = sysdynamics(lat, model, trunc=trunc)
+mpsK = boundarycondition!(mpsK, lat)
+hybriddynamics!(mpsK, lat, corr, ExactTTIIF(algmult=SVDCompression(trunc), verbosity=0))
+Z  = integrate(lat, mpsK)
+gtau = [gf(lat, (ContourIndex(i, conj=false, branch=:τ, band=1),
+                 ContourIndex(1, conj=true,  branch=:τ, band=1)), mpsK, Z=Z)
+        for i in 1:lat.k]
+```
+
 ### 1.2 Real time (Keldysh)
 
 Real-time evolution from a thermal initial state: greater and lesser GFs.

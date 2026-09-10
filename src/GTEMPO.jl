@@ -47,7 +47,7 @@ export branch, correlationfunction
 
 # influence functional
 export InfluenceFunctionalAlgorithm, PartialIF, XTRGIF, ExactTTIIF, TDVPIF, partialif_hybrid, partialif_hybrid_naive
-export influenceoperators, influenceoperatorsteppers, influenceoperatorstepper, influencefunctional
+export influenceoperators, influenceoperatorsteppers, influenceoperatorstepper
 export hybriddynamics, hybriddynamics!, hybriddynamics_naive, hybriddynamics_naive!, hybriddynamicsstepper, hybriddynamicsstepper!
 export retardedinteractdynamics_naive, retardedinteractdynamics_naive!
 

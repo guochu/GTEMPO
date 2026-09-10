@@ -69,6 +69,14 @@ All of them take the exponential expansion algorithm (`algexpan`, an
 `ExponentialExpansionAlgorithm` from ExpExp) and an MPO compression algorithm
 (`algmult`, e.g. `SVDCompression`).
 
+Every algorithm also offers the in-place `hybriddynamics!(gmps, lattice, corr,
+alg; band)`, which multiplies the influence functional directly into an
+existing `GrassmannMPS` — e.g. the impurity dynamics obtained from
+`sysdynamics` — so that the dynamics and the bath influence live in a single
+state. `ExactTTIIF` in particular builds its IF term by term and multiplies
+each term into `gmps` incrementally; on a multi-band lattice the terms are
+built on a single-band lattice and expanded via `fillband`.
+
 ## Impurity dynamics
 
 `sysdynamics(lattice, model, trunc=trunc)` evolves the impurity operator `K`.

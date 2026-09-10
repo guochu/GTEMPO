@@ -98,6 +98,36 @@ end
 	@test relerr(g, g_ed) < 1.0e-2
 end
 
+@testset "Few-mode bath, imaginary time: in-place ExactTTIIF hybriddynamics!" begin
+	# the whole workflow on one state: sysdynamics builds K, then
+	# hybriddynamics! merges the influence functional into K in place
+	μ = 0.7; ω = 1.0; α = 0.5
+	δτ = 0.1; N = 8; β = N * δτ
+	trunc = truncdimcutoff(D=60, ϵ=1.0e-10)
+
+	H, a, adag, H0 = singlemode_ed(μ=μ, U=0, bathspecs=[(ω, α)])
+	g_ed = gτ_ed(H, a, adag, 0:δτ:β, β)
+
+	bath = fermionicbath(DiracDelta(ω=ω, α=α), β=β)
+	model = ToulouseIM(μ=μ)
+	lat = GrassmannLattice(N=N, δτ=δτ, contour=:imag)
+	corr = correlationfunction(bath, lat)
+	alg = ExactTTIIF(algmult=SVDCompression(trunc), verbosity=0)
+
+	mpsK = sysdynamics(lat, model, trunc=trunc)
+	mpsK = boundarycondition!(mpsK, lat)
+	mpsK = hybriddynamics!(mpsK, lat, corr, alg)
+	g = gτ_series(lat, mpsK)
+	@test relerr(g, g_ed) < 1.0e-2
+
+	# agrees with the standard separate-construction workflow
+	mpsI = hybriddynamics(lat, corr, alg)
+	mpsK0 = sysdynamics(lat, model, trunc=trunc)
+	mpsK0 = boundarycondition!(mpsK0, lat)
+	g0 = gτ_series(lat, mpsK0, mpsI)
+	@test relerr(g, g0) < 1.0e-3
+end
+
 @testset "Few-mode bath, imaginary time: time-dependent Hamiltonian" begin
 	# on the imaginary axis only the constant hτ enters; ht/htt are
 	# deliberately very different and must not matter

@@ -75,6 +75,42 @@ end
 	@test relerr(lt, lt_ed) < 3.0e-2
 end
 
+@testset "Few-mode bath, real time: in-place ExactTTIIF hybriddynamics!" begin
+	# the whole workflow on one state: sysdynamics builds K (with the thermal
+	# initial state), then hybriddynamics! merges the influence functional
+	# into K in place
+	μ = 0.7; ω = 1.0; α = 0.5
+	β = 1.0; δt = 0.05; Nt = 8
+	ts = 0:δt:(Nt*δt)
+	trunc = truncdimcutoff(D=60, ϵ=1.0e-10)
+
+	H, a, adag, H0 = singlemode_ed(μ=μ, U=0, bathspecs=[(ω, α)])
+	gt_ed, lt_ed = greater_lesser_ed(H, a, adag, H0, ts, β)
+
+	bath = fermionicbath(DiracDelta(ω=ω, α=α), β=β)
+	model = ToulouseIM(μ=μ)
+	lat = GrassmannLattice(N=Nt, δt=δt, contour=:real)
+	corr = correlationfunction(bath, lat)
+	alg = ExactTTIIF(algmult=SVDCompression(trunc), verbosity=0)
+
+	mpsK = sysdynamics(lat, model, trunc=trunc)
+	mpsK = boundarycondition!(mpsK, lat)
+	mpsK = systhermalstate!(mpsK, lat, model, trunc=trunc, β=β)
+	mpsK = hybriddynamics!(mpsK, lat, corr, alg)
+	gt, lt = gtlt_series(lat, mpsK)
+	@test relerr(gt, gt_ed) < 3.0e-2
+	@test relerr(lt, lt_ed) < 3.0e-2
+
+	# agrees with the standard separate-construction workflow
+	mpsI = hybriddynamics(lat, corr, alg)
+	mpsK0 = sysdynamics(lat, model, trunc=trunc)
+	mpsK0 = boundarycondition!(mpsK0, lat)
+	mpsK0 = systhermalstate!(mpsK0, lat, model, trunc=trunc, β=β)
+	gt0, lt0 = gtlt_series(lat, mpsK0, mpsI)
+	@test relerr(gt, gt0) < 1.0e-3
+	@test relerr(lt, lt0) < 1.0e-3
+end
+
 @testset "Few-mode bath, real time: time-dependent Hamiltonian" begin
 	# the impurity level is modulated as μ(t) = μ1 + A·sin(ωt·t): the thermal
 	# initial state is built from hτ (μ0), the real-time branches evolve with
