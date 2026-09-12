@@ -17,3 +17,5 @@ const DefaultKTruncation = truncdimcutoff(D=1000, ϵ=1.0e-10, add_back=0)
 
 const DefaultExpansionAlg = OverDeterminedProny(n=15, tol=1.0e-4, verbosity=0) # default exponential (Prony) expansion algorithm
 
+const DefaultMultAlg = DMRG1(DefaultITruncation) # default compression algorithm for GMPS multiplication / partial integration
+

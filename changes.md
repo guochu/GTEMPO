@@ -2,6 +2,36 @@
 
 本轮重构涉及的接口更改汇总。所有更改均已通过全量测试验证（行为不变或数值等价）。
 
+## 第五批更新
+
+### partialintegrate 重构与 DMRG1 缩放修复
+
+- `src/partialintegrate` 扁平化：`integrateband`、`multintegrateband`、`utils`、`svdmult`、`itermult`、`multpartialintegrate` 全部由 `partialintegrate/partialintegrate.jl` 统一 include（原 `generalmultpartialintegrate/` 子目录删除）。
+- `partialintegrate` 的 `alg` 改为关键字参数（默认 `DefaultMultAlg`），docstring 标注 **experimental interface**（将来可能大改）。
+- 修复 DMRG1 路径的范数丢失：DMRG sweep 与 SVD 路径不同、没有逐步的缩放核算，finalize 后以精确积分校准整体缩放（`target/current` 乘入 `z[1]`，`target` 为 partialintegrate 定义上必须保持的 `∫(xs...)`）。
+- API 测试同时覆盖 `SVDCompression` 与 `DMRG1`（`test/api/integration.jl`）。
+
+### 删除三个 Grassmann ordering
+
+连同定义、`ConjugationStyle`/`LayoutStyle` trait、专用 `index` 方法、导出与全部测试项一并移除：
+
+- `A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1`（real，band-local）
+- `A2Ā2A1Ā1B2B̄2B1B̄1`（imaginary，band-local）
+- `A1Ā1B1B̄1b̄1B̄1ā1Ā1`（real，含别名 `AaBbb̄B̄āĀ`）
+
+### 算法类型层级整理
+
+- 移除抽象类 `DMRGMultAlgorithm`：`DMRG1`/`DMRG2` 直接继承 `DMRGAlgorithm`，相关方法签名（`mult`/`mult!`/`iterativemult`/`compute!`/`sweep!`/`finalize!`/`parint_iterativemult`/`multintegrateband`/`_ac_partialintegrate`）全部改用 `DMRGAlgorithm`（依赖 Julia 方法按特异性分发，`SVDCompression` 等特化分支不受影响）。
+- `DMRG1`/`DMRG2` 的定义移到 `src/algorithms.jl`（与 `SVDCompression` 同处）。
+- `src/auxiliary/orth.jl` 的内容（`MatrixProductOrthogonalAlgorithm`、`Orthogonalize`）并入 `src/algorithms.jl`，原文件删除。
+- `const DefaultMultAlg = DMRG1(DefaultITruncation)` 移到 `src/defaults.jl`；include 顺序调整为 `algorithms.jl` 先于 `defaults.jl`（`DefaultMultAlg` 的构造依赖 `DMRG1`）。
+
+### 其它
+
+- 移除 `ExactTTIIF` 未使用的 `algmult2` 字段。
+- 新增 `DefaultExpansionAlg` 常量，统一 `XTRGIF`/`ExactTTIIF`/`TDVPIF` 及 ttiif、decayterm 相关接口的默认 Prony 展开参数；删除 `DefaultMPOTruncation`（原使用处改用 `DefaultITruncation` / `DefaultIntegrationTruncation`）。
+- 注释掉 `partialintegrate` 中未使用的 `my_mult`/`my_mult2`。
+
 ## 第三批更新
 
 ### 杂质哈密顿量类型层级与接口

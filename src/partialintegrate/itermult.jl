@@ -69,7 +69,7 @@ function parint_cache(z::GrassmannMPS, xs::GrassmannMPS...; cidx::Vector{Int}, v
     return PartialIntegrateIterativeMultCache(z, xs, cidx, hstorage)
 end
 
-function parint_iterativemult(xs::GrassmannMPS...; cidx::Vector{Int}, alg::DMRGMultAlgorithm)
+function parint_iterativemult(xs::GrassmannMPS...; cidx::Vector{Int}, alg::DMRGAlgorithm)
     rt = @elapsed if alg.initguess == :svd
         z = _parint_svd_guess(xs...; cidx=cidx, trunc=alg.trunc, verbosity=alg.verbosity)
     else

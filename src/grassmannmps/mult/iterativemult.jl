@@ -1,53 +1,4 @@
-# abstract type IterativeMultInitialGuess end
-# struct SVDGuess <: IterativeMultInitialGuess end
-
-abstract type DMRGMultAlgorithm <: DMRGAlgorithm end
-
-const AllowedInitGuesses = (:svd, :pre, :rand)
-
-struct DMRG1 <: DMRGMultAlgorithm
-    trunc::TruncationDimCutoff 
-    maxiter::Int
-    tol::Float64 
-    initguess::Symbol
-    verbosity::Int 
-    callback::Function
-end
-function DMRG1(trunc::TruncationDimCutoff; maxiter::Int=5, tol::Float64=1.0e-12, initguess::Symbol=:svd, verbosity::Int=0, callback::Function=Returns(nothing))
-    (initguess in AllowedInitGuesses) || throw(ArgumentError("initguess must be one of $(AllowedInitGuesses)"))
-    return DMRG1(trunc, maxiter, tol, initguess, verbosity, callback)
-end 
-DMRG1(; trunc::TruncationDimCutoff=DefaultITruncation, kwargs...) = DMRG1(trunc; kwargs...)
-Base.similar(x::DMRG1; trunc::TruncationDimCutoff=x.trunc, maxiter::Int=x.maxiter, tol::Float64=x.tol, initguess::Symbol=x.initguess, verbosity::Int=x.verbosity, callback=x.callback) = DMRG1(
-            trunc=trunc, maxiter=maxiter, tol=tol, initguess=initguess, verbosity=verbosity, callback=callback)
-
-
-struct DMRG2 <: DMRGMultAlgorithm
-    trunc::TruncationDimCutoff 
-    maxiter::Int
-    tol::Float64 
-    initguess::Symbol
-    verbosity::Int 
-end
-
-function DMRG2(trunc::TruncationDimCutoff; maxiter::Int=5, tol::Float64=1.0e-12, initguess::Symbol=:svd, verbosity::Int=0)
-    (initguess in AllowedInitGuesses) || throw(ArgumentError("initguess must be one of $(AllowedInitGuesses)"))
-    return DMRG2(trunc, maxiter, tol, initguess, verbosity)
-end 
-DMRG2(; trunc::TruncationDimCutoff=DefaultITruncation, kwargs...) = DMRG2(trunc; kwargs...)
-Base.similar(x::DMRG2; trunc::TruncationDimCutoff=x.trunc, maxiter::Int=x.maxiter, tol::Float64=x.tol, initguess::Symbol=x.initguess, verbosity::Int=x.verbosity) = DMRG2(
-            trunc=trunc, maxiter=maxiter, tol=tol, initguess=initguess, verbosity=verbosity)
-
-
-function Base.getproperty(x::DMRGMultAlgorithm, s::Symbol)
-    if s == :D
-        return x.trunc.D
-    elseif s == :ϵ
-        return x.trunc.ϵ
-    else
-        getfield(x, s)
-    end
-end
+# the DMRG1/DMRG2 algorithms are defined in src/algorithms.jl
 
 
 # z is the output GMPS
@@ -82,7 +33,7 @@ function mult_cache(z::GrassmannMPS, x::GrassmannMPS, y::GrassmannMPS)
     return GMPSIterativeMultCache(z, x, y, hstorage)
 end
 
-function iterativemult(x::GrassmannMPS, y::GrassmannMPS, alg::DMRGMultAlgorithm)
+function iterativemult(x::GrassmannMPS, y::GrassmannMPS, alg::DMRGAlgorithm)
     if alg.initguess == :svd
         z = _svd_guess(x, y, alg.D)
     elseif alg.initguess == :rand
@@ -100,7 +51,7 @@ function iterativemult(x::GrassmannMPS, y::GrassmannMPS, alg::DMRGMultAlgorithm)
     return z
 end
 
-compute!(env::GMPSIterativeMultCache, alg::DMRGMultAlgorithm) = iterative_compute!(env, alg)
+compute!(env::GMPSIterativeMultCache, alg::DMRGAlgorithm) = iterative_compute!(env, alg)
 
 
 function iterative_compute!(m, alg)
@@ -129,9 +80,9 @@ function iterative_error_2(m::AbstractVector)
     return σ / abs(μ)
 end
 
-sweep!(m::GMPSIterativeMultCache, alg::DMRGMultAlgorithm) = vcat(leftsweep!(m, alg), rightsweep!(m, alg))
+sweep!(m::GMPSIterativeMultCache, alg::DMRGAlgorithm) = vcat(leftsweep!(m, alg), rightsweep!(m, alg))
 
-function finalize!(m::GMPSIterativeMultCache, alg::DMRGMultAlgorithm) end
+function finalize!(m::GMPSIterativeMultCache, alg::DMRGAlgorithm) end
 function finalize!(m::GMPSIterativeMultCache, alg::DMRG1)
     leftsweep!(m, alg)
     rightsweep_final!(m, alg)

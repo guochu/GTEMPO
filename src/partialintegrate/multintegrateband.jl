@@ -53,8 +53,8 @@ function mult_cache(z::GrassmannMPS, x::GrassmannMPS, y::GrassmannMPS, lattice::
     return IntegrateBandIterativeMultCache(z, x, y, lattice, band, hstorage)
 end
 
-# multintegrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS; alg::DMRGMultAlgorithm=DefaultMultAlg, band::Int=1) = multintegrateband(lattice, x, y, alg, band=band)
-# multintegrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS, alg::DMRGMultAlgorithm; band::Int=1) = iterativemultintegrate(x, y, lattice, alg, band=band)
+# multintegrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS; alg::DMRGAlgorithm=DefaultMultAlg, band::Int=1) = multintegrateband(lattice, x, y, alg, band=band)
+# multintegrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS, alg::DMRGAlgorithm; band::Int=1) = iterativemultintegrate(x, y, lattice, alg, band=band)
 
 
 # multiply x and y, integrate out band
@@ -65,7 +65,7 @@ Multiply the two GMPSs `x` and `y` while integrating out the Grassmann
 variables on `band`, compressing the result with the DMRG-mult algorithm
 `alg` (see also `partialintegrate`).
 """
-function multintegrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS, alg::DMRGMultAlgorithm; band::Int=1)
+function multintegrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS, alg::DMRGAlgorithm; band::Int=1)
     if alg.initguess == :svd
         z = _integrateband_svd_guess(lattice, x, y, alg.D; band=band)
     else

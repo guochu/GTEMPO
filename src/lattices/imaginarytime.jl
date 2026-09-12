@@ -79,20 +79,6 @@ function index(x::ImagGrassmannLattice{<:A1Ā1B1B̄1}, i::Int; conj::Bool, band
 		ifelse(conj, (x.k-i)*2*bands + 2*band, (x.k-i)*2*bands + 2*band-1) + 2*bands
 	end	
 end
-# a\bar{a}b\bar{b} a_2\bar{a}_2a_1\bar{a}_1 b_2\bar{b}_2b_1\bar{b}_1
-function index(x::ImagGrassmannLattice{<:A2Ā2A1Ā1B2B̄2B1B̄1}, i::Int; conj::Bool, band::Int=1, branch::Symbol=:τ)
-	@boundscheck begin
-		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
-		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
-		(branch == :τ) || throw(ArgumentError("branch must be :τ"))
-	end
-	n = 2 * x.k 
-	if i == 0
-		ifelse(conj, 2*band, 2*band-1)
-	else
-		ifelse(conj, (band-1) * n + (x.k-i)*2 + 2, (band-1) * n + (x.k-i)*2 + 1) + 2 * x.bands
-	end	
-end
 
 function index(x::ImagGrassmannLattice{<:Ā2A1B̄2B1}, i::Int; conj::Bool, band::Int=1, branch::Symbol=:τ)
 	@boundscheck begin

@@ -8,10 +8,9 @@ spectrum_func() = spectrum_func(10)
 spectrum_func2(D=10) = spectrum(ϵ->f(D, ϵ), lb=0, ub=D) # half-line spectrum
 
 # ------------------------------------------------------- Grassmann orderings
-const imag_orderings   = [A1Ā1B1B̄1(), A1B1B̄1Ā1(), A2Ā2A1Ā1B2B̄2B1B̄1()]
+const imag_orderings   = [A1Ā1B1B̄1(), A1B1B̄1Ā1()]
 const real_orderings   = [A1Ā1B1B̄1a1ā1b1b̄1(), A1Ā1a1ā1B1B̄1b1b̄1(),
-						  A1Ā1B1B̄1b̄1B̄1ā1Ā1(), A1B1ā1b̄1Ā1B̄1a1b1(),
-						  A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1(),
+						  A1B1ā1b̄1Ā1B̄1a1b1(),
 						  A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2(),
 						  A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2()]
 const mixed_orderings  = [A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2(),

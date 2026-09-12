@@ -9,7 +9,7 @@ end
 
 
 
-_ac_partialintegrate(alg::DMRGMultAlgorithm, xs::Vararg{GrassmannMPS}; cidx::Vector{Int}) = parint_iterativemult(xs...; cidx=cidx, alg=alg)
+_ac_partialintegrate(alg::DMRGAlgorithm, xs::Vararg{GrassmannMPS}; cidx::Vector{Int}) = parint_iterativemult(xs...; cidx=cidx, alg=alg)
 _ac_partialintegrate(alg::SVDCompression, xs::Vararg{GrassmannMPS}; cidx::Vector{Int}) = parint_mult(xs...; cidx=cidx, trunc=alg.trunc, verbosity=alg.verbosity)
 # _partialintegrate(xs::GrassmannMPS...; cidx::Vector{Int}, trunc::TruncationScheme, verbosity::Int=0) = parint_mult(xs...; cidx=cidx, trunc=trunc, verbosity=verbosity)
 

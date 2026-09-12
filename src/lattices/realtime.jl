@@ -109,25 +109,6 @@ function timesteps(gmps::GrassmannMPS, x::RealGrassmannLattice)
 	return div(L, 4*x.bands)
 end
 
-# ab\bar{b}\bar{a} a_2^+a_2^-b_2^+b_2^-\bar{b}_2^-\bar{b}_2^+\bar{a}_2^-\bar{a}_2^+ a_1^+a_1^-b_1^+b_1^-\bar{b}_1^-\bar{b}_1^+\bar{a}_1^-\bar{a}_1^+
-function index(x::RealGrassmannLattice{<:A1Ā1B1B̄1b̄1B̄1ā1Ā1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
-	@boundscheck begin
-		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
-		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
-		(branch in (:+, :-)) || throw(ArgumentError("branch must be :+ or :-"))
-	end
-	TL = length(x)
-	bands = x.bands
-	if i == 0
-		ifelse(conj, 2bands+1-band, band)
-	else
-		if branch == :+
-			ifelse(conj, TL-4(i-1)*bands-2(band-1), TL-4i*bands+1+2(band-1))
-		else
-			ifelse(conj, TL-4(i-1)*bands-1-2(band-1), TL-4i*bands+2band)
-		end
-	end
-end
 
 # a\bar{a}b\bar{b} a₂^+b₂^+ā₂^-b̄₂^-ā₂^+b̄₂^+a₂^-b₂^-  a₁^+b₁^+ā₁^-b̄₁^-ā₁^+b̄₁^+a₁^-b₁^-
 function index(x::RealGrassmannLattice{<:A1B1ā1b̄1Ā1B̄1a1b1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
@@ -189,25 +170,6 @@ function index(x::RealGrassmannLattice{<:A1Ā1B1B̄1a1ā1b1b̄1}, i::Int; conj
 	end
 end
 
-# a\bar{a}b\bar{b} a_2^+\bar{a}_2^+a_1^+\bar{a}_1^+ a_2^-\bar{a}_2^-a_1^-\bar{a}_1^- b_2^+\bar{b}_2^+b_1^+\bar{b}_1^+  b_2^-\bar{b}_2^-b_1^-\bar{b}_1^-
-function index(x::RealGrassmannLattice{<:A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
-	@boundscheck begin
-		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
-		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
-		(branch in (:+, :-)) || throw(ArgumentError("branch must be :+ or :-"))
-	end
-	TL = length(x)
-	n = 4 * x.k
-	if i == 0
-		ifelse(conj, 2*band, 2*band-1)
-	else
-		if branch == :+
-			ifelse(conj, (band-1) * n + 2*(x.k-i) + 2, (band-1) * n + 2*(x.k-i) + 1 ) + 2*x.bands
-		else
-			ifelse(conj, (band-1) * n + 2*x.k+ 2*(x.k-i) + 2, (band-1) * n + 2*x.k+ 2*(x.k-i) + 1 ) + 2*x.bands
-		end
-	end
-end
 
 # ab\bar{b}\bar{a} a_2^+b_2^+\bar{b}_2^+\bar{a}_2^+a_1^+b_1^+\bar{b}_1^+\bar{a}_1^+ a_1^-b_1^-\bar{b}_1^-\bar{a}_1^-a_2^-b_2^-\bar{b}_2^-\bar{a}_2^-
 function index(x::RealGrassmannLattice{<:A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)

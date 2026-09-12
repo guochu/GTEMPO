@@ -47,7 +47,6 @@ changeordering(o::GrassmannOrdering, lattice::AbstractGrassmannLattice, x::Varar
 #     return _abba2aabb(x, lattice, trunc=trunc)
 # end
 
-# function convert_ordering(::Type{A1Ā1a1ā1B1B̄1b1b̄1}, lattice::RealGrassmannLattice{A1Ā1B1B̄1b̄1B̄1ā1Ā1}, x::GrassmannMPS; trunc::TruncationScheme=DefaultKTruncation)
 #     return _abba2aabb(x, lattice, trunc=trunc)
 # end
 
@@ -87,7 +86,6 @@ This function a simple wrapper of changeordering, by specifying a particular ord
 """
 toadjacentordering(lattice::AbstractGrassmannLattice, x::Vararg{GrassmannMPS}; kwargs...) = error("toadjacentordering not implemented for lattice type $(typeof(lattice))")
 toadjacentordering(lattice::ImagGrassmannLattice, x::Vararg{GrassmannMPS}; kwargs...) = changeordering(A1Ā1B1B̄1, lattice, x...; kwargs...)
-# toadjacentordering(lattice::RealGrassmannLattice{<:A1Ā1B1B̄1b̄1B̄1ā1Ā1}, x::GrassmannMPS...; kwargs...) = changeordering(A1Ā1a1ā1B1B̄1b1b̄1, lattice, x...; kwargs...)
 # toadjacentordering(lattice::RealGrassmannLattice{<:A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2}, x::GrassmannMPS...; kwargs...) = changeordering(
 #                     A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2, lattice, x...; kwargs...)
 function toadjacentordering(lattice::RealGrassmannLattice, x::Vararg{GrassmannMPS}; kwargs...)

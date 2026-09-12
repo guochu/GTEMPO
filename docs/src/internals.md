@@ -52,7 +52,7 @@ lands on which chain position is fixed by a `GrassmannOrdering` (e.g.
 
 * the `conj` alternation (`ConjugationStyle`: adjacent conjugations vs general),
 * how time steps, branches and bands interleave (`LayoutStyle`:
-  `TimeLocalLayout`, `BandLocalLayout`, `BranchLocalLayout`, `GeneralLayout`).
+  `TimeLocalLayout`, `BranchLocalLayout`, `GeneralLayout`).
 
 Along the imaginary branch the chain runs **backwards in time** (τ = β sits
 next to the boundary, τ = δτ next to the real branches); real branches run

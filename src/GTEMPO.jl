@@ -13,7 +13,7 @@ export NoTruncation
 export AbstractGTerm, GTerm, ExpGTerm, z2space
 export AbstractGMPS, AbstractFiniteGMPS, GrassmannMPS, SparseGMPS, togmps, scaling, setscaling!, randomgmps, increase_bond!
 export iscanonical, isleftcanonical, isrightcanonical
-export mult!, mult, DMRG1, DMRG2, DMRGMultAlgorithm
+export mult!, mult, DMRG1, DMRG2
 export GrassmannTransferMatrix
 export randomfockmps
 
@@ -22,11 +22,11 @@ export GrassmannOrdering, ImagGrassmannOrdering, RealGrassmannOrdering, MixedGra
 export AbstractGrassmannLattice, ImagGrassmannLattice, RealGrassmannLattice, MixedGrassmannLattice, ContourIndex
 export branches, matchindices, indexmappings, swapbandperm, swapband!, swapband, fillband
 export OrderingStyle, ConjugationStyle, AdjacentConjugation, GeneralConjugation
-export LayoutStyle, TimeLocalLayout, BandLocalLayout, BranchLocalLayout, GeneralLayout
+export LayoutStyle, TimeLocalLayout, BranchLocalLayout, GeneralLayout
 # export TimeOrderingStyle, ImaginaryTimeOrderingStyle, RealTimeOrderingStyle, TimeAscending, TimeDscending
-export A1Ā1B1B̄1, AĀBB̄, A1B1B̄1Ā1, ABB̄Ā, A2Ā2A1Ā1B2B̄2B1B̄1
+export A1Ā1B1B̄1, AĀBB̄, A1B1B̄1Ā1, ABB̄Ā
 export A1Ā1B1B̄1a1ā1b1b̄1, AĀBB̄aābb̄, A1Ā1a1ā1B1B̄1b1b̄1, AĀaāBB̄bb̄
-export A1Ā1B1B̄1b̄1B̄1ā1Ā1, AaBbb̄B̄āĀ, A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1, ABāb̄ĀB̄ab, A1B1ā1b̄1Ā1B̄1a1b1
+export ABāb̄ĀB̄ab, A1B1ā1b̄1Ā1B̄1a1b1
 export A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2, A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2 #band local ordering
 export Ā2A1B̄2B1, Ā2A1ā1a2B̄2B1b̄1b̄2 #retarded interaction orderings
 export A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2, AĀBB̄_AĀaāBB̄bb̄, A1B1B̄1Ā1_A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2 #mixedtime lattice
@@ -127,11 +127,10 @@ using KrylovKit: Arnoldi, exponentiate
 using LinearAlgebra: LinearAlgebra, Symmetric, eigen, qr, pinv, eigvals, Diagonal, diagm
 
 
-include("defaults.jl") # default constants
 include("auxiliary/linalg.jl")
 include("auxiliary/mpstensors.jl")
-include("auxiliary/orth.jl")
 include("algorithms.jl")
+include("defaults.jl") # default constants (DefaultMultAlg requires DMRG1 from algorithms.jl)
 
 include("mpo/mpo.jl")
 

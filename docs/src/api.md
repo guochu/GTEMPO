@@ -41,7 +41,7 @@ downstream algorithms:
 - `ConjugationStyle`: adjacent-conjugation (`AdjacentConjugation`) versus
   general orderings (`GeneralConjugation`).
 - `LayoutStyle`: how time steps, branches and bands interleave
-  (`TimeLocalLayout`, `BandLocalLayout`, `BranchLocalLayout`,
+  (`TimeLocalLayout`, `BranchLocalLayout`,
   `GeneralLayout`).
 
 Orderings can be converted with `changeordering` / `toadjacentordering`,

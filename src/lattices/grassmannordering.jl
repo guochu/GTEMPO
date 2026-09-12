@@ -30,7 +30,6 @@ ConjugationStyle(x::GrassmannOrdering) = ConjugationStyle(typeof(x))
 
 abstract type LayoutStyle end
 struct TimeLocalLayout <: LayoutStyle end
-struct BandLocalLayout <: LayoutStyle end
 """
 	struct BranchLocalLayout
 
@@ -44,9 +43,8 @@ struct GeneralLayout <: LayoutStyle end
 
 There are three kinds of ConjugationStyle
 TimeLocalLayout: the GVs within the same single time step are placed nearby
-BandLocalLayout: the GVs within the same single band are placed nearby
 BranchLocalLayout: the GVs within the same branch are placed nearby, this is
-used for the real-axis calculation, which contains the the forward (+) and 
+used for the real-axis calculation, which contains the the forward (+) and
 backward (-) branches
 """
 LayoutStyle(x::GrassmannOrdering) = LayoutStyle(typeof(x))
@@ -83,14 +81,6 @@ ConjugationStyle(::Type{A1B1B̄1Ā1}) = GeneralConjugation()
 LayoutStyle(::Type{A1B1B̄1Ā1}) = TimeLocalLayout()
 const ABB̄Ā = A1B1B̄1Ā1
 
-"""
-	struct A2Ā2A1Ā1B2B̄2B1B̄1
-
-GrassmannOrdering aābb̄ a₂ā₂a₁ā₁ b₂b̄₂b₁b̄₁
-"""
-struct A2Ā2A1Ā1B2B̄2B1B̄1 <: ImagGrassmannOrdering end
-ConjugationStyle(::Type{A2Ā2A1Ā1B2B̄2B1B̄1}) = AdjacentConjugation()
-LayoutStyle(::Type{A2Ā2A1Ā1B2B̄2B1B̄1}) = BandLocalLayout()
 
 """
 	struct Ā2A1B̄2B1
@@ -128,19 +118,9 @@ ConjugationStyle(::Type{A1Ā1a1ā1B1B̄1b1b̄1}) = AdjacentConjugation()
 LayoutStyle(::Type{A1Ā1a1ā1B1B̄1b1b̄1}) = TimeLocalLayout()
 const AĀaāBB̄bb̄ = A1Ā1a1ā1B1B̄1b1b̄1
 
-"""
-	struct A1Ā1B1B̄1b̄1B̄1ā1Ā1
-
-GrassmannOrdering abb̄ā a₂+a₂-b₂+b₂-b̄₂-b̄₂+ā₂-ā₂+ a₁+a₁-b₁+b₁-b̄₁-b̄₁+ā₁-ā₁+
-This is a historical ordering, which may not be very useful
-"""
-struct A1Ā1B1B̄1b̄1B̄1ā1Ā1 <: RealGrassmannOrdering end
-ConjugationStyle(::Type{A1Ā1B1B̄1b̄1B̄1ā1Ā1}) = GeneralConjugation()
-LayoutStyle(::Type{A1Ā1B1B̄1b̄1B̄1ā1Ā1}) = TimeLocalLayout()
-const AaBbb̄B̄āĀ = A1Ā1B1B̄1b̄1B̄1ā1Ā1
 
 """
-	struct A1Ā1B1B̄1b̄1B̄1ā1Ā1
+	struct A1B1ā1b̄1Ā1B̄1a1b1
 
 GrassmannOrdering aābb̄ a₂+b₂+ā₂-b̄₂-ā₂+b̄₂+a₂-b₂-  a₁+b₁+ā₁-b̄₁-ā₁+b̄₁+a₁-b₁-
 This ordering is convenient to build the impurity dynamics for time local ordering
@@ -149,15 +129,6 @@ struct A1B1ā1b̄1Ā1B̄1a1b1 <: RealGrassmannOrdering end
 ConjugationStyle(::Type{A1B1ā1b̄1Ā1B̄1a1b1}) = GeneralConjugation()
 LayoutStyle(::Type{A1B1ā1b̄1Ā1B̄1a1b1}) = TimeLocalLayout()
 const ABāb̄ĀB̄ab = A1B1ā1b̄1Ā1B̄1a1b1
-
-"""
-	struct A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1
-
-GrassmannOrdering aābb̄ a₂+ā₂+a₁+ā₁+ a₂-ā₂-a₁-ā₁- b₂+b̄₂+b₁+b̄₁+  b₂-b̄₂-b₁-b̄₁-
-"""
-struct A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1 <: RealGrassmannOrdering end
-ConjugationStyle(::Type{A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1}) = AdjacentConjugation()
-LayoutStyle(::Type{A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1}) = BandLocalLayout()
 
 """
 	struct A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2

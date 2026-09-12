@@ -83,9 +83,9 @@ end
 
 # all exported orderings of each contour, including the retarded-interaction
 # orderings and the fast-propagator mixed-time ordering
-const all_imag_orderings = [A1Ā1B1B̄1(), A1B1B̄1Ā1(), A2Ā2A1Ā1B2B̄2B1B̄1(), Ā2A1B̄2B1()]
-const all_real_orderings = [A1Ā1B1B̄1a1ā1b1b̄1(), A1Ā1a1ā1B1B̄1b1b̄1(), A1Ā1B1B̄1b̄1B̄1ā1Ā1(),
-							A1B1ā1b̄1Ā1B̄1a1b1(), A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1(),
+const all_imag_orderings = [A1Ā1B1B̄1(), A1B1B̄1Ā1(), Ā2A1B̄2B1()]
+const all_real_orderings = [A1Ā1B1B̄1a1ā1b1b̄1(), A1Ā1a1ā1B1B̄1b1b̄1(),
+							A1B1ā1b̄1Ā1B̄1a1b1(),
 							A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2(), A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2(),
 							Ā2A1ā1a2B̄2B1b̄1b̄2()]
 const all_mixed_orderings = [A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2(),
@@ -99,7 +99,6 @@ const all_mixed_orderings = [A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2
 @testset "API: ordering classification" begin
 	for (o, conj, layout) in ((A1Ā1B1B̄1(), AdjacentConjugation, TimeLocalLayout),
 							 (A1B1B̄1Ā1(), GeneralConjugation, TimeLocalLayout),
-							 (A2Ā2A1Ā1B2B̄2B1B̄1(), AdjacentConjugation, BandLocalLayout),
 							 (Ā2A1B̄2B1(), GeneralConjugation, GeneralLayout))
 		lat = GrassmannLattice(N=2, δτ=0.1, contour=:imag, ordering=o)
 		@test lat isa ImagGrassmannLattice
@@ -109,9 +108,7 @@ const all_mixed_orderings = [A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2
 	end
 	for (o, conj, layout) in ((A1Ā1B1B̄1a1ā1b1b̄1(), AdjacentConjugation, TimeLocalLayout),
 							  (A1Ā1a1ā1B1B̄1b1b̄1(), AdjacentConjugation, TimeLocalLayout),
-							  (A1Ā1B1B̄1b̄1B̄1ā1Ā1(), GeneralConjugation, TimeLocalLayout),
 							  (A1B1ā1b̄1Ā1B̄1a1b1(), GeneralConjugation, TimeLocalLayout),
-							  (A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1(), AdjacentConjugation, BandLocalLayout),
 							  (A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2(), GeneralConjugation, BranchLocalLayout),
 							  (A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2(), AdjacentConjugation, BranchLocalLayout),
 							  (Ā2A1ā1a2B̄2B1b̄1b̄2(), GeneralConjugation, GeneralLayout))
@@ -166,15 +163,6 @@ check_indexmap(lat, expected::Dict) = all(
 		(1, false, :τ, 1) => 13, (1, false, :τ, 2) => 14, (1, true, :τ, 2) => 15, (1, true, :τ, 1) => 16))
 	@test integrate(lat, vacuumstate(lat)) ≈ 1 atol = 1.0e-6
 
-	# a\bar{a}b\bar{b} a_2\bar{a}_2a_1\bar{a}_1 b_2\bar{b}_2b_1\bar{b}_1
-	lat = GrassmannLattice(N=1, δτ=0.05, bands=2, contour=:imag, ordering=A2Ā2A1Ā1B2B̄2B1B̄1())
-	@test length(lat) == 12 && lat.k == 2 && lat.β == 0.05 && lat.T == 20
-	@test check_indexmap(lat, Dict(
-		(0, false, :τ, 1) => 1,  (0, true, :τ, 1) => 2,  (0, false, :τ, 2) => 3,  (0, true, :τ, 2) => 4,
-		(2, false, :τ, 1) => 5,  (2, true, :τ, 1) => 6,  (1, false, :τ, 1) => 7,  (1, true, :τ, 1) => 8,
-		(2, false, :τ, 2) => 9,  (2, true, :τ, 2) => 10, (1, false, :τ, 2) => 11, (1, true, :τ, 2) => 12))
-	@test integrate(lat, vacuumstate(lat)) ≈ 1 atol = 1.0e-6
-
 	# aābb̄ a₃b₃ ā₃a₂b̄₃b₂ ā₂a₁b̄₂b₁ ā₁b̄₁ (retarded-interaction ordering)
 	lat = GrassmannLattice(N=2, δτ=0.05, bands=2, contour=:imag, ordering=Ā2A1B̄2B1())
 	@test length(lat) == 16 && lat.k == 3 && lat.β == 0.1 && lat.T == 10
@@ -208,27 +196,6 @@ end
 		(1, false, :+, 2) => 17, (1, true, :+, 2) => 18, (1, false, :-, 2) => 19, (1, true, :-, 2) => 20))
 	@test integrate(lat, vacuumstate(lat)) ≈ 1 atol = 1.0e-6
 
-	# abb̄ā a₂+a₂-b₂+b₂-b̄₂-b̄₂+ā₂-ā₂+ a₁+... (historical ordering)
-	lat = GrassmannLattice(N=2, δt=0.05, contour=:real, ordering=A1Ā1B1B̄1b̄1B̄1ā1Ā1())
-	@test length(lat) == 14 && lat.k == 3 && lat.t == 0.1
-	@test check_indexmap(lat, Dict(
-		(0, false, :τ, 1) => 1,  (0, true, :τ, 1) => 2,
-		(3, false, :+, 1) => 3,  (3, false, :-, 1) => 4, (3, true, :-, 1) => 5,  (3, true, :+, 1) => 6,
-		(2, false, :+, 1) => 7,  (2, false, :-, 1) => 8, (2, true, :-, 1) => 9,  (2, true, :+, 1) => 10,
-		(1, false, :+, 1) => 11, (1, false, :-, 1) => 12, (1, true, :-, 1) => 13, (1, true, :+, 1) => 14))
-	@test integrate(lat, vacuumstate(lat)) ≈ 1 atol = 1.0e-6
-
-	# a₂+a₂-b₂+b₂-b̄₂-b̄₂+ā₂-ā₂+ with bands
-	lat = GrassmannLattice(N=1, δt=0.1, bands=2, contour=:real, ordering=A1Ā1B1B̄1b̄1B̄1ā1Ā1())
-	@test length(lat) == 20 && lat.k == 2 && lat.t == 0.1
-	@test check_indexmap(lat, Dict(
-		(0, false, :τ, 1) => 1,  (0, false, :τ, 2) => 2,  (0, true, :τ, 2) => 3,  (0, true, :τ, 1) => 4,
-		(2, false, :+, 1) => 5,  (2, false, :-, 1) => 6,  (2, false, :+, 2) => 7,  (2, false, :-, 2) => 8,
-		(2, true, :-, 2) => 9,   (2, true, :+, 2) => 10,  (2, true, :-, 1) => 11, (2, true, :+, 1) => 12,
-		(1, false, :+, 1) => 13, (1, false, :-, 1) => 14, (1, false, :+, 2) => 15, (1, false, :-, 2) => 16,
-		(1, true, :-, 2) => 17,  (1, true, :+, 2) => 18,  (1, true, :-, 1) => 19, (1, true, :+, 1) => 20))
-	@test integrate(lat, vacuumstate(lat)) ≈ 1 atol = 1.0e-6
-
 	# aā a₃+ā₃-ā₃+a₃⁻- ... (impurity-dynamics time-local ordering)
 	lat = GrassmannLattice(N=2, δt=0.05, contour=:real, ordering=A1B1ā1b̄1Ā1B̄1a1b1())
 	@test length(lat) == 14 && lat.k == 3 && lat.t == 0.1
@@ -248,28 +215,6 @@ end
 		(2, true, :+, 1) => 9,   (2, true, :+, 2) => 10,  (2, false, :-, 1) => 11, (2, false, :-, 2) => 12,
 		(1, false, :+, 1) => 13, (1, false, :+, 2) => 14, (1, true, :-, 1) => 15, (1, true, :-, 2) => 16,
 		(1, true, :+, 1) => 17,  (1, true, :+, 2) => 18,  (1, false, :-, 1) => 19, (1, false, :-, 2) => 20))
-	@test integrate(lat, vacuumstate(lat)) ≈ 1 atol = 1.0e-6
-
-	# aābb̄ a₂+ā₂+a₁+ā₁+ a₂-ā₂-a₁-ā₁- b₂+b̄₂+b₁+b̄₁+ b₂-b̄₂-b₁-b̄₁-
-	lat = GrassmannLattice(N=2, δt=0.05, contour=:real, ordering=A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1())
-	@test length(lat) == 14 && lat.k == 3 && lat.t == 0.1
-	@test check_indexmap(lat, Dict(
-		(0, false, :τ, 1) => 1,  (0, true, :τ, 1) => 2,
-		(3, false, :+, 1) => 3,  (3, true, :+, 1) => 4,  (2, false, :+, 1) => 5,  (2, true, :+, 1) => 6,
-		(1, false, :+, 1) => 7,  (1, true, :+, 1) => 8,
-		(3, false, :-, 1) => 9,  (3, true, :-, 1) => 10, (2, false, :-, 1) => 11, (2, true, :-, 1) => 12,
-		(1, false, :-, 1) => 13, (1, true, :-, 1) => 14))
-	@test integrate(lat, vacuumstate(lat)) ≈ 1 atol = 1.0e-6
-
-	# band-local ordering with bands
-	lat = GrassmannLattice(N=1, δt=0.1, bands=2, contour=:real, ordering=A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1())
-	@test length(lat) == 20 && lat.k == 2 && lat.t == 0.1
-	@test check_indexmap(lat, Dict(
-		(0, false, :τ, 1) => 1,  (0, true, :τ, 1) => 2,  (0, false, :τ, 2) => 3,  (0, true, :τ, 2) => 4,
-		(2, false, :+, 1) => 5,  (2, true, :+, 1) => 6,  (1, false, :+, 1) => 7,  (1, true, :+, 1) => 8,
-		(2, false, :-, 1) => 9,  (2, true, :-, 1) => 10, (1, false, :-, 1) => 11, (1, true, :-, 1) => 12,
-		(2, false, :+, 2) => 13, (2, true, :+, 2) => 14, (1, false, :+, 2) => 15, (1, true, :+, 2) => 16,
-		(2, false, :-, 2) => 17, (2, true, :-, 2) => 18, (1, false, :-, 2) => 19, (1, true, :-, 2) => 20))
 	@test integrate(lat, vacuumstate(lat)) ≈ 1 atol = 1.0e-6
 
 	# abb̄ā a₂+b₂+b̄₂+ā₂+a₁+b₁+b̄₁+ā₁+ a₁-b₁-b̄₁-ā₁-a₂-b₂-b̄₂-ā₂-
