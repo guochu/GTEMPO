@@ -145,7 +145,7 @@
   把影响泛函视为影响算符 H 的"平衡态" IF = exp(H)，用二阶单点 TDVP 虚时流 dz/dτ = H·z（τ: 0 → 1）从恒等影响泛函出发演化得到。
   - `hybriddynamics(lattice, corr, alg::TDVPIF; band)` / `hybriddynamics!(gmps, lattice, corr, alg::TDVPIF; band)`
   - `hybriddynamics!` 支持把影响泛函在单次流中合并进任意初始 `GrassmannMPS`（z(1) = e^H·z(0)），如 `sysdynamics` 的输出
-  - 实时格子上驱动流的是 4 个分支影响算符之和（逐个相加并以紧的 `DefaultMPOTruncation` 压缩）
+  - 实时格子上驱动流的是 4 个分支影响算符之和（逐个相加并以紧的 `DefaultITruncation` 压缩）
   - 费米符号全部继承自 `mult` 机制（`get_left_xy`、`updatemultleft/right`），键矩阵的有效映射实现为 AC 映射的投影 AL†·(H·z)
   - 测试见 `test/tempo/tdvpif.jl`（含 δ 收敛性验证与 in-place 合并验证）
 

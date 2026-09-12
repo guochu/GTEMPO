@@ -52,26 +52,28 @@ end
 	lat2 = similar(lat3, bands=2)
 	lat1 = similar(lat3, bands=1)
 	trunc = truncdimcutoff(D=64, ϵ=1.0e-10)
-	alg = SVDCompression(trunc)
 	x = randomgmps(Float64, length(lat3), D=4)
 	y = randomgmps(Float64, length(lat3), D=4)
 	z = randomgmps(Float64, length(lat3), D=4)
 	Zxy = integrate(lat3, x, y)
 
-	# two GMPS, integrating out a single band
-	xyp = partialintegrate(lat3, alg, x, y; branchs=(:τ,), bands=(1,))
-	@test length(xyp) == length(lat2)
-	@test relerr(Zxy, integrate(lat2, xyp)) < 1.0e-8
+	# both the SVD compression and the iterative DMRG1 algorithm are supported
+	for alg in (SVDCompression(trunc), DMRG1(trunc))
+		# two GMPS, integrating out a single band
+		xyp = partialintegrate(lat3, x, y; branchs=(:τ,), bands=(1,), alg=alg)
+		@test length(xyp) == length(lat2)
+		@test relerr(Zxy, integrate(lat2, xyp)) < 1.0e-8
 
-	# two GMPS, integrating out two bands at once
-	xyp13 = partialintegrate(lat3, alg, x, y; branchs=(:τ,), bands=(1, 3))
-	@test length(xyp13) == length(lat1)
-	@test relerr(Zxy, integrate(lat1, xyp13)) < 1.0e-8
+		# two GMPS, integrating out two bands at once
+		xyp13 = partialintegrate(lat3, x, y; branchs=(:τ,), bands=(1, 3), alg=alg)
+		@test length(xyp13) == length(lat1)
+		@test relerr(Zxy, integrate(lat1, xyp13)) < 1.0e-8
 
-	# three GMPS
-	xyzp = partialintegrate(lat3, alg, x, y, z; branchs=(:τ,), bands=(1,))
-	@test length(xyzp) == length(lat2)
-	@test relerr(integrate(lat3, x, y, z), integrate(lat2, xyzp)) < 1.0e-8
+		# three GMPS
+		xyzp = partialintegrate(lat3, x, y, z; branchs=(:τ,), bands=(1,), alg=alg)
+		@test length(xyzp) == length(lat2)
+		@test relerr(integrate(lat3, x, y, z), integrate(lat2, xyzp)) < 1.0e-8
+	end
 end
 
 @testset "API: zipup integration, integrate(A,B,...) = integrate(A*B...)" begin

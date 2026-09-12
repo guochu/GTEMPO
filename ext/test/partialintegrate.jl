@@ -44,8 +44,8 @@ end
 
             for j in eachindex(bands)
                 res1 = integratebands(lattice, res0, bands[j])
-                res2 = partialintegrate(lattice, alg1, xs...; branchs=branchs, bands=bands[j])
-                res3 = partialintegrate(lattice, alg2, xs...; branchs=branchs, bands=bands[j])
+                res2 = partialintegrate(lattice, xs...; branchs=branchs, bands=bands[j], alg=alg1)
+                res3 = partialintegrate(lattice, xs...; branchs=branchs, bands=bands[j], alg=alg2)
                 @test distance(res1, res2) < δ
                 @test _dis(res1, res3) < δ    
             end

@@ -18,7 +18,9 @@
 
 # Using iterative multiply, the scaling will lost
 
-# TODO: how to recover the residual when using normalize!(hstorage[iz])
+# NOTE: never normalize the environment tensors (neither here nor in the
+# sweeps): normalizing would discard the residual norms and the overall
+# scaling could not be recovered afterwards.
 
 
 
@@ -50,13 +52,11 @@ function parint_cache(z::GrassmannMPS, xs::GrassmannMPS...; cidx::Vector{Int}, v
             j = ixs ÷ 2
             @assert 2*j == ixs
 			hstorage[iz+1] = GrassmannTransferMatrix(j, xs...) * hstorage[iz+1]
-            normalize!(hstorage[iz+1])
             ixs -= 2
 		else
 			(iz == 1) && break
             below_right = get_below_right(hstorage[iz+1], getindex.(xs, ixs)...)
             hstorage[iz] = above_below_right(z[iz], below_right)
-            normalize!(hstorage[iz])
 			iz -= 1
             ixs -= 1
 		end
@@ -64,7 +64,6 @@ function parint_cache(z::GrassmannMPS, xs::GrassmannMPS...; cidx::Vector{Int}, v
 	end
     for j in 2:2:ixs
         hstorage[1] = left_m(hstorage[1], GrassmannTransferMatrix(j÷2, xs...))
-        normalize!(hstorage[1])
     end
 
     return PartialIntegrateIterativeMultCache(z, xs, cidx, hstorage)
@@ -82,10 +81,18 @@ function parint_iterativemult(xs::GrassmannMPS...; cidx::Vector{Int}, alg::DMRGM
     (alg.verbosity >= 1) && println("build cache cost $rt Seconds")
 
     deltas = compute!(cache, alg)
-    z = cache.o
-    _rescaling!(z)
-    setscaling!(z, 1)
-    return z
+	z = cache.o
+    # The DMRG sweeps lose track of the overall scaling (the SVD path keeps it
+    # via the per-step _renormalize! accounting, the sweeps do not). Restore it
+    # by calibrating against the exact integral that partialintegrate must
+    # reproduce: the integral is linear in the data, so rescaling one site
+    # tensor by target/current fixes the normalization without relying on the
+    # scaling-ref convention.
+    target = TK.scalar(l_LL(xs...) * GrassmannTransferMatrix(xs...))
+    current = TK.scalar(l_LL(z) * GrassmannTransferMatrix((z.data,)))
+    z[1] = rmul!(z[1], target / current)
+	_rescaling!(z)
+	return z
 end
 
 compute!(env::PartialIntegrateIterativeMultCache, alg::DMRG1) = iterative_compute!(env, alg)
@@ -106,7 +113,6 @@ function leftsweep!(m::PartialIntegrateIterativeMultCache, alg::DMRG1)
         rt = @elapsed if insorted(ixs, cidx)
             j = (ixs+1) ÷ 2
             hstorage[iz] = left_m(hstorage[iz], GrassmannTransferMatrix(j, xs...))
-            normalize!(hstorage[iz])
             ixs += 2
         else
             (iz == Lz) && break
@@ -120,7 +126,6 @@ function leftsweep!(m::PartialIntegrateIterativeMultCache, alg::DMRG1)
             
             tmp = left_below_above(tmp, z[iz])
             hstorage[iz+1] = tmp
-            normalize!(hstorage[iz+1])
             iz += 1
             ixs += 1
         end
@@ -143,7 +148,6 @@ function rightsweep!(m::PartialIntegrateIterativeMultCache, alg::DMRG1)
         rt = @elapsed if insorted(ixs-1, cidx)
             j = (ixs+1) ÷ 2
             hstorage[iz+1] = m_right(GrassmannTransferMatrix(j, xs...), hstorage[iz+1])
-            normalize!(hstorage[iz+1])
             ixs -= 2
         else
             (iz == 1) && break
@@ -158,7 +162,6 @@ function rightsweep!(m::PartialIntegrateIterativeMultCache, alg::DMRG1)
     
             tmp = above_below_right(z[iz], tmp)
             hstorage[iz] = tmp
-            normalize!(hstorage[iz])
             iz -= 1
             ixs -= 1
         end
@@ -183,7 +186,6 @@ function rightsweep_final!(m::PartialIntegrateIterativeMultCache, alg::DMRG1)
         rt = @elapsed if insorted(ixs-1, cidx)
             j = (ixs+1) ÷ 2
             hstorage[iz+1] = m_right(GrassmannTransferMatrix(j, xs...), hstorage[iz+1])
-            normalize!(hstorage[iz+1])
             ixs -= 2
         else
             (iz == 1) && break
@@ -199,7 +201,6 @@ function rightsweep_final!(m::PartialIntegrateIterativeMultCache, alg::DMRG1)
 
             tmp = above_below_right(z[iz], tmp)
             hstorage[iz] = tmp
-            normalize!(hstorage[iz])
             iz -= 1
             ixs -= 1
         end

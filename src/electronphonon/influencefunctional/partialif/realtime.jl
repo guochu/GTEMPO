@@ -63,7 +63,7 @@ end
 # 	return gmps
 # end
 
-# function hybriddynamics_2band!(gmps::FockMPS, lattice::RealFockLattice, corr::RealCorrelationFunction; trunc::TruncationScheme=DefaultMPOTruncation)
+# function hybriddynamics_2band!(gmps::FockMPS, lattice::RealFockLattice, corr::RealCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
 # 	@assert lattice.bands == 2
 # 	_hybriddynamics_1band!(gmps, lattice, corr, 2, trunc=trunc)
 # 	alg = Orthogonalize(TK.SVD(), trunc)
@@ -135,7 +135,7 @@ function _hybriddynamics_1band_naive!(gmps::FockMPS, lattice::RealFockLattice, c
 end
 
 function hybriddynamics_2band_naive!(gmps::FockMPS, lattice::RealFockLattice, corr::RealCorrelationFunction; 
-											trunc::TruncationScheme=DefaultMPOTruncation)
+											trunc::TruncationScheme=DefaultITruncation)
 	@assert lattice.bands == 2
 	for band in 1:lattice.bands
 		_hybriddynamics_1band_naive!(gmps, lattice, corr, band, trunc=trunc)

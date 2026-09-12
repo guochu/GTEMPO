@@ -5,12 +5,11 @@
 
 Construct the influence functional with the `ExactTTIIF` algorithm on
 `lattice` (starting from the vacuum state). Equivalently the in-place
-[`hybriddynamics!`](@ref), see its docstring for the workflow of merging the
+`hybriddynamics!`, see its docstring for the workflow of merging the
 influence functional into an existing `GrassmannMPS` such as the impurity
 dynamics from `sysdynamics`.
 """
-hybriddynamics(lattice::AbstractGrassmannLattice, 
-corr::AbstractCorrelationFunction, alg::ExactTTIIF; kwargs...) = hybriddynamics!(vacuumstate(lattice), lattice, corr, alg; kwargs...)
+hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::ExactTTIIF; kwargs...) = hybriddynamics!(vacuumstate(lattice), lattice, corr, alg; kwargs...)
 
 """
     hybriddynamics!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::ExactTTIIF; band::Int=1)

@@ -37,7 +37,7 @@ function _retardedinteractdynamics_naive_1band!(gmps::GrassmannMPS, lattice::Rea
 end
 
 function retardedinteractdynamics_naive_2band!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, corr::RealCorrelationFunction; 
-											trunc::TruncationScheme=DefaultMPOTruncation)
+											trunc::TruncationScheme=DefaultITruncation)
 	@assert lattice.bands == 2
 	_retardedinteractdynamics_naive_1band!(gmps, lattice, corr, 2, trunc=trunc)
 
@@ -67,7 +67,7 @@ function retardedinteractdynamics_naive_2band!(gmps::GrassmannMPS, lattice::Real
 end
 
 # function retardedinteractdynamics_naive_2band!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, corr::RealCorrelationFunction; 
-# 											trunc::TruncationScheme=DefaultMPOTruncation)
+# 											trunc::TruncationScheme=DefaultITruncation)
 # 	@assert lattice.bands == 2
 # 	_retardedinteractdynamics_naive_1band!(gmps, lattice, corr, 2, trunc=trunc)
 

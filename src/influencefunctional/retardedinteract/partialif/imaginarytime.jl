@@ -141,7 +141,7 @@ end
 # end
 
 # # only applicable for BandLocalLayout
-# function retardedinteractdynamics_naive_2band!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr1::ImagCorrelationFunction; trunc::TruncationScheme=DefaultMPOTruncation)
+# function retardedinteractdynamics_naive_2band!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr1::ImagCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
 # 	@assert lattice.bands == 2
 # 	(LayoutStyle(lattice) isa BandLocalLayout) || throw(ArgumentError("currently only TimelocalLayout support for this function"))
 # 	corr = corr1.data

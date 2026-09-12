@@ -99,7 +99,7 @@ end
 # end
 
 function retardedinteractdynamics_naive_2band!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::AbstractMixedCorrelationFunction; 
-											trunc::TruncationScheme=DefaultMPOTruncation)
+											trunc::TruncationScheme=DefaultITruncation)
 	@assert lattice.bands == 2
 	_retardedinteractdynamics_naive_1band!(gmps, lattice, corr, 2, trunc=trunc)
 	alg = Orthogonalize(TK.SVD(), trunc)
@@ -135,7 +135,7 @@ function retardedinteractdynamics_naive_2band!(gmps::GrassmannMPS, lattice::Mixe
 end
 
 # function retardedinteractdynamics_naive_2band!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::AbstractMixedCorrelationFunction; 
-# 											trunc::TruncationScheme=DefaultMPOTruncation)
+# 											trunc::TruncationScheme=DefaultITruncation)
 # 	@assert lattice.bands == 2
 # 	_retardedinteractdynamics_naive_1band!(gmps, lattice, corr, 2, trunc=trunc)
 # 	alg = Orthogonalize(TK.SVD(), trunc)

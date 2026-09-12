@@ -58,7 +58,7 @@ end
 # NOTE: the direct-sum bond dimensions of the four branches add up, so the
 # branches are summed one by one, compressing with SVD canonicalization after
 # each addition to keep the bond dimension bounded. The compression uses the
-# tight `DefaultMPOTruncation` (not `alg.trunc`): the compression error of H
+# tight `DefaultITruncation` (not `alg.trunc`): the compression error of H
 # is exponentially amplified by the flow (IF = e^H), so a loose tolerance
 # would degrade the accuracy of the influence functional.
 function _tdvpif_hamiltonian(lattice::RealGrassmannLattice{O}, corr::RealCorrelationFunction, alg::TDVPIF; band::Int=1) where O
@@ -75,7 +75,7 @@ end
 
 function _tdvpif_hamiltonian_timelocal(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction, alg::TDVPIF, T; band::Int=1)
 	h1, h2, h3, h4 = influenceoperators(lattice, corr, band=band, algexpan=alg.algexpan)
-	orth = Orthogonalize(SVD(), DefaultMPOTruncation; normalize=false)
+	orth = Orthogonalize(SVD(), DefaultIntegrationTruncation; normalize=false)
 	H = h1 * vacuumstate(T, lattice)
 	H = H + h2 * vacuumstate(T, lattice)
 	canonicalize!(H, alg=orth)
