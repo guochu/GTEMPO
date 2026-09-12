@@ -7,7 +7,7 @@ function _influencefunctional(lattice::ImagGrassmannLattice1Order{O}, corr::Imag
 		return [fillband(lattice, mps, band=band) for mps in mpss]
 	end
 	if !(LayoutStyle(lattice) isa TimeLocalLayout)
-		lattice2 = similar(lattice, ordering = A1Ā1B1B̄1())
+		lattice2 = similar(lattice, ordering = A1Ā1B1B̄1())
 		mpss = _influencefunctional_util(lattice2, corr, alg)
 		# change the ordering of all mpss
 		mpss2 = similar(mpss)

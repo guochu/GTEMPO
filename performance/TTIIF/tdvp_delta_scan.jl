@@ -6,7 +6,7 @@ f(D, ϵ) = sqrt(1 - (ϵ / D)^2) / π
 N = 25; δτ = 0.01; β = N * δτ; ϵ_d = 1.25π
 trunc = truncdimcutoff(D = 100, ϵ = 1.0e-8, add_back = 0)
 bath = fermionicbath(spectrum(ϵ -> f(10, ϵ), lb = -10, ub = 10), β = β, μ = 0)
-lattice = GrassmannLattice(N = N, δτ = β / N, contour = :imag, ordering = A1Ā1B1B̄1())
+lattice = GrassmannLattice(N = N, δτ = β / N, contour = :imag, ordering = A1Ā1B1B̄1())
 corr = correlationfunction(bath, lattice)
 b2 = discretebath(bath, δw = 0.2)
 exactGτ = toulouse_Gτ(Toulouse(b2, ϵ_d = ϵ_d), collect(0:δτ:β))
@@ -30,7 +30,7 @@ end
 Nt = 10; δt = 0.02; β = 1.0; ϵ_d = -1.0
 trunc2 = truncdimcutoff(D = 100, ϵ = 1.0e-9, add_back = 0)
 bath2 = fermionicbath(spectrum(ϵ -> f(1, ϵ), lb = -1, ub = 1), β = β, μ = 0)
-lattice2 = GrassmannLattice(N = Nt, δt = δt, contour = :real, order = 1, ordering = A1Ā1a1ā1B1B̄1b1b̄1())
+lattice2 = GrassmannLattice(N = Nt, δt = δt, contour = :real, order = 1, ordering = A1Ā1a1ā1B1B̄1b1b̄1())
 corr2 = correlationfunction(bath2, lattice2)
 b22 = discretebath(bath2, δw = 0.02)
 model = Toulouse(b22, ϵ_d = ϵ_d)

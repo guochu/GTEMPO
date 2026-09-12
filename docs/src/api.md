@@ -34,7 +34,7 @@ timesteps
 ## Orderings
 
 The same lattice can be walked in different *Grassmann orderings*
-(`GrassmannOrdering` subtypes such as `A1Ā1B1B̄1a1ā1b1b̄1`). The ordering
+(`GrassmannOrdering` subtypes such as `A1Ā1B1B̄1a1ā1b1b̄1`). The ordering
 determines both the conjugation structure of the sites and the efficiency of
 downstream algorithms:
 

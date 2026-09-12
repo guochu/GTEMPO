@@ -199,9 +199,9 @@ function _contract!(α, A::AbstractParityTensorMap, B::AbstractParityTensorMap,
     A′ = gpermute(A, (oindA, cindA))
     B′ = gpermute(B, (cindB, oindB))
     # fermionic junction twist: permute the contracted pair into the canonical
-    # (a, ā) order before contracting. A contracted pair whose A-side leg is
-    # non-dual (an `a`) against a dual B-side leg (an `ā`) is in the crossed
-    # (ā, a) order; permuting it costs a twist -1 per odd sector, applied on
+    # (a, Ā) order before contracting. A contracted pair whose A-side leg is
+    # non-dual (an `a`) against a dual B-side leg (an `Ā`) is in the crossed
+    # (Ā, a) order; permuting it costs a twist -1 per odd sector, applied on
     # the A side. This is unconditional, matching the GrassmannTensors /
     # TensorKit fermionic conventions, and independent of which region cindB
     # lives in. (space(A′, No+k) = space(A, cindA[k]).)

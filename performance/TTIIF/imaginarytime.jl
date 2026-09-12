@@ -56,7 +56,7 @@ b2 = discretebath(bath, δw = 0.2)
 exactGτ = toulouse_Gτ(Toulouse(b2, ϵ_d = ϵ_d), collect(0:δτ:β))
 
 # ------------------------------ 各算法计时 ----------------------------------
-lattice = GrassmannLattice(N = N, δτ = β / N, contour = :imag, ordering = A1Ā1B1B̄1())
+lattice = GrassmannLattice(N = N, δτ = β / N, contour = :imag, ordering = A1Ā1B1B̄1())
 corr = correlationfunction(bath, lattice)
 
 results = Dict{String, Any}()

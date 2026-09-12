@@ -28,11 +28,11 @@ Return different Grassmann lattices depending on the "contour"
 there are three choices for "contour"
 real (or eauivalent Keldysh): return RealGrassmannLattice
 imag: return ImagGrassmannLattice
-mixed (or equivalent KadanoffBaym): return MixedGrassmannLattice
+mixed (or equivalent Kadanoff): return MixedGrassmannLattice
 The kwargs are different for different lattice types
 """
 function GrassmannLattice(; contour::Symbol, kwargs...)
-	(contour in (:real, :imag, :Keldysh, :mixed, :Kadanoff)) || throw(ArgumentError("contour must be :real (equivalentlt :Keldysh), :imag or :mixed (equivalentlt :KadanoffBaym)"))
+	(contour in (:real, :imag, :Keldysh, :mixed, :Kadanoff)) || throw(ArgumentError("contour must be :real (equivalent to :Keldysh), :imag or :mixed (equivalent to :Kadanoff)"))
 	if (contour == :real) || (contour == :Keldysh)
 		return RealGrassmannLattice(; kwargs...)
 	elseif contour == :imag

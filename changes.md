@@ -2,6 +2,20 @@
 
 本轮重构涉及的接口更改汇总。所有更改均已通过全量测试验证（行为不变或数值等价）。
 
+## 第六批更新
+
+### Grassmann ordering 导出与缩写清理
+
+- 删除 `src/lattices/grassmannordering.jl` 中全部 7 个缩写别名（`const AĀBB̄ = ...` 等），所有使用处改用完整 ordering 名（含 `MixedGrassmannLattice1Order` 默认 ordering 参数）。
+- 只导出满足 **AdjacentConjugation** 的 ordering（6 个）：`A1Ā1B1B̄1`、`A1Ā1B1B̄1a1ā1b1b̄1`、`A1Ā1a1ā1B1B̄1b1b̄1`、`A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2` 及两个 mixed-time ordering；8 个 GeneralConjugation ordering 不再导出（内部仍可用，测试入口通过 `using GTEMPO: ...` 显式导入）。
+
+### GrassmannOrdering Unicode 规范统一
+
+- 全仓库统一为组合宏形式（`A` + U+0304），消除同一 ordering 名在不同文件中"预组合（U+0100）/组合宏"混用导致的符号不一致：
+  - 修正 `src/influencefunctional/hybridization/ttiif/imaginarytime.jl`、`src/influencefunctional/hybridization/exact_ttiif/imaginarytime.jl` 中因编码不一致而失联的 `index` 等方法特化
+  - 统一 `src/grassmanntensor/` 中混用的 `ā` 变量名编码
+  - 测试与文档中 8 个文件的宏字符一并规范化
+
 ## 第五批更新
 
 ### partialintegrate 重构与 DMRG1 缩放修复
@@ -15,9 +29,9 @@
 
 连同定义、`ConjugationStyle`/`LayoutStyle` trait、专用 `index` 方法、导出与全部测试项一并移除：
 
-- `A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1`（real，band-local）
-- `A2Ā2A1Ā1B2B̄2B1B̄1`（imaginary，band-local）
-- `A1Ā1B1B̄1b̄1B̄1ā1Ā1`（real，含别名 `AaBbb̄B̄āĀ`）
+- `A2Ā2A1Ā1a2ā2a1ā1B2B̄2B1B̄1b2b̄2b1b̄1`（real，band-local）
+- `A2Ā2A1Ā1B2B̄2B1B̄1`（imaginary，band-local）
+- `A1Ā1B1B̄1b̄1B̄1ā1Ā1`（real，含别名 `AaBbb̄B̄āĀ`）
 
 ### 算法类型层级整理
 
@@ -162,7 +176,7 @@
 ### 删除
 
 - `test/models/bmps_gf.jl` 及其在 `test/runtests.jl` 中的 include。
-- `band_boundary` 的 4 个死 method（realtime.jl 中 `A1Ā1B1B̄1b̄1B̄1ā1Ā1`、`A1B1ā1b̄1Ā1B̄1a1b1` 与两个 `A2...` ordering 版本）：这些 ordering 不在 `_AllowedRealGrassmannOrdering` 内或非 TimeLocal，`_fit_to_lattice` 永远不会走到；其余 4 个活跃 method（虚时 2 个、实时 2 个）保留。
+- `band_boundary` 的 4 个死 method（realtime.jl 中 `A1Ā1B1B̄1b̄1B̄1ā1Ā1`、`A1B1ā1b̄1Ā1B̄1a1b1` 与两个 `A2...` ordering 版本）：这些 ordering 不在 `_AllowedRealGrassmannOrdering` 内或非 TimeLocal，`_fit_to_lattice` 永远不会走到；其余 4 个活跃 method（虚时 2 个、实时 2 个）保留。
 
 ### 其它
 

@@ -59,7 +59,7 @@ ts = collect(δt:δt:N*δt)
 exactGt, _ = toulouse_neq_greater_lesser(model, ts, nsys=0)
 
 # ------------------------------ 各算法计时 ----------------------------------
-lattice = GrassmannLattice(N = N, δt = δt, contour = :real, order = 1, ordering = A1Ā1a1ā1B1B̄1b1b̄1())
+lattice = GrassmannLattice(N = N, δt = δt, contour = :real, order = 1, ordering = A1Ā1a1ā1B1B̄1b1b̄1())
 corr = correlationfunction(bath, lattice)
 
 results = Dict{String, Any}()

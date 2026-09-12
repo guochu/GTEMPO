@@ -167,7 +167,7 @@ TEMPO for so long — and why the code in this package is built on
 On a discretized contour the IF factorizes (for a fermionic bath):
 
 ```
-I[ā,a] = exp(-Σ_{j,k} ā_j η_{j,k} a_k) ,
+I[ā,a] = exp(-Σ_{j,k} ā_j η_{j,k} a_k) ,
 ```
 
 where the matrix `η` is the discretized hybridization. This `η` is exactly
@@ -188,7 +188,7 @@ Three contours are supported — imaginary time (Matsubara), real time
 The full path integral is a product of three factors:
 
 ```
-Z = ∫ D[ā,a] K[ā,a] I[ā,a]         (K: impurity dynamics, I: bath influence)
+Z = ∫ D[ā,a] K[ā,a] I[ā,a]         (K: impurity dynamics, I: bath influence)
 ```
 
 GTEMPO represents both factors as **Grassmann matrix product states (GMPS)** —
@@ -197,7 +197,7 @@ handled by the tensor algebra instead of by explicit swap gates.
 
 - **`hybriddynamics(lat, corr, alg)`** builds the IF `I` as a GMPS. The
   default `PartialIF` implements the *partial-IF* construction of the papers:
-  `I = exp(-Σ ā η a)` is regrouped as a product of O(N) *partial IFs*, each
+  `I = exp(-Σ ā η a)` is regrouped as a product of O(N) *partial IFs*, each
   of bond dimension 2, which are then multiplied together.
 - **`sysdynamics(lat, model, trunc)`** builds the impurity propagator `K`
   from the impurity Hamiltonian, and **`boundarycondition!`** closes the
@@ -332,9 +332,9 @@ fails for bosons), so the IF is built by multiplying `2n` (imaginary) or
   ```
 
   A subtle but important point from the polaron paper: the phonon IF
-  *cannot* be obtained by naively replacing `n̂ → āa` in `e^{αn̂}`; the
-  correct matrix element is `⟨a'|e^{αn̂}|a⟩ = e^{e^α ā'a}` (and not
-  `e^{α ā'a}`). The Fock-lattice path handles this exactly.
+  *cannot* be obtained by naively replacing `n̂ → āa` in `e^{αn̂}`; the
+  correct matrix element is `⟨a'|e^{αn̂}|a⟩ = e^{e^α ā'a}` (and not
+  `e^{α ā'a}`). The Fock-lattice path handles this exactly.
 
 ### Suggested reading order
 

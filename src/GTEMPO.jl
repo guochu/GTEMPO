@@ -24,15 +24,12 @@ export branches, matchindices, indexmappings, swapbandperm, swapband!, swapband,
 export OrderingStyle, ConjugationStyle, AdjacentConjugation, GeneralConjugation
 export LayoutStyle, TimeLocalLayout, BranchLocalLayout, GeneralLayout
 # export TimeOrderingStyle, ImaginaryTimeOrderingStyle, RealTimeOrderingStyle, TimeAscending, TimeDscending
-export A1Ā1B1B̄1, AĀBB̄, A1B1B̄1Ā1, ABB̄Ā
-export A1Ā1B1B̄1a1ā1b1b̄1, AĀBB̄aābb̄, A1Ā1a1ā1B1B̄1b1b̄1, AĀaāBB̄bb̄
-export ABāb̄ĀB̄ab, A1B1ā1b̄1Ā1B̄1a1b1
-export A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2, A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2 #band local ordering
-export Ā2A1B̄2B1, Ā2A1ā1a2B̄2B1b̄1b̄2 #retarded interaction orderings
-export A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2, AĀBB̄_AĀaāBB̄bb̄, A1B1B̄1Ā1_A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2 #mixedtime lattice
-export A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2, AĀBB̄_aāAĀbb̄BB̄
-export Ā3A2B̄3B2Ā2A1B̄2B1_ā1a2Ā2A1b̄1b2B̄2B1ā2a3Ā3A2b̄2b3B̄3B2 #retarded interaction mixedtime ordering
-export A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄1A1B1 #fast propagator mixedtime ordering
+export A1Ā1B1B̄1
+export A1Ā1B1B̄1a1ā1b1b̄1
+export A1Ā1a1ā1B1B̄1b1b̄1
+export A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2
+export A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2
+export A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2
 export vacuumstate, makestep, timesteps
 export ImagGrassmannLattice1Order, RealGrassmannLattice1Order, RealGrassmannLattice2Order, GrassmannLattice, index
 
@@ -62,7 +59,7 @@ export nn, cached_nn, insert_n!, insert_n, nn2, cached_nn2
 
 # connections of Grassmann variables
 export bulkconnection!, bulkconnection
-export boundarycondition!, boundarycondition, boundarycondition_branching
+export boundarycondition!, boundarycondition
 
 # utilities for TEMPO
 # impurity model Hamilltonians
@@ -72,7 +69,6 @@ export sysdynamics, sysdynamics_fast, sysdynamicsstepper!
 export sysdynamics_imaginary!, sysdynamics_forward!, sysdynamics_backward!
 export sysinitialstate, sysinitialstate!, systhermalstate, systhermalstate!
 export ImpurityHamiltonian, QuenchedImpurityHamiltonian, TdImpurityHamiltonian, TdImpurityOp
-export FockMatrix, fock_propagator, fock_thermalstate
 export baresysdynamics, baresysdynamics_fast
 export baresysdynamics_imaginary!, baresysdynamics_forward!, baresysdynamics_backward!
 export sysdynamics_deprecated, sysdynamics_deprecated!

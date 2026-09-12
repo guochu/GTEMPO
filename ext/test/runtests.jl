@@ -19,6 +19,12 @@ using GTEMPO
 
 include("../GTEMPOCUDAExt/includes.jl")
 
+
+using GTEMPO: A1B1B̄1Ā1, Ā2A1B̄2B1,
+          A1B1ā1b̄1Ā1B̄1a1b1, A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2,
+          Ā2A1ā1a2B̄2B1b̄1b̄2, A1B1B̄1Ā1_A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2,
+          Ā3A2B̄3B2Ā2A1B̄2B1_ā1a2Ā2A1b̄1b2B̄2B1ā2a3Ā3A2b̄2b3B̄3B2, A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄1A1B1
+
 Random.seed!(12354)
 
 # include("util.jl")

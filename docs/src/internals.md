@@ -48,7 +48,7 @@ signs.
 
 A lattice is a chain of these GVs. Which physical time step / branch / band
 lands on which chain position is fixed by a `GrassmannOrdering` (e.g.
-`A1Ā1B1B̄1a1ā1b1b̄1` for the real-time default). The ordering determines:
+`A1Ā1B1B̄1a1ā1b1b̄1` for the real-time default). The ordering determines:
 
 * the `conj` alternation (`ConjugationStyle`: adjacent conjugations vs general),
 * how time steps, branches and bands interleave (`LayoutStyle`:

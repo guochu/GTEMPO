@@ -1,5 +1,5 @@
 """
-	influenceoperators(lattice::ImagGrassmannLattice1Order{<:A1Ā1B1B̄1}, corr2::ImagCorrelationFunction; band, algexpan)
+	influenceoperators(lattice::ImagGrassmannLattice1Order{<:A1Ā1B1B̄1}, corr2::ImagCorrelationFunction; band, algexpan)
 
 The influenceoperators ΣᵢⱼΔᵢⱼāᵢaⱼ as an MPO (returned in a 1-tuple), the bond dimension of MPO is 2n, where n is number of the prony expansion
 """
@@ -13,7 +13,7 @@ function influenceoperators(lattice::ImagGrassmannLattice1Order, corr2::ImagCorr
 end
 
 """
-	influenceoperatorsteppers(lattice::ImagGrassmannLattice1Order{<:A1Ā1B1B̄1}, corr2::ImagCorrelationFunction, dt, alg; band, algexpan)
+	influenceoperatorsteppers(lattice::ImagGrassmannLattice1Order{<:A1Ā1B1B̄1}, corr2::ImagCorrelationFunction, dt, alg; band, algexpan)
 """
 function influenceoperatorsteppers(lattice::ImagGrassmannLattice1Order, corr2::ImagCorrelationFunction, dt::Real, alg::FirstOrderStepper;
 										band::Int=1, algexpan::ExponentialExpansionAlgorithm=DefaultExpansionAlg)

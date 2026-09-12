@@ -19,10 +19,10 @@ otherwise similar signatures.
 
 In addition to the fermionic `gpermute` reordering signs, the backend applies
 the fermionic twists that put every contracted pair into the canonical
-`(a, ā)` order before contracting, in the same way as the GrassmannTensors /
+`(a, Ā)` order before contracting, in the same way as the GrassmannTensors /
 TensorKit fermionic conventions:
 * `contract!`: every contracted pair whose A-side leg carries a non-dual
-  space (an `a`, contracted against an `ā` on the B side) contributes a twist
+  space (an `a`, contracted against an `Ā` on the B side) contributes a twist
   of `-1` per odd sector, applied on the A side — independent of which
   region the B-side legs live in.
 * `trace_permute!`: closing the trace loop, every traced codomain leg with a

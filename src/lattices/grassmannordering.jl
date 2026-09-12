@@ -68,7 +68,6 @@ ConjugationStyle(::Type{A1Ā1B1B̄1}) = AdjacentConjugation()
 LayoutStyle(::Type{A1Ā1B1B̄1}) = TimeLocalLayout()
 ImaginaryTimeOrderingStyle(::Type{<:ImagGrassmannOrdering}) = TimeDscending()
 TimeOrderingStyle(::Type{O}) where {O<:ImagGrassmannOrdering} = ImaginaryTimeOrderingStyle(O)
-const AĀBB̄ = A1Ā1B1B̄1
 
 """
 	struct A1B1B̄1Ā1
@@ -79,7 +78,6 @@ This ordering is convenient to build the impurity dynamics
 struct A1B1B̄1Ā1 <: ImagGrassmannOrdering end
 ConjugationStyle(::Type{A1B1B̄1Ā1}) = GeneralConjugation()
 LayoutStyle(::Type{A1B1B̄1Ā1}) = TimeLocalLayout()
-const ABB̄Ā = A1B1B̄1Ā1
 
 
 """
@@ -106,7 +104,6 @@ ConjugationStyle(::Type{A1Ā1B1B̄1a1ā1b1b̄1}) = AdjacentConjugation()
 LayoutStyle(::Type{A1Ā1B1B̄1a1ā1b1b̄1}) = TimeLocalLayout()
 RealTimeOrderingStyle(::Type{<:RealGrassmannOrdering}) = TimeDscending()
 TimeOrderingStyle(::Type{O}) where {O<:RealGrassmannOrdering} = RealTimeOrderingStyle(O)
-const AĀBB̄aābb̄ = A1Ā1B1B̄1a1ā1b1b̄1
 
 """
 	struct A1Ā1a1ā1B1B̄1b1b̄1
@@ -116,7 +113,6 @@ GrassmannOrdering aābb̄ a₂+ā₂+a₂-ā₂-b₂+b̄₂+b₂-b̄₂- a₁
 struct A1Ā1a1ā1B1B̄1b1b̄1 <: RealGrassmannOrdering end
 ConjugationStyle(::Type{A1Ā1a1ā1B1B̄1b1b̄1}) = AdjacentConjugation()
 LayoutStyle(::Type{A1Ā1a1ā1B1B̄1b1b̄1}) = TimeLocalLayout()
-const AĀaāBB̄bb̄ = A1Ā1a1ā1B1B̄1b1b̄1
 
 
 """
@@ -128,7 +124,6 @@ This ordering is convenient to build the impurity dynamics for time local orderi
 struct A1B1ā1b̄1Ā1B̄1a1b1 <: RealGrassmannOrdering end
 ConjugationStyle(::Type{A1B1ā1b̄1Ā1B̄1a1b1}) = GeneralConjugation()
 LayoutStyle(::Type{A1B1ā1b̄1Ā1B̄1a1b1}) = TimeLocalLayout()
-const ABāb̄ĀB̄ab = A1B1ā1b̄1Ā1B̄1a1b1
 
 """
 	struct A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2
@@ -173,7 +168,6 @@ ConjugationStyle(::Type{A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b
 LayoutStyle(::Type{A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2}) = TimeLocalLayout()
 RealTimeOrderingStyle(::Type{A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2}) = TimeAscending()
 ImaginaryTimeOrderingStyle(::Type{<:MixedGrassmannOrdering}) = TimeDscending()
-const AĀBB̄_AĀaāBB̄bb̄ = A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2
 
 """
 	struct A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2
@@ -185,7 +179,6 @@ struct A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2 <: MixedGra
 ConjugationStyle(::Type{A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2}) = AdjacentConjugation()
 LayoutStyle(::Type{A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2}) = TimeLocalLayout()
 RealTimeOrderingStyle(::Type{A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2}) = TimeAscending()
-const AĀBB̄_aāAĀbb̄BB̄ = A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2
 
 """
 	struct A1B1B̄1Ā1_A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2
