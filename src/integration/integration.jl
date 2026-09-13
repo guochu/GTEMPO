@@ -24,7 +24,6 @@ BMPSIntegrate(; trunc::TruncationScheme=DefaultIntegrationTruncation) = BMPSInte
 
 
 
-include("acintegrate/util.jl")
 include("acintegrate/ac_integrate.jl")
 include("acintegrate/integrate1.jl")
 include("acintegrate/integrate2.jl")
@@ -32,11 +31,6 @@ include("acintegrate/integrate3.jl")
 include("acintegrate/integrate4.jl")
 include("acintegrate/integrate5.jl")
 
-# include("acintegrate/integrate6.jl")
-# include("acintegrate/integrate7.jl")
-
-include("acintegrate/ac_cached_integrate.jl")
-include("acintegrate/ac_cached_integrate2.jl")
 include("acintegrate/ac_bmps_integrate.jl")
 
 include("conversion.jl")

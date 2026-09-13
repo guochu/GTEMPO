@@ -9,7 +9,7 @@ end
 function _bmps_integrate(lattice::AbstractGrassmannLattice, xx::Vector{<:GrassmannMPS}; center::Int=pos2pairindex(length(lattice)), kwargs...)
 	left = _bmps_integrate_left( xx, center+1; kwargs...)
 	right = _bmps_integrate_right(xx, center; kwargs...)
-	return contract_center(left, right)
+	return gmps_contract_center(left, right)
 end
 
 function _integrate_center(xx::Vector{<:GrassmannMPS}, left::GrassmannMPS, left_b::Int, 
@@ -21,7 +21,7 @@ function _integrate_center(xx::Vector{<:GrassmannMPS}, left::GrassmannMPS, left_
 	for i in right_b:-1:center+1
 		right = update_pair_right(right, i, xx; trunc=trunc)
 	end
-	return contract_center(left, right)
+	return gmps_contract_center(left, right)
 end
 
 function _bmps_integrate_left(xx::Vector{<:GrassmannMPS}, center::Int; trunc::TruncationScheme=DefaultIntegrationTruncation)
@@ -115,7 +115,7 @@ function update_pair_right(right::GrassmannMPS, j::Int, xx::Vector{<:GrassmannMP
 	return right	
 end
 
-function contract_center(left::GrassmannMPS, right::GrassmannMPS)
+function gmps_contract_center(left::GrassmannMPS, right::GrassmannMPS)
 	L = length(left)
 	mj = isomorphism(scalartype(left), space_r(left)', space_l(right))
 	f = scaling(left) * scaling(right)

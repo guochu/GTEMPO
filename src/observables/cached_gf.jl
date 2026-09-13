@@ -30,8 +30,9 @@ end
 """
 	cached_greater(lattice, i::Int, j::Int, A, B...; band=1, kwargs...)
 
-Greater Green's function `G^>(i, j) = -i⟨d(i) d†(j)⟩` on the real branches,
-evaluated with cached environments. `band` may be an `Int` or a 2-tuple.
+Correlation `⟨d(i) d†(j)⟩` on the real branches, evaluated with cached
+environments. The greater Green's function is `G^>(i, j) = -im * cached_greater(i, j)`.
+`band` may be an `Int` or a 2-tuple.
 """
 function cached_greater(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
                         band::Union{Int, Tuple{Int, Int}}=1, kwargs...)
@@ -45,8 +46,9 @@ cached_greater(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::I
 """
 	cached_lesser(lattice, i::Int, j::Int, A, B...; band=1, kwargs...)
 
-Lesser Green's function `G^<(i, j) = i⟨d†(i) d(j)⟩` on the real branches,
-evaluated with cached environments. `band` may be an `Int` or a 2-tuple.
+Correlation `-⟨d†(i) d(j)⟩` on the real branches, evaluated with cached
+environments. The lesser Green's function is `G^<(i, j) = -im * cached_lesser(i, j)`.
+`band` may be an `Int` or a 2-tuple.
 """
 function cached_lesser(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
                        band::Union{Int, Tuple{Int, Int}}=1, kwargs...)
