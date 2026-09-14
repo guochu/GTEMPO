@@ -98,14 +98,12 @@ function Base.complex(psi::GrassmannMPS)
 	return psi
 end
 
-isrightcanonical(a::GrassmannMPS; kwargs...) = (scaling(a) ≈ 1) && all(x->isrightcanonical(x; kwargs...), a.data)
+isrightcanonical(a::GrassmannMPS; kwargs...) = all(x->isrightcanonical(x; kwargs...), a.data)
 function isleftcanonical(a::GrassmannMPS; kwargs...)
-	(scaling(a) ≈ 1) || return false
 	all(x->isleftcanonical(x; kwargs...), a.data[1:end-1]) || return false
 	return isleftcanonical_r(a.data[end]; kwargs...)
 end
 function iscanonical(a::GrassmannMPS; kwargs...)
-	(scaling(a) ≈ 1) || return false
 	isrightcanonical(a) || return false
 	# we also check whether the singular vectors are the correct Schmidt numbers
 	svectors_uninitialized(a) && return false
