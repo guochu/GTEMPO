@@ -119,6 +119,49 @@
 - 删除 `cached_Gτ`、`cached_Gt`、`cached_Gm`、`cached_contour_ordered_Gm`；改用 `cached_gf`。
 - 删除 `cached_Gτ_fast`、`cached_Gt_fast`、`cached_Gm_fast`；改用 `cached_gf_fast`（等时端点修正 `r[end] = 1 - r[1]` 在 imag 轮廓由 `cached_gf_fast` 内部处理，mixed 轮廓需调用方显式执行）。
 - `cached_greater`/`cached_lesser` 重写为直接构造 `ContourIndex` 调用 `cached_gf`：不再接受 `c1/c2/b1/b2` 关键字（语义固定为 greater/lesser），仅保留 `band` 与缓存相关关键字。
+- 旧 `Gτ`/`Gt`/`Gm`（含 cached、fast 版本）与 `gf`/`cached_gf`/`cached_gf_fast` 的逐条对应公式：
+
+  记 `C(i; c, b, d) = ContourIndex(i, conj=c, branch=b, band=d)`（全部为关键字参数）；`band` 关键字为 `Int` 时 `band₁ = band₂ = band`，为 `(b₁, b₂)` 元组时分别取两带。
+
+  **逐点版本 → `gf`**（旧默认 `alg = ExactIntegrate()`、`Z = integrate(lattice, A, B...; alg)`）：
+
+  | 旧接口 | 等价新写法 |
+  |---|---|
+  | `Gτ(lat::ImagGrassmannLattice, i, j, A, B...; band=1, c1=false, c2=true, alg, Z)` | `gf(lat, (C(i; c1, :τ, band₁), C(j; c2, :τ, band₂)), A, B...; alg, Z)` |
+  | `Gt(lat::RealGrassmannLattice, i, j, A, B...; b1, b2, band=1, c1=true, c2=false, alg, Z)` | `gf(lat, (C(i; c1, b1, band₁), C(j; c2, b2, band₂)), A, B...; alg, Z)` |
+  | `Gm(lat::MixedGrassmannLattice, i, j, A, B...; b1, b2, band=1, c1=true, c2=false, alg, Z)` | 同上（`b1, b2 ∈ {:+, :-, :τ}`） |
+
+  与旧版一致的约定：`Gτ(lat, i, A, B...; kwargs...) = Gτ(lat, i, 1, A, B...; kwargs...)`（`j` 默认 1）；Mixed 轮廓上 `Gt(lat, i, j, ...; b1, b2 ∈ {:+, :-}, ...)` 委托 `Gm`，`Gτ(lat, i, j, ...; c1=false, c2=true, ...)` 委托 `Gm(...; b1=:τ, b2=:τ)`。
+
+  **全格点批量版本**（`k = lattice.k`；`parallel_Gτ` 公式与此相同，仅把 `integrate` 换成 `parallel_integrate`，已随 `parallel_run` 一并停用）：
+
+  ```julia
+  # Gτ(lat::ImagGrassmannLattice1Order, A, B...; band)：
+  g = [Gτ(lat, i, A, B...; band) for i in 1:k-1]   # Matsubara G(τᵢ) = ⟨aᵢ b₁⟩
+  push!(g, 1 - g[1])                               # 末点由等时关系补全
+  ```
+
+  **cached 逐点版本 → `cached_gf`**（`cache = environments(lat, A, B...)`，不再有 `alg/Z`）：
+
+  | 旧接口 | 等价新写法 |
+  |---|---|
+  | `cached_Gτ(lat, i, j, A, B...; cache, band=1, c1=false, c2=true)` | `cached_gf(lat, (C(i; c1, :τ, band₁), C(j; c2, :τ, band₂)), A, B...; cache)` |
+  | `cached_Gt(lat::RealGrassmannLattice, i, j, A, B...; cache, b1, b2, band=1, c1=true, c2=false)` | `cached_gf(lat, (C(i; c1, b1, band₁), C(j; c2, b2, band₂)), A, B...; cache)` |
+  | `cached_Gm(lat::MixedGrassmannLattice, i, j, A, B...; cache, b1, b2, band=1, c1=true, c2=false)` | 同上（`b1, b2 ∈ {:+, :-, :τ}`；Mixed 上 `cached_Gt`/`cached_Gτ` 的委托关系同逐点表） |
+  | `cached_contour_ordered_Gm(lat, i, j, A, B...; cache, b1, b2, band=1)` | `cached_contour_ordered_gf(lat, C(i; false, b1, band₁), C(j; true, b2, band₂), A, B...; cache)`，其中 `cached_contour_ordered_gf(lat, a, b, …) = a < b ? -cached_gf(lat, (b, a), …) : cached_gf(lat, (a, b), …)` |
+
+  批量版本 `cached_Gτ(lat::Union{ImagGrassmannLattice, MixedGrassmannLattice}, A, B...; cache, band=1)`：`g[i] = cached_Gτ(lat, i, A, B...; cache, band)`（i = 1 … kτ−1），`g[kτ] = 1 - g[1]`。
+
+  **fast 版本 → `cached_gf_fast`**（一次给出 `⟨aᵢ b₁⟩, i = 1 … N`，`N` 由轮廓与分支自动确定）：
+
+  | 旧接口 | 等价新写法 |
+  |---|---|
+  | `cached_Gτ_fast(lat::ImagGrassmannLattice, A, B...; c1=false, c2=true)` | `cached_gf_fast(lat, A, B...; b1=:τ, b2=:τ, c1=c1, c2=c2)`（末点修正 `r[end] = 1 - r[1]` 内部处理） |
+  | `cached_Gτ_fast(lat::MixedGrassmannLattice, A, B...; c1=false, c2=true)` | 上式之后再执行 `r[end] = 1 - r[1]` |
+  | `cached_Gt_fast(lat::RealGrassmannLattice, A, B...; b1, b2, c1=true, c2=false)` | `cached_gf_fast(lat, A, B...; b1=b1, b2=b2, c1=c1, c2=c2)` |
+  | `cached_Gm_fast(lat::MixedGrassmannLattice, A, B...; b1, b2, c1=true, c2=false)` | 同上（`b1 ∈ {:+, :-}` 时长度 `kt`、`:τ` 时长度 `kτ`；末点修正需调用方执行） |
+  | `cached_greater_fast(lat, A, B...)` | `cached_gf_fast(lat, A, B...; b1=:+, b2=:+, c1=false, c2=true)` |
+  | `cached_lesser_fast(lat, A, B...)` | `-cached_gf_fast(lat, A, B...; b1=:+, b2=:-, c1=false, c2=true)`（注意前导负号） |
 - `parallel_run`、`parallel_integrate`（与 `parallel_Gτ` 一起）整文件注释停用（`src/integration/parallelintegrate.jl`）。
 - `occupation2`（等时 Green 函数路径的占据数实现）已注释停用：与 Toulouse ED 严格解对比，Keldysh 轮廓略优于 `occupation`（0.35% vs 0.53%，均为离散化/截断噪声量级），但虚时轮廓在 i ≥ 2 存在约 6% 的错误跳变（仅 i = 1 恰好正确，边界 Grassmann 迹贡献未正确计入）。保留 `occupation`（insert_n 路径）与 `cached_occupation`。
 
