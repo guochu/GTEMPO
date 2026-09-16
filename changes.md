@@ -165,6 +165,12 @@
 - `parallel_run`、`parallel_integrate`（与 `parallel_Gτ` 一起）整文件注释停用（`src/integration/parallelintegrate.jl`）。
 - `occupation2`（等时 Green 函数路径的占据数实现）已注释停用：与 Toulouse ED 严格解对比，Keldysh 轮廓略优于 `occupation`（0.35% vs 0.53%，均为离散化/截断噪声量级），但虚时轮廓在 i ≥ 2 存在约 6% 的错误跳变（仅 i = 1 恰好正确，边界 Grassmann 迹贡献未正确计入）。保留 `occupation`（insert_n 路径）与 `cached_occupation`。
 
+### mult 迭代收敛判据（iterative_compute!）
+
+- `iterative_compute!` 的收敛判据从"每轮 sweep 残差的相对标准差（`iterative_error_2`，即 σ/|μ|）"改为"相邻两轮 sweep 损失的相对变化"（与 ITensor/TeNPy/quimb/block2 的 DMRG 判据一致；第一轮总是执行，对应 `delta = 2*tol`）。
+- 每轮 sweep 的损失定义为该轮 sweep 输出的**最后一个**残差 ‖mpsj‖（整轮 left+right 扫描结束、site 2 处的残差）；`iterative_compute!` 的返回值 `kvals` 相应变为每轮 sweep 的损失序列。理论上 sweep 内 ‖mpsj‖ 沿扫描方向单调递增，收敛后达到平台，故相邻轮损失差趋于零。
+- 删除不再使用的 `iterative_error_2`。
+
 ### 其它
 
 - `_normalize!(psi::GrassmannMPS)` 改为重载 `LinearAlgebra.normalize!`，不再导出私有名。

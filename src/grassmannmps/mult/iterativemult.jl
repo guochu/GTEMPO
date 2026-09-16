@@ -55,29 +55,36 @@ compute!(env::GMPSIterativeMultCache, alg::DMRGAlgorithm) = iterative_compute!(e
 
 
 function iterative_compute!(m, alg)
-    kvals = Float64[]
-    iter = 0
-    delta = 2 * alg.tol
-    while (iter < alg.maxiter) && (delta >= alg.tol)
-        _kvals = sweep!(m, alg)
-        delta = iterative_error_2(_kvals)
-        push!(kvals, delta)
-        iter += 1
-        (alg.verbosity >= 2) && println("finish the $iter-th sweep with error $delta", "\n")
-    end
-    if (alg.verbosity >= 1) && (iter < alg.maxiter)
-        println("early converge in $iter-th sweeps with error $delta")
-    end
-    if (alg.verbosity >= 0) && (delta >= alg.tol)
-        println("fail to converge, required precision: $(alg.tol), actual precision $delta in $iter sweeps")
-    end
-    finalize!(m ,alg)
-    return kvals
-end
-function iterative_error_2(m::AbstractVector)
-    μ = sum(m) / length(m)
-    σ = sqrt(sum(abs2(x - μ) for x in m) / (length(m) - 1))
-    return σ / abs(μ)
+	# `sweep!` returns the vector of all per-site loss values ‖mpsj_j‖ of one
+	# sweep; `iterative_compute!` returns the vector of per-sweep losses, where
+	# the loss of one sweep is the *last* residual of the sweep (the ‖mpsj‖ at
+	# site 2 after the full left+right sweep). Convergence criterion (cf.
+	# ITensor/TeNPy/quimb/block2 DMRG): the relative change of the loss between
+	# two adjacent sweeps (the first sweep always runs, cf. `delta = 2*tol`).
+	# At the fixed point the loss is sweep-stationary, so this difference
+	# vanishes.
+	kvals = Float64[]
+	loss_prev = NaN
+	iter = 0
+	delta = 2 * alg.tol
+	while (iter < alg.maxiter) && (delta >= alg.tol)
+		kvals_sweep = sweep!(m, alg)
+		loss_cur = kvals_sweep[end]
+		delta = (iter == 0) ? 2 * alg.tol :
+			abs(loss_cur - loss_prev) / max(loss_cur, loss_prev, eps(Float64))
+		loss_prev = loss_cur
+		push!(kvals, loss_cur)
+		iter += 1
+		(alg.verbosity >= 2) && println("finish the $iter-th sweep with error $delta", "\n")
+	end
+	if (alg.verbosity >= 1) && (iter < alg.maxiter)
+		println("early converge in $iter-th sweeps with error $delta")
+	end
+	if (alg.verbosity >= 0) && (delta >= alg.tol)
+		println("fail to converge, required precision: $(alg.tol), actual precision $delta in $iter sweeps")
+	end
+	finalize!(m ,alg)
+	return kvals
 end
 
 sweep!(m::GMPSIterativeMultCache, alg::DMRGAlgorithm) = vcat(leftsweep!(m, alg), rightsweep!(m, alg))
