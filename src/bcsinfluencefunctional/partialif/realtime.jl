@@ -34,7 +34,7 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order
 		band1′ = ifelse(c1, band1, band2)
 		pos1 = index(lattice, i, conj=c1, band=band1′, branch=b1)
 		pos2s = Int[]
-		coefs = scalartype(lattice)[]
+		coefs = promote_type(scalartype(lattice), scalartype(corr))[]
 		for j in 1:k, b2 in branches(lattice), c2 in (true, false)
 			coef = index(corr[c1, c2], i, j, b1=b1, b2=b2)
 			band2′ = ifelse(c2, band2, band1)
@@ -42,7 +42,7 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order
 			push!(pos2s, pos2)
 			push!(coefs, coef)
 		end
-		tmp = partialmpo(pos1, pos2s, coefs) * vacuumstate(lattice)
+		tmp = partialmpo(pos1, pos2s, coefs) * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 		gmps = mult!(gmps, tmp, trunc=trunc)
 	end
 	return gmps

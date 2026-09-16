@@ -9,7 +9,10 @@ Construct the influence functional with the `ExactTTIIF` algorithm on
 influence functional into an existing `GrassmannMPS` such as the impurity
 dynamics from `sysdynamics`.
 """
-hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::ExactTTIIF; kwargs...) = hybriddynamics!(vacuumstate(lattice), lattice, corr, alg; kwargs...)
+function hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::ExactTTIIF; kwargs...)
+	T = promote_type(scalartype(lattice), scalartype(corr))
+	return hybriddynamics!(vacuumstate(T, lattice), lattice, corr, alg; kwargs...)
+end
 
 """
     hybriddynamics!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::ExactTTIIF; band::Int=1)

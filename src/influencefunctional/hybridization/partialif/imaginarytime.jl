@@ -36,11 +36,11 @@ function partialif_hybrid(lattice::ImagGrassmannLattice1Order, i::Int, cols::Abs
 	row = index(lattice, i, band=band, conj=true)
 	col_pos = [index(lattice, j, band=band, conj=false) for j in length(cols):-1:1]
 	mpo = partialmpo(row, col_pos, reverse(cols))
-	return mpo * vacuumstate(lattice)
+	return mpo * vacuumstate(promote_type(scalartype(lattice), eltype(cols)), lattice)
 end
 
 function partialif_hybrid_naive(lattice::ImagGrassmannLattice1Order, i::Int, cols::AbstractVector; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
-	gmps = vacuumstate(lattice)
+	gmps = vacuumstate(promote_type(scalartype(lattice), eltype(cols)), lattice)
 	for j in 1:lattice.k
 		pos1, pos2 = index(lattice, i, conj=true, band=band), index(lattice, j, conj=false, band=band)
 		t = exp(GTerm(pos1, pos2, coeff=cols[j]))

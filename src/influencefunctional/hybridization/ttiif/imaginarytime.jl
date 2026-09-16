@@ -51,14 +51,14 @@ end
 
 function _influenceoperatorstepper(lattice::ImagGrassmannLattice1Order, corr::ImagCorrelationFunction, dt::Real, alg::FirstOrderStepper, algmult::DMRGAlgorithm; 
 										band::Int=1, algexpan::ExponentialExpansionAlgorithm=DefaultExpansionAlg)
-	mps = only(influenceoperatorsteppers(lattice, corr, dt, alg, band=band, algexpan=algexpan)) * vacuumstate(lattice)
+	mps = only(influenceoperatorsteppers(lattice, corr, dt, alg, band=band, algexpan=algexpan)) * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 	return mps
 end
 function _influenceoperatorstepper(lattice::ImagGrassmannLattice1Order, corr::ImagCorrelationFunction, dt::Real, alg::ComplexStepper, algmult::DMRGAlgorithm; 
 										band::Int=1, algexpan::ExponentialExpansionAlgorithm=DefaultExpansionAlg)
  	mpo1, mpo2 = influenceoperatorsteppers(lattice, corr, dt, alg, band=band, algexpan=algexpan)
-	mps1 = mpo1 * vacuumstate(lattice)
-	mps2 = mpo2 * vacuumstate(lattice)
+	mps1 = mpo1 * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
+	mps2 = mpo2 * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 	return mult(mps1, mps2, algmult)
 end
 

@@ -17,7 +17,7 @@ function _retardedinteractdynamics_naive_1band!(gmps::GrassmannMPS, lattice::Ima
 	k = lattice.k-1
 	alg = Orthogonalize(TK.SVD(), trunc)
 	for i in 1:k
-		tmp = vacuumstate(lattice)
+		tmp = vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 		pos1a, pos1b = index(lattice, i+1, conj=true, band=band), index(lattice, i, conj=false, band=band)
 		for j in 1:k
 			pos2a, pos2b = index(lattice, j+1, conj=true, band=band), index(lattice, j, conj=false, band=band)
@@ -44,7 +44,7 @@ function retardedinteractdynamics_naive_2band!(gmps::GrassmannMPS, lattice::Imag
 	k = lattice.k-1
 	alg = Orthogonalize(TK.SVD(), trunc)
 	for i in 1:k
-		tmp = vacuumstate(lattice)
+		tmp = vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 		pos1a, pos1b = index(lattice, i+1, conj=true, band=1), index(lattice, i, conj=false, band=1)
 		for j in 1:k
 			pos2a, pos2b = index(lattice, j+1, conj=true, band=2), index(lattice, j, conj=false, band=2)

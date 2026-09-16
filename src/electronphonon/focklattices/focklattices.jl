@@ -40,3 +40,4 @@ end
 
 
 vacuumstate(x::AbstractFockLattice) = FockMPS(scalartype(x), length(x))
+vacuumstate(::Type{T}, x::AbstractFockLattice) where {T<:Number} = FockMPS(T, length(x))

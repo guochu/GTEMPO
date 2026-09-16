@@ -18,7 +18,7 @@ function _retardedinteractdynamics_naive_1band!(gmps::GrassmannMPS, lattice::Rea
 	# (LayoutStyle(lattice) isa BandLocalLayout) || throw(ArgumentError("currently only TimelocalLayout support for this function"))
 	alg = Orthogonalize(TK.SVD(), trunc)
 	for i in 1:lattice.kt-1, b1 in (:+, :-)
-		tmp = vacuumstate(lattice)
+		tmp = vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 		pos1a, pos1b, c1 = get_pair_pos(lattice, i, band, b1)
 		for j in 1:lattice.kt-1, b2 in (:+, :-)
 			pos2a, pos2b, c2 = get_pair_pos(lattice, j, band, b2)
@@ -43,7 +43,7 @@ function retardedinteractdynamics_naive_2band!(gmps::GrassmannMPS, lattice::Real
 
 	alg = Orthogonalize(TK.SVD(), trunc)
 	for i in 1:lattice.kt-1, b1 in branches(lattice)
-		tmp = vacuumstate(lattice)
+		tmp = vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 		pos1a, pos1b, c1 = get_pair_pos(lattice, i, 1, b1)
 		for j in 1:lattice.kt-1, b2 in branches(lattice), band2 in 1:lattice.bands
 			pos2a, pos2b, c2 = get_pair_pos(lattice, j, band2, b2)

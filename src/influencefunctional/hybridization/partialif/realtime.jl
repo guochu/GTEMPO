@@ -47,7 +47,7 @@ function partialif_hybrid(lattice::RealGrassmannLattice, i::Int, cols::AbstractV
 	row = index(lattice, i, band=band, conj=true, branch=b1)
 	col_pos = [index(lattice, j, band=band, conj=false, branch=b2) for j in length(cols):-1:1]
 	mpo = partialmpo(row, col_pos, reverse(cols))
-	return mpo * vacuumstate(lattice)
+	return mpo * vacuumstate(promote_type(scalartype(lattice), eltype(cols)), lattice)
 end
 function partialif_hybrid(lattice::RealGrassmannLattice, i::Int, cols_f::AbstractVector, cols_b::AbstractVector; b1::Symbol, band::Int=1)
 	@assert length(cols_f) == length(cols_b)
@@ -62,13 +62,13 @@ function partialif_hybrid(lattice::RealGrassmannLattice, i::Int, cols_f::Abstrac
 		push!(cols, cols_b[j])
 	end
 	mpo = partialmpo(row, col_pos, cols)
-	return mpo * vacuumstate(lattice)
+	return mpo * vacuumstate(promote_type(scalartype(lattice), eltype(cols)), lattice)
 end
 function partialif_hybrid_naive(lattice::RealGrassmannLattice, i::Int, cols_f::AbstractVector, cols_b::AbstractVector; 
 							b1::Symbol, band::Int=1, trunc::TruncationScheme=DefaultITruncation)
 	@assert length(cols_f) == length(cols_b)
 	alg = Orthogonalize(TK.SVD(), trunc)
-	gmps = vacuumstate(lattice)
+	gmps = vacuumstate(promote_type(scalartype(lattice), eltype(cols_f), eltype(cols_b)), lattice)
 	for j in length(cols_f):-1:1
 		pos1, pos2 = index(lattice, i, conj=true, branch=b1, band=band), index(lattice, j, conj=false, branch=:+, band=band)
 		t = exp(GTerm(pos1, pos2, coeff=cols_f[j]))
@@ -87,7 +87,7 @@ function partialif_hybrid(lattice::RealGrassmannLattice, rows::AbstractVector, j
 	col = index(lattice, j, band=band, conj=false, branch=b2)
 	row_pos = [index(lattice, i, band=band, conj=true, branch=b1) for i in length(rows):-1:1]
 	mpo = partialmpo(col, row_pos, -reverse(rows))
-	return mpo * vacuumstate(lattice)
+	return mpo * vacuumstate(promote_type(scalartype(lattice), eltype(rows)), lattice)
 end
 function partialif_hybrid(lattice::RealGrassmannLattice, rows_f::AbstractVector, rows_b::AbstractVector, j::Int; b2::Symbol, band::Int=1)
 	col = index(lattice, j, band=band, conj=false, branch=b2)
@@ -101,5 +101,5 @@ function partialif_hybrid(lattice::RealGrassmannLattice, rows_f::AbstractVector,
 		push!(rows, -rows_b[i])
 	end
 	mpo = partialmpo(col, row_pos, rows)
-	return mpo * vacuumstate(lattice)
+	return mpo * vacuumstate(promote_type(scalartype(lattice), eltype(rows)), lattice)
 end

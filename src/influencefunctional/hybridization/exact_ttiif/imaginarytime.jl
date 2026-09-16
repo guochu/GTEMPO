@@ -38,7 +38,7 @@ function _influencefunctional_util(lattice::ImagGrassmannLattice1Order, corr::Im
 		@assert norm([norm(res2.data[i] - res1.data[i]) for i in 1:3]) < 1e-14
 
 		# fit to lattice
-		(_fit_to_lattice(lattice, res1, I2, 1) * vacuumstate(lattice), λ, b, c)
+		(_fit_to_lattice(lattice, res1, I2, 1) * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice), λ, b, c)
 	end
 
 	(alg.verbosity >= 1) && println(length(mpss), " terms to be multiply...")

@@ -66,34 +66,34 @@ end
 function _influenceoperatorstepper(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction, dt::Real, alg::FirstOrderStepper, 
 											algmult::DMRGAlgorithm; band::Int=1, algexpan::ExponentialExpansionAlgorithm=DefaultExpansionAlg)
 	h1, h2, h3, h4 = influenceoperatorsteppers(lattice, corr, dt, alg, band=band, algexpan=algexpan)
-	mps = h1 * vacuumstate(lattice)
-	tmp = h2 * vacuumstate(lattice)
+	mps = h1 * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
+	tmp = h2 * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 	mps = mult(mps, tmp, algmult)
-	tmp = h3 * vacuumstate(lattice)
+	tmp = h3 * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 	mps = mult(mps, tmp, algmult)
-	tmp = h4 * vacuumstate(lattice)
+	tmp = h4 * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 	mps = mult(mps, tmp, algmult)
 	return mps
 end
 function _influenceoperatorstepper(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction, dt::Real, alg::ComplexStepper, 
 											algmult::DMRGAlgorithm; band::Int=1, algexpan::ExponentialExpansionAlgorithm=DefaultExpansionAlg)
 	(h1a, h1b), (h2a, h2b), (h3a, h3b), (h4a, h4b) = influenceoperatorsteppers(lattice, corr, dt, alg, band=band, algexpan=algexpan)
-	mps1 = h1a * vacuumstate(lattice)
-	tmp = h1b * vacuumstate(lattice)
+	mps1 = h1a * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
+	tmp = h1b * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 	mps = mult(mps1, tmp, algmult)
 
-	mps1 = h2a * vacuumstate(lattice)
-	tmp = h2b * vacuumstate(lattice)
+	mps1 = h2a * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
+	tmp = h2b * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 	mps1 = mult(mps1, tmp, algmult)
 	mps = mult(mps, mps1, algmult)
 
-	mps1 = h3a * vacuumstate(lattice)
-	tmp = h3b * vacuumstate(lattice)
+	mps1 = h3a * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
+	tmp = h3b * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 	mps1 = mult(mps1, tmp, algmult)
 	mps = mult(mps, mps1, algmult)
 
-	mps1 = h4a * vacuumstate(lattice)
-	tmp = h4b * vacuumstate(lattice)
+	mps1 = h4a * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
+	tmp = h4b * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 	mps1 = mult(mps1, tmp, algmult)
 	mps = mult(mps, mps1, algmult)
 

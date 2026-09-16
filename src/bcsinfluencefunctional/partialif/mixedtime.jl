@@ -42,7 +42,7 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Orde
 			i′ = (b1 == :τ) ? i+1 : i
 			pos1 = index(lattice, i′, conj=c1, band=band1′, branch=b1)
 			pos2s = Int[]
-			coefs = scalartype(lattice)[]
+			coefs = promote_type(scalartype(lattice), scalartype(corr))[]
 			for b2 in branches(lattice), c2 in (true, false)
 				k2 = (b2 == :τ) ? lattice.Nτ : lattice.Nt
 				for j in 1:k2
@@ -54,7 +54,7 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Orde
 					push!(coefs, coef)
 				end
 			end
-			tmp = partialmpo(pos1, pos2s, coefs) * vacuumstate(lattice)
+			tmp = partialmpo(pos1, pos2s, coefs) * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 			gmps = mult!(gmps, tmp, trunc=trunc)			
 		end
 	end

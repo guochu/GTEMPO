@@ -20,7 +20,7 @@ function _retardedinteractdynamics_naive_1band!(gmps::GrassmannMPS, lattice::Mix
 		k1 = ifelse(b1==:τ, lattice.Nτ, lattice.Nt)
 		for i in 1:k1
 			pos1a, pos1b, c1 = get_pair_pos(lattice, i, band, b1)
-			tmp = vacuumstate(lattice)
+			tmp = vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 			for b2 in branches(lattice)
 				k2 = ifelse(b2==:τ, lattice.Nτ, lattice.Nt)
 				for j in 1:k2
@@ -108,7 +108,7 @@ function retardedinteractdynamics_naive_2band!(gmps::GrassmannMPS, lattice::Mixe
 		k1 = ifelse(b1==:τ, lattice.Nτ, lattice.Nt)
 		for i in 1:k1
 			pos1a, pos1b, c1 = get_pair_pos(lattice, i, 1, b1)
-			tmp = vacuumstate(lattice)
+			tmp = vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 			for b2 in branches(lattice)
 				k2 = ifelse(b2==:τ, lattice.Nτ, lattice.Nt)
 				for j in 1:k2, band2 in 1:lattice.bands

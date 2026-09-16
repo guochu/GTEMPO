@@ -6,13 +6,13 @@ include("mixedtime.jl")
 hybriddynamics(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::BCSCorrelationFunction, alg::PartialIF; orbital::Int=1) = hybriddynamics(
 				gmps, lattice, corr; orbital=orbital, trunc=alg.trunc)
 hybriddynamics(lattice::AbstractGrassmannLattice, corr::BCSCorrelationFunction, alg::PartialIF; orbital::Int=1) = hybriddynamics!(
-				vacuumstate(scalartype(corr), lattice), lattice, corr; orbital=orbital, trunc=alg.trunc)
+				vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice), lattice, corr; orbital=orbital, trunc=alg.trunc)
 
 hybriddynamics(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::BCSCorrelationFunction; kwargs...) = hybriddynamics!(copy(gmps), lattice, corr; kwargs...)
-hybriddynamics(lattice::AbstractGrassmannLattice, corr::BCSCorrelationFunction; kwargs...) = hybriddynamics!(vacuumstate(scalartype(corr), lattice), lattice, corr; kwargs...)
+hybriddynamics(lattice::AbstractGrassmannLattice, corr::BCSCorrelationFunction; kwargs...) = hybriddynamics!(vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice), lattice, corr; kwargs...)
 
 hybriddynamics_naive(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::BCSCorrelationFunction; kwargs...) = hybriddynamics_naive!(copy(gmps), lattice, corr; kwargs...)
-hybriddynamics_naive(lattice::AbstractGrassmannLattice, corr::BCSCorrelationFunction; kwargs...) = hybriddynamics_naive!(vacuumstate(scalartype(corr), lattice), lattice, corr; kwargs...)
+hybriddynamics_naive(lattice::AbstractGrassmannLattice, corr::BCSCorrelationFunction; kwargs...) = hybriddynamics_naive!(vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice), lattice, corr; kwargs...)
 
 
 function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::BCSCorrelationFunction; 
@@ -23,7 +23,7 @@ function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::AbstractGrassmannLat
 	for b1 in branches(lattice), c1 in (true, false)
 		k1 = (b1 == :τ) ? lattice.Nτ : lattice.Nt
 		for i in 1:k1
-			tmp = vacuumstate(scalartype(corr), lattice)
+			tmp = vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 			band1′ = ifelse(c1, band1, band2)
 			i′ = (b1 == :τ) ? i+1 : i
 			pos1 = index(lattice, i′, conj=c1, band=band1′, branch=b1)

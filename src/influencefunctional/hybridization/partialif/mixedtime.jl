@@ -74,7 +74,7 @@ function partialif_hybrid(lattice::MixedGrassmannLattice, i::Int, cols_f::Abstra
 	end
 	
 	mpo = partialmpo(row, col_pos, cols)
-	return mpo * vacuumstate(lattice)
+	return mpo * vacuumstate(promote_type(scalartype(lattice), eltype(cols)), lattice)
 end
 
 function partialif_hybrid_naive(lattice::MixedGrassmannLattice, i::Int, cols_f::AbstractVector, cols_b::AbstractVector, cols_i::AbstractVector; 
@@ -85,7 +85,7 @@ function partialif_hybrid_naive(lattice::MixedGrassmannLattice, i::Int, cols_f::
 		i = i + 1
 	end
 	alg = Orthogonalize(TK.SVD(), trunc)
-	gmps = vacuumstate(lattice)
+	gmps = vacuumstate(promote_type(scalartype(lattice), eltype(cols_f), eltype(cols_b), eltype(cols_i)), lattice)
 	for j in 1:length(cols_i)
 		pos1, pos2 = index(lattice, i, conj=true, branch=b1, band=band), index(lattice, j+1, conj=false, branch=:τ, band=band)
 		t = exp(GTerm(pos1, pos2, coeff=cols_i[j]))
