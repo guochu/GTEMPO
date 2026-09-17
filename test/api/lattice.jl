@@ -547,3 +547,56 @@ end
 	@test all(index(lat, 1, branch=:τ, band=b) == b for b in 1:3)
 	@test all(index(lat, 1, branch=:-, band=b) == 2*b + 2 && index(lat, 1, branch=:+, band=b) == 2*b + 3 for b in 1:3)
 end
+
+@testset "API: lattice ops & accessors" begin
+	trunc = truncdimcutoff(D=64, ϵ=1.0e-12)
+
+	# direct lattice constructors and the abstract type hierarchy
+	lat_i = ImagGrassmannLattice1Order(δτ=0.1, N=4)
+	lat_r = RealGrassmannLattice1Order(δt=0.05, N=4)
+	lat_r2 = RealGrassmannLattice2Order(δt=0.05, N=4)
+	@test lat_i isa ImagGrassmannLattice && lat_i isa AbstractGrassmannLattice
+	@test lat_r isa RealGrassmannLattice && lat_r2 isa RealGrassmannLattice
+	# concrete orderings belong to the exported ordering families
+	@test ImagGrassmannOrdering <: GrassmannOrdering
+	@test RealGrassmannOrdering <: GrassmannOrdering
+	@test MixedGrassmannOrdering <: GrassmannOrdering
+	@test A1Ā1B1B̄1() isa ImagGrassmannOrdering
+	@test A1Ā1a1ā1B1B̄1b1b̄1() isa RealGrassmannOrdering
+	@test A1Ā1B1B̄1a1ā1b1b̄1() isa RealGrassmannOrdering
+	@test A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2() isa MixedGrassmannOrdering
+	# OrderingStyle returns the ordering instance of a lattice
+	@test OrderingStyle(lat_i) == lat_i.ordering
+	@test OrderingStyle(typeof(lat_i)) == lat_i.ordering
+	@test OrderingStyle(lat_r2) == lat_r2.ordering
+
+	# swapband! (in place) agrees with swapband (copy)
+	lat2 = ImagGrassmannLattice1Order(δτ=0.1, N=2, bands=2)
+	x = randomgmps(length(lat2), D=4)
+	@test distance(swapband(x, lat2, 1, 2; trunc=trunc), swapband!(deepcopy(x), lat2, 1, 2; trunc=trunc)) == 0
+
+	# boundarycondition (copy) agrees with boundarycondition! (in place)
+	model = AndersonIM(U=1, μ=-0.5)
+	lat = GrassmannLattice(N=2, δτ=0.1, contour=:imag, bands=2)
+	K = sysdynamics(lat, model, trunc=trunc)
+	for b in 1:lat.bands
+		K = bulkconnection!(K, lat, band=b)
+	end
+	Kc = boundarycondition(K, lat, band=1, trunc=trunc)
+	Ki = boundarycondition!(deepcopy(K), lat, band=1, trunc=trunc)
+	@test distance(Kc, Ki) == 0
+	# bulkconnection from the vacuum state
+	B = bulkconnection(lat)
+	@test B isa GrassmannMPS && length(B) == length(lat)
+
+	# makestep / timesteps on the real-time lattice
+	latr = GrassmannLattice(N=1, δt=0.05, contour=:real)
+	Kr = vacuumstate(latr)
+	latr, Kr = makestep(latr, Kr)
+	@test latr.N == 2 && latr.k == 3
+	@test timesteps(Kr, latr) == latr.k
+
+	# physical space accessors
+	@test physical_space(Kr, 1) == physical_space(Kr[1])
+	@test physical_spaces(Kr) == [physical_space(Kr[i]) for i in 1:length(Kr)]
+end

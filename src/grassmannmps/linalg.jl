@@ -129,15 +129,6 @@ end
 TK.permute!(x::GrassmannMPS, perm::Vector; kwargs...) = _permute!(x, perm; kwargs...)
 TK.permute(x::AbstractGMPS, perm::Vector{Int}; kwargs...) = permute!(deepcopy(x), perm; kwargs...)
 
-function naive_permute!(x::AbstractGMPS, perm::Vector{Int}; trunc::TruncationScheme=DefaultIntegrationTruncation)
-    @assert length(x) == length(perm)
-    for i in TK.permutation2swaps(perm)
-        naive_swap!(x, i, trunc=trunc)
-    end
-    return x
-end
-naive_permute(x::AbstractGMPS, perm::Vector{Int}; kwargs...) = naive_permute!(copy(x), perm; kwargs...)
-
 function _mult_site(xj, yj)
     @grassmann r[1,4,2,5;3,6] := xj[1,2,3] * yj[4,5,6]
     return r

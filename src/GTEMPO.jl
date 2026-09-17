@@ -80,7 +80,7 @@ export baresysdynamics_deprecated, baresysdynamics_deprecated!
 export AbstractNTerm, ExpNTerm
 export FockMPS
 export FockOrdering, ImagFockOrdering, RealFockOrdering, MixedFockOrdering, similargrassmannordering
-export M1N1, MN, M1m1N1n1, MmNn, M1N1_M1m1N1n1M2m2N2n2, MN_MmNn, M1N1_m1M1n1N1m2M2n2N2
+export M1N1, MN, M1m1N1n1, MmNn, M1N1_m1M1n1N1m2M2n2N2, MN_MmNn
 export AbstractFockLattice, FockLattice, ImagFockLattice, similargrassmannlattice
 export RealFockLattice, MixedFockLattice
 export reweighting!, reweighting
@@ -119,6 +119,8 @@ import QuAPI: branch, index
 
 
 using ExpExp
+# AbstractPronyExpansion is not exported by ExpExp but re-exported here
+using ExpExp: AbstractPronyExpansion
 using KrylovKit: Arnoldi, exponentiate
 using LinearAlgebra: LinearAlgebra, Symmetric, eigen, qr, pinv, eigvals, Diagonal, diagm
 

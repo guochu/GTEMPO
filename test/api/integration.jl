@@ -95,3 +95,9 @@ end
 		@test relerr(z_exact, z_bmps) < 1.0e-8
 	end
 end
+
+@testset "API: integration algorithms" begin
+	@test ExactIntegrate() isa IntegrationAlgorithm
+	@test BMPSIntegrate() isa IntegrationAlgorithm
+	@test BMPSIntegrate(truncdimcutoff(D=64, ϵ=1.0e-10)) isa IntegrationAlgorithm
+end
