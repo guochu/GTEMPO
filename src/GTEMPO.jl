@@ -96,7 +96,6 @@ export DMRGAlgorithm
 export timeevompo, WI, WII, ComplexStepper, FirstOrderStepper, complex_stepper
 export bond_dimension, bond_dimensions, distance, space_l, space_r, l_LL, r_RR, bondtensortype
 export Orthogonalize
-export AbstractPronyExpansion, OverDeterminedProny, DeterminedProny, MatrixPencil, LeastSquareProny
 
 
 
@@ -118,9 +117,7 @@ import QuAPI: branch, index
 
 
 
-using ExpExp
-# AbstractPronyExpansion is not exported by ExpExp but re-exported here
-using ExpExp: AbstractPronyExpansion
+@reexport using ExpExp
 using KrylovKit: Arnoldi, exponentiate
 using LinearAlgebra: LinearAlgebra, Symmetric, eigen, qr, pinv, eigvals, Diagonal, diagm
 

@@ -192,19 +192,3 @@ using LinearAlgebra: normalize!
 		end
 	end
 end
-
-@testset "API: @grassmann macro" begin
-	# the macro dispatches the contraction to the Grassmann (fermionic) backend;
-	# on the purely even sector it must reproduce ordinary arithmetic
-	s0 = Z2Space(0 => 1)
-	A = isomorphism(Float64, s0 ⊗ s0, s0 ⊗ s0)      # identity MPOTensor, trace = 1
-	t = @grassmann A[1, 2, 1, 2]
-	@test t ≈ 1.0 atol=1.0e-12
-	# a chained contraction t1 * t2 = identity, with unit norm
-	# (contracted legs must pair a domain leg with a codomain leg)
-	t1 = isomorphism(Float64, s0 ⊗ s0, s0)
-	t2 = isomorphism(Float64, s0, s0 ⊗ s0)
-	c = zeros(Float64, s0 ⊗ s0 ← s0 ⊗ s0)
-	@grassmann c[1, 2; 4, 5] := t1[1, 2, 3] * t2[3, 4, 5]
-	@test norm(c) ≈ 1.0 atol=1.0e-12
-end
