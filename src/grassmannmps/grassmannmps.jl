@@ -14,7 +14,7 @@ should be multiplied by "scaling"
 # end
 struct GrassmannMPS{A <: MPSTensor, B <: MPSBondTensor} <: AbstractFiniteGMPS{A}
 	data::Vector{A}
-	svectors::Vector{Union{Missing, B}}
+	s::Vector{Union{Missing, B}}
 	scaling::Ref{Float64}
 end
 
@@ -23,17 +23,17 @@ function GrassmannMPS(data::Vector{A}; scaling::Real=1) where {A <: MPSTensor}
 	isoneunit(space_r(data[end])) || throw(ArgumentError("input data must be in the even sector"))
 	T = real(scalartype(A))
 	B = bondtensortype(spacetype(A), T)
-	svectors = Vector{Union{Missing, B}}(missing, length(data)+1)
-	# svectors[1] = Diagonal(id(space_l(data[1])))
-	# svectors[end] = Diagonal(id(space_r(data[end])'))
-	svectors[1] = DiagonalTensorMap{Float64}(ones, space_l(data[1]) )
-	svectors[end] = DiagonalTensorMap{Float64}(ones, space_r(data[end])' )
-	return GrassmannMPS(data, svectors, Ref(convert(Float64, scaling)))
+	s = Vector{Union{Missing, B}}(missing, length(data)+1)
+	# s[1] = Diagonal(id(space_l(data[1])))
+	# s[end] = Diagonal(id(space_r(data[end])'))
+	s[1] = DiagonalTensorMap{Float64}(ones, space_l(data[1]) )
+	s[end] = DiagonalTensorMap{Float64}(ones, space_r(data[end])' )
+	return GrassmannMPS(data, s, Ref(convert(Float64, scaling)))
 end
-function GrassmannMPS(data::AbstractVector{A}, svectors::Vector, scaling::Real=1) where {A <: MPSTensor}
+function GrassmannMPS(data::AbstractVector{A}, s::Vector, scaling::Real=1) where {A <: MPSTensor}
 	# @assert iseven(length(data))
 	# isoneunit(space_r(data[end])) || throw(ArgumentError("input data must be in the even sector"))
-	return GrassmannMPS(convert(Vector{A}, data), svectors, Ref(convert(Float64, scaling)))
+	return GrassmannMPS(convert(Vector{A}, data), s, Ref(convert(Float64, scaling)))
 end
 
 function GrassmannMPS(::Type{T}, L::Int) where {T <: Number}
@@ -47,17 +47,6 @@ end
 GrassmannMPS(L::Int) = GrassmannMPS(Float64, L)
 
 
-function Base.getproperty(psi::GrassmannMPS, s::Symbol)
-	if s == :s
-		return psi.svectors
-		# return MPSBondView(psi)
-	else
-		return getfield(psi, s)
-	end
-end
-
-# GrassmannMPS(psi::MPS; kwargs...) = GrassmannMPS(psi.data; kwargs...)
-
 """
 	scaling(x::GrassmannMPS)
 
@@ -66,7 +55,7 @@ Return the scaling factor of the GMPS
 scaling(x::GrassmannMPS) = x.scaling[]
 """
 	setscaling!(x::GrassmannMPS, new_scaling::Real)
-Replace the scaling factor of the GMPS by new_scaling 
+Replace the scaling factor of the GMPS by new_scaling
 """
 setscaling!(x::GrassmannMPS, scaling::Real) = (x.scaling[] = scaling)
 
@@ -76,24 +65,20 @@ Base.getindex(x::GrassmannMPS, i::Int) = getindex(x.data, i)
 Base.firstindex(x::GrassmannMPS) = firstindex(x.data)
 Base.lastindex(x::GrassmannMPS) = lastindex(x.data)
 function Base.setindex!(x::GrassmannMPS, v::MPSTensor, i::Int)
-	# DMRG.check_mpstensor_dir(v) || throw(SpaceMismatch())
-	# if i == 1
-	# 	isoneunit(space_l(v)) || throw(SpaceMismatch("space_l of MPS should be vacuum by convention."))
-	# end
 	return setindex!(x.data, v, i)
 end
 
-svectors_uninitialized(psi::GrassmannMPS) = any(ismissing, psi.svectors)
+svectors_uninitialized(psi::GrassmannMPS) = any(ismissing, psi.s)
 function unset_svectors!(psi::GrassmannMPS)
-	psi.svectors[2:end-1] .= missing
+	psi.s[2:end-1] .= missing
 	return psi
 end
 
-Base.copy(psi::GrassmannMPS) = GrassmannMPS(copy(psi.data), copy(psi.svectors), Ref(scaling(psi)))
+Base.copy(psi::GrassmannMPS) = GrassmannMPS(copy(psi.data), copy(psi.s), Ref(scaling(psi)))
 function Base.complex(psi::GrassmannMPS)
 	if scalartype(psi) <: Real
 		data = [complex(item) for item in psi.data]
-		return GrassmannMPS(data, psi.svectors, psi.scaling)
+		return GrassmannMPS(data, psi.s, psi.scaling)
 	end
 	return psi
 end
@@ -121,7 +106,7 @@ end
 
 # function apply!(t::PartialMPO, mps::GrassmannMPS)
 # 	@assert isoneunit(space_r(t))
-# 	apply!(t, MPS(mps.data, mps.svectors))
+# 	apply!(t, MPS(mps.data, mps.s))
 # 	return mps
 # 	# _start, _end = positions(t)[1], positions(t)[end]
 # 	# S = spacetype(mps)
@@ -246,7 +231,7 @@ end
 # 	return x
 # end
 
-function easy_swap!(x::AbstractGMPS, bond::Int; trunc::TruncationScheme=DefaultTruncation)
+function swap!(x::AbstractGMPS, bond::Int; trunc::TruncationScheme=DefaultITruncation)
 	x[bond], x.s[bond+1], x[bond+1] = _swap_gate(x.s[bond], x[bond], x.s[bond+1], x[bond+1], trunc=trunc)
         # x[bond], x[bond+1] = _swap_gate(x[bond], x[bond+1], trunc=trunc)
         return x
@@ -286,15 +271,6 @@ end
 # 	end
 # 	return r
 # end
-
-function _swap_gate(m1, m2; trunc)
-	@grassmann twositemps[1,4;2,5] := m1[1,2,3] * m2[3,4,5]
-	u, s, v, err = tsvd(twositemps; alg=SDD(), trunc=trunc)
-	# restore the site tensor: single permute does not cancel (no pre-twist),
-	# hence the fermionic permute must be kept (via @grassmann)
-	@grassmann v2[1 2; 3] := v[1,2,3]
-	return u * s, v2
-end
 
 function _swap_gate(svectorj1, m1, svectorj2, m2; trunc::TruncationScheme)
 	@grassmann twositemps[1,4;2,5] := m1[1,2,3] * m2[3,4,5]

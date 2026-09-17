@@ -68,7 +68,7 @@ for (name, alg) in algs
 	mpsI = boundarycondition(mpsI, lattice)
 
 	t_obs = @elapsed begin
-		mpsK = sysdynamics(lattice, AndersonIM(μ = ϵ_d, U = 0), trunc = trunc)
+		mpsK = sysdynamics(lattice, AndersonIM(ϵ_d = ϵ_d, U = 0), trunc = trunc)
 		# greater(i, j=1) = <d(t_i) d†(δt)> (no -i factor; the second operator
 		# sits at grid time 1 = δt). Since nsys=0 ⇒ <d†(t')d(t)> = 0, this
 		# depends only on t_i - δt.

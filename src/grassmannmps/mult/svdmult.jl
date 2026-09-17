@@ -4,7 +4,7 @@
 
 Multiplication of two GMPS x and y, and the result is stored in x
 """
-function mult!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=DefaultTruncation, verbosity::Int=0)
+function mult!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=DefaultITruncation, verbosity::Int=0)
     (length(x) == length(y)) || throw(DimensionMismatch())
     left = isomorphism(scalartype(x), fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) )
     tmp5 = g_fuse(_mult_site(x[1], y[1]), 3)

@@ -27,7 +27,7 @@ end
 similar to gf, but return the contour ordered Green's function
 """
 function contour_ordered_gf(lattice::AbstractGrassmannLattice, a::ContourIndex, b::ContourIndex, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
-                            alg::IntegrationAlgorithm=ExactIntegrate(), Z::Real = integrate(lattice, A, B..., alg=alg)) 
+                            alg::IntegrationAlgorithm=ExactIntegrate(), Z::Number = integrate(lattice, A, B..., alg=alg)) 
     ((!a.conj) && (b.conj)) || throw(ArgumentError("conj(a)=false and conj(b)=true should be satisfied"))
     return (a < b) ? -gf(lattice, (b, a), A, B...; alg=alg, Z=Z) : gf(lattice, (a, b), A, B...; alg=alg, Z=Z) 
 end

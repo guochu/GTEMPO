@@ -21,7 +21,7 @@ function boundarycondition_branching(x0::Vector{<:GrassmannMPS}, lattice::Abstra
 end
 
 """
-	boundarycondition!(x::GrassmannMPS, lattice::AbstractGrassmannLattice; band=1, trunc=DefaultIntegrationTruncation)
+	boundarycondition!(x::GrassmannMPS, lattice::AbstractGrassmannLattice; band=1, trunc=DefaultKTruncation)
 
 In-place version of `boundarycondition`: applies the boundary connection term
 onto `x` directly and returns it.
@@ -30,12 +30,12 @@ Note that we have different boundary conditions for different contours
 """
 # imaginary-time
 """
-	boundarycondition!(x::GrassmannMPS, lattice::AbstractGrassmannLattice; band=1, trunc=DefaultIntegrationTruncation)
+	boundarycondition!(x::GrassmannMPS, lattice::AbstractGrassmannLattice; band=1, trunc=DefaultKTruncation)
 
 In-place version of `boundarycondition`: applies the boundary connection term
 onto `x` directly and returns it.
 """
-function boundarycondition!(x::GrassmannMPS, lattice::ImagGrassmannLattice; band::Int=1, trunc::TruncationScheme=DefaultIntegrationTruncation)
+function boundarycondition!(x::GrassmannMPS, lattice::ImagGrassmannLattice; band::Int=1, trunc::TruncationScheme=DefaultKTruncation)
 	pos1, pos2 = index(lattice, 0, conj=true, band=band), index(lattice, lattice.k, conj=false, band=band)
 	apply!(exp(GTerm(pos1, pos2, coeff=-1)), x)
 	canonicalize!(x, alg=Orthogonalize(trunc=trunc))
@@ -46,14 +46,14 @@ function boundarycondition!(x::GrassmannMPS, lattice::ImagGrassmannLattice; band
 end
 
 """
-	boundarycondition_branching(x0::GrassmannMPS, lattice::AbstractGrassmannLattice; band=1, trunc=DefaultIntegrationTruncation)
+	boundarycondition_branching(x0::GrassmannMPS, lattice::AbstractGrassmannLattice; band=1, trunc=DefaultKTruncation)
 
 Like `boundarycondition`, but instead of summing the connection terms it
 returns a vector of GMPSs, one per branching, whose sum equals the result of
 `boundarycondition`. The sum can then be performed on the fly for efficiency
 [see PRB 109, 165113 (2024)].
 """
-function boundarycondition_branching(x0::GrassmannMPS, lattice::ImagGrassmannLattice; band::Int=1, trunc::TruncationScheme=DefaultIntegrationTruncation)
+function boundarycondition_branching(x0::GrassmannMPS, lattice::ImagGrassmannLattice; band::Int=1, trunc::TruncationScheme=DefaultKTruncation)
 	pos1, pos2 = index(lattice, 0, conj=true, band=band), index(lattice, lattice.k, conj=false, band=band)
 	t = exp(GTerm(pos1, pos2, coeff=-1))
 	x = t * x0
@@ -66,7 +66,7 @@ function boundarycondition_branching(x0::GrassmannMPS, lattice::ImagGrassmannLat
 end
 
 # real-time
-function boundarycondition!(x::GrassmannMPS, lattice::RealGrassmannLattice; band::Int=1, trunc::TruncationScheme=DefaultIntegrationTruncation)
+function boundarycondition!(x::GrassmannMPS, lattice::RealGrassmannLattice; band::Int=1, trunc::TruncationScheme=DefaultKTruncation)
 	pos1, pos2 = index(lattice, 0, conj=true, band=band, branch=:+), index(lattice, lattice.k, conj=false, band=band, branch=:+)
 	apply!(exp(GTerm(pos1, pos2, coeff=-1)), x)
 	canonicalize!(x, alg=Orthogonalize(trunc=trunc))
@@ -75,7 +75,7 @@ function boundarycondition!(x::GrassmannMPS, lattice::RealGrassmannLattice; band
 	canonicalize!(x, alg=Orthogonalize(trunc=trunc))
 	return x
 end
-function boundarycondition_branching(x0::GrassmannMPS, lattice::RealGrassmannLattice; band::Int=1, trunc::TruncationScheme=DefaultIntegrationTruncation) 
+function boundarycondition_branching(x0::GrassmannMPS, lattice::RealGrassmannLattice; band::Int=1, trunc::TruncationScheme=DefaultKTruncation) 
 	(LayoutStyle(lattice) isa BranchLocalLayout) || throw(ArgumentError("boundarycondition_branching only work with BranchLocalLayout for RealGrassmannLattice"))
 	pos1, pos2 = index(lattice, 0, conj=true, band=band, branch=:+), index(lattice, lattice.k, conj=false, band=band, branch=:+)
 	t = exp(GTerm(pos1, pos2, coeff=-1))
@@ -88,7 +88,7 @@ function boundarycondition_branching(x0::GrassmannMPS, lattice::RealGrassmannLat
 	return x, x2
 end
 # mixed-time
-function boundarycondition!(x::GrassmannMPS, lattice::MixedGrassmannLattice; band::Int=1, trunc::TruncationScheme=DefaultIntegrationTruncation)
+function boundarycondition!(x::GrassmannMPS, lattice::MixedGrassmannLattice; band::Int=1, trunc::TruncationScheme=DefaultKTruncation)
 	pos1, pos2 = index(lattice, lattice.kt, conj=true, band=band, branch=:-), index(lattice, lattice.kt, conj=false, band=band, branch=:+)
 	apply!(exp(GTerm(pos1, pos2, coeff=1)), x)
 
@@ -103,7 +103,7 @@ function boundarycondition!(x::GrassmannMPS, lattice::MixedGrassmannLattice; ban
 	canonicalize!(x, alg=Orthogonalize(trunc=trunc))
 	return x
 end
-# function boundarycondition_branching(x0::GrassmannMPS, lattice::MixedGrassmannLattice; band::Int=1, trunc::TruncationScheme=DefaultIntegrationTruncation)
+# function boundarycondition_branching(x0::GrassmannMPS, lattice::MixedGrassmannLattice; band::Int=1, trunc::TruncationScheme=DefaultKTruncation)
 # 	pos1, pos2 = index(lattice, lattice.kt, conj=true, band=band, branch=:-), index(lattice, lattice.kt, conj=false, band=band, branch=:+)
 # 	x = exp(GTerm(pos1, pos2, coeff=1)) * x0
 	

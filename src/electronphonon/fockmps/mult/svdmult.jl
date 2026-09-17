@@ -1,4 +1,4 @@
-function mult!(x::FockMPS, y::FockMPS; trunc::TruncationScheme=DMRG.DefaultTruncation, verbosity::Int=0)
+function mult!(x::FockMPS, y::FockMPS; trunc::TruncationScheme=DefaultITruncation, verbosity::Int=0)
     (length(x) == length(y)) || throw(DimensionMismatch())
     T = promote_type(scalartype(x), scalartype(y))
     L = length(x)

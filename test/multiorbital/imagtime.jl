@@ -8,7 +8,7 @@
 	g_ed = gτ_ed(H, a, adag, 0:δτ:β, β)
 
 	bath = fermionicbath(DiracDelta(ω=ω, α=α), β=β)
-	model = AndersonIM(U=U, μ=μ)
+	model = AndersonIM(U=U, ϵ_d=μ)
 	for ordering in imag_orderings
 		lat = GrassmannLattice(N=N, δτ=δτ, contour=:imag, ordering=ordering, bands=2)
 		mpsK, Is = fermionic_setup(lat, bath, model, trunc)

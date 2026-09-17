@@ -2,14 +2,14 @@
 	struct AndersonIM
 
 Single-orbital Anderson impurity model with one bath:
-H = μ (n₁ + n₂) + U n₁ n₂ on two bands (one per spin direction).
+H = ϵ_d (n₁ + n₂) + U n₁ n₂ on two bands (one per spin direction).
 """
 struct AndersonIM <: ConstImpurityHamiltonian
 	U::Float64
-	μ::Float64
+	ϵ_d::Float64
 end
-AndersonIM(U::Real, μ::Real) = AndersonIM(convert(Float64, U), convert(Float64, μ))
-AndersonIM(; U::Real, μ::Real) = AndersonIM(U, μ)
+AndersonIM(U::Real, ϵ_d::Real) = AndersonIM(convert(Float64, U), convert(Float64, ϵ_d))
+AndersonIM(; U::Real, ϵ_d::Real) = AndersonIM(U, ϵ_d)
 
 num_bands(::AndersonIM) = 2
 
@@ -17,13 +17,13 @@ num_bands(::AndersonIM) = 2
 	struct ToulouseIM
 
 Toulouse impurity model: the noninteracting (`U = 0`) single-band case of
-`AndersonIM`, H = μ n̂ on a single band.
+`AndersonIM`, H = ϵ_d n̂ on a single band.
 """
 struct ToulouseIM <: ConstImpurityHamiltonian
-	μ::Float64
+	ϵ_d::Float64
 end
-ToulouseIM(μ::Real) = ToulouseIM(convert(Float64, μ))
-ToulouseIM(; μ::Real) = ToulouseIM(μ)
+ToulouseIM(ϵ_d::Real) = ToulouseIM(convert(Float64, ϵ_d))
+ToulouseIM(; ϵ_d::Real) = ToulouseIM(ϵ_d)
 
 num_bands(::ToulouseIM) = 1
 
@@ -74,8 +74,8 @@ num_bands(::ToulouseIM) = 1
 
 
 # function sysdynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice, model::SingleImpurityModel; trunc::TruncationScheme=DefaultKTruncation) 
-# 	μ, U = model.μ, model.U
-# 	a, b = siam_coeffs(μ, U, -lattice.δτ)
+# 	ϵ_d, U = model.ϵ_d, model.U
+# 	a, b = siam_coeffs(ϵ_d, U, -lattice.δτ)
 # 	for band in 1:lattice.bands
 # 		for i in 1:lattice.k-1
 #             pos1, pos2 = index(lattice, i+1, conj=true, band=band), index(lattice, i, conj=false, band=band)
@@ -106,8 +106,8 @@ num_bands(::ToulouseIM) = 1
 
 # function sysdynamics_forward!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::SingleImpurityModel; trunc::TruncationScheme=DefaultKTruncation)
 # 	# free dynamics
-# 	μ, U = model.μ, model.U
-# 	a, b = siam_coeffs(μ, U, -im*lattice.δt) 
+# 	ϵ_d, U = model.ϵ_d, model.U
+# 	a, b = siam_coeffs(ϵ_d, U, -im*lattice.δt) 
 # 	for band in 1:lattice.bands
 # 		for i in 1:lattice.k-1
 #             pos1, pos2 = index(lattice, i+1, conj=true, branch=:+, band=band), index(lattice, i, conj=false, branch=:+, band=band)
@@ -136,10 +136,10 @@ num_bands(::ToulouseIM) = 1
 # end
 # function sysdynamics_backward!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::SingleImpurityModel; trunc::TruncationScheme=DefaultKTruncation)
 # 	# free dynamics
-# 	μ, U = model.μ, model.U
-# 	# a = exp(-im*lattice.δt*μ)
+# 	ϵ_d, U = model.ϵ_d, model.U
+# 	# a = exp(-im*lattice.δt*ϵ_d)
 # 	# ac = conj(a)
-# 	a, b = siam_coeffs(μ, U, im*lattice.δt) 
+# 	a, b = siam_coeffs(ϵ_d, U, im*lattice.δt) 
 # 	for band in 1:lattice.bands
 # 		for i in 1:lattice.k-1
 # 			pos1, pos2 = index(lattice, i, conj=true, branch=:-, band=band), index(lattice, i+1, conj=false, branch=:-, band=band)
@@ -172,15 +172,15 @@ num_bands(::ToulouseIM) = 1
 	sysdynamics_imaginary!(gmps, lattice, model::AndersonIM; trunc) -> GrassmannMPS
 
 Analytical solution of the imaginary-time propagator for the Anderson
-impurity: the Hamiltonian terms μ(n₁+n₂) and U n₁n₂ all commute, so the
+impurity: the Hamiltonian terms ϵ_d(n₁+n₂) and U n₁n₂ all commute, so the
 factorization into GTerms is exact. Building an equivalent model from
 `ImpurityHamiltonian` and calling the generic `sysdynamics_imaginary!`
 yields exactly the same result.
 """
 function sysdynamics_imaginary!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::AndersonIM; trunc::TruncationScheme=DefaultKTruncation)
 	# free dynamics
-	μ, U = model.μ, model.U
-	a, b = siam_coeffs(μ, U, -lattice.δτ)   
+	ϵ_d, U = model.ϵ_d, model.U
+	a, b = siam_coeffs(ϵ_d, U, -lattice.δτ)   
 	for band in 1:lattice.bands
 		for i in 1:lattice.kτ-1
             pos1, pos2 = index(lattice, i+1, conj=true, branch=:τ, band=band), index(lattice, i, conj=false, branch=:τ, band=band)
@@ -211,15 +211,15 @@ end
 	sysdynamics_forward!(gmps, lattice, model::AndersonIM; trunc) -> GrassmannMPS
 
 Analytical solution of the forward-branch propagator for the Anderson
-impurity: the Hamiltonian terms μ(n₁+n₂) and U n₁n₂ all commute, so the
+impurity: the Hamiltonian terms ϵ_d(n₁+n₂) and U n₁n₂ all commute, so the
 factorization into GTerms is exact. Building an equivalent model from
 `ImpurityHamiltonian` and calling the generic `sysdynamics_forward!`
 yields exactly the same result.
 """
 function sysdynamics_forward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::AndersonIM; trunc::TruncationScheme=DefaultKTruncation)
 	# free dynamics
-	μ, U = model.μ, model.U
-	a, b = siam_coeffs(μ, U, -im*lattice.δt) 
+	ϵ_d, U = model.ϵ_d, model.U
+	a, b = siam_coeffs(ϵ_d, U, -im*lattice.δt) 
 	for band in 1:lattice.bands
 		for i in 1:lattice.Nt
             pos1, pos2 = index(lattice, i+1, conj=true, branch=:+, band=band), index(lattice, i, conj=false, branch=:+, band=band)
@@ -250,17 +250,17 @@ end
 	sysdynamics_backward!(gmps, lattice, model::AndersonIM; trunc) -> GrassmannMPS
 
 Analytical solution of the backward-branch propagator for the Anderson
-impurity: the Hamiltonian terms μ(n₁+n₂) and U n₁n₂ all commute, so the
+impurity: the Hamiltonian terms ϵ_d(n₁+n₂) and U n₁n₂ all commute, so the
 factorization into GTerms is exact. Building an equivalent model from
 `ImpurityHamiltonian` and calling the generic `sysdynamics_backward!`
 yields exactly the same result.
 """
 function sysdynamics_backward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::AndersonIM; trunc::TruncationScheme=DefaultKTruncation)
 	# free dynamics
-	μ, U = model.μ, model.U
-	# a = exp(-im*lattice.δt*μ)
+	ϵ_d, U = model.ϵ_d, model.U
+	# a = exp(-im*lattice.δt*ϵ_d)
 	# ac = conj(a)
-	a, b = siam_coeffs(μ, U, im*lattice.δt) 
+	a, b = siam_coeffs(ϵ_d, U, im*lattice.δt) 
 	for band in 1:lattice.bands
 		for i in 1:lattice.Nt
 			pos1, pos2 = index(lattice, i, conj=true, branch=:-, band=band), index(lattice, i+1, conj=false, branch=:-, band=band)
@@ -289,9 +289,9 @@ function sysdynamics_backward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLat
 	return gmps
 end
 
-function si_sysdynamics_stepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattice; μ::Real, U::Real=0, trunc::Union{Nothing,TruncationScheme}=DefaultKTruncation)
+function si_sysdynamics_stepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattice; ϵ_d::Real, U::Real=0, trunc::Union{Nothing,TruncationScheme}=DefaultKTruncation)
 	# free dynamics
-	a = exp(-im*lattice.δt*μ)
+	a = exp(-im*lattice.δt*ϵ_d)
 	i = lattice.k - 1
 	for band in 1:lattice.bands
 		pos1, pos2 = index(lattice, i+1, conj=true, branch=:+, band=band), index(lattice, i, conj=false, branch=:+, band=band)
@@ -337,12 +337,12 @@ free (and, for two bands, the interaction) propagator of the current time step
 `lattice.k - 1` onto `gmps` in place. Intended for online/stepwise evolutions
 combined with `makestep` and `hybriddynamicsstepper!`.
 """
-sysdynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::AndersonIM; kwargs...) = si_sysdynamics_stepper!(gmps, lattice; μ=model.μ, U=model.U, kwargs...)
+sysdynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::AndersonIM; kwargs...) = si_sysdynamics_stepper!(gmps, lattice; ϵ_d=model.ϵ_d, U=model.U, kwargs...)
 
 
-function siam_coeffs(μ, U, dt)
-	# a = exp(dt*(μ - U/2))
-	a = exp(dt*μ)
+function siam_coeffs(ϵ_d, U, dt)
+	# a = exp(dt*(ϵ_d - U/2))
+	a = exp(dt*ϵ_d)
 	b = a^2 * (exp(dt*U) - 1)
 	return a, b
 end
@@ -351,18 +351,18 @@ end
 	systhermalstate!(gmps, lattice, model::AndersonIM; β, trunc) -> GrassmannMPS
 
 Analytical solution of the normalized thermal state exp(-βĤ)/tr(exp(-βĤ))
-for the Anderson impurity: the Hamiltonian terms μ(n₁+n₂) and U n₁n₂ all
+for the Anderson impurity: the Hamiltonian terms ϵ_d(n₁+n₂) and U n₁n₂ all
 commute, so the factorization of exp(-βĤ) into GTerms is exact. Building
 an equivalent model from `ImpurityHamiltonian` and calling the generic
 `systhermalstate!` yields exactly the same result. For `β == Inf` the
 ground state projector is built via the generic Fock-space construction.
 """
 function systhermalstate!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::AndersonIM; β::Real, trunc::TruncationScheme=DefaultKTruncation)
-	μ, U = model.μ, model.U
+	ϵ_d, U = model.ϵ_d, model.U
 	if β == Inf
 		return sysinitialstate!(gmps, lattice, fock_thermalstate(model, β); trunc=trunc)
 	end
-	a, b = siam_coeffs(μ, U, -β)
+	a, b = siam_coeffs(ϵ_d, U, -β)
 	for band in 1:lattice.bands
 		pos1, pos2 = index(lattice, 1, conj=true, branch=:+, band=band), index(lattice, 1, conj=false, branch=:-, band=band)
 		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)

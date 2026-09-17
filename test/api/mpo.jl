@@ -46,8 +46,21 @@
 	# DMRG algorithm hierarchy
 	trunc = truncdimcutoff(D=32, ϵ=1.0e-12)
 	@test SVDCompression(trunc) isa DMRGAlgorithm
+	@test SVDCompression() isa DMRGAlgorithm
+	@test SVDCompression(trunc=truncdim(16)) isa DMRGAlgorithm       # any TruncationScheme
+	@test SVDCompression(trunc=truncrelerr(1.0e-10)) isa DMRGAlgorithm
+	@test SVDCompression(trunc).trunc === trunc
+	@test SVDCompression(truncdimcutoff(D=50, ϵ=1.0e-8)).trunc == truncdimcutoff(D=50, ϵ=1.0e-8, add_back=0)
+	alg = SVDCompression(trunc)
+	@test similar(alg).trunc == trunc
+	@test similar(alg; trunc=truncdim(16)).trunc == truncdim(16)
 	@test DMRG1(trunc=trunc) isa DMRGAlgorithm
+	@test DMRG1(truncdim(16)) isa DMRGAlgorithm                      # any scheme with a bond dimension
 	@test DMRG2(trunc) isa DMRGAlgorithm
+	# DMRG1/DMRG2 need the bond dimension for their initial guesses:
+	# schemes without D are rejected
+	@test_throws MethodError DMRG1(truncerr(1.0e-10))
+	@test_throws MethodError DMRG2(truncerr(1.0e-10))
 
 	# tensor type helpers
 	S = typeof(ph)

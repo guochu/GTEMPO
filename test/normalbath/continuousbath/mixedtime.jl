@@ -14,7 +14,7 @@
 	gt_ref, lt_ref = im * gt_ref, -im * lt_ref
 	gτ_ref = toulouse_Gτ(ed_model, τs)
 
-	model = ToulouseIM(μ=μ)
+	model = ToulouseIM(ϵ_d=μ)
 	lat = GrassmannLattice(Nt=Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed)
 	corr = correlationfunction(bath, lat)
 	mpsI = hybriddynamics(lat, corr, trunc=trunc)

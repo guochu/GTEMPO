@@ -34,12 +34,13 @@ function mult_cache(z::GrassmannMPS, x::GrassmannMPS, y::GrassmannMPS)
 end
 
 function iterativemult(x::GrassmannMPS, y::GrassmannMPS, alg::DMRGAlgorithm)
+    D = alg.trunc.D
     if alg.initguess == :svd
-        z = _svd_guess(x, y, alg.D)
+        z = _svd_guess(x, y, D)
     elseif alg.initguess == :rand
-        z = randomgmps(promote_type(scalartype(x), scalartype(y)), length(x), D=alg.D)
+        z = randomgmps(promote_type(scalartype(x), scalartype(y)), length(x), D=D)
     elseif alg.initguess == :pre
-        z = increase_bond!(copy(x), alg.D)
+        z = increase_bond!(copy(x), D)
     else
         error("unsupported initguess $(alg.initguess)")
     end

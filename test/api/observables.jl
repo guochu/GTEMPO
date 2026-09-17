@@ -1,7 +1,7 @@
 @testset "API: observables" begin
 	# free impurity (U = 0) coupled to a semicircular bath
 	trunc = truncdimcutoff(D=50, ϵ=1.0e-10)
-	model = ToulouseIM(μ=-0.5)
+	model = ToulouseIM(ϵ_d=-0.5)
 	bath = fermionicbath(spectrum_func(), β=1.0, μ=0)
 
 	# imaginary time
@@ -60,7 +60,7 @@ end
 
 @testset "API: greater / lesser / contour ordered gf" begin
 	trunc = truncdimcutoff(D=50, ϵ=1.0e-10)
-	model = ToulouseIM(μ=-0.5)
+	model = ToulouseIM(ϵ_d=-0.5)
 	bath = fermionicbath(spectrum_func(), β=1.0, μ=0)
 	lat = GrassmannLattice(N=4, δt=0.05, contour=:real)
 	corr = correlationfunction(bath, lat)
@@ -79,14 +79,13 @@ end
 	@test l1 == gf(lat, (ContourIndex(1, conj=true, branch=:-, band=1), ContourIndex(3, conj=false, branch=:+, band=1)), K, I; Z=Z)
 	@test lesser(lat, 3, K, I; Z=Z) == l1
 	# contour ordering: a < b gives -(b, a), otherwise (a, b); conj(a)=false, conj(b)=true
-	# (contour_ordered_gf requires a real Z, unlike greater/lesser)
 	x = ContourIndex(1, conj=false, branch=:+, band=1)
 	y = ContourIndex(3, conj=true, branch=:+, band=1)
-	@test contour_ordered_gf(lat, x, y, K, I; Z=real(Z)) ≈ -gf(lat, (y, x), K, I; Z=Z) atol=1.0e-9
+	@test contour_ordered_gf(lat, x, y, K, I; Z=Z) == -gf(lat, (y, x), K, I; Z=Z)
 	x2 = ContourIndex(3, conj=false, branch=:+, band=1)
 	y2 = ContourIndex(1, conj=true, branch=:+, band=1)
-	@test contour_ordered_gf(lat, x2, y2, K, I; Z=real(Z)) ≈ g1 atol=1.0e-9
-	@test_throws ArgumentError contour_ordered_gf(lat, y2, x2, K, I; Z=1.0)
+	@test contour_ordered_gf(lat, x2, y2, K, I; Z=Z) == g1
+	@test_throws ArgumentError contour_ordered_gf(lat, y2, x2, K, I; Z=Z)
 	# cached versions agree with the direct evaluation (up to roundoff)
 	@test cached_greater(lat, 3, 1, K, I; cache=cache) ≈ g1 atol=1.0e-12
 	@test cached_lesser(lat, 1, 3, K, I; cache=cache) ≈ l1 atol=1.0e-12
@@ -106,7 +105,7 @@ end
 
 @testset "API: electric current & heat current" begin
 	trunc = truncdimcutoff(D=50, ϵ=1.0e-10)
-	model = ToulouseIM(μ=-0.5)
+	model = ToulouseIM(ϵ_d=-0.5)
 	bath = fermionicbath(spectrum_func(), β=1.0, μ=0)
 	lat = GrassmannLattice(N=4, δt=0.05, contour=:real)
 	corr = correlationfunction(bath, lat)
@@ -140,7 +139,7 @@ end
 
 @testset "API: nn family & expectationvalue" begin
 	trunc = truncdimcutoff(D=50, ϵ=1.0e-10)
-	model = ToulouseIM(μ=-0.5)
+	model = ToulouseIM(ϵ_d=-0.5)
 	bath = fermionicbath(spectrum_func(), β=1.0, μ=0)
 	lat = GrassmannLattice(N=4, δτ=0.25, contour=:imag)
 	corr = correlationfunction(bath, lat)

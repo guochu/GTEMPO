@@ -13,7 +13,7 @@
 	g_analytic = [toulouse_Gτ(bath, τ; ϵ_d=μ) for τ in 0:δτ:β]
 	@test relerr(g_ed, g_analytic) < 1.0e-2
 
-	model = ToulouseIM(μ=μ)
+	model = ToulouseIM(ϵ_d=μ)
 	for ordering in imag_orderings
 		lat = GrassmannLattice(N=N, δτ=δτ, contour=:imag, ordering=ordering)
 		corr = correlationfunction(bath, lat)
@@ -46,7 +46,7 @@ end
 	spec = DiscreteSpectrum([s[1] for s in specs], [s[2] for s in specs])
 	corr = correlationfunction(fermionicbath(spec, β=β), lat)
 	mpsI = hybriddynamics(lat, corr, trunc=trunc)
-	mpsK = sysdynamics(lat, ToulouseIM(μ=μ), trunc=trunc)
+	mpsK = sysdynamics(lat, ToulouseIM(ϵ_d=μ), trunc=trunc)
 	mpsK = boundarycondition!(mpsK, lat)
 	g = gτ_series(lat, mpsK, mpsI)
 	@test relerr(g, g_ed) < 2.0e-2
@@ -63,7 +63,7 @@ end
 
 	lat = GrassmannLattice(N=N, δτ=δτ, contour=:imag, bands=2)
 	bath = fermionicbath(DiracDelta(ω=ω, α=α), β=β)
-	model = AndersonIM(U=U, μ=μ)
+	model = AndersonIM(U=U, ϵ_d=μ)
 	mpsK, Is = fermionic_setup(lat, bath, model, trunc)
 	cache = environments(lat, mpsK, Is...)
 	g = cached_gf_fast(lat, mpsK, Is...; c1=false, c2=true, b1=:τ, b2=:τ, cache=cache)
@@ -109,7 +109,7 @@ end
 	g_ed = gτ_ed(H, a, adag, 0:δτ:β, β)
 
 	bath = fermionicbath(DiracDelta(ω=ω, α=α), β=β)
-	model = ToulouseIM(μ=μ)
+	model = ToulouseIM(ϵ_d=μ)
 	lat = GrassmannLattice(N=N, δτ=δτ, contour=:imag)
 	corr = correlationfunction(bath, lat)
 	alg = ExactTTIIF(algmult=SVDCompression(trunc), verbosity=0)

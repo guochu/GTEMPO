@@ -32,7 +32,7 @@ const Ds = QUICK ? (20,) : (20, 40, 80)
 const Dref = 160                                                  # converged reference
 
 bath = fermionicbath(DiscreteSpectrum(ws, αs), β=β)
-model = ToulouseIM(μ=μ)
+model = ToulouseIM(ϵ_d=μ)
 H, a, adag, H0 = singlemode_ed(μ=μ, U=0, bathspecs=collect(zip(ws, αs)))
 
 # imaginary-time contour

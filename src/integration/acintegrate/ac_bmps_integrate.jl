@@ -13,7 +13,7 @@ function _bmps_integrate(lattice::AbstractGrassmannLattice, xx::Vector{<:Grassma
 end
 
 function _integrate_center(xx::Vector{<:GrassmannMPS}, left::GrassmannMPS, left_b::Int, 
-		right::GrassmannMPS, right_b::Int, center::Int = div(left_b+right_b, 2); trunc::TruncationScheme=DefaultIntegrationTruncation)
+		right::GrassmannMPS, right_b::Int, center::Int = div(left_b+right_b, 2); trunc::TruncationScheme=DefaultKTruncation)
 	@assert left_b <= center <= right_b
 	for i in left_b:center
 		left = update_pair_left(left, i, xx; trunc=trunc)
@@ -24,14 +24,14 @@ function _integrate_center(xx::Vector{<:GrassmannMPS}, left::GrassmannMPS, left_
 	return gmps_contract_center(left, right)
 end
 
-function _bmps_integrate_left(xx::Vector{<:GrassmannMPS}, center::Int; trunc::TruncationScheme=DefaultIntegrationTruncation)
+function _bmps_integrate_left(xx::Vector{<:GrassmannMPS}, center::Int; trunc::TruncationScheme=DefaultKTruncation)
 	left = _l_bmps_boundary(xx)
 	for i in 1:center-1
 		left = update_pair_left(left, i, xx, trunc=trunc)
 	end
 	return left
 end
-function _bmps_integrate_right(xx::Vector{<:GrassmannMPS}, center::Int; trunc::TruncationScheme=DefaultIntegrationTruncation)
+function _bmps_integrate_right(xx::Vector{<:GrassmannMPS}, center::Int; trunc::TruncationScheme=DefaultKTruncation)
 	right = _r_bmps_boundary(xx)
 	Lhalf = pos2pairindex(length(xx[1]))
 	for i in Lhalf:-1:center+1
@@ -52,7 +52,7 @@ function _r_bmps_boundary(xx::Vector{<:GrassmannMPS})
 	return GrassmannMPS([v for i in 1:length(xx)])
 end
 
-function update_left_util(left::GrassmannMPS, pos::Int, x::Vector{<:GrassmannMPS}; trunc=DefaultIntegrationTruncation)
+function update_left_util(left::GrassmannMPS, pos::Int, x::Vector{<:GrassmannMPS}; trunc=DefaultKTruncation)
 	@assert length(left) == length(x)
 	tmp = [rmul!(_apply_physical_left(left[i], x[i][pos]), scaling(x[i]) ) for i in 1:length(left)]
 	left2 = similar(left.data, length(left))
@@ -77,14 +77,14 @@ function update_left_2(left::GrassmannMPS, pos::Int, x::Vector{<:GrassmannMPS}; 
 	return canonicalize!(GrassmannMPS(left2, scaling=scaling(left)), alg=Orthogonalize(trunc=trunc))
 end
 
-function update_pair_left(left::GrassmannMPS, j::Int, xx::Vector{<:GrassmannMPS}; trunc=DefaultIntegrationTruncation)
+function update_pair_left(left::GrassmannMPS, j::Int, xx::Vector{<:GrassmannMPS}; trunc=DefaultKTruncation)
 	posa = 2 * j -1
 	left = update_left_1(left, posa, xx, trunc=trunc)
 	left = update_left_2(left, posa+1, xx, trunc=trunc)
 	return left
 end
 
-function update_right_util(right::GrassmannMPS, pos::Int, x::Vector{<:GrassmannMPS}; trunc=DefaultIntegrationTruncation)
+function update_right_util(right::GrassmannMPS, pos::Int, x::Vector{<:GrassmannMPS}; trunc=DefaultKTruncation)
 	@assert length(right) == length(x)
 	L = length(right)
 	tmp = [rmul!(_apply_physical_right(right[i], x[L-i+1][pos]), scaling(x[L-i+1])) for i in 1:L]

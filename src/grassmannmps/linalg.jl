@@ -116,13 +116,13 @@ Base.:-(x::GrassmannMPS, y::GrassmannMPS) = x + (-y)
 #     return ts
 # end
 
-function _permute!(x::AbstractGMPS, perm::Vector{Int}; trunc::TruncationScheme=DefaultIntegrationTruncation)
+function _permute!(x::AbstractGMPS, perm::Vector{Int}; trunc::TruncationScheme=DefaultKTruncation)
     @assert length(x) == length(perm)
     if svectors_uninitialized(x)
         canonicalize!(x, alg=Orthogonalize(trunc=trunc, normalize=false))
     end
     for i in TK.permutation2swaps(perm)
-        easy_swap!(x, i, trunc=trunc)
+        swap!(x, i, trunc=trunc)
     end
     return x
 end

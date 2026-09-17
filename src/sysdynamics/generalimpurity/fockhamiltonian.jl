@@ -49,11 +49,11 @@ end
 
 function fockmatrix(m::AndersonIM)
     adag, a = jw_operators(2)
-    return m.μ * (adag[1]*a[1] + adag[2]*a[2]) + m.U * adag[1]*a[1] * adag[2]*a[2]
+    return m.ϵ_d * (adag[1]*a[1] + adag[2]*a[2]) + m.U * adag[1]*a[1] * adag[2]*a[2]
 end
 
 function fockmatrix(m::ToulouseIM)
-    return fockmatrix([tunneling(1, 1, coeff=m.μ)], 1)
+    return fockmatrix([tunneling(1, 1, coeff=m.ϵ_d)], 1)
 end
 
 function jw_operators(term::AdagATerm, N::Int)

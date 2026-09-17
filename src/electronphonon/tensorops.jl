@@ -150,7 +150,7 @@ end
 
 # truncation
 _truncate!(v::AbstractVector{<:Real}, trunc::NoTruncation, p::Real=2) = v, 0.
-function _truncate!(v::AbstractVector{<:Real}, trunc::TruncationDimCutoff, p::Real=2)
+function _truncate!(v::AbstractVector{<:Real}, trunc::TruncateDimCutoff, p::Real=2)
     sca = norm(v, p)
     dtrunc = findlast(Base.Fix2(>, sca * trunc.ϵ), v)
     if isnothing(dtrunc)

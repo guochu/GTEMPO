@@ -209,10 +209,10 @@ function rightsweep_final!(m::PartialIntegrateIterativeMultCache, alg::DMRG1)
     r = u * s
     z[1] = @tensor tmp[1,2;4] := z[1][1,2,3] * r[3,4]
 
-    # z.svectors[1] = Diagonal(id(space_l(z[1])))
-	# z.svectors[end] = Diagonal(id(space_r(z[end])'))
-    z.svectors[1] = DiagonalTensorMap{Float64}(ones, space_l(z[1]) )
-	z.svectors[end] = DiagonalTensorMap{Float64}(ones, space_r(z[end])' )
+    # z.s[1] = Diagonal(id(space_l(z[1])))
+	# z.s[end] = Diagonal(id(space_r(z[end])'))
+    z.s[1] = DiagonalTensorMap{Float64}(ones, space_l(z[1]) )
+	z.s[end] = DiagonalTensorMap{Float64}(ones, space_r(z[end])' )
 
     (alg.verbosity >= 2) && println("z of bond dimension: ", bond_dimension(z))
     return kvals
@@ -221,7 +221,7 @@ end
 
 
 
-function _parint_svd_guess(xs::GrassmannMPS...; cidx::Vector{Int}, trunc::TruncationScheme=DefaultTruncation, verbosity::Int=0)
+function _parint_svd_guess(xs::GrassmannMPS...; cidx::Vector{Int}, trunc::TruncationScheme=DefaultITruncation, verbosity::Int=0)
     Lxs = length(xs[1])
     (unique(length.(xs)) == [Lxs,]) || throw(DimensionMismatch("unique($(length.(xs))) != [$Lxs,]"))
     check_contract_idx(Lxs, cidx)

@@ -21,11 +21,11 @@ end
 
 function cu_iterativemult(x::GrassmannMPS, y::GrassmannMPS, alg::CuDMRGMultAlgorithm)
     if alg.initguess == :svd
-        z = _cu_svd_guess(x, y, alg.D)
+        z = _cu_svd_guess(x, y, alg.trunc.D)
     elseif alg.initguess == :rand
-        z = randomgmps(promote_type(scalartype(x), scalartype(y)), length(x), D=alg.D)
+        z = randomgmps(promote_type(scalartype(x), scalartype(y)), length(x), D=alg.trunc.D)
     elseif alg.initguess == :pre
-        z = increase_bond!(copy(x), alg.D)
+        z = increase_bond!(copy(x), alg.trunc.D)
     else
         error("unsupported initguess $(alg.initguess)")
     end

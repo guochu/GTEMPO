@@ -35,7 +35,7 @@
 	alg = ExactTTIIF(algmult=SVDCompression(trunc), verbosity=0)
 	mpsI4 = hybriddynamics(lat, corr, alg)
 	@test relerr(hybriddynamics!(vacuumstate(lat), lat, corr, alg), mpsI4) < 1.0e-12
-	model = ToulouseIM(μ=0.5)
+	model = ToulouseIM(ϵ_d=0.5)
 	mpsK = sysdynamics(lat, model, trunc=trunc)
 	mpsK = hybriddynamics!(mpsK, lat, corr, alg)
 	mpsK_ref = mult(sysdynamics(lat, model, trunc=trunc), mpsI4, trunc=trunc)
@@ -88,7 +88,7 @@ end
 	alg = ExactTTIIF(algmult=SVDCompression(trunc), verbosity=0)
 	mpsI4 = hybriddynamics(lat, corr, alg)
 	@test relerr(hybriddynamics!(vacuumstate(lat), lat, corr, alg), mpsI4) < 1.0e-12
-	model = ToulouseIM(μ=0.5)
+	model = ToulouseIM(ϵ_d=0.5)
 	mpsK = sysdynamics(lat, model, trunc=trunc)
 	mpsK = hybriddynamics!(mpsK, lat, corr, alg)
 	mpsK_ref = mult(sysdynamics(lat, model, trunc=trunc), mpsI4, trunc=trunc)

@@ -67,7 +67,7 @@ function reweighting!(lattice2::AbstractGrassmannLattice{O}, mps2::GrassmannMPS,
 		mps3 = _reweighting!(lattice3, mps3, lattice, mps)
 		lattice2′, mps3′ = changeordering(O, lattice3, mps3; kwargs...)
 		mps2.data[:] = mps3′.data[:]
-		mps2.svectors[:] = mps3′.svectors[:]
+		mps2.s[:] = mps3′.s[:]
 		setscaling!(mps2, scaling(mps3′))
 		return mps2
 	end

@@ -9,7 +9,7 @@
 	trunc2 = truncdimcutoff(D=chi2, ϵ=1.0e-10)
 
 	lattice = GrassmannLattice(Nt=Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:Kadanoff, bands=2)
-	model = AndersonIM(U=U, μ=-ϵ_d)
+	model = AndersonIM(U=U, ϵ_d=-ϵ_d)
 	mpsK = sysdynamics(lattice, model, trunc=trunc)
 	for band in 1:2
 		mpsK = boundarycondition!(mpsK, lattice, band=band, trunc=trunc)
@@ -35,7 +35,7 @@
 
 	# quadratic model with a complex gap: Toulouse ED on the discretized bath
 	Δ = 0.1 + 0.2im
-	model = AndersonIM(U=0, μ=-ϵ_d)
+	model = AndersonIM(U=0, ϵ_d=-ϵ_d)
 	mpsK = sysdynamics(lattice, model, trunc=trunc)
 	for band in 1:2
 		mpsK = boundarycondition!(mpsK, lattice, band=band, trunc=trunc)

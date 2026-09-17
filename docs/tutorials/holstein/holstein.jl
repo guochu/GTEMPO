@@ -87,7 +87,7 @@ function run_gtempo(δt; tmax=1.0, with_phonon=true)
 	Is = [fillband(lattice, mpsI_e, band=b) for b in 1:bands]
 
 	# bare impurity dynamics: Toulouse model (single band, U = 0)
-	model = ToulouseIM(μ=μ)
+	model = ToulouseIM(ϵ_d=μ)
 	mpsK = sysdynamics(lattice, model, trunc=trunc)
 	mpsK = systhermalstate!(mpsK, lattice, model, trunc=trunc, β=β)
 	mpsK = boundarycondition!(mpsK, lattice, band=1, trunc=trunc)

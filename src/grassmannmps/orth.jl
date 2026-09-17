@@ -92,7 +92,7 @@ function _rightorth!(psi::GrassmannMPS, alg::SVD, trunc::TruncationScheme, norma
 end
 
 canonicalize(psi::GrassmannMPS; kwargs...) = canonicalize!(copy(psi); kwargs...)
-function canonicalize!(psi::GrassmannMPS; alg::Orthogonalize = Orthogonalize(trunc=DefaultTruncation, normalize=false))
+function canonicalize!(psi::GrassmannMPS; alg::Orthogonalize = Orthogonalize(trunc=DefaultITruncation, normalize=false))
 	alg.normalize && @warn "canonicalize with renormalization not recommanded for GrassmannMPS"
 	L = length(psi)
 	_leftorth!(psi, QR(), NoTruncation(), alg.normalize, alg.verbosity)

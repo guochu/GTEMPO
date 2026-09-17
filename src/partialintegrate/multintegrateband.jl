@@ -67,7 +67,7 @@ variables on `band`, compressing the result with the DMRG-mult algorithm
 """
 function multintegrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS, alg::DMRGAlgorithm; band::Int=1)
     if alg.initguess == :svd
-        z = _integrateband_svd_guess(lattice, x, y, alg.D; band=band)
+        z = _integrateband_svd_guess(lattice, x, y, alg.trunc.D; band=band)
     else
         error("unsupported initguess $(alg.initguess)")
     end

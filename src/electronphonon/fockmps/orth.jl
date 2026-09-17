@@ -75,7 +75,7 @@ function _rightorth!(psi::FockMPS, alg::SVD, trunc::TruncationScheme, normalize:
 	return psi
 end
 
-function canonicalize!(psi::FockMPS; alg::Orthogonalize = Orthogonalize(trunc=DefaultTruncation, normalize=false))
+function canonicalize!(psi::FockMPS; alg::Orthogonalize = Orthogonalize(trunc=DefaultITruncation, normalize=false))
 	alg.normalize && @warn "canonicalize with renormalization not recommanded for FockMPS"
 	L = length(psi)
 	_leftorth!(psi, QR(), NoTruncation(), alg.normalize, alg.verbosity)

@@ -10,7 +10,7 @@
 
 	spec = DiracDelta(ω=ω, α=α)
 	bath = fermionicbath(spec, β=β)
-	model = ToulouseIM(μ=μ)
+	model = ToulouseIM(ϵ_d=μ)
 	for ordering in real_orderings
 		lat = GrassmannLattice(N=Nt, δt=δt, contour=:real, ordering=ordering)
 		corr = correlationfunction(bath, lat)
@@ -41,7 +41,7 @@ end
 	gt_ed, lt_ed = greater_lesser_ed(H, a, adag, H0, ts, β)
 	lat = GrassmannLattice(N=Nt, δt=δt, contour=:real, bands=2)
 	bath = fermionicbath(DiracDelta(ω=ω, α=α), β=β)
-	mpsK, Is = fermionic_setup(lat, bath, AndersonIM(U=U, μ=μ), trunc, β=β)
+	mpsK, Is = fermionic_setup(lat, bath, AndersonIM(U=U, ϵ_d=μ), trunc, β=β)
 	gt, lt = gtlt_series(lat, mpsK, Is...)
 	@test relerr(gt, gt_ed) < 3.0e-2
 	@test relerr(lt, lt_ed) < 3.0e-2
@@ -88,7 +88,7 @@ end
 	gt_ed, lt_ed = greater_lesser_ed(H, a, adag, H0, ts, β)
 
 	bath = fermionicbath(DiracDelta(ω=ω, α=α), β=β)
-	model = ToulouseIM(μ=μ)
+	model = ToulouseIM(ϵ_d=μ)
 	lat = GrassmannLattice(N=Nt, δt=δt, contour=:real)
 	corr = correlationfunction(bath, lat)
 	alg = ExactTTIIF(algmult=SVDCompression(trunc), verbosity=0)

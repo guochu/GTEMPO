@@ -50,9 +50,9 @@ end
 	pbath = bosonicbath(DiracDelta(ω=0.8, α=0.5), β=1.0)
 	pcorr = correlationfunction(pbath, flat)
 	mpsI_p = hybriddynamics(flat, pcorr, trunc=trunc)
-	K = sysdynamics(rlat, ToulouseIM(μ=0.5), trunc=trunc)
+	K = sysdynamics(rlat, ToulouseIM(ϵ_d=0.5), trunc=trunc)
 	Kw = reweighting!(rlat, K, flat, mpsI_p, trunc=trunc)
 	@test Kw isa GrassmannMPS && length(Kw) == length(rlat) && norm(Kw) > 0
-	Kw2 = reweighting(rlat, sysdynamics(rlat, ToulouseIM(μ=0.5), trunc=trunc), flat, mpsI_p, trunc=trunc)
+	Kw2 = reweighting(rlat, sysdynamics(rlat, ToulouseIM(ϵ_d=0.5), trunc=trunc), flat, mpsI_p, trunc=trunc)
 	@test distance(Kw, Kw2) / norm(Kw) < 1.0e-12
 end

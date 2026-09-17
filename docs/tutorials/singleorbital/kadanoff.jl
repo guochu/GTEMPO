@@ -16,7 +16,7 @@ function main(t; β=10, δτ=0.1, δt=0.1, chi=60,  U=1, ϵ_d=-U/2)
 	# fermionic bath with a semicircular spectral density
 	bath = fermionicbath(semicircular(t=1), β=β, μ=0)
 	# the impurity model: Anderson impurity with on-site energy ϵ_d and interaction U
-	exact_model = AndersonIM(μ = ϵ_d, U=U)
+	exact_model = AndersonIM(ϵ_d = ϵ_d, U=U)
 
 	# two bands: one band per spin direction
 	bands = 2

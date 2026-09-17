@@ -576,7 +576,7 @@ end
 	@test distance(swapband(x, lat2, 1, 2; trunc=trunc), swapband!(deepcopy(x), lat2, 1, 2; trunc=trunc)) == 0
 
 	# boundarycondition (copy) agrees with boundarycondition! (in place)
-	model = AndersonIM(U=1, μ=-0.5)
+	model = AndersonIM(U=1, ϵ_d=-0.5)
 	lat = GrassmannLattice(N=2, δτ=0.1, contour=:imag, bands=2)
 	K = sysdynamics(lat, model, trunc=trunc)
 	for b in 1:lat.bands

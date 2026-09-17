@@ -9,7 +9,7 @@
 	# equilibrium Toulouse Green's function (GTEMPO convention: im * toulouse_Gt)
 	gt_ref = [im * toulouse_Gt(bath, tj; ϵ_d=μ) for tj in ts]
 
-	model = ToulouseIM(μ=μ)
+	model = ToulouseIM(ϵ_d=μ)
 	lat = GrassmannLattice(N=Nt, δt=δt, contour=:real)
 	corr = correlationfunction(bath, lat)
 	# TDVPIF (real time, continuous bath) is the most expensive construction;

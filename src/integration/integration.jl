@@ -20,7 +20,7 @@ with the truncation scheme `trunc`.
 struct BMPSIntegrate{T<:TruncationScheme} <: IntegrationAlgorithm
 	trunc::T
 end
-BMPSIntegrate(; trunc::TruncationScheme=DefaultIntegrationTruncation) = BMPSIntegrate(trunc)
+BMPSIntegrate(; trunc::TruncationScheme=DefaultKTruncation) = BMPSIntegrate(trunc)
 
 
 

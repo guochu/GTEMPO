@@ -17,7 +17,7 @@
 #         Δuu′ = t² G_uu ,   Δdd′ = −t² conj(G_dd) ,
 #         Δud′ = t² G_ud ,   Δdu′ = t² G_du .
 #
-# Half filling: ϵ_d = U/2, i.e. `AndersonIM(U=U, μ=−U/2)` (particle–hole
+# Half filling: ϵ_d = U/2, i.e. `AndersonIM(U=U, ϵ_d=−U/2)` (particle–hole
 # symmetric for either sign of U).  With the user-specified U = 1, 5 the
 # bath probes the anomalous channel; the same script also supports the
 # attractive sign (e.g. U = −1 of the reference code) unchanged.
@@ -90,7 +90,7 @@ function run_dmft(beta::Real, U::Real)
 
 	trunc = truncdimcutoff(D=D_bond, ϵ=1.0e-10)
 	lattice = GrassmannLattice(N=Nτ, δτ=δτ, contour=:imag, bands=2)
-	model = AndersonIM(U=U, μ=μ_imp)
+	model = AndersonIM(U=U, ϵ_d=μ_imp)
 
 	# Δ-independent part of the path (built once)
 	mpsK = sysdynamics(lattice, model, trunc=trunc)

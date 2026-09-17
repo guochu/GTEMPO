@@ -27,7 +27,7 @@
 		corr = correlationfunction(bath, lattice)
 		mpsI = hybriddynamics(lattice, corr, trunc=trunc)
 		mpsI = boundarycondition!(mpsI, lattice)
-		mpsK = sysdynamics(lattice, AndersonIM(μ=ϵ_d, U=0), trunc=trunc)
+		mpsK = sysdynamics(lattice, AndersonIM(ϵ_d=ϵ_d, U=0), trunc=trunc)
 
 		currents = electriccurrent(lattice, corr, mpsK, mpsI)
 		@test length(currents) == N
@@ -75,7 +75,7 @@ end
 	corr = lcorr + rcorr
 	mpsI = hybriddynamics(lattice, corr, trunc=trunc)
 	mpsI = boundarycondition!(mpsI, lattice)
-	mpsK = sysdynamics(lattice, AndersonIM(μ=ϵ_d, U=0), trunc=trunc)
+	mpsK = sysdynamics(lattice, AndersonIM(ϵ_d=ϵ_d, U=0), trunc=trunc)
 
 	cl = electriccurrent(lattice, lcorr, mpsK, mpsI)
 	cr = electriccurrent(lattice, rcorr, mpsK, mpsI)

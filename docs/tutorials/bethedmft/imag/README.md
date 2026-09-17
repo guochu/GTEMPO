@@ -61,7 +61,7 @@ GTEMPO 侧要点：
 - 晶格：`GrassmannLattice(N=Nτ, δτ=β/Nτ, bands=2, contour=:imag)`，δτ = 0.05
 - 路径积分核：`hybriddynamics(lattice, Δiw_to_Δτ(...), trunc, band=1)`
   + `swapband` 到第二条自旋带（不用 `boundarycondition_branching`）
-- 杂质：两带 `AndersonIM(U=U, μ=−U/2)`，`sysdynamics` + `boundarycondition!`
+- 杂质：两带 `AndersonIM(U=U, ϵ_d=−U/2)`，`sysdynamics` + `boundarycondition!`
 - 观测量：`cached_gf_fast` 给出裸关联，**G(τ) = −⟨d(τ)d†⟩**
 
 cthyb 侧要点：

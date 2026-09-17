@@ -18,7 +18,7 @@ for δ in (0.1, 0.05, 0.02)
 	t = @elapsed mpsI = hybriddynamics(lattice, corr, TDVPIF(trunc = trunc, δ = δ))
 	mpsI = boundarycondition(mpsI, lattice)
 	tobs = @elapsed begin
-		mpsK = sysdynamics(lattice, AndersonIM(μ = ϵ_d, U = 0), trunc = trunc)
+		mpsK = sysdynamics(lattice, AndersonIM(ϵ_d = ϵ_d, U = 0), trunc = trunc)
 		g = cached_gf_fast(lattice, mpsK, mpsI; c1=false, c2=true, b1=:τ, b2=:τ)
 	end
 	err = norm(g - exactGτ) / norm(exactGτ)
@@ -44,7 +44,7 @@ for δ in (0.1, 0.05, 0.02)
 	t = @elapsed mpsI = hybriddynamics(lattice2, corr2, TDVPIF(trunc = trunc2, δ = δ))
 	mpsI = boundarycondition(mpsI, lattice2)
 	tobs = @elapsed begin
-		mpsK = sysdynamics(lattice2, AndersonIM(μ = ϵ_d, U = 0), trunc = trunc2)
+		mpsK = sysdynamics(lattice2, AndersonIM(ϵ_d = ϵ_d, U = 0), trunc = trunc2)
 		g = [greater(lattice2, i, 1, mpsK, mpsI) for i in 2:Nt]
 	end
 	ref = im .* exactGt[1:Nt-1]

@@ -75,7 +75,7 @@ end
 
 function _tdvpif_hamiltonian_timelocal(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction, alg::TDVPIF, T; band::Int=1)
 	h1, h2, h3, h4 = influenceoperators(lattice, corr, band=band, algexpan=alg.algexpan)
-	orth = Orthogonalize(SVD(), DefaultIntegrationTruncation; normalize=false)
+	orth = Orthogonalize(SVD(), DefaultKTruncation; normalize=false)
 	H = h1 * vacuumstate(T, lattice)
 	H = H + h2 * vacuumstate(T, lattice)
 	canonicalize!(H, alg=orth)

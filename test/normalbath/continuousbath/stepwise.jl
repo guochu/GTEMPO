@@ -34,7 +34,7 @@
 		push!(currents_ed, sum(jobs .* ρ))
 	end
 
-	exact_model = AndersonIM(μ=ϵ_d, U=0)
+	exact_model = AndersonIM(ϵ_d=ϵ_d, U=0)
 	for order in (1, 2)
 		lattice_o = GrassmannLattice(N=N, δt=δt, contour=:real, order=order)
 		corr = correlationfunction(bath, lattice_o)

@@ -2,6 +2,54 @@
 
 本轮重构涉及的接口更改汇总。所有更改均已通过全量测试验证（行为不变或数值等价）。
 
+## 第七批更新（2026-09-17）：截断方案与 MPS 算法接口统一（同步 TEMPO 2026-09-17）
+
+同步 TEMPO 同日的接口调整：压缩算法的截断参数统一为 `TruncationScheme` 对象，默认截断常量收敛。Z2Tensors 依赖包同步把截断类型 **`TruncationDimCutoff` 更名为 `TruncateDimCutoff`**（`truncdimcutoff(D, ϵ[, add_back])` 构造不变），GTEMPO 全库跟进。
+
+### `SVDCompression`：`D`/`tol` 字段 → 参数化 `trunc` 字段
+
+| 旧接口（已删除） | 新接口 |
+|---|---|
+| `SVDCompression(; D=Defaults.D, tol=Defaults.tol, verbosity=0)` | `SVDCompression(; trunc=truncdimcutoff(D=Defaults.D, ϵ=Defaults.tol, add_back=0), verbosity=0)` |
+| `SVDCompression(trunc::TruncationDimCutoff; verbosity=0)` | `SVDCompression(trunc::TruncationScheme; verbosity=0)`（接受**任意** `TruncationScheme`，含 `truncdim`/`truncerr`） |
+| `alg.trunc`（getproperty 合成）/ `get_trunc(alg)` / `alg.D` / `alg.ϵ` | `alg.trunc`（真实字段） |
+
+- 结构体参数化为 `SVDCompression{T<:TruncationScheme}`；`Base.similar` 同步改为 `trunc` 参数。
+
+### `DMRG1`/`DMRG2`：`trunc` 必须携带键维 `D`
+
+- `trunc` 字段与构造器签名收紧为 **`TruncationWithD = Union{TruncationDimension, TruncationDimCutoff}`**（即 `truncdim(D)` 或 `truncdimcutoff(D, ϵ)`）；原因：迭代乘法的初始猜测（`:svd`/`:rand`/`:pre`）需要 `D` 信息，实现改用 `alg.trunc.D`。
+- **删除** `Base.getproperty(::DMRGAlgorithm, :D/:ϵ)` 访问器；`Base.similar` 同步。
+
+### 默认截断常量收敛（`src/defaults.jl`）
+
+| 常量 | 变更 |
+|---|---|
+| `DefaultKTruncation` | `truncdimcutoff(D=1000, ϵ=1e-10)` → **`truncrelerr(Defaults.tolgauge)`**（只按相对 ϵ 截断，等价 TEMPO 的 `trunccutoff`） |
+| `DefaultIntegrationTruncation` | **已删除**，原用点（`bulkconnection!`、`boundarycondition!`、`_permute!`、`BMPSIntegrate`、AC-BMPS 积分）改用 `DefaultKTruncation` |
+| `DefaultTruncation` | **已删除**，原用点（`mult!`、`swap!`、`canonicalize!`、`parint_mult`/`_parint_svd_guess` 及 CUDA 扩展对应版本）改用 `DefaultITruncation` |
+| `DefaultITruncation` | `truncdimcutoff(D=200, ϵ=1e-10)` → **`truncdimcutoff(D=Defaults.D, ϵ=Defaults.tolgauge)`**；`DefaultMultAlg = DMRG1(DefaultITruncation)` 随之 |
+| TDVPIF 的 H 压缩 | `DefaultIntegrationTruncation` → `DefaultKTruncation` |
+
+### 其它接口清理
+
+- 删除 2 参的 `_swap_gate(m1, m2; trunc)`（死代码；4 参的 svector 版本保留）。
+- `easy_swap!` 更名为 **`swap!`**（含 FockMPS 路径的调用点），默认截断由 `DefaultTruncation` 改为 `DefaultITruncation`。
+- **`GrassmannMPS` 的字段 `svectors` 更名为 `s`**（删除合成 `getproperty` 别名；`svectors_uninitialized` / `unset_svectors!` 接口不变）。与 `FockMPS` 的字段命名对齐。
+- **`ToulouseIM` / `AndersonIM` 的字段与关键字 `μ` 更名为 `ϵ_d`**。语义确认：`H = ϵ_d·n̂`，与 `ImpurityModelBase.Toulouse` 的 `ϵ_d` 完全一致（同为 on-site 能量直接乘 n̂，**无符号差**；BCS 测试中的 `ϵ_d=-ϵ_d` 只是参数取值）。`IRLM` 的 `μ` 关键字不受影响。
+- 修复 `contour_ordered_gf` 的 `Z::Real` 类型约束 → **`Z::Number`**（实时间格点的配分函数是复数，原约束使该接口不可用，属 bug）。
+- 删除 `test/api/prony.jl`：Prony 展开由 ExpExp 包负责测试，GTEMPO 直接使用且无重载（`AbstractPronyExpansion` 的 re-export 修复已在上批提交）。
+- 新增 `test/api/grassmanntensor.jl`：系统对比 `@grassmann` 与 `@tensor`——偶宇称张量上两个宏完全一致（收缩/迹/原地加法/多链/order kwargs）；奇宇称下普通收缩仍一致，闭合 U-turn 圈（trace）按费米圈规则差 −1（用 parity 分解逐一验证）。
+
+### 迁移指南
+
+- `SVDCompression(D=χ)` → `SVDCompression(truncdimcutoff(D=χ, ϵ=Defaults.tol))`（或按需 `truncdimcutoff(D=χ, ϵ=...)`）。
+- `SVDCompression(D=χ, tol=ε)` → `SVDCompression(truncdimcutoff(D=χ, ϵ=ε))`。
+- `DMRG1(trunc)` / `DMRG1(trunc=...)`：`trunc` 需为 `truncdim(D)` 或 `truncdimcutoff(D, ϵ)`；`DMRG1(truncerr(ϵ))` 现在会 `MethodError`。
+- `alg.D` / `alg.ϵ` 访问改为 `alg.trunc.D` / `alg.trunc.ϵ`（仅限含 `D` 的方案）。
+- `DefaultIntegrationTruncation` / `DefaultTruncation` → `DefaultKTruncation` / `DefaultITruncation`。
+- `ToulouseIM(μ=x)` / `AndersonIM(μ=x)` → `...ϵ_d=x`；`psi.svectors` → `psi.s`；`easy_swap!` → `swap!`。
+
 ## 第六批更新
 
 ### Grassmann ordering 导出与缩写清理

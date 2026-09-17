@@ -1,5 +1,5 @@
 
-function cu_parint_mult(xs::GrassmannMPS...; cidx::Vector{Int}, trunc::TruncationScheme=DefaultTruncation, verbosity::Int=0)
+function cu_parint_mult(xs::GrassmannMPS...; cidx::Vector{Int}, trunc::TruncationScheme=DefaultITruncation, verbosity::Int=0)
     Lxs = length(xs[1])
     (unique(length.(xs)) == [Lxs,]) || throw(DimensionMismatch())
     check_contract_idx(Lxs, cidx)
@@ -33,10 +33,10 @@ function cu_parint_mult(xs::GrassmannMPS...; cidx::Vector{Int}, trunc::Truncatio
     @tensor tmp[1 2;4] := z[end][1 2 3] * left_right(left, right)[3 4]
     z[end] = tmp
 
-    # z.svectors[1] = Diagonal(id(space_l(z[1])))
-	# z.svectors[end] = Diagonal(id(space_r(z[end])'))
-    z.svectors[1] = DiagonalTensorMap{Float64}(ones, space_l(z[1]) )
-	z.svectors[end] = DiagonalTensorMap{Float64}(ones, space_r(z[end])' )
+    # z.s[1] = Diagonal(id(space_l(z[1])))
+	# z.s[end] = Diagonal(id(space_r(z[end])'))
+    z.s[1] = DiagonalTensorMap{Float64}(ones, space_l(z[1]) )
+	z.s[end] = DiagonalTensorMap{Float64}(ones, space_r(z[end])' )
 
     setscaling!(z, *(scaling.(xs)...) ^ (length(xs[1]) / length(z)) * scaling(z))
     (verbosity >= 2) && println("bond dimension of intermediate GMPS: ", bond_dimension(z))

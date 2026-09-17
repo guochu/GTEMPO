@@ -11,10 +11,10 @@ Build the IF as the product of partial MPOs, each with D=2
 see [SciPost Phys. Core 7, 063 (2024)]
 """
 struct PartialIF <: InfluenceFunctionalAlgorithm 
-	trunc::TruncationDimCutoff
+	trunc::TruncateDimCutoff
 	verbosity::Int
 end
-PartialIF(; trunc::TruncationDimCutoff=DefaultITruncation, verbosity::Int=0) = PartialIF(trunc, verbosity)
+PartialIF(; trunc::TruncateDimCutoff=DefaultITruncation, verbosity::Int=0) = PartialIF(trunc, verbosity)
 """
 	struct XTRGIF
 
@@ -25,7 +25,7 @@ struct XTRGIF{T<:ExponentialExpansionAlgorithm, E<:TimeEvoMPOAlgorithm, M<:DMRGA
 	algexpan::T
 	algevo::E
 	algmult::M
-	# trunc::TruncationDimCutoff
+	# trunc::TruncateDimCutoff
 	k::Int
 	fast::Bool
 	verbosity::Int
@@ -87,7 +87,7 @@ dimension grows with the correlations up to `trunc.D`.
 
 # Fields
 - `algexpan::ExponentialExpansionAlgorithm`: exponential (Prony) expansion algorithm for the bath correlation function.
-- `trunc::TruncationDimCutoff`: bond dimension of the flow manifold / final influence functional.
+- `trunc::TruncateDimCutoff`: bond dimension of the flow manifold / final influence functional.
 - `δ::Float64`: imaginary-time step of the flow (0 < δ ≤ 1, adjusted so that 1/δ is an integer).
 - `verbosity::Int`: verbosity level of the output.
 - `callback::Function`: callback function invoked after the flow.
@@ -98,7 +98,7 @@ the 4 branch MPOs returned by `influenceoperators` ((+,+), (+,−), (−,+),
 """
 struct TDVPIF <: InfluenceFunctionalAlgorithm
 	algexpan::ExponentialExpansionAlgorithm
-	trunc::TruncationDimCutoff      # bond dimension of the flow manifold / final IF
+	trunc::TruncateDimCutoff      # bond dimension of the flow manifold / final IF
 	δ::Float64                      # imaginary-time step of the flow (0 < δ ≤ 1, adjusted so that 1/δ is an integer)
 	verbosity::Int
 	callback::Function
@@ -109,7 +109,7 @@ end
 Keyword constructor for `TDVPIF`; all parameters have default values and usually need not be passed explicitly.
 """
 function TDVPIF(; algexpan::ExponentialExpansionAlgorithm=DefaultExpansionAlg,
-				trunc::TruncationDimCutoff=DefaultITruncation,
+				trunc::TruncateDimCutoff=DefaultITruncation,
 				δ::Real=0.1,
 				verbosity::Int=0,
 				callback::Function=Returns(nothing))

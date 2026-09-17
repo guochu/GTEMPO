@@ -10,7 +10,7 @@ standard workflow; the scenario-specific walkthroughs live in the
 
 ```julia
 bath  = fermionicbath(spectrum, β=β, μ=μ)      # 1. bath
-model = AndersonIM(U=U, μ=ϵ_d)                 # 2. impurity Hamiltonian (two bands)
+model = AndersonIM(U=U, ϵ_d=ϵ_d)                 # 2. impurity Hamiltonian (two bands)
 lat   = GrassmannLattice(N=N, δτ=δτ, contour=:imag, bands=2)   # 3. discretized contour
 corr  = correlationfunction(bath, lat)         # 4. discretized hybridization
 mpsI  = hybriddynamics(lat, corr, trunc=trunc) # 5. influence functional (IF)
@@ -209,7 +209,7 @@ handled by the tensor algebra instead of by explicit swap gates.
 
 ```julia
 bath  = fermionicbath(semicircular(5.0), β=1.0, μ=0.0)
-model = AndersonIM(U=2.0, μ=-1.0)
+model = AndersonIM(U=2.0, ϵ_d=-1.0)
 lattice = GrassmannLattice(N=10, δt=0.05, contour=:real, bands=2)
 trunc = truncdimcutoff(D=100, ϵ=1e-9)
 

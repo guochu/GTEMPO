@@ -63,7 +63,7 @@ function run_dmft(beta::Real, U::Real)
 
 	# impurity model and the Δ-independent part of the path (built once)
 	bath = fermionicbath(spectrum_func(D_band), β=beta, μ=0)
-	model = AndersonIM(U=U, μ=-ϵ_d)
+	model = AndersonIM(U=U, ϵ_d=-ϵ_d)
 	mpsK = sysdynamics(lattice, model, trunc=trunc)
 	for band in 1:lattice.bands
 		mpsK = boundarycondition!(mpsK, lattice, band=band, trunc=trunc)

@@ -12,7 +12,7 @@
 
 	spec = DiracDelta(ω=ω, α=α)
 	bath = fermionicbath(spec, β=β)
-	model = ToulouseIM(μ=μ)
+	model = ToulouseIM(ϵ_d=μ)
 	for ordering in mixed_orderings
 		lat = GrassmannLattice(Nt=Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed, ordering=ordering)
 		corr = correlationfunction(bath, lat)
@@ -40,7 +40,7 @@ end
 
 	lat = GrassmannLattice(Nt=Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed, bands=2)
 	bath = fermionicbath(DiracDelta(ω=ω, α=α), β=β)
-	mpsK, Is = fermionic_setup(lat, bath, AndersonIM(U=U, μ=μ), trunc)
+	mpsK, Is = fermionic_setup(lat, bath, AndersonIM(U=U, ϵ_d=μ), trunc)
 	gt, lt, gτ = gtltgτ_series(lat, mpsK, Is...)
 	@test relerr(gt, gt_ed) < 3.0e-2
 	@test relerr(lt, lt_ed) < 3.0e-2
@@ -61,7 +61,7 @@ end
 
 	spec = DiracDelta(ω=w, α=alpha)
 	bath = fermionicbath(spec, β=beta)
-	model = AndersonIM(U=U, μ=mu)
+	model = AndersonIM(U=U, ϵ_d=mu)
 
 	lat = GrassmannLattice(Nt=Nt, δt=dt, Nτ=Ntau, δτ=dtau, contour=:mixed, bands=2)
 	mpsK, Is = fermionic_setup(lat, bath, model, trunc)

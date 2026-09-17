@@ -104,7 +104,7 @@ using Base: @boundscheck, @propagate_inbounds
 using Logging: @warn
 using Reexport, TupleTools, Strided
 using Z2Tensors
-using Z2Tensors: Z2Tensors, QR, SVD, LQ, AdjointTensorMap, NoTruncation, TruncationDimCutoff
+using Z2Tensors: Z2Tensors, QR, SVD, LQ, AdjointTensorMap, NoTruncation, TruncateDimCutoff, TruncationDimension
 const TK = Z2Tensors
 using TensorOperations: TensorOperations, IndexTuple, Index2Tuple, linearize, AbstractBackend # for Grassmann Tensors
 const TO = TensorOperations

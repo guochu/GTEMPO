@@ -1,6 +1,6 @@
 @testset "API: sysdynamics" begin
 	trunc = truncdimcutoff(D=50, ϵ=1.0e-10)
-	model = AndersonIM(U=1, μ=-0.5)
+	model = AndersonIM(U=1, ϵ_d=-0.5)
 
 	# imaginary time
 	lat = GrassmannLattice(N=4, δτ=0.1, contour=:imag, bands=2)
@@ -56,7 +56,7 @@ end
 
 @testset "API: impurity hamiltonians & steppers" begin
 	trunc = truncdimcutoff(D=50, ϵ=1.0e-10)
-	model = AndersonIM(U=1, μ=-0.5)
+	model = AndersonIM(U=1, ϵ_d=-0.5)
 
 	# --- predefined models: IRLM / KanamoriIM and the type hierarchy ---
 	irlm = IRLM(μ=-0.5, J=0.3, U=1.0)

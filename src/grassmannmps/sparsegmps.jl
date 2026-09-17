@@ -157,7 +157,7 @@ scheme; the bonds outside the window are inherited from `x`. The Schmidt
 values (svectors) are refreshed inside the window only, so they may
 become stale elsewhere (the next `canonicalize!` recomputes them).
 """
-function mult!(x::GrassmannMPS, y::SparseGMPS; trunc::TruncationScheme=DefaultTruncation, verbosity::Int=0)
+function mult!(x::GrassmannMPS, y::SparseGMPS; trunc::TruncationScheme=DefaultITruncation, verbosity::Int=0)
 	L = length(x)
 	(isempty(y.data) || all(p -> 1 <= p <= L, y.positions)) || throw(BoundsError())
 	# the unit element: x * 1 = x
@@ -204,7 +204,7 @@ function mult!(x::GrassmannMPS, y::SparseGMPS; trunc::TruncationScheme=DefaultTr
 	for i in p₁+1:L
 		newdata[i] = x[i]
 	end
-	x′ = GrassmannMPS(newdata, copy(x.svectors), scaling(x))
+	x′ = GrassmannMPS(newdata, copy(x.s), scaling(x))
 
 	# --- local right-to-left SVD sweep with truncation over [p₀, p₁] ---
 	for i in p₁:-1:p₀+1
@@ -222,7 +222,7 @@ function mult!(x::GrassmannMPS, y::SparseGMPS; trunc::TruncationScheme=DefaultTr
 	_renormalize!(x′, x′[p₀], false)
 
 	copy!(x.data, x′.data)
-	copy!(x.svectors, x′.svectors)
+	copy!(x.s, x′.s)
 	setscaling!(x, scaling(x′))
 	return x
 end

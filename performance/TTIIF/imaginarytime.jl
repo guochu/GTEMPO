@@ -65,7 +65,7 @@ for (name, alg) in algs
 	mpsI = boundarycondition(mpsI, lattice)
 
 	t_obs = @elapsed begin
-		mpsK = sysdynamics(lattice, AndersonIM(μ = ϵ_d, U = 0), trunc = trunc)
+		mpsK = sysdynamics(lattice, AndersonIM(ϵ_d = ϵ_d, U = 0), trunc = trunc)
 		g = cached_gf_fast(lattice, mpsK, mpsI; c1=false, c2=true, b1=:τ, b2=:τ)
 	end
 

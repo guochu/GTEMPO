@@ -20,7 +20,7 @@ bond dimension.
 
 ## Setup
 
-- impurity: `ToulouseIM(μ = 0.3)` (single band, `U = 0`)
+- impurity: `ToulouseIM(ϵ_d = 0.3)` (single band, `U = 0`)
 - bath: 6 exponential modes, `ω = 0.5 … 3.0`, `α = 0.5 … 0.16`, `β = 2`
   → about 20 decay terms per branch after an
   `OverDeterminedProny(n = 30, tol = 1e-8)` fit, so there are ~80 term-MPOs to

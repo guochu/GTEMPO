@@ -20,7 +20,7 @@ beta = 1.0; dtau = 0.1; N = round(Int, beta/dtau)
 trunc = truncdimcutoff(D=120, ϵ=1e-6)
 
 bath  = fermionicbath(semicircular(t=1), β=beta, μ=0)
-model = AndersonIM(U=1.0, μ=-0.5)
+model = AndersonIM(U=1.0, ϵ_d=-0.5)
 
 lat  = GrassmannLattice(N=N, δτ=dtau, contour=:imag)
 corr = correlationfunction(bath, lat)
@@ -173,7 +173,7 @@ with `orbital=1`. `bcsbath(normalbath, Δ)` wraps a normal bath with a gap `Δ`
 
 ```julia
 lat  = GrassmannLattice(N=10, δτ=0.1, contour=:imag, bands=2)
-model = AndersonIM(U=1.0, μ=-ϵ_d)
+model = AndersonIM(U=1.0, ϵ_d=-ϵ_d)
 mpsK = sysdynamics(lat, model, trunc=trunc)
 for band in 1:2
     mpsK = boundarycondition!(mpsK, lat, band=band, trunc=trunc)
@@ -227,7 +227,7 @@ pbath = bosonicbath(DiracDelta(ω=1.0, α=0.5), β=β)
 corr  = correlationfunction(pbath, flat)
 mpsI  = hybriddynamics(flat, corr, trunc=trunc)
 
-model = (U == 0 ? ToulouseIM(μ=μ) : AndersonIM(U=U, μ=μ))  # AndersonIM is always two-band
+model = (U == 0 ? ToulouseIM(ϵ_d=μ) : AndersonIM(U=U, ϵ_d=μ))  # AndersonIM is always two-band
 mpsK  = sysdynamics(lattice, model, trunc=trunc)
 adt   = reweighting!(lattice, mpsK, flat, mpsI, trunc=trunc)
 for band in 1:bands

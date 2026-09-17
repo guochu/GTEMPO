@@ -7,7 +7,7 @@
 
 	# trivial case: Δ = 0 reproduces two independent normal bands
 	lattice = GrassmannLattice(N=Nτ, δτ=δτ, contour=:imag, bands=2)
-	model = AndersonIM(U=U, μ=-ϵ_d)
+	model = AndersonIM(U=U, ϵ_d=-ϵ_d)
 	mpsK = sysdynamics(lattice, model, trunc=trunc)
 	for band in 1:2
 		mpsK = boundarycondition!(mpsK, lattice, band=band, trunc=trunc)
@@ -33,7 +33,7 @@
 	gs = []
 	for ordering in imag_orderings
 		lattice = GrassmannLattice(N=Nτ, δτ=δτ, contour=:imag, bands=2, ordering=ordering)
-		model = AndersonIM(U=0, μ=-ϵ_d)
+		model = AndersonIM(U=0, ϵ_d=-ϵ_d)
 		mpsK = sysdynamics(lattice, model, trunc=trunc)
 		mpsK = complex(mpsK)
 		for band in 1:2
