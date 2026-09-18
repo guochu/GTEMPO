@@ -2,6 +2,20 @@
 
 本轮重构涉及的接口更改汇总。所有更改均已通过全量测试验证（行为不变或数值等价）。
 
+## 新增实轴 Grassmann ordering：`a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2`（2026-09-17）
+
+- 新增**时间升序**（`RealTimeOrderingStyle = TimeAscending()`）的实轴 time-local ordering：每个时间块内按 `a⁻ā⁻a⁺Ā⁺b⁻b̄⁻b⁺B̄⁺` 排列，块顺序为 `j=1,…,k`（既有实轴 ordering 均为时间降序）。它是 mixed ordering `A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2` 的纯实轴对应版本，已导出。按命名约定，只写一个时间点的名字表示该模式按时间降序重复（默认 TimeDscending）；本 ordering 为时间升序，名字显式写出时间点 1 和 2。
+- 影响泛函（TTIIF / ExactTTIIF / TDVPIF）对该 ordering **直接构造**（加入 `_AllowedRealGrassmannOrdering`），`_fit_to_lattice` 按 `RealTimeOrderingStyle` 决定时间块布放方向（升序时 `u_left` 端紧邻边界块的 `j=1`），不再走 `changeordering`/permute fallback。
+- `makestep` 支持时间升序格点：新时间块追加在右端，旧块位点不变（降序时旧块右移的原行为不变）。
+
+## Grassmann lattice 的 `show`/`print`（2026-09-17）
+
+为所有 `AbstractGrassmannLattice`（imag/real/mixed 三种轮廓、全部 ordering）新增统一打印，基于 `indexmappings` 逐位点反查符号，无需按 ordering 特化：
+
+- 紧凑形式 `show(io, lat)`（`print`/`string`/数组内）只输出符号链；REPL 多行显示（`text/plain`）额外给出类型名、参数（`bands`/`N`/`δt`/`Nτ`/`δτ`）和总位点数，类型名用 `nameof` 不带模块前缀。
+- 符号约定全小写：带用 `a,b,c,…`；共轭为字母 + 组合长音符（U+0304）；时间点下标 ₀₁₂…；实轴 branch 上标 `⁺`/`⁻`；虚轴与 `i=0` 边界位点无上标；mixed 格点虚/实段之间以 `_` 连接。
+- 行为由 `test/api/lattice.jl` 中 "API: lattice show / printing" 固化（102 项断言，含 7 条完整符号链 fixture、`text/plain` 精确文本及全部导出 ordering 的通用不变量）。
+
 ## 第七批更新（2026-09-17）：截断方案与 MPS 算法接口统一（同步 TEMPO 2026-09-17）
 
 同步 TEMPO 同日的接口调整：压缩算法的截断参数统一为 `TruncationScheme` 对象，默认截断常量收敛。Z2Tensors 依赖包同步把截断类型 **`TruncationDimCutoff` 更名为 `TruncateDimCutoff`**（`truncdimcutoff(D, ϵ[, add_back])` 构造不变），GTEMPO 全库跟进。
@@ -55,13 +69,13 @@
 ### Grassmann ordering 导出与缩写清理
 
 - 删除 `src/lattices/grassmannordering.jl` 中全部 7 个缩写别名（`const AĀBB̄ = ...` 等），所有使用处改用完整 ordering 名（含 `MixedGrassmannLattice1Order` 默认 ordering 参数）。
-- 只导出满足 **AdjacentConjugation** 的 ordering（6 个）：`A1Ā1B1B̄1`、`A1Ā1B1B̄1a1ā1b1b̄1`、`A1Ā1a1ā1B1B̄1b1b̄1`、`A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2` 及两个 mixed-time ordering；8 个 GeneralConjugation ordering 不再导出（内部仍可用，测试入口通过 `using GTEMPO: ...` 显式导入）。
+- 只导出满足 **AdjacentConjugation** 的 ordering（6 个）：`A1Ā1B1B̄1`、`A1Ā1B1B̄1a1ā1b1b̄1`、`A1Ā1a1ā1B1B̄1b1b̄1`、`A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2` 及两个 mixed-time ordering；8 个 GeneralConjugation ordering 不再导出（内部仍可用，测试入口通过 `using GTEMPO: ...` 显式导入）。
 
 ### GrassmannOrdering Unicode 规范统一
 
 - 全仓库统一为组合宏形式（`A` + U+0304），消除同一 ordering 名在不同文件中"预组合（U+0100）/组合宏"混用导致的符号不一致：
   - 修正 `src/influencefunctional/hybridization/ttiif/imaginarytime.jl`、`src/influencefunctional/hybridization/exact_ttiif/imaginarytime.jl` 中因编码不一致而失联的 `index` 等方法特化
-  - 统一 `src/grassmanntensor/` 中混用的 `ā` 变量名编码
+  - 统一 `src/grassmanntensor/` 中混用的 `ā` 变量名编码
   - 测试与文档中 8 个文件的宏字符一并规范化
 
 ## 第五批更新

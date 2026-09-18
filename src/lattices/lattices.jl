@@ -172,3 +172,59 @@ function trivial_sitetenor(::Type{T}, leftspace) where {T <: Number}
 	end
 	return v
 end
+
+# ------------------------------------------------------------- show / printing
+# One symbol per MPS site, written with the same convention as the ordering
+# names but entirely in lowercase:
+#   band letter a, b, c, ...; a combining macron marks the conjugate;
+#   a subscript gives the time index; a superscript +/- gives the real-time
+#   branch. The imaginary-time branch (:τ) and the i=0 boundary sites carry
+#   no branch superscript. A mixed (L-shaped) lattice joins the imaginary and
+#   real parts with "_".
+const _subscript_digits = ('₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉')
+_subscript(n::Int) = join(_subscript_digits[d+1] for d in reverse!(digits(n)))
+
+function _grassmann_symbol(i::Int, conj::Bool, branch::Symbol, band::Int)
+	c = Char(Int('a') + band - 1)
+	s = conj ? String([c, '\u0304']) : string(c)
+	s *= _subscript(i)
+	(i == 0) && return s
+	if branch === :+
+		s *= "⁺"
+	elseif branch === :-
+		s *= "⁻"
+	end
+	return s
+end
+
+function _site_symbols(lattice::AbstractGrassmannLattice)
+	pos2key = Dict{Int, Tuple{Int, Bool, Symbol, Int}}()
+	for (key, pos) in indexmappings(lattice)
+		pos2key[pos] = key
+	end
+	return [_grassmann_symbol(pos2key[pos]...) for pos in 1:length(lattice)]
+end
+
+_lattice_string(lattice::AbstractGrassmannLattice) = join(_site_symbols(lattice))
+function _lattice_string(lattice::MixedGrassmannLattice)
+	syms = _site_symbols(lattice)
+	cut = 2 * lattice.bands * (lattice.kτ + 1)
+	return join(@view syms[1:cut]) * "_" * join(@view syms[cut+1:end])
+end
+
+Base.show(io::IO, lattice::AbstractGrassmannLattice) = print(io, _lattice_string(lattice))
+
+function Base.show(io::IO, ::MIME"text/plain", lattice::AbstractGrassmannLattice)
+	print(io, nameof(typeof(lattice)), " (")
+	_show_lattice_params(io, lattice)
+	print(io, ", ", length(lattice), " sites):\n  ")
+	print(io, _lattice_string(lattice))
+end
+
+_show_lattice_params(io::IO, lattice::RealGrassmannLattice) =
+	print(io, "bands=", lattice.bands, ", N=", lattice.N, ", δt=", lattice.δt)
+_show_lattice_params(io::IO, lattice::ImagGrassmannLattice) =
+	print(io, "bands=", lattice.bands, ", N=", lattice.N, ", δτ=", lattice.δτ)
+_show_lattice_params(io::IO, lattice::MixedGrassmannLattice) =
+	print(io, "bands=", lattice.bands, ", Nt=", lattice.Nt, ", δt=", lattice.δt,
+		  ", Nτ=", lattice.Nτ, ", δτ=", lattice.δτ)

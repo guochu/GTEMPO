@@ -94,7 +94,15 @@ end
 function _makestep_util(lattice2::RealGrassmannLattice, x::GrassmannMPS)
 	L = length(x)
 	x2 = GrassmannMPS(scalartype(x), length(lattice2))
-	x2.data[end-L+1:end] = x.data
+	if RealTimeOrderingStyle(lattice2) isa TimeAscending
+		# the new time block is appended at the right end, old blocks keep
+		# their site positions
+		x2.data[1:L] = x.data
+	else
+		# time descending: the new time block is inserted next to the
+		# left boundary, old blocks shift to the right
+		x2.data[end-L+1:end] = x.data
+	end
 	return x2
 end
 
@@ -146,6 +154,27 @@ function index(x::RealGrassmannLattice{<:A1Ā1a1ā1B1B̄1b1b̄1}, i::Int; conj
 			ifelse(conj, TL-4i*bands+2+4*(band-1), TL-4i*bands+1+4*(band-1))
 		else
 			ifelse(conj, TL-4i*bands+4+4*(band-1), TL-4i*bands+3+4*(band-1))
+		end
+	end
+end
+
+# a\bar{a}b\bar{b} a_1^-\bar{a}_1^-a_1^+\bar{a}_1^+b_1^-\bar{b}_1^-b_1^+\bar{b}_1^+ a_2^-\bar{a}_2^-a_2^+\bar{a}_2^+b_2^-\bar{b}_2^-b_2^+\bar{b}_2^+
+# time ascending: the block of time step 1 directly follows the boundary block
+function index(x::RealGrassmannLattice{<:a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+	@boundscheck begin
+		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
+		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
+		(branch in (:+, :-)) || throw(ArgumentError("branch must be :+ or :-"))
+	end
+	bands = x.bands
+	if i == 0
+		ifelse(conj, 2*band, 2*band-1)
+	else
+		base = 2bands + 4*(i-1)*bands
+		if branch == :-
+			ifelse(conj, base+2+4*(band-1), base+1+4*(band-1))
+		else
+			ifelse(conj, base+4+4*(band-1), base+3+4*(band-1))
 		end
 	end
 end
@@ -278,6 +307,16 @@ function band_boundary(lattice::RealGrassmannLattice{<:A1Ā1B1B̄1a1ā1b1b̄1}
     else
         posa = index(lattice, j, conj=false, branch=:+, band=1)
         posb = index(lattice, j, conj=true, branch=:-, band=lattice.bands)
+    end
+    return posa, posb
+end
+function band_boundary(lattice::RealGrassmannLattice{<:a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2}, j::Int)
+    if j == 0
+        posa = index(lattice, j, conj=false, band=1)
+        posb = index(lattice, j, conj=true, band=lattice.bands)
+    else
+        posa = index(lattice, j, conj=false, branch=:-, band=1)
+        posb = index(lattice, j, conj=true, branch=:+, band=lattice.bands)
     end
     return posa, posb
 end

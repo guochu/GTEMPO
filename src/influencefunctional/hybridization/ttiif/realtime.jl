@@ -1,6 +1,8 @@
-const _AllowedRealGrassmannOrdering = Union{A1Ā1a1ā1B1B̄1b1b̄1, A1Ā1B1B̄1a1ā1b1b̄1}
+const _AllowedRealGrassmannOrdering = Union{A1Ā1a1ā1B1B̄1b1b̄1, A1Ā1B1B̄1a1ā1b1b̄1, a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2}
 
-# full influence operator, only works for ordering A1Ā1a1ā1B1B̄1b1b̄1 and A1Ā1B1B̄1a1ā1b1b̄1
+# full influence operator, works for the time-local adjacent-conjugation orderings
+# A1Ā1a1ā1B1B̄1b1b̄1 and A1Ā1B1B̄1a1ā1b1b̄1 (time descending),
+# a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2 (time ascending)
 function influenceoperators(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction; 
 							band::Int=1, algexpan::ExponentialExpansionAlgorithm=DefaultExpansionAlg)
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr, band)
@@ -138,30 +140,17 @@ function _fit_to_lattice(lattice::RealGrassmannLattice, mpo::MPO, _JW::MPSBondTe
 		vd2 = id(leftspace)
 		data2[pos] = @tensor tmp[1,3;2,4] := vd2[1,2] * I2[3,4]
 	end
-	j = lattice.k
-	posa, posb = band_boundary(lattice, j)
-	pos1, pos2 = index(lattice, j, conj=false, branch=f1, band=band), index(lattice, j, conj=true, branch=f2, band=band)
-	if pos1 > pos2 # this sign has already been taken care of
-		pos1, pos2 = pos2, pos1
-	end
-	for i in posa:posb
-		if i < pos1
-			vd2 = id(leftspace)
-			data2[i] = @tensor tmp[1,3;2,4] := vd2[1,2] * I2[3,4]
-		elseif i == pos1
-			data2[i] = u_left
-		elseif i < pos2
-			vd2 = id(leftspace)
-			data2[i] = @tensor tmp[1,3;2,4] := vd2[1,2] * _JW[3,4]
-		elseif i == pos2
-			data2[i] = v_left
-		else
-			vd2 = id(leftspace)
-			data2[i] = @tensor tmp[1,3;2,4] := vd2[1,2] * I2[3,4]			
-		end
-		leftspace = space_r(data2[i])'
-	end
-	for j in lattice.k-1:-1:2
+	# fill the time blocks in physical site order: on a time-descending
+	# lattice the boundary block i=0 is followed by the block j=k, while on
+	# a time-ascending lattice it is followed by j=1. The 3-site bath MPO
+	# starts with (u_left, v_left) at the boundary side and ends with
+	# (u_right, v_right) at the far end.
+	ascending = RealTimeOrderingStyle(lattice) isa TimeAscending
+	jfirst = ascending ? 1 : lattice.k
+	jlast  = ascending ? lattice.k : 1
+	jmids  = ascending ? (2:lattice.k-1) : (lattice.k-1:-1:2)
+
+	function placeblock!(j, u, v, leftspace)
 		posa, posb = band_boundary(lattice, j)
 		pos1, pos2 = index(lattice, j, conj=false, branch=f1, band=band), index(lattice, j, conj=true, branch=f2, band=band)
 		if pos1 > pos2 # this sign has already been taken care of
@@ -172,42 +161,26 @@ function _fit_to_lattice(lattice::RealGrassmannLattice, mpo::MPO, _JW::MPSBondTe
 				vd2 = id(leftspace)
 				data2[i] = @tensor tmp[1,3;2,4] := vd2[1,2] * I2[3,4]
 			elseif i == pos1
-				data2[i] = u_middle
+				data2[i] = u
 			elseif i < pos2
 				vd2 = id(leftspace)
 				data2[i] = @tensor tmp[1,3;2,4] := vd2[1,2] * _JW[3,4]
 			elseif i == pos2
-				data2[i] = v_middle
+				data2[i] = v
 			else
 				vd2 = id(leftspace)
-				data2[i] = @tensor tmp[1,3;2,4] := vd2[1,2] * I2[3,4]			
+				data2[i] = @tensor tmp[1,3;2,4] := vd2[1,2] * I2[3,4]
 			end
 			leftspace = space_r(data2[i])'
 		end
+		return leftspace
 	end
-	j = 1
-	posa, posb = band_boundary(lattice, j)
-	pos1, pos2 = index(lattice, j, conj=false, branch=f1, band=band), index(lattice, j, conj=true, branch=f2, band=band)
-	if pos1 > pos2 # this sign has already been taken care of
-		pos1, pos2 = pos2, pos1
+
+	leftspace = placeblock!(jfirst, u_left, v_left, leftspace)
+	for j in jmids
+		leftspace = placeblock!(j, u_middle, v_middle, leftspace)
 	end
-	for i in posa:posb
-		if i < pos1
-			vd2 = id(leftspace)
-			data2[i] = @tensor tmp[1,3;2,4] := vd2[1,2] * I2[3,4]
-		elseif i == pos1
-			data2[i] = u_right
-		elseif i < pos2
-			vd2 = id(leftspace)
-			data2[i] = @tensor tmp[1,3;2,4] := vd2[1,2] * _JW[3,4]
-		elseif i == pos2
-			data2[i] = v_right
-		else
-			vd2 = id(leftspace)
-			data2[i] = @tensor tmp[1,3;2,4] := vd2[1,2] * I2[3,4]			
-		end
-		leftspace = space_r(data2[i])'
-	end
+	leftspace = placeblock!(jlast, u_right, v_right, leftspace)
 	return MPO(data2)
 end
 

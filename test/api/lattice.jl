@@ -84,7 +84,7 @@ end
 # all exported orderings of each contour, including the retarded-interaction
 # orderings and the fast-propagator mixed-time ordering
 const all_imag_orderings = [A1Ā1B1B̄1(), A1B1B̄1Ā1(), Ā2A1B̄2B1()]
-const all_real_orderings = [A1Ā1B1B̄1a1ā1b1b̄1(), A1Ā1a1ā1B1B̄1b1b̄1(),
+const all_real_orderings = [A1Ā1B1B̄1a1ā1b1b̄1(), A1Ā1a1ā1B1B̄1b1b̄1(), a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2(),
 							A1B1ā1b̄1Ā1B̄1a1b1(),
 							A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2(), A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2(),
 							Ā2A1ā1a2B̄2B1b̄1b̄2()]
@@ -108,6 +108,7 @@ const all_mixed_orderings = [A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2
 	end
 	for (o, conj, layout) in ((A1Ā1B1B̄1a1ā1b1b̄1(), AdjacentConjugation, TimeLocalLayout),
 							  (A1Ā1a1ā1B1B̄1b1b̄1(), AdjacentConjugation, TimeLocalLayout),
+							  (a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2(), AdjacentConjugation, TimeLocalLayout),
 							  (A1B1ā1b̄1Ā1B̄1a1b1(), GeneralConjugation, TimeLocalLayout),
 							  (A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2(), GeneralConjugation, BranchLocalLayout),
 							  (A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2(), AdjacentConjugation, BranchLocalLayout),
@@ -194,6 +195,17 @@ end
 		(2, false, :+, 2) => 9,  (2, true, :+, 2) => 10, (2, false, :-, 2) => 11, (2, true, :-, 2) => 12,
 		(1, false, :+, 1) => 13, (1, true, :+, 1) => 14, (1, false, :-, 1) => 15, (1, true, :-, 1) => 16,
 		(1, false, :+, 2) => 17, (1, true, :+, 2) => 18, (1, false, :-, 2) => 19, (1, true, :-, 2) => 20))
+	@test integrate(lat, vacuumstate(lat)) ≈ 1 atol = 1.0e-6
+
+	# ābb̄ a₁-ā₁-a₁+ā₁+b₁-b̄₁-b₁+b̄₁+ a₂-ā₂-a₂+ā₂+b₂-b̄₂-b₂+b̄₂+
+	lat = GrassmannLattice(N=1, δt=0.1, bands=2, contour=:real, ordering=a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2())
+	@test length(lat) == 20 && lat.k == 2 && lat.t == 0.1
+	@test check_indexmap(lat, Dict(
+		(0, false, :τ, 1) => 1,  (0, true, :τ, 1) => 2,  (0, false, :τ, 2) => 3,  (0, true, :τ, 2) => 4,
+		(1, false, :-, 1) => 5,  (1, true, :-, 1) => 6,  (1, false, :+, 1) => 7,  (1, true, :+, 1) => 8,
+		(1, false, :-, 2) => 9,  (1, true, :-, 2) => 10, (1, false, :+, 2) => 11, (1, true, :+, 2) => 12,
+		(2, false, :-, 1) => 13, (2, true, :-, 1) => 14, (2, false, :+, 1) => 15, (2, true, :+, 1) => 16,
+		(2, false, :-, 2) => 17, (2, true, :-, 2) => 18, (2, false, :+, 2) => 19, (2, true, :+, 2) => 20))
 	@test integrate(lat, vacuumstate(lat)) ≈ 1 atol = 1.0e-6
 
 	# aā a₃+ā₃-ā₃+a₃⁻- ... (impurity-dynamics time-local ordering)
@@ -599,4 +611,86 @@ end
 	# physical space accessors
 	@test physical_space(Kr, 1) == physical_space(Kr[1])
 	@test physical_spaces(Kr) == [physical_space(Kr[i]) for i in 1:length(Kr)]
+end
+
+
+# show/print convention: one lowercase Grassmann symbol per MPS site — a
+# combining macron (U+0304) marks the conjugate, the time index is
+# subscripted, the real-time branch carries a +/- superscript, and "_" joins
+# the imaginary/real parts of a mixed lattice. Fixture chains below use \u
+# escapes to keep the source ASCII.
+@testset "API: lattice show / printing" begin
+	# compact 2-arg show: the pure site-symbol chain
+	chain_fixtures = [
+		# imaginary time, adjacent conjugation (descending), bands=2, N=2
+		(GrassmannLattice(contour=:imag, N=2, δτ=0.05, bands=2, ordering=A1Ā1B1B̄1()),
+		 "a\u2080a\u0304\u2080b\u2080b\u0304\u2080a\u2083a\u0304\u2083b\u2083b\u0304\u2083a\u2082a\u0304\u2082b\u2082b\u0304\u2082a\u2081a\u0304\u2081b\u2081b\u0304\u2081"),
+		# imaginary time, general conjugation (conjugate pairs separated)
+		(GrassmannLattice(contour=:imag, N=2, δτ=0.05, bands=2, ordering=A1B1B̄1Ā1()),
+		 "a\u2080b\u2080b\u0304\u2080a\u0304\u2080a\u2083b\u2083b\u0304\u2083a\u0304\u2083a\u2082b\u2082b\u0304\u2082a\u0304\u2082a\u2081b\u2081b\u0304\u2081a\u0304\u2081"),
+		# real time, canonical time-local ordering (descending, + before -)
+		(GrassmannLattice(contour=:real, N=2, δt=0.05, ordering=A1Ā1B1B̄1a1ā1b1b̄1()),
+		 "a\u2080a\u0304\u2080a\u2083\u207aa\u0304\u2083\u207aa\u2083\u207ba\u0304\u2083\u207ba\u2082\u207aa\u0304\u2082\u207aa\u2082\u207ba\u0304\u2082\u207ba\u2081\u207aa\u0304\u2081\u207aa\u2081\u207ba\u0304\u2081\u207b"),
+		# real time, ascending time-local ordering, bands=3, N=2
+		(RealGrassmannLattice1Order(δt=0.1, N=2, bands=3, ordering=a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2()),
+		 "a\u2080a\u0304\u2080b\u2080b\u0304\u2080c\u2080c\u0304\u2080a\u2081\u207ba\u0304\u2081\u207ba\u2081\u207aa\u0304\u2081\u207ab\u2081\u207bb\u0304\u2081\u207bb\u2081\u207ab\u0304\u2081\u207ac\u2081\u207bc\u0304\u2081\u207bc\u2081\u207ac\u0304\u2081\u207aa\u2082\u207ba\u0304\u2082\u207ba\u2082\u207aa\u0304\u2082\u207ab\u2082\u207bb\u0304\u2082\u207bb\u2082\u207ab\u0304\u2082\u207ac\u2082\u207bc\u0304\u2082\u207bc\u2082\u207ac\u0304\u2082\u207aa\u2083\u207ba\u0304\u2083\u207ba\u2083\u207aa\u0304\u2083\u207ab\u2083\u207bb\u0304\u2083\u207bb\u2083\u207ab\u0304\u2083\u207ac\u2083\u207bc\u0304\u2083\u207bc\u2083\u207ac\u0304\u2083\u207a"),
+		# real time, branch-local ordering (descending), bands=2, N=1
+		(GrassmannLattice(contour=:real, N=1, δt=0.1, bands=2, ordering=A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2()),
+		 "a\u2080a\u0304\u2080b\u2080b\u0304\u2080a\u2082\u207aa\u0304\u2082\u207ab\u2082\u207ab\u0304\u2082\u207aa\u2081\u207aa\u0304\u2081\u207ab\u2081\u207ab\u0304\u2081\u207aa\u2081\u207ba\u0304\u2081\u207bb\u2081\u207bb\u0304\u2081\u207ba\u2082\u207ba\u0304\u2082\u207bb\u2082\u207bb\u0304\u2082\u207b"),
+		# mixed time, default ordering, bands=1, Nt=2, Nτ=2
+		(GrassmannLattice(contour=:mixed, Nt=2, δt=0.05, Nτ=2, δτ=0.1),
+		 "a\u2080a\u0304\u2080a\u2083a\u0304\u2083a\u2082a\u0304\u2082a\u2081a\u0304\u2081_a\u2081\u207aa\u0304\u2081\u207aa\u2081\u207ba\u0304\u2081\u207ba\u2082\u207aa\u0304\u2082\u207aa\u2082\u207ba\u0304\u2082\u207ba\u2083\u207aa\u0304\u2083\u207aa\u2083\u207ba\u0304\u2083\u207b"),
+		# mixed time, fast-propagator ordering (interleaved branches), Nt=1, Nτ=2
+		(GrassmannLattice(contour=:mixed, Nt=1, δt=0.1, Nτ=2, δτ=0.1, ordering=A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄1A1B1()),
+		 "a\u2080a\u0304\u2080a\u2083a\u0304\u2083a\u2082a\u0304\u2082a\u2081a\u0304\u2081_a\u2081\u207ba\u0304\u2081\u207aa\u0304\u2081\u207ba\u2081\u207aa\u2082\u207ba\u0304\u2082\u207aa\u0304\u2082\u207ba\u2082\u207a"),
+	]
+	for (lat, expected_chain) in chain_fixtures
+		chain = sprint(show, lat)
+		@test chain == expected_chain
+		# print/show on a generic IO use the compact form
+		buf = IOBuffer()
+		show(buf, lat)
+		@test String(take!(buf)) == expected_chain
+		# all band letters are lowercase; only macrons/sub/superscripts appear
+		@test !occursin(r"[A-Z]", chain)
+	end
+
+	# multiline text/plain show: bare type name (no module prefix), parameters,
+	# total site count, then the symbol chain on the next line
+	plain_cases = [
+		(1, "ImagGrassmannLattice1Order (bands=2, N=2, δτ=0.05, 16 sites):\n  "),
+		(4, "RealGrassmannLattice1Order (bands=3, N=2, δt=0.1, 42 sites):\n  "),
+		(6, "MixedGrassmannLattice1Order (bands=1, Nt=2, δt=0.05, Nτ=2, δτ=0.1, 20 sites):\n  "),
+	]
+	for (idx, header) in plain_cases
+		lat, chain = chain_fixtures[idx]
+		plain = sprint(show, MIME"text/plain"(), lat)
+		@test plain == header * chain
+		@test !occursin("GTEMPO.", plain)
+	end
+
+	# generic invariants for every exported ordering
+	for (orderings, mk) in (
+		(all_imag_orderings, o -> GrassmannLattice(N=2, δτ=0.05, bands=2, contour=:imag, ordering=o)),
+		(all_real_orderings, o -> GrassmannLattice(N=1, δt=0.1, bands=2, contour=:real, ordering=o)),
+		(all_mixed_orderings, o -> GrassmannLattice(Nt=1, δt=0.1, Nτ=2, δτ=0.1, bands=2, contour=:mixed, ordering=o)))
+		for o in orderings
+			lat = mk(o)
+			chain = sprint(show, lat)
+			@test length(GTEMPO._site_symbols(lat)) == length(lat)
+			plain = sprint(show, MIME"text/plain"(), lat)
+			@test occursin("bands=", plain)
+			@test occursin("$(length(lat)) sites):", plain)
+			@test endswith(plain, chain)
+			if lat isa RealGrassmannLattice
+				# only the real-time sites carry +/- branch superscripts
+				@test occursin("\u207a", chain) && occursin("\u207b", chain)
+			elseif lat isa ImagGrassmannLattice
+				@test !occursin("\u207a", chain) && !occursin("\u207b", chain)
+			else
+				# the L-shaped contour joins the imaginary and real parts once
+				@test count(==('_'), chain) == 1
+			end
+		end
+	end
 end

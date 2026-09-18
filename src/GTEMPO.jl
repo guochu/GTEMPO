@@ -27,6 +27,7 @@ export LayoutStyle, TimeLocalLayout, BranchLocalLayout, GeneralLayout
 export A1Ā1B1B̄1
 export A1Ā1B1B̄1a1ā1b1b̄1
 export A1Ā1a1ā1B1B̄1b1b̄1
+export a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2
 export A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2
 export A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2
 export A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2

@@ -114,6 +114,20 @@ struct A1Ā1a1ā1B1B̄1b1b̄1 <: RealGrassmannOrdering end
 ConjugationStyle(::Type{A1Ā1a1ā1B1B̄1b1b̄1}) = AdjacentConjugation()
 LayoutStyle(::Type{A1Ā1a1ā1B1B̄1b1b̄1}) = TimeLocalLayout()
 
+"""
+	struct a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2
+
+GrassmannOrdering aābb̄ a₁-ā₁-a₁+ā₁+b₁-b̄₁-b₁+b̄₁+ a₂-ā₂-a₂+ā₂+b₂-b̄₂-b₂+b̄₂+
+Naming convention: a name that spells out only one time point implies that the
+pattern repeats with descending time indices (TimeDscending, the default).
+This ordering is TimeAscending (the real-time index runs from small to large),
+so both time points are written out to make the ascending block order explicit.
+"""
+struct a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2 <: RealGrassmannOrdering end
+ConjugationStyle(::Type{a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2}) = AdjacentConjugation()
+LayoutStyle(::Type{a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2}) = TimeLocalLayout()
+RealTimeOrderingStyle(::Type{a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2}) = TimeAscending()
+
 
 """
 	struct A1B1ā1b̄1Ā1B̄1a1b1
