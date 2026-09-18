@@ -50,33 +50,6 @@ changeordering(o::GrassmannOrdering, lattice::AbstractGrassmannLattice, x::Varar
 #     return _abba2aabb(x, lattice, trunc=trunc)
 # end
 
-# function convert_ordering(::Type{A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2}, lattice::RealGrassmannLattice{A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2}, x::GrassmannMPS; trunc::TruncationScheme=DefaultKTruncation)
-#     return _abba2aabb_real(x, lattice, trunc=trunc)
-# end
-
-# function convert_ordering(::Type{A1Ā1a1ā1B1B̄1b1b̄1}, lattice::RealGrassmannLattice{A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2}, x::GrassmannMPS; trunc::TruncationScheme=DefaultKTruncation)
-#     y = copy(x)
-#     for j in 1:lattice.k
-#         posa = index(lattice, j, band=1, conj=true, forward=true) + 1
-#         posb = index(lattice, j, band=1, conj=false, forward=false) 
-#         posb_end = index(lattice, j, band=lattice.bands, conj=false, forward=false) 
-#         while (posb >= posa) && (posb <= posb_end)
-#             for i in posb-1:-1:posa
-#                 easy_swap!(y, i, trunc=trunc)
-#             end
-#             for i in posb:-1:posa+1
-#                 easy_swap!(y, i, trunc=trunc)
-#             end  
-#             posa += 4
-#             posb += 2         
-#         end
-#     end
-#     return y
-# end
-# function convert_ordering(::Type{A1Ā1a1ā1B1B̄1b1b̄1}, lattice::RealGrassmannLattice{A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2}, x::GrassmannMPS; kwargs...)
-#     y = convert_ordering(A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2, lattice, x; kwargs...)
-#     return convert_ordering(A1Ā1a1ā1B1B̄1b1b̄1, similar(lattice, ordering=A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2()), y; kwargs...)
-# end
 
 """
     toadjacentordering(lattice::AbstractGrassmannLattice, x::GrassmannMPS...; kwargs...)
@@ -86,23 +59,8 @@ This function a simple wrapper of changeordering, by specifying a particular ord
 """
 toadjacentordering(lattice::AbstractGrassmannLattice, x::Vararg{GrassmannMPS}; kwargs...) = error("toadjacentordering not implemented for lattice type $(typeof(lattice))")
 toadjacentordering(lattice::ImagGrassmannLattice, x::Vararg{GrassmannMPS}; kwargs...) = changeordering(A1Ā1B1B̄1, lattice, x...; kwargs...)
-# toadjacentordering(lattice::RealGrassmannLattice{<:A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2}, x::GrassmannMPS...; kwargs...) = changeordering(
-#                     A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2, lattice, x...; kwargs...)
-function toadjacentordering(lattice::RealGrassmannLattice, x::Vararg{GrassmannMPS}; kwargs...)
-    if LayoutStyle(lattice) isa TimeLocalLayout
-        return changeordering(A1Ā1a1ā1B1B̄1b1b̄1, lattice, x...; kwargs...)
-    else
-        return changeordering(A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2, lattice, x...; kwargs...)
-    end
-end 
+toadjacentordering(lattice::RealGrassmannLattice, x::Vararg{GrassmannMPS}; kwargs...) = changeordering(A1Ā1a1ā1B1B̄1b1b̄1, lattice, x...; kwargs...)
 
-"""
-    toadjacentordering(lattice::MixedGrassmannLattice{<:A1B1B̄1Ā1_A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2}, x::GrassmannMPS...; trunc) 
-
-Convert the ordering of GVs in x... from the ordering in lattice into an optimal "AdjacentConjugation" ordering 
-"""
-toadjacentordering(lattice::MixedGrassmannLattice{<:A1B1B̄1Ā1_A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2}, x::Vararg{GrassmannMPS}; kwargs...) = changeordering(
-                    A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2, lattice, x...; kwargs...)
 
 # function _abba2aabb(x::GrassmannMPS, lattice::AbstractGrassmannLattice; trunc::TruncationScheme=DefaultKTruncation)
 #     @assert length(x) == length(lattice)

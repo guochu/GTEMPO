@@ -200,48 +200,6 @@ function index(x::RealGrassmannLattice{<:A1Ā1B1B̄1a1ā1b1b̄1}, i::Int; conj
 end
 
 
-# ab\bar{b}\bar{a} a_2^+b_2^+\bar{b}_2^+\bar{a}_2^+a_1^+b_1^+\bar{b}_1^+\bar{a}_1^+ a_1^-b_1^-\bar{b}_1^-\bar{a}_1^-a_2^-b_2^-\bar{b}_2^-\bar{a}_2^-
-function index(x::RealGrassmannLattice{<:A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
-	@boundscheck begin
-		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
-		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
-		(branch in (:+, :-)) || throw(ArgumentError("branch must be :+ or :-"))
-	end
-	TL = length(x)
-	bands = x.bands
-	if i == 0
-		ifelse(conj, 2*bands+1-band, band)
-	else
-		if branch == :+
-			ifelse(conj, 2*bands*(x.k-i) + 2*bands-band+1, 2*bands*(x.k-i) + band ) + 2*bands
-		else
-			ifelse(conj, 2*bands*(i-1) + 2*bands-band+1, 2*bands*(i-1) + band ) + 2*bands + 2 * bands * x.k
-		end
-	end
-end
-
-
-# a\bar{a}b\bar{b} a_2^+\bar{a}_2^+b_2^+\bar{b}_2^+a_1^+\bar{a}_1^+b_1^+\bar{b}_1^+ a_1^-\bar{a}_1^-b_1^-\bar{b}_1^-a_2^-\bar{a}_2^-b_2^-\bar{b}_2^-
-function index(x::RealGrassmannLattice{<:A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
-	@boundscheck begin
-		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
-		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
-		(branch in (:+, :-)) || throw(ArgumentError("branch must be :+ or :-"))
-	end
-	TL = length(x)
-	bands = x.bands
-	if i == 0
-		ifelse(conj, 2*band, 2*band-1)
-	else
-		if branch == :+
-			ifelse(conj, 2*bands*(x.k-i) + 2*band, 2*bands*(x.k-i) + 2*band - 1 ) + 2*bands
-		else
-			ifelse(conj, 2*bands*(i-1) + 2*band, 2*bands*(i-1) + 2*band - 1 ) + 2*bands + 2 * bands * x.k
-		end
-	end
-end
-
-
 function index(x::RealGrassmannLattice{<:Ā2A1ā1a2B̄2B1b̄1b̄2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))

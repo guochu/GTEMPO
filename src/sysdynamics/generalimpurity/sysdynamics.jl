@@ -303,8 +303,7 @@ end
 # the canonical ordering in which the propagator windows of one branch
 # (for real time: of both branches together) are pairwise disjoint
 _fastordering(lattice::ImagGrassmannLattice) = A1B1B̄1Ā1()
-_fastordering(lattice::RealGrassmannLattice) = LayoutStyle(lattice) isa TimeLocalLayout ?
-		A1B1ā1b̄1Ā1B̄1a1b1() : A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2()
+_fastordering(lattice::RealGrassmannLattice) = A1B1ā1b̄1Ā1B̄1a1b1()
 _fastordering(lattice::MixedGrassmannLattice) = A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄1A1B1()
 
 # the propagator windows of all time steps of the given branches, in the
@@ -408,8 +407,7 @@ windows are pairwise disjoint in the ordering of `lattice` (time-local
 orderings such as A1B1B̄1Ā1), their tensors are filled directly into a
 vacuum GrassmannMPS — the exact product of all propagators, without any
 GMPS multiplication. Otherwise the propagator is built in a canonical
-ordering (A1B1B̄1Ā1 for imaginary time, A1B1ā1b̄1Ā1B̄1a1b1 resp.
-A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2 for real time,
+ordering (A1B1B̄1Ā1 for imaginary time, A1B1ā1b̄1Ā1B̄1a1b1 for real time,
 A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄1A1B1 for mixed contours) and transformed to
 the requested ordering with `changeordering`.
 """

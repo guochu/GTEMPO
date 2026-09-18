@@ -127,39 +127,6 @@ function index(x::MixedGrassmannLattice1Order{<:A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B
 	end
 end
 
-# acending order for real branch, descending order for imag time
-function index(x::MixedGrassmannLattice1Order{<:A1B1B̄1Ā1_A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
-	@boundscheck begin
-		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
-		(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
-		if i != 0
-			if branch == :τ
-				(1 <= i <= x.Nτ + 1) || throw(BoundsError(1:x.kτ, i))
-			else
-				(1 <= i <= x.Nt + 1) || throw(BoundsError(1:x.kt, i))
-			end
-		end
-	end
-	
-	bands = x.bands
-	if i == 0
-		ifelse(conj, 2*bands+1-band, band) 
-	else
-		k = x.Nt + 1
-		if branch == :+
-			ifelse(conj, 2*bands*(k-i) + 2*bands-band+1, 2*bands*(k-i) + band ) + 2*x.bands*(x.kτ+1)
-		elseif branch == :-
-			ifelse(conj, 2*bands*(i-1) + 2*bands-band+1, 2*bands*(i-1) + band ) + 2 * bands * k + 2*x.bands*(x.kτ+1)
-		else
-			# if i == 1
-			# 	index(x, 1, conj=conj, branch=:-, band=band)
-			# else
-			# 	ifelse(conj, (x.Nτ+1-i)*2*bands + 2bands+1-band, (x.Nτ+1-i)*2*bands + band) + 2*x.bands
-			# end
-			ifelse(conj, (x.Nτ+1-i)*2*bands + 2bands+1-band, (x.Nτ+1-i)*2*bands + band) + 2*x.bands
-		end
-	end
-end
 
 """
 	index(x::MixedGrassmannLattice1Order, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)

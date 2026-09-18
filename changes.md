@@ -2,6 +2,13 @@
 
 本轮重构涉及的接口更改汇总。所有更改均已通过全量测试验证（行为不变或数值等价）。
 
+## 删除 `BranchLocalLayout` 与相关 ordering（2026-09-17）
+
+- 删除 `BranchLocalLayout` 布局类型及全部三个 band-local ordering：`A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2`（real）、`A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2`（real）、`A1B1B̄1Ā1_A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2`（mixed），连同各自的 `index` 方法与导出。
+- `sysdynamics_fast` 的实轴 canonical ordering 统一为 `A1B1ā1b̄1Ā1B̄1a1b1`（原对非 TimeLocal lattice 返回 band-local ordering）。
+- 实轴 `toadjacentordering` 统一转换到 `A1Ā1a1ā1B1B̄1b1b̄1`；删除 mixed band-local ordering 的专用方法。
+- 删除 `boundarycondition_branching` 的实轴方法（其唯一实现依赖 `BranchLocalLayout`；虚轴方法保留）。
+
 ## 新增实轴 Grassmann ordering：`a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2`（2026-09-17）
 
 - 新增**时间升序**（`RealTimeOrderingStyle = TimeAscending()`）的实轴 time-local ordering：每个时间块内按 `a⁻ā⁻a⁺Ā⁺b⁻b̄⁻b⁺B̄⁺` 排列，块顺序为 `j=1,…,k`（既有实轴 ordering 均为时间降序）。它是 mixed ordering `A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2` 的纯实轴对应版本，已导出。按命名约定，只写一个时间点的名字表示该模式按时间降序重复（默认 TimeDscending）；本 ordering 为时间升序，名字显式写出时间点 1 和 2。
