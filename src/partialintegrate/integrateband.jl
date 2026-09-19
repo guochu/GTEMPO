@@ -53,7 +53,7 @@ end
 
 function _integrate_pairsites(a, b)
 	@tensor tmp[1,2,4;5] := a[1,2,3] * b[3,4,5]
-	return _g_trace(tmp, 2)
+	return g_trace_phy(tmp, 2)
 end
 
 _absorb_transfer(tmp, tmp2) = isnothing(tmp) ? tmp2 : tmp * tmp2

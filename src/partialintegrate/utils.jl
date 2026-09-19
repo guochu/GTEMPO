@@ -231,10 +231,10 @@ function left_m(left::AbstractParityTensorMap{<:Number, 1, N}, m::GrassmannTrans
 
     # another implementation
     # left = permute(left, (ntuple(i->i,N), (N+1,)))
-    # left = gpermute(left, (1,), ntuple(i->i+1,N))
+    # left = g_permute(left, (1,), ntuple(i->i+1,N))
     # left = left * m
     # left = permute(left, (ntuple(i->i,N), (N+1,)))
-    # gpermute(left, (1,), ntuple(i->i+1,N))
+    # g_permute(left, (1,), ntuple(i->i+1,N))
     # return left
 end
 function m_right(m::GrassmannTransferMatrix, right::AbstractParityTensorMap{<:Number, N, 1}) where N

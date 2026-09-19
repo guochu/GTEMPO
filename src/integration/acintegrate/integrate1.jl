@@ -40,12 +40,12 @@ function update_pair_left(left::AbstractParityTensorMap{<:Number, 1, N}, j::Int,
 	pos1, pos2 = 2*j-1, 2*j
 	@grassmann tmp2[-1, -2,-3; -4] := left[-1, 1] * x[pos1][1,-2,3] * x[pos2][3,-3,-4]
 	# return _trace_physical(tmp2)
-	return g_trace(tmp2, 2)
+	return g_trace_phy(tmp2, 2)
 end
 
 function update_pair_right(right::AbstractParityTensorMap{<:Number, N, 1}, j::Int, x::Vector) where {N}
 	pos1, pos2 = 2*j-1, 2*j
 	@grassmann tmp2[-1, -2,-3; -4] := x[pos1][-1,-2,1] * x[pos2][1,-3,2] * right[2,-4]
 	# return _trace_physical(tmp2)
-	return g_trace(tmp2, 2)
+	return g_trace_phy(tmp2, 2)
 end

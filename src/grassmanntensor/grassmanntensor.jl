@@ -6,7 +6,7 @@ const AbstractParityTensorMap{T, N₁, N₂} = AbstractTensorMap{T, N₁, N₂}
 TensorOperations backend that implements `tensoradd!`, `tensortrace!` and
 `tensorcontract!` for Z2-graded (parity) `TensorMap`s with the fermionic
 (Grassmann) sign convention: every internal index permutation is carried out
-by the fermionic `gpermute` instead of the bosonic `permute`. It is inserted
+by the fermionic `g_permute` instead of the bosonic `permute`. It is inserted
 automatically by the [`@grassmann`](@ref) macro, and can equally be passed
 explicitly as `backend = GrassmannBackend()` to the function-based
 TensorOperations API.
@@ -17,7 +17,7 @@ to supply the sign information and to mark these functions as carrying the
 fermionic convention, in contrast to the sign-free Z2Tensors operations with
 otherwise similar signatures.
 
-In addition to the fermionic `gpermute` reordering signs, the backend applies
+In addition to the fermionic `g_permute` reordering signs, the backend applies
 the fermionic twists that put every contracted pair into the canonical
 `(a, Ā)` order before contracting, in the same way as the GrassmannTensors /
 TensorKit fermionic conventions:
@@ -30,7 +30,20 @@ TensorKit fermionic conventions:
 """
 struct GrassmannBackend <: AbstractBackend end
 
-function gpermute(t::AbstractParityTensorMap, (p₁, p₂)::Index2Tuple{N₁,N₂};
+"""
+    g_permute(t, (p₁, p₂); copy=false)
+    g_permute(t, p1, p2; copy=false)
+    g_permute!(tdst, tsrc, p)
+
+Permute the legs of the parity tensor `t` treating it as a Grassmann
+tensor: the leg reordering `(p₁, p₂)` (linearized leg positions, codomain
+first) is applied with the fermionic reordering signs — a factor `-1` for
+every transposition of two odd Grassmann variables in the permutation —
+instead of the sign-free bosonic `permute`. This is the primitive on which
+the `GrassmannBackend` of the `@grassmann` macro is built; `g_permute!` is
+the in-place variant writing into `tdst`.
+"""
+function g_permute(t::AbstractParityTensorMap, (p₁, p₂)::Index2Tuple{N₁,N₂};
                   copy::Bool=false) where {N₁,N₂}
     cod = ProductSpace{N₁}(map(n -> space(t, n), p₁))
     dom = ProductSpace{N₂}(map(n -> dual(space(t, n)), p₂))
@@ -40,19 +53,19 @@ function gpermute(t::AbstractParityTensorMap, (p₁, p₂)::Index2Tuple{N₁,N�
     end
     # general case
     @inbounds begin
-        return gpermute!(similar(t, cod ← dom), t, (p₁, p₂))
+        return g_permute!(similar(t, cod ← dom), t, (p₁, p₂))
     end
 end
-function gpermute(t::AdjointTensorMap, (p₁, p₂)::Index2Tuple; copy::Bool=false) 
+function g_permute(t::AdjointTensorMap, (p₁, p₂)::Index2Tuple; copy::Bool=false) 
     p₁′ = TK.adjointtensorindices(t, p₂)
     p₂′ = TK.adjointtensorindices(t, p₁)
-    return adjoint(gpermute(adjoint(t), (p₁′, p₂′); copy=copy))
+    return adjoint(g_permute(adjoint(t), (p₁′, p₂′); copy=copy))
 end
 # convenience: two separate leg-index tuples
-gpermute(t::AbstractParityTensorMap, p1::IndexTuple, p2::IndexTuple; kwargs...) = gpermute(t, (p1, p2); kwargs...)
+g_permute(t::AbstractParityTensorMap, p1::IndexTuple, p2::IndexTuple; kwargs...) = g_permute(t, (p1, p2); kwargs...)
 
 
-@propagate_inbounds function gpermute!(tdst::AbstractParityTensorMap{<:Number, N₁, N₂},
+@propagate_inbounds function g_permute!(tdst::AbstractParityTensorMap{<:Number, N₁, N₂},
                                        tsrc::AbstractParityTensorMap,
                                        p::Index2Tuple{N₁,N₂}) where {N₁,N₂}
     return add_gpermute!(tdst, tsrc, p, true, false)

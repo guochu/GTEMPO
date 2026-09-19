@@ -64,9 +64,38 @@ The vacuum expectation value of a `GTerm` (a product of GVs at given chain
 positions) is evaluated by contracting the chain from both ends into the
 vacuum (`TwosideExpectationCache`). The fermionic signs of the permutation
 that brings the GVs next to each other are handled internally by
-`compensate_twists!` / `gpermute` during the construction of the MPO gates,
+`compensate_twists!` / `g_permute` during the construction of the MPO gates,
 so that user-level code works with plain Grassmann products
 (`GTerm(pos1, pos2, coeff=η)` → `exp(GTerm(...))`).
+
+### 2.4 Grassmann tensor utilities
+
+Three internal helpers operate directly on the Z2-graded blocks of a site
+tensor; they live in `src/grassmanntensor/` and `src/grassmannmps/util.jl`
+and are the building blocks of the site-level algebra (MPO gate
+application, `partialintegrate`, the AC-integration kernels):
+
+* **`g_permute(t, (p₁, p₂))` / `g_permute!(tdst, tsrc, p)`** — permute the
+  legs of a tensor *as a Grassmann tensor*: the reordering carries the
+  fermionic signs of Eq. (4) in
+  [Tensor conventions](@ref "Tensor and Grassmann conventions") (a `-1`
+  per odd–odd transposition), unlike the bosonic `permute`. It is the
+  primitive behind the `GrassmannBackend` of the `@grassmann` macro.
+
+* **`g_trace_phy(m, i)`** — inner trace over the adjacent physical legs
+  `i, i+1`. A closed Grassmann trace requires mutual conjugates (`x`
+  against `x̄`), but in a stored `GrassmannMPS` conjugate physical indices
+  such as `a` and `ā` are represented by the *same* Z2 space, so the
+  generic `@grassmann` trace cannot be used. The routine works on the
+  fusion-tree blocks: a block survives only when the two traced sectors
+  coincide, and an odd traced pair on the domain side contributes `-1`.
+
+* **`g_fuse(m, i)`** — multiply the adjacent Grassmann variables
+  `x_i x_{i+1}` into a single fused leg. The graded-commutative rule
+  `x_i x_{i+1} = (-1)^{p_i p_{i+1}} x_{i+1} x_i` means the fused leg
+  carries the total parity `p_i ⊕ p_{i+1}`; blocks with two odd legs are
+  dropped, since the bilinear product of two odd variables has no
+  single-variable representation.
 
 ## 3. IF construction and the one-site τ shift
 

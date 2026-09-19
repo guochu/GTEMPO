@@ -45,7 +45,7 @@ function update_pair_left(left::AbstractParityTensorMap{<:Number, 1, 2}, j::Int,
 	tmp3 = g_fuse(tmp2, 3)
 
 	# trace physices
-	traced = g_trace(tmp3, 2)
+	traced = g_trace_phy(tmp3, 2)
 	# restore the accumulated left environment: single fermionic permute (via @grassmann)
 	@grassmann lout[1; 2 3] := traced[1,2,3]
 	return lout
@@ -75,7 +75,7 @@ function update_pair_right(right::AbstractParityTensorMap{<:Number, 2, 1}, j::In
 	tmp3 = g_fuse(tmp2, 3)
 
 	# trace physices
-	return g_trace(tmp3, 3)
+	return g_trace_phy(tmp3, 3)
 	# right = TensorMap(zeros, scalartype(tmp3), space(tmp3, 1) ⊗ space(tmp3, 2) ← space(tmp3, 5)')
 	# for (f1, f2) in fusiontrees(tmp3)
 	# 	if f1.uncoupled[3] == f1.uncoupled[4]

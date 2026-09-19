@@ -7,7 +7,7 @@
 # are inherited from the Z2Tensors implementations for plain
 # `AbstractTensorMap`s. Only the three execution methods `tensoradd!`,
 # `tensortrace!` and `tensorcontract!` carry fermionic signs, entering
-# through `gpermute` (see grassmanntensor.jl).
+# through `g_permute` (see grassmanntensor.jl).
 #
 # Plain `@tensor` expressions (without `GrassmannBackend`) are unaffected and
 # keep the bosonic (sign-free) Z2Tensors semantics.
@@ -196,8 +196,8 @@ function _contract!(α, A::AbstractParityTensorMap, B::AbstractParityTensorMap,
                     oindB::IndexTuple{N₂}, cindB::IndexTuple,
                     p₁::IndexTuple, p₂::IndexTuple,
                     backend::GrassmannBackend) where {N₁,N₂}
-    A′ = gpermute(A, (oindA, cindA))
-    B′ = gpermute(B, (cindB, oindB))
+    A′ = g_permute(A, (oindA, cindA))
+    B′ = g_permute(B, (cindB, oindB))
     # fermionic junction twist: permute the contracted pair into the canonical
     # (a, Ā) order before contracting. A contracted pair whose A-side leg is
     # non-dual (an `a`) against a dual B-side leg (an `Ā`) is in the crossed
@@ -212,7 +212,7 @@ function _contract!(α, A::AbstractParityTensorMap, B::AbstractParityTensorMap,
     oindAinC = TupleTools.getindices(ipC, ntuple(n -> n, N₁))
     oindBinC = TupleTools.getindices(ipC, ntuple(n -> n + N₁, N₂))
     if TK.has_shared_permute(C, (oindAinC, oindBinC))
-        C′ = gpermute(C, (oindAinC, oindBinC))
+        C′ = g_permute(C, (oindAinC, oindBinC))
         mul!(C′, A′, B′, α, β)
     else
         C′ = A′ * B′

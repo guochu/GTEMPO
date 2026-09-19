@@ -199,7 +199,7 @@ The G-type of a leg is read off its space flag: a leg is a ket
 $\xi$ ("$a$") when `isdual(space(t, i)) == false` and a bra $\bar\xi$
 ("$\bar a$") when it is `true` (Example 1 prints exactly these flags).
 
-### 5.2 Index permutation: fermionic `gpermute`
+### 5.2 Index permutation: fermionic `g_permute`
 
 Reordering the legs of a tensor reorders its G-string. Only the exchange of
 two *odd* G-numbers costs a sign (Eq. (1)); moving an even sector
@@ -213,7 +213,7 @@ $$
 $$
 
 i.e. $(-1)$ for each odd–odd swap and $+1$ otherwise. This is the internal
-`gpermute` (renamed from `f_permute`; not exported — use the `@grassmann`
+`g_permute` (renamed from `f_permute`; not exported — use the `@grassmann`
 macro, which applies these signs to every index permutation); the
 bosonic `permute` never carries these signs. Example 2 isolates the effect.
 
@@ -414,7 +414,7 @@ loop sign at all.
 ### 5.6 Addition
 
 `tensoradd!` only permutes and sums blocks; it carries the odd–odd swap
-signs of `gpermute` (Eq. (4)) but no junction twist (there is no contracted
+signs of `g_permute` (Eq. (4)) but no junction twist (there is no contracted
 pair). It is exercised by the in-place forms `=` / `+=` in the macro test of
 §8.
 
@@ -449,7 +449,7 @@ Output:
 
 | operation | file | formula |
 |---|---|---|
-| index permutation | `src/grassmanntensor/grassmanntensor.jl` (`gpermute`, `add_gpermute!`) | Eq. (4), odd–odd swap signs |
+| index permutation | `src/grassmanntensor/grassmanntensor.jl` (`g_permute`, `add_gpermute!`) | Eq. (4), odd–odd swap signs |
 | contraction junction | `src/grassmanntensor/tensoroperations.jl` (`_contract!`) | Eq. (5), twist $(-1)^{\sum p}$ on crossed A-side ket legs |
 | trace closure | `src/grassmanntensor/tensoroperations.jl` (`trace_permute!`) | Eq. (6), U-turn twist $(-1)^{\#}$ of traced non-dual odd legs |
 | block twist helper | `src/grassmanntensor/grassmanntensor.jl` (`g_twist!`) | multiplies blocks by $(-1)^{\#\text{odd twisted legs}}$ |

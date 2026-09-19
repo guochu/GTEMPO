@@ -49,7 +49,7 @@
 # 	left5 = GrassmannTensorMap(left5)
 
 # 	# trace physices
-# 	return permute(g_trace(left5, 2), (1,), (2,3,4))
+# 	return permute(g_trace_phy(left5, 2), (1,), (2,3,4))
 # end
 
 # function update_pair_right(right::GrassmannTensorMap{<:AbstractTensorMap{<:Number, S, 3, 1}}, j::Int, x::Vector, y::Vector, z::Vector)
@@ -100,7 +100,7 @@
 # 	end
 
 # 	right5 = GrassmannTensorMap(right5)
-# 	return permute(g_trace(right5, 4), (1,2,3), (4,))
+# 	return permute(g_trace_phy(right5, 4), (1,2,3), (4,))
 # end
 
 
@@ -125,7 +125,7 @@ function update_pair_left(left::AbstractParityTensorMap{<:Number, 1, 3}, j::Int,
 	tmp5 = g_fuse(tmp4, 3)
 
 	# trace physices
-	left = g_trace(tmp5, 2)
+	left = g_trace_phy(tmp5, 2)
 
 	return left
 end
@@ -147,7 +147,7 @@ function update_pair_right(right::AbstractParityTensorMap{<:Number, 3, 1}, j::In
 	@grassmann tmp4[f,d,b,g,ec,a86;4] := z[posb-1][f,g,9] * tmp3[9,d,b,ec,a86,4]
 	tmp5 = g_fuse(tmp4, 4)
 
-	right = g_trace(tmp5, 4)
+	right = g_trace_phy(tmp5, 4)
 
 	return right
 

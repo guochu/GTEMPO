@@ -1,5 +1,21 @@
 
-# fuse i and i+1 into a single index
+"""
+	g_fuse(m, i)
+
+Fuse the adjacent legs `i` and `i+1` of the Grassmann tensor `m` into a
+single leg, forming the Grassmann variable product `x_i x_{i+1}`.
+
+With `p_i, p_{i+1} ∈ {0, 1}` the Z2 parities of the two legs, the product
+follows the graded-commutative Grassmann algebra
+
+	x_i x_{i+1} = (-1)^{p_i p_{i+1}} x_{i+1} x_i,
+
+so the fused leg carries the total parity `p_i ⊕ p_{i+1}`: a block with
+`(p_i, p_{i+1}) = (0, 0)` is kept on the even fused sector, a block with
+exactly one odd leg is kept on the odd fused sector, and a block with two
+odd legs is dropped — the bilinear `x_i x_{i+1}` of two odd variables has
+no single-variable representation on the fused leg.
+"""
 function g_fuse(m::AbstractTensorMap{T, M, N}, i::Int) where {T<:Number, M, N}
 	@assert (i != M) && (i < M+N)
 	@assert space(m, i) == space(m, i+1)
@@ -58,9 +74,22 @@ function g_fuse(m::AbstractTensorMap{T, M, N}, i::Int) where {T<:Number, M, N}
 	return tmp
 end
 
-g_trace(m::AbstractTensorMap, i::Int) = _g_trace(m, i)
+"""
+	g_trace_phy(m, i)
 
-function _g_trace(m::AbstractTensorMap{T, M, N}, i::Int) where {T<:Number, M, N}
+Trace the adjacent legs `i` and `i+1` of the Grassmann tensor `m` (an inner
+trace over a pair of adjacent physical Grassmann indices).
+
+A closed Grassmann trace requires the traced pair to be mutual conjugates
+(`x` traced against `x̄`). In the stored `GrassmannMPS`, however, mutually
+conjugate physical indices such as `a` and `ā` are represented by the *same*
+Z2 space, so the generic `@grassmann` trace cannot recognize the conjugate
+structure and cannot be used here. This routine therefore traces the pair
+directly on the fusion-tree blocks: a block survives only if the two traced
+sectors coincide, and a surviving block with an odd traced sector on the
+domain side picks up a fermionic sign `-1`.
+"""
+function g_trace_phy(m::AbstractTensorMap{T, M, N}, i::Int) where {T<:Number, M, N}
 	@assert (i != M) && (i < M+N)
 	@assert space(m, i) == space(m, i+1)
 	local tmp
