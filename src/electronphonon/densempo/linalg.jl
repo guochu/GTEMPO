@@ -29,7 +29,7 @@ function apply!(h::PartialDenseMPO, psi::FockMPS)
             @tensor tmp[-1 -2; -3 -4 -5] := h[_pos][-1, -3, -4, 1] * psi[pos][-2, 1, -5]
             leftspace = space_r(h[_pos])
         else
-            hj = _eye(T, leftspace, leftspace)
+            hj = TK.isometry(T, leftspace, leftspace)
            @tensor tmp[-1 -2; -3 -4 -5] := hj[-1, -4] * psi[pos][-2, -3, -5]
         end
         psi[pos] = tie(tmp, (2, 1, 2))

@@ -2,6 +2,15 @@
 
 本轮重构涉及的接口更改汇总。所有更改均已通过全量测试验证（行为不变或数值等价）。
 
+## 删除 `src/electronphonon/tensorops.jl`（2026-09-17）
+
+Z2Tensors 已提供等价的稠密张量工具，GTEMPO 不再自带重复实现：
+
+- `permute(::AbstractArray, ...)`、`tie`、`_group_extent`、`_truncate!`、`tsvd!`（矩阵与 (left, right) 张量版）直接使用 Z2Tensors 导出的同名函数；`tsvd!` 的输入数组自身作 workspace（不再传 workspace 参数）。
+- `_eye` → `TK.isometry`；`tqr!(a, left, right)` / `tlq!(a, left, right)` → `TK.leftorth!` / `TK.rightorth!`（默认算法 QRpos/LQpos，保证 R/L 因子对角非负）。
+- `stable_svd!` 删除（Z2Tensors 的 `tsvd!` 内部已用 MatrixAlgebraKit 的 SafeDivideAndConquer 驱动）。
+- `Base.kron` 对同秩稠密数组的扩展同样由 Z2Tensors 提供（`auxiliary/tensoroperations.jl`），本地实现删除。
+
 ## 删除 `BranchLocalLayout` 与相关 ordering（2026-09-17）
 
 - 删除 `BranchLocalLayout` 布局类型及全部三个 band-local ordering：`A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2`（real）、`A2Ā2B2B̄2A1Ā1B1B̄1a1ā1b1b̄1a2ā2b2b̄2`（real）、`A1B1B̄1Ā1_A2B2B̄2Ā2A1B1B̄1Ā1a1b1b̄1ā1a2b2b̄2ā2`（mixed），连同各自的 `index` 方法与导出。

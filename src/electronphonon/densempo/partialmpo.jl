@@ -57,4 +57,4 @@ function Base.complex(psi::PartialDenseMPO)
 	return psi
 end
 
-TK.id(m::PartialDenseMPO) = PartialDenseMPO([reshape(_eye(scalartype(m), 2, 2), 1,2,1,2) for item in m.data], positions(m))
+TK.id(m::PartialDenseMPO) = PartialDenseMPO([reshape(TK.isometry(scalartype(m), 2, 2), 1,2,1,2) for item in m.data], positions(m))

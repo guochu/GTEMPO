@@ -1,6 +1,3 @@
-# some dense tensor operations
-include("tensorops.jl")
-
 # definitions of abstract densempo and densemps
 include("abstractdefs.jl")
 

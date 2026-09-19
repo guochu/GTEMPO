@@ -4,7 +4,7 @@ function _leftorth!(psi::FockMPS, alg::QR, trunc::TruncationScheme, normalize::B
 	!isa(trunc, NoTruncation) &&  @warn "truncation has no effect with QR"
 	L = length(psi)
 	for i in 1:L-1
-		q, r = tqr!(psi[i], (1, 2), (3,))
+		q, r = TK.leftorth!(psi[i], (1, 2), (3,))
 		psi[i] = q
 		_renormalize!(psi, r, normalize)
 		@tensor tmp[1 3; 4] := r[1,2] * psi[i+1][2,3,4]
@@ -43,7 +43,7 @@ function _rightorth!(psi::FockMPS, alg::QR, trunc::TruncationScheme, normalize::
 	!isa(trunc, NoTruncation) &&  @warn "truncation has no effect with QR"
 	L = length(psi)
 	for i in L:-1:2
-		l, q = tlq!(psi[i], (1,), (2, 3))
+		l, q = TK.rightorth!(psi[i], (1,), (2, 3))
 		psi[i] = q
 		_renormalize!(psi, l, normalize)
 		@tensor tmp[1 2; 4] := psi[i-1][1,2,3] * l[3,4] 

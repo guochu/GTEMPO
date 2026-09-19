@@ -4,12 +4,12 @@ function mult!(x::FockMPS, y::FockMPS; trunc::TruncationScheme=DefaultITruncatio
     L = length(x)
     z = Vector{Array{T, 3}}(undef, L)
     tmp = tie(n_fuse(_mult_site_n(x[1], y[1]), 3), (2,1,1,1))
-    q, r = tqr!(tmp, (1, 2), (3,4))
+    q, r = TK.leftorth!(tmp, (1, 2), (3,4))
     x[1] = q
     for i in 2:L-1
         @tensor tmp[1,4,6,5,7] := r[1,2,3] * x[i][2,4,5] * y[i][3,6,7]
         tmp2 = n_fuse(tmp, 2)
-        q, r = tqr!(tmp2, (1, 2), (3,4))
+        q, r = TK.leftorth!(tmp2, (1, 2), (3,4))
         x[i] = q
         _renormalize!(x, r, false)
     end
