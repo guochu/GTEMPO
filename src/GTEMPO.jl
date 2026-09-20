@@ -100,7 +100,6 @@ export Orthogonalize
 
 
 using Base: @boundscheck, @propagate_inbounds
-using Logging: @warn
 using Reexport, TupleTools, Strided
 using Z2Tensors
 using Z2Tensors: Z2Tensors, QR, SVD, LQ, AdjointTensorMap, NoTruncation, TruncateDimCutoff, TruncationDimension
@@ -116,10 +115,9 @@ import QuAPI: branch, index
 
 
 
-
 @reexport using ExpExp
 using KrylovKit: Arnoldi, exponentiate
-using LinearAlgebra: LinearAlgebra, Symmetric, eigen, qr, pinv, eigvals, Diagonal, diagm
+using LinearAlgebra: LinearAlgebra, eigen, Diagonal
 
 
 include("auxiliary/linalg.jl")
