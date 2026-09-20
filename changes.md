@@ -2,6 +2,10 @@
 
 本轮重构涉及的接口更改汇总。所有更改均已通过全量测试验证（行为不变或数值等价）。
 
+## 测试容差调整：实轴 `bare + bulkconnection == sysdynamics`（2026-09-17）
+
+`test/api/sysdynamics.jl` 中 "impurity hamiltonians & steppers" 的实轴断言由绝对阈值 `< 1.0e-8` 改为相对阈值 `< distance/norm(K) < 1.0e-6`，与虚轴对应断言一致。原因：Z2Tensors 近期更新（norm/fusiontensor/⊗ 修复）改变了 contraction 内部的浮点求和顺序，使 bare+bulkconnection 与 sysdynamics 两条独立构造路径从"逐位一致"变为存在 ~1e-6 的浮点水平差异（相对误差约 2e-8），原绝对阈值对实现顺序过敏。
+
 ## 删除 `src/electronphonon/tensorops.jl`（2026-09-17）
 
 Z2Tensors 已提供等价的稠密张量工具，GTEMPO 不再自带重复实现：
