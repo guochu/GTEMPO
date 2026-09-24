@@ -1,84 +1,23 @@
+# 正交化 / 规范化（后端：FiniteMPSAlgorithms）
+#
+# GTEMPO 的 QR/SVD 与 TruncationScheme（Z2Tensors 体系，Grassmann 路径共用）
+# 和 FMA 的对应类型是相互独立的；`_fmaorth`/`_fmatrunc` 把 GTEMPO 侧的算法
+# 配置翻译为 FMA 的类型后，实际的 QR/SVD sweep 由 FMA 在 FockMPS 内层的
+# CanonicalMPS payload 上完成。
 
-TK.leftorth!(psi::FockMPS; alg::Orthogonalize = Orthogonalize()) = _leftorth!(psi, alg.orth, alg.trunc, alg.normalize, alg.verbosity)
-function _leftorth!(psi::FockMPS, alg::QR, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
-	!isa(trunc, NoTruncation) &&  @warn "truncation has no effect with QR"
-	L = length(psi)
-	for i in 1:L-1
-		q, r = TK.leftorth!(psi[i], (1, 2), (3,))
-		psi[i] = q
-		_renormalize!(psi, r, normalize)
-		@tensor tmp[1 3; 4] := r[1,2] * psi[i+1][2,3,4]
-		psi[i + 1] = tmp
-	end
-	_renormalize!(psi, psi[L], normalize)
-	_renormalize_coeff!(psi, normalize)
-	return psi
-end
+_fmaorth(::QR) = FMA.QR()
+_fmaorth(::SVD) = FMA.SVD()
+_fmatrunc(::NoTruncation) = FMA.NoTruncation()
+_fmatrunc(t::TruncationDimension) = FMA.TruncateDim(t.dim)
+_fmatrunc(t::TruncateRelError) = FMA.TruncateRelError(t.ϵ)
+_fmatrunc(t::TruncateDimCutoff) = FMA.TruncateDimCutoff(t.D, t.ϵ, t.add_back)
+_fmaorthalg(alg::Orthogonalize) = FMA.Orthogonalize(_fmaorth(alg.orth), _fmatrunc(alg.trunc), alg.normalize, alg.verbosity)
 
-function _leftorth!(psi::FockMPS, alg::SVD, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
-	L = length(psi)
-	# errs = Float64[]
-	maxerr = 0.
-	for i in 1:L-1
-		u, s, v, err = tsvd!(psi[i], (1, 2), (3,), trunc=trunc)
-		nr = _renormalize!(psi, s, normalize)
-		rerror = sqrt(err * err / (nr * nr + err * err))
-		(verbosity > 1) && println("SVD truncerror at bond $(i): ", rerror)
-		psi[i] = u
-		v2 = Diagonal(s) * v
-		@tensor tmp[-1 -2; -3] := v2[-1, 1] * psi[i+1][1,-2,-3]
-		psi[i+1] = tmp
-		psi.s[i+1] = s
-		# push!(errs, err)
-		maxerr = max(maxerr, rerror)
-	end
-	(verbosity > 0) && println("Max SVD truncerror in leftorth: ", maxerr)
-	_renormalize!(psi, psi[L], normalize)
-	_renormalize_coeff!(psi, normalize)
-	return psi
-end
-
-TK.rightorth!(psi::FockMPS; alg::Orthogonalize = Orthogonalize()) = _rightorth!(psi, alg.orth, alg.trunc, alg.normalize, alg.verbosity)
-function _rightorth!(psi::FockMPS, alg::QR, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
-	!isa(trunc, NoTruncation) &&  @warn "truncation has no effect with QR"
-	L = length(psi)
-	for i in L:-1:2
-		l, q = TK.rightorth!(psi[i], (1,), (2, 3))
-		psi[i] = q
-		_renormalize!(psi, l, normalize)
-		@tensor tmp[1 2; 4] := psi[i-1][1,2,3] * l[3,4] 
-		psi[i-1] = tmp
-	end
-	_renormalize!(psi, psi[1], normalize)
-	_renormalize_coeff!(psi, normalize)
-	return psi
-end
-
-function _rightorth!(psi::FockMPS, alg::SVD, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
-	L = length(psi)
-	maxerr = 0.
-	for i in L:-1:2
-		u, s, v, err = tsvd!(psi[i], (1,), (2, 3), trunc=trunc)
-		psi[i] = v
-		nr = _renormalize!(psi, s, normalize)
-		rerror = sqrt(err * err / (nr * nr + err * err))
-		(verbosity > 1) && println("SVD truncerror at bond $(i): ", rerror)
-		u2 = u * Diagonal(s)
-		@tensor tmp[-1 -2; -3] := psi[i-1][-1, -2, 1] * u2[1, -3]
-		psi[i-1] = tmp
-		psi.s[i] = s
-		maxerr = max(maxerr, err)
-	end
-	(verbosity > 0) && println("Max SVD truncerror in rightorth: ", maxerr)
-	_renormalize!(psi, psi[1], normalize)
-	_renormalize_coeff!(psi, normalize)
-	return psi
-end
+TK.leftorth!(psi::FockMPS; alg::Orthogonalize = Orthogonalize()) = (FMA._leftorth!(psi.parent, _fmaorth(alg.orth), _fmatrunc(alg.trunc), alg.normalize, alg.verbosity); psi)
+TK.rightorth!(psi::FockMPS; alg::Orthogonalize = Orthogonalize()) = (FMA._rightorth!(psi.parent, _fmaorth(alg.orth), _fmatrunc(alg.trunc), alg.normalize, alg.verbosity); psi)
 
 function canonicalize!(psi::FockMPS; alg::Orthogonalize = Orthogonalize(trunc=DefaultITruncation, normalize=false))
 	alg.normalize && @warn "canonicalize with renormalization not recommanded for FockMPS"
-	L = length(psi)
-	_leftorth!(psi, QR(), NoTruncation(), alg.normalize, alg.verbosity)
-	_rightorth!(psi, alg.orth, alg.trunc, alg.normalize, alg.verbosity)
+	FMA._canonicalize!(psi.parent; alg=_fmaorthalg(alg))
 	return psi
 end

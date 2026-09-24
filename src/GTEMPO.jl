@@ -78,7 +78,7 @@ export baresysdynamics_deprecated, baresysdynamics_deprecated!
 
 # electron-phonon interaction
 export AbstractNTerm, ExpNTerm
-export FockMPS
+export FockMPS, FockMPO
 export FockOrdering, ImagFockOrdering, RealFockOrdering, MixedFockOrdering, similargrassmannordering
 export M1N1, MN, M1m1N1n1, MmNn, M1N1_m1M1n1N1m2M2n2N2, MN_MmNn
 export AbstractFockLattice, FockLattice, ImagFockLattice, similargrassmannlattice
@@ -104,6 +104,17 @@ using Reexport, TupleTools, Strided
 using Z2Tensors
 using Z2Tensors: Z2Tensors, QR, SVD, LQ, AdjointTensorMap, NoTruncation, TruncateDimCutoff, TruncationDimension
 const TK = Z2Tensors
+# ---------------------------------------------------------------------------
+# FockMPS/FockMPO 的存储后端：FiniteMPSAlgorithms
+#
+# FockMPS 内嵌 CanonicalMPS、FockMPO 内嵌 MPO（字段 `.parent`），FMA 的算法
+# 直接作用在 payload 上并就地改写；稠密张量原语（tie/isometry/tsvd! 等）也
+# 来自 FMA。为避免与 Z2Tensors（Grassmann 路径）的同名导出歧义，FMA 仅按
+# 模块限定使用（`FMA.xxx`），不整包 `using`。
+# ---------------------------------------------------------------------------
+import FiniteMPSAlgorithms
+const FMA = FiniteMPSAlgorithms
+using FiniteMPSAlgorithms: CanonicalMPS, tie, ⊙
 using TensorOperations: TensorOperations, IndexTuple, Index2Tuple, linearize, AbstractBackend # for Grassmann Tensors
 const TO = TensorOperations
 # @reexport using DMRG, ImpurityModelBase, QuAPI

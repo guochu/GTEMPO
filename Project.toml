@@ -5,6 +5,7 @@ version = "0.0.1"
 
 [deps]
 ExpExp = "05571471-befe-4da2-8d73-f7916647c25f"
+FiniteMPSAlgorithms = "b7c1d2a3-4e5f-4a6b-8c7d-9e0f1a2b3c4d"
 ImpurityModelBase = "a5817ebb-6d84-46c1-a17a-d25f868e249e"
 KrylovKit = "0b1a1467-8014-51b9-945f-bf0ae24f4b77"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"

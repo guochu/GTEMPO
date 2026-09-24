@@ -1,50 +1,47 @@
 """
-	FockMPS{T<:Number, R<:Real} 
+	FockMPS{T<:Number, R<:Real}
 
-The 1-th position is state |0⟩
-The 2-th position is state |1⟩
+One-dimensional dense tensor network (`Dense1DTN`) representing a finite matrix product state on the Fock lattice.
+The storage payload is a FiniteMPSAlgorithms `CanonicalMPS` (field `.parent`): site tensors, Schmidt values
+and the per-site scaling are all carried by the payload, on which the FiniteMPSAlgorithms algorithms operate
+in place. `.data` delegates to the payload's site-tensor vector; `.s` / `.scaling` delegate to the payload's
+Schmidt values / scaling.
+
+Site tensor convention (payload `CanonicalMPS`):
+- Dimension 1: left auxiliary (bond) index, with dimension 1 at the leftmost site
+- Dimension 2: physical index; entry 1 corresponds to state |0⟩ and entry 2 to state |1⟩
+- Dimension 3: right auxiliary (bond) index, with dimension 1 at the rightmost site
+
+# Examples
+```julia
+julia> psi = FockMPS(5)               # all-ones vacuum state with 5 sites
+julia> psi = randomfockmps(5, D=8)    # random FockMPS with 5 sites and bond dimension 8
+```
 """
 struct FockMPS{T<:Number, R<:Real} <: Dense1DTN{T}
-	data::Vector{Array{T, 3}}
-	s::Vector{Union{Missing, Vector{R}}}
-	scaling::Ref{Float64}
-
-function FockMPS{T, R}(data::AbstractVector, svectors::Vector, scaling::Ref{R}) where {T<:Number, R<:Number}
-	(R == real(T)) || throw(ArgumentError("scalar type for singular vectors must be real"))
-	(length(data)+1 == length(svectors)) || throw(DimensionMismatch("length of singular vectors must be length of site tensors+1"))
-	_check_mps_space(data)
-	new{T, R}(convert(Vector{Array{T, 3}}, data), convert(Vector{Union{Missing, Vector{R}}}, svectors), scaling)
-end
+	parent::CanonicalMPS{T, R}
 end
 
-function FockMPS{T, R}(data::Vector, scaling::Ref{R}) where {T<:Number, R<:Number}
-	(R == real(T)) || throw(ArgumentError("scalar type for singular vectors must be real"))
-	_check_mps_space(data)
-	svectors = Vector{Union{Missing, Vector{R}}}(undef, length(data)+1)
-	svectors[1] = ones(space_l(data[1]))
-	svectors[end] = ones(space_r(data[end]))
-	return FockMPS{T, R}(convert(Vector{Array{T, 3}}, data), svectors, scaling)
+# `.parent` 即内层的 CanonicalMPS payload；`.data` 委托到 payload 的站点张量
+# 向量；`.s` / `.scaling` 委托到 payload
+function Base.getproperty(psi::FockMPS, s::Symbol)
+	s === :parent && return getfield(psi, :parent)
+	s === :data && return getfield(psi, :parent).data
+	s === :s && return getfield(psi, :parent).s
+	s === :scaling && return getfield(psi, :parent).scaling
+	throw(ArgumentError("FockMPS has no property $s"))
+end
+Base.propertynames(::FockMPS) = (:parent, :data, :s, :scaling)
+
+function FockMPS(data::AbstractVector{<:DenseMPSTensor{T}}, svectors::AbstractVector; scaling::Real=1) where {T<:Number}
+	return FockMPS(CanonicalMPS(convert(Vector{Array{T, 3}}, data), svectors, scaling))
+end
+function FockMPS(data::AbstractVector{<:DenseMPSTensor{T}}; scaling::Real=1) where {T<:Number}
+	return FockMPS(CanonicalMPS(convert(Vector{Array{T, 3}}, data); scaling))
 end
 
-function FockMPS(data::AbstractVector{<:DenseMPSTensor{T}}, svectors::AbstractVector; scaling::Real=1) where {T <: Number}
-	R = real(T)
-	return FockMPS{T, R}(data, svectors, Ref(convert(R, scaling)))
-end 
-function FockMPS(data::AbstractVector{<:DenseMPSTensor{T}}; scaling::Real=1) where {T <: Number}
-	R = real(T)
-	return FockMPS{T, R}(data, Ref(convert(R, scaling)))
-end
-
-# function FockMPS(::Type{T}, L::Int) where {T <: Number}
-# 	v = zeros(T, 1, 2, 1)
-# 	v[1,1,1] = 1
-# 	data = [copy(v) for i in 1:L]
-# 	return FockMPS(data, scaling=1)
-# end
 function FockMPS(::Type{T}, L::Int) where {T <: Number}
-	v = ones(T, 1, 2, 1)
-	data = [copy(v) for i in 1:L]
-	return FockMPS(data, scaling=1)
+	return FockMPS(CanonicalMPS(T, L; d=2))
 end
 FockMPS(L::Int) = FockMPS(Float64, L)
 
@@ -57,23 +54,13 @@ function TK.normalize!(x::FockMPS)
 	return x
 end
 
-Base.copy(psi::FockMPS) = FockMPS(copy(psi.data), copy(psi.s), scaling=scaling(psi))
+Base.copy(psi::FockMPS) = FockMPS(copy(psi.parent))
+Base.copy!(dst::FockMPS, src::FockMPS) = (copy!(dst.parent, src.parent); dst)
 
-svectors_uninitialized(psi::FockMPS) = any(ismissing, psi.s)
+svectors_uninitialized(psi::FockMPS) = FMA.svectors_uninitialized(psi.parent)
 function unset_svectors!(psi::FockMPS)
-	psi.s[2:end-1] .= missing
+	FMA.unset_svectors!(psi.parent)
 	return psi
-end
-
-function _check_mps_space(mpstensors::Vector)
-	L = length(mpstensors)
-	for i in 1:L-1
-		(space_r(mpstensors[i]) == space_l(mpstensors[i+1])) || throw(DimensionMismatch())
-	end
-	(space_l(mpstensors[1]) == 1) || throw(DimensionMismatch("left boundary should be size 1"))
-	(space_r(mpstensors[L]) == 1) || throw(DimensionMismatch("right boundary should be size 1"))
-	all(x->size(x, 2)==2, mpstensors) || throw(ArgumentError("physical dimension of site tensors must be 2"))
-	return true
 end
 
 
@@ -109,7 +96,7 @@ isleftcanonical(a::FockMPS; kwargs...) = all(x->isleftcanonical(x; kwargs...), a
 isrightcanonical(a::FockMPS; kwargs...) = all(x->isrightcanonical(x; kwargs...), a.data)
 
 """
-	iscanonical(psi::MPS; kwargs...) = is_right_canonical(psi; kwargs...)
+	iscanonical(psi::FockMPS; kwargs...) = is_right_canonical(psi; kwargs...)
 check if the state is right-canonical, the singular vectors are also checked that whether there are the correct Schmidt numbers or not
 This form is useful for time evolution for stability issue and also efficient for computing observers of unitary systems
 """

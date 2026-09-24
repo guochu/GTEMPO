@@ -1,4 +1,4 @@
-# definitions of abstract densempo and densemps
+# definitions of abstract dense tensor networks (Dense1DTN) and the FockMPS/FockMPO wrappers
 include("abstractdefs.jl")
 
 # implementation of fockmps
@@ -7,12 +7,10 @@ include("fockmps/fockmps.jl")
 include("fockmps/orth.jl")
 include("fockmps/linalg.jl")
 include("fockmps/integrate.jl")
-include("fockmps/mult/mult.jl")
+include("fockmps/mult.jl")
 
-# implementation of densempo
-include("densempo/densempo.jl")
-include("densempo/partialmpo.jl")
-include("densempo/linalg.jl")
+# implementation of fockmpo (lightweight wrapper of FiniteMPSAlgorithms.MPO)
+include("fockmpo.jl")
 
 include("fockterms.jl")
 

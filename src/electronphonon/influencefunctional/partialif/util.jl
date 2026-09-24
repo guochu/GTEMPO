@@ -219,7 +219,7 @@ function _fit_to_full(L::Int, pos, mpsdata)
 	end
 	tmp = zeros(2,2,2)
 	for i in 1:2
-		tmp[:,i,:] = isometry(2)
+		tmp[:,i,:] = FMA.isometry(2)
 	end
 	for j in pos[1]:pos[end]
 		posj = findfirst(x->x==j, pos)

@@ -1,80 +1,36 @@
-# # # the convention here is different from DMRG!!!
-TK.dot(psiA::FockMPS, psiB::FockMPS) = _dot(psiA, psiB) * (scaling(psiA) * scaling(psiB))^length(psiA)
-function TK.norm(psi::FockMPS) 
-	a = real(_dot(psi, psi))
-    a = (abs(a) >= 1.0e-14) ? a : zero(a)
-	return sqrt(a) * scaling(psi)^(length(psi))
-end
+# 链级线性代数（后端：FiniteMPSAlgorithms）
+#
+# dot/norm/lmul! 与 +/-/⊙(Hadamard 积) 全部委托给 FMA 在 CanonicalMPS payload
+# 上的同名函数（含 per-site scaling 约定，总 scaling = scaling^L）。
+
+LinearAlgebra.dot(psiA::FockMPS, psiB::FockMPS) = LinearAlgebra.dot(psiA.parent, psiB.parent)
+LinearAlgebra.norm(psi::FockMPS) = LinearAlgebra.norm(psi.parent)
 distance(a::FockMPS, b::FockMPS) = _distance(a, b)
 distance2(a::FockMPS, b::FockMPS) = _distance2(a, b)
 
+LinearAlgebra.lmul!(f::Number, psi::FockMPS) = (LinearAlgebra.lmul!(f, psi.parent); psi)
 
-function TK.lmul!(f::Number, psi::FockMPS)
-    if !isempty(psi)
-        psi[1] *= f
-    end
-    _renormalize!(psi, psi[1], false)
-    return psi
-end
-
-Base.:*(psi::FockMPS, f::Number) = lmul!(f, copy(psi))
+Base.:*(psi::FockMPS, f::Number) = FockMPS(psi.parent * f)
 Base.:*(f::Number, psi::FockMPS) = psi * f
 Base.:/(psi::FockMPS, f::Number) = psi * (1/f)
-Base.:(-)(psi::FockMPS) = (-1) * psi
+Base.:(-)(psi::FockMPS) = FockMPS(-psi.parent)
 
-function _dot(psiA::FockMPS, psiB::FockMPS) 
-    (length(psiA) == length(psiB)) || throw(ArgumentError("dimension mismatch"))
-    hold = l_LL(psiA, psiB)
-    for i in 1:length(psiA)
-        hold = updateleft(hold, psiA[i], psiB[i])
-    end
-    return tr(hold)
-
-end
-
-
-# the reuslt is also a GrassmannMPS
+# 精确（未压缩）乘积：物理指标共享的逐点（Hadamard）乘积，委托给 FMA 的 ⊙
 function Base.:*(x::FockMPS, y::FockMPS)
-    (length(x) == length(y)) || throw(DimensionMismatch())
-    r = [n_fuse(_mult_site_n(x[i], y[i]), 3) for i in 1:length(x)]
-    return FockMPS([tie(rj, (2,1,2)) for rj in r], scaling=scaling(x)*scaling(y))
+	(length(x) == length(y)) || throw(DimensionMismatch())
+	return FockMPS(⊙(x.parent, y.parent))
 end
 
-function Base.:+(x::FockMPS, y::FockMPS) 
-    (length(x) == length(y)) || throw(DimensionMismatch())
-    @assert !isempty(x)
-    scaling_x = scaling(x)
-    scaling_y = scaling(y)
-    (length(x) == 1) && return FockMPS([scaling_x * x[1] + scaling_y * y[1]])
-
-    L = length(x)
-    T = promote_type(scalartype(x), scalartype(y))
-    r = Vector{Array{T, 3}}(undef, L)
-    r[1] = cat(scaling_x*x[1], scaling_y*y[1], dims=3)
-    r[L] = cat(scaling_x*x[L], scaling_y*y[L], dims=1)
-    for i in 2:L-1
-        r[i] = cat(scaling_x*x[i], scaling_y*y[i], dims=(1,3))
-    end
-    return FockMPS(r)
+# 块对角直和：FMA 的实现会把两边的 scaling 折入数据
+function Base.:+(x::FockMPS, y::FockMPS)
+	(length(x) == length(y)) || throw(DimensionMismatch())
+	return FockMPS(x.parent + y.parent)
 end
 Base.:-(x::FockMPS, y::FockMPS) = x + (-y)
 
-
-function _permute!(x::FockMPS, perm::Vector{Int}; trunc::TruncationScheme=DefaultKTruncation)
-    @assert length(x) == length(perm)
-    if svectors_uninitialized(x)
-        canonicalize!(x, alg=Orthogonalize(trunc=trunc, normalize=false))
-    end
-    for i in TK.permutation2swaps(perm)
-        swap!(x, i, trunc=trunc)
-    end
-    return x
+# 站点内容重排：委托给 FMA 的链级 permute!（内部经 canonicalize! 与相邻 swap!）
+function TK.permute!(x::FockMPS, perm::Vector{Int}; trunc::TruncationScheme=DefaultKTruncation)
+	FMA.permute!(x.parent, perm; trunc=_fmatrunc(trunc))
+	return x
 end
-TK.permute!(x::FockMPS, perm::Vector; kwargs...) = _permute!(x, perm; kwargs...)
 TK.permute(x::FockMPS, perm::Vector{Int}; kwargs...) = permute!(deepcopy(x), perm; kwargs...)
-
-function _mult_site_n(xj, yj)
-    @tensor r[1,4,2,5;3,6] := xj[1,2,3] * yj[4,5,6]
-    return r
-end
-
