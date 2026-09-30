@@ -100,8 +100,8 @@ end
 # `_renormalize!` bookkeeping, so the output value is e^H·z(0) regardless of
 # the gauge of the input.
 function _tdvpif_hybriddynamics!(z::GrassmannMPS, H::GrassmannMPS, alg::TDVPIF)
-	increase_bond!(z, alg.trunc.D)
-	canonicalize!(z, alg=Orthogonalize(SVD(), NoTruncation(); normalize=false))
+	# changebond! finalizes in right-canonical form with the Schmidt values initialized
+	changebond!(z, alg.trunc.D)
 	_tdvpif_flow!(z, H, alg)
 	# after the flow, a final canonicalization sweep compresses z with SVD
 	# truncation to the target bond dimension

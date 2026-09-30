@@ -11,7 +11,7 @@ export NoTruncation
 
 # Grassmann MPS
 export AbstractGTerm, GTerm, ExpGTerm, z2space
-export AbstractGMPS, AbstractFiniteGMPS, GrassmannMPS, SparseGMPS, togmps, scaling, setscaling!, randomgmps, increase_bond!
+export AbstractGMPS, AbstractFiniteGMPS, GrassmannMPS, SparseGMPS, togmps, scaling, setscaling!, randomgmps, changebond!
 export iscanonical, isleftcanonical, isrightcanonical
 export mult!, mult, DMRG1, DMRG2
 export GrassmannTransferMatrix

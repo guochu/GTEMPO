@@ -87,14 +87,20 @@ using LinearAlgebra: normalize!
 	normalize!(x)
 	@test norm(x) ≈ 1.0 rtol = 1.0e-10
 
-	# --- increase_bond! ---
+	# --- changebond! ---
 	x = randomgmps(L, D=4)
 	x0 = deepcopy(x)
-	xd = increase_bond!(x, 16)
-	@test minimum(bond_dimensions(xd)[2:end-1]) >= 4  # original internal bonds have dim 4
-	@test maximum(bond_dimensions(xd)) == 16
-	@test svectors_uninitialized(xd)
-	@test distance(xd, x0) / norm(x0) < 1.0e-12  # isometry insertion preserves the state
+	xd = changebond!(x, 16)
+	# zero-padded bonds are trimmed by the finalizing rightorth! sweep down to the
+	# feasibility caps min(D, 2^(L-i)) of the finite MPS (physical dimension 2)
+	@test bond_dimensions(xd) == min.(16, 2 .^ (L-1:-1:0))
+	@test !svectors_uninitialized(xd)  # finalized in right-canonical form (FMA convention)
+	@test isrightcanonical(xd)
+	# state preserved up to the numerical accuracy of the SVD right-orthogonalization sweep
+	@test distance(xd, x0) / norm(x0) < 1.0e-7
+	# shrink: bonds are sliced down to the target profile
+	xs = changebond!(deepcopy(xd), 4)
+	@test maximum(bond_dimensions(xs)) == 4
 
 	# --- permute!: stays mixed-canonical, inverse permute restores the state ---
 	truncbig = truncdimcutoff(D=256, ϵ=1.0e-12)

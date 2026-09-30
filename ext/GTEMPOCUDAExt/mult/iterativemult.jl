@@ -25,7 +25,7 @@ function cu_iterativemult(x::GrassmannMPS, y::GrassmannMPS, alg::CuDMRGMultAlgor
     elseif alg.initguess == :rand
         z = randomgmps(promote_type(scalartype(x), scalartype(y)), length(x), D=alg.trunc.D)
     elseif alg.initguess == :pre
-        z = increase_bond!(copy(x), alg.trunc.D)
+        z = changebond!(copy(x), alg.trunc.D)
     else
         error("unsupported initguess $(alg.initguess)")
     end

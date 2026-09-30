@@ -77,18 +77,16 @@ end
 randomfockmps(L::Int; kwargs...) = randomfockmps(Float64, L; kwargs...)
 
 
-function increase_bond!(psi::FockMPS; D::Int)
-	if bond_dimension(psi) < D
-		for i in 1:length(psi)
-			sl = max(D, size(psi[i], 1))
-			sr = max(D, size(psi[i], 3))
-			m = zeros(scalartype(psi), sl, size(psi[i], 2), sr)
-			m[1:size(psi[i], 1), :, 1:size(psi[i], 3)] .= psi[i]
-			psi[i] = m
-		end
-	end
-	return psi
-end
+"""
+	changebond!(psi::FockMPS, D::Int; noise::Real=0) -> psi
+
+Bring the bond profile of `psi` to `min(D, feasible)`: bonds larger than the target are
+shrunk by slicing the leading bond indices, smaller bonds are grown with random entries
+of magnitude `noise` (zero by default, so that the represented state is unchanged).
+Delegates to FiniteMPSAlgorithms' `changebond!` on the inner `CanonicalMPS` payload;
+the chain is returned in right-canonical form with the Schmidt values initialized.
+"""
+changebond!(psi::FockMPS, D::Int; noise::Real=0) = (FMA.changebond!(psi.parent; D, noise); psi)
 
 
 # check is canonical

@@ -40,7 +40,7 @@ function iterativemult(x::GrassmannMPS, y::GrassmannMPS, alg::DMRGAlgorithm)
     elseif alg.initguess == :rand
         z = randomgmps(promote_type(scalartype(x), scalartype(y)), length(x), D=D)
     elseif alg.initguess == :pre
-        z = increase_bond!(copy(x), D)
+        z = changebond!(copy(x), D)
     else
         error("unsupported initguess $(alg.initguess)")
     end

@@ -194,22 +194,53 @@ end
 randomgmps(L::Int; kwargs...) = randomgmps(Float64, L; kwargs...)
 
 
-function increase_bond!(x::GrassmannMPS, D::Int)
+# bond map (new ← old) bringing the old bond to the target profile: keep the leading
+# min(dim(old,c), dim(target,c)) components per Z2 sector (growth embeds with the
+# identity, shrink slices the leading components), optionally filling the grown
+# components with randn entries of magnitude `noise`
+function _bondmap(::Type{T}, old::Z2Space, target::Z2Space; noise::Real=0) where {T<:Number}
+	t = zeros(T, target ← old)
+	for (fl, fr) in fusiontrees(t)
+		(fl.uncoupled[1] == fr.uncoupled[1]) || continue
+		b = t[fl, fr]
+		k = min(size(b, 1), size(b, 2))
+		@inbounds for i in 1:k
+			b[i, i] = one(T)
+		end
+		if noise != 0 && size(b, 1) > k
+			b[k+1:end, :] .= noise .* randn(T, size(b, 1) - k, size(b, 2))
+		end
+	end
+	return t
+end
+
+"""
+	changebond!(x::GrassmannMPS, D::Int; noise::Real=0) -> x
+
+Bring the bond profile of `x` to `min(D, feasible)` (the `FockMPS`/FiniteMPSAlgorithms
+`changebond!` semantics): bonds smaller than the target are grown by embedding the site
+tensors with bond isometries, bonds larger than the target are shrunk by slicing the
+leading components per Z2 sector. The additionally grown components carry random
+entries of magnitude `noise` (zero by default, so that the represented state is
+unchanged). Following the FiniteMPSAlgorithms convention, the chain is finalized with
+an exact `rightorth!` sweep: the result is **right-canonical** with the Schmidt values
+initialized, ready to be used directly as the input of the iterative algorithms
+(no prior `canonicalize!`/`rightorth!` needed).
+"""
+function changebond!(x::GrassmannMPS, D::Int; noise::Real=0)
 	Dh = div(D, 2)
 	virtualspace = Z2Space(0=>Dh, 1=>Dh)
 	L = length(x)
-	ms = [isometry(scalartype(x), virtualspace, space_l(x[site+1])) for site in 1:L-1]
+	ms = [_bondmap(scalartype(x), space_l(x[site+1]), virtualspace; noise) for site in 1:L-1]
 	@tensor tmp[1,2;4] := x[1][1,2,3] * conj(ms[1][4,3])
 	x[1] = tmp
 	@tensor tmp[1,3;4] := ms[L-1][1,2] * x[L][2,3,4]
 	x[L] = tmp
 	for site in 2:L-1
-		vspace = space_l(x[site+1])
-		(vspace ≾ virtualspace) || @warn "old virtualspace $(vspace) is not monomorphic to the new virtualspace $(virtualspace)"
 		@tensor tmp[1,3;5] := ms[site-1][1,2] * x[site][2,3,4] * conj(ms[site][5,4])
 		x[site] = tmp
 	end
-	unset_svectors!(x)
+	rightorth!(x, alg=Orthogonalize(SVD(), NoTruncation(); normalize=false))
 	return x
 end
 
