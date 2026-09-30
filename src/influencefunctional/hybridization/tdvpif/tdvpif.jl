@@ -18,7 +18,8 @@
 # canonicalized without truncation, so that the zero-weight directions become
 # orthonormal directions of the environments and the sweeps can populate the
 # full bond profile min(d^j, d^{L-j}, D) as the flow builds up correlations.
-# Truncation is applied only in the final canonicalization.
+# Since the sweeps never exceed this bond profile, no final compression is
+# needed; the Schmidt values invalidated by the sweeps are reset at the end.
 #
 # All fermionic signs of the tangent-space effective maps are inherited from
 # the `mult` machinery: the AC map reuses `get_left_xy` and the environment
@@ -95,17 +96,19 @@ end
 # preparation: lift z to the flow bond dimension (zero-padded) and canonicalize
 # without truncation, so that the zero-weight directions become orthonormal
 # directions of the environments and the sweeps can populate the full bond
-# profile min(d^j, d^{L-j}, D); finalization: canonicalize with the truncation
-# scheme. The global scaling factor of z is carried through the flow by the
+# profile min(d^j, d^{L-j}, D); the sweeps never exceed this profile, so no
+# final truncation is needed — only the invalidated Schmidt values are reset.
+# The global scaling factor of z is carried through the flow by the
 # `_renormalize!` bookkeeping, so the output value is e^H·z(0) regardless of
 # the gauge of the input.
 function _tdvpif_hybriddynamics!(z::GrassmannMPS, H::GrassmannMPS, alg::TDVPIF)
 	# changebond! finalizes in right-canonical form with the Schmidt values initialized
+	# and caps the bond profile at D; the flow keeps the bond profile bounded, so no
+	# final compression is needed — only the Schmidt values become stale in the sweeps
+	# and are reset
 	changebond!(z, alg.trunc.D)
 	_tdvpif_flow!(z, H, alg)
-	# after the flow, a final canonicalization sweep compresses z with SVD
-	# truncation to the target bond dimension
-	canonicalize!(z, alg=Orthogonalize(SVD(), alg.trunc; normalize=false))
+	unset_svectors!(z)
 	alg.callback(Float64[])
 	return z
 end
