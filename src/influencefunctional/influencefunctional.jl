@@ -90,7 +90,6 @@ dimension grows with the correlations up to `trunc.D`.
 - `trunc::TruncateDimCutoff`: bond dimension of the flow manifold / final influence functional.
 - `δ::Float64`: imaginary-time step of the flow (0 < δ ≤ 1, adjusted so that 1/δ is an integer).
 - `verbosity::Int`: verbosity level of the output.
-- `callback::Function`: callback function invoked after the flow.
 
 On real-time lattices the influence operator driving the flow is the sum of
 the 4 branch MPOs returned by `influenceoperators` ((+,+), (+,−), (−,+),
@@ -101,22 +100,20 @@ struct TDVPIF <: InfluenceFunctionalAlgorithm
 	trunc::TruncateDimCutoff      # bond dimension of the flow manifold / final IF
 	δ::Float64                      # imaginary-time step of the flow (0 < δ ≤ 1, adjusted so that 1/δ is an integer)
 	verbosity::Int
-	callback::Function
 end
 """
-	TDVPIF(; algexpan, trunc, δ, verbosity, callback)
+	TDVPIF(; algexpan, trunc, δ, verbosity)
 
 Keyword constructor for `TDVPIF`; all parameters have default values and usually need not be passed explicitly.
 """
 function TDVPIF(; algexpan::ExponentialExpansionAlgorithm=DefaultExpansionAlg,
 				trunc::TruncateDimCutoff=DefaultITruncation,
 				δ::Real=0.1,
-				verbosity::Int=0,
-				callback::Function=Returns(nothing))
+				verbosity::Int=0)
 	(0 < δ <= 1) || throw(ArgumentError("δ must be a real number in (0, 1], got $δ"))
 	# adjust δ so that 1/δ is an integer number of steps
 	n = max(round(Int, 1 / δ), 1)
-	return TDVPIF(algexpan, trunc, 1 / n, verbosity, callback)
+	return TDVPIF(algexpan, trunc, 1 / n, verbosity)
 end
 
 # temporary solution

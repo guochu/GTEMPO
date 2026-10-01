@@ -109,7 +109,6 @@ function _tdvpif_hybriddynamics!(z::GrassmannMPS, H::GrassmannMPS, alg::TDVPIF)
 	changebond!(z, alg.trunc.D)
 	_tdvpif_flow!(z, H, alg)
 	unset_svectors!(z)
-	alg.callback(Float64[])
 	return z
 end
 
