@@ -220,18 +220,38 @@ end
 Bring the bond profile of `x` to `min(D, feasible)` (the `FockMPS`/FiniteMPSAlgorithms
 `changebond!` semantics): bonds smaller than the target are grown by embedding the site
 tensors with bond isometries, bonds larger than the target are shrunk by slicing the
-leading components per Z2 sector. The additionally grown components carry random
-entries of magnitude `noise` (zero by default, so that the represented state is
-unchanged). Following the FiniteMPSAlgorithms convention, the chain is finalized with
-an exact `rightorth!` sweep: the result is **right-canonical** with the Schmidt values
-initialized, ready to be used directly as the input of the iterative algorithms
-(no prior `canonicalize!`/`rightorth!` needed).
+leading components per Z2 sector. The feasibility caps follow FiniteMPSAlgorithms:
+the bond after site `i` never exceeds `min(D, ∏_{j≤i} d_j, ∏_{j>i} d_j)` with `d_j` the
+physical dimensions. The additionally grown components carry random entries of magnitude
+`noise` (zero by default, so that the represented state is unchanged). Following the
+FiniteMPSAlgorithms convention, the chain is finalized with an exact `rightorth!` sweep:
+the result is **right-canonical** with the Schmidt values initialized, ready to be used
+directly as the input of the iterative algorithms (no prior `canonicalize!`/`rightorth!`
+needed).
 """
 function changebond!(x::GrassmannMPS, D::Int; noise::Real=0)
-	Dh = div(D, 2)
-	virtualspace = Z2Space(0=>Dh, 1=>Dh)
 	L = length(x)
-	ms = [_bondmap(scalartype(x), space_l(x[site+1]), virtualspace; noise) for site in 1:L-1]
+	# feasibility caps: the bond after site i is bounded by the products of the
+	# physical dimensions on both sides (FMA changebond!'s Dl/Dr logic)
+	ds = [dim(physical_space(x, j)) for j in 1:L]
+	Dl = ones(Int, L + 1)
+	for i in 1:L
+		Dl[i+1] = min(D, Dl[i] * ds[i])
+	end
+	Dr = ones(Int, L + 1)
+	for i in L:-1:1
+		Dr[i] = min(D, Dr[i+1] * ds[i])
+	end
+	caps = min.(Dl, Dr)
+	# 缩键的切片语义假设链处于规范规范（键的 leading 分量即主导 Schmidt 方向）；
+	# 存在需要缩键的键时，先做一次无截断正交化以保证切片是合法的截断
+	any(bond_dimensions(x)[i] > caps[i+1] for i in 1:L-1) &&
+		canonicalize!(x, alg=Orthogonalize(SVD(), NoTruncation(); normalize=false))
+	Dh = div(D, 2)
+	ms = [begin
+		dh = min(Dh, div(caps[site+1], 2))
+		_bondmap(scalartype(x), space_l(x[site+1]), Z2Space(0=>dh, 1=>dh); noise)
+	end for site in 1:L-1]
 	@tensor tmp[1,2;4] := x[1][1,2,3] * conj(ms[1][4,3])
 	x[1] = tmp
 	@tensor tmp[1,3;4] := ms[L-1][1,2] * x[L][2,3,4]

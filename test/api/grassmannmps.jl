@@ -92,8 +92,8 @@ using LinearAlgebra: normalize!
 	x0 = deepcopy(x)
 	xd = changebond!(x, 16)
 	# zero-padded bonds are trimmed by the finalizing rightorth! sweep down to the
-	# feasibility caps min(D, 2^(L-i)) of the finite MPS (physical dimension 2)
-	@test bond_dimensions(xd) == min.(16, 2 .^ (L-1:-1:0))
+	# feasibility caps min(D, 2^i, 2^(L-i)) of the finite MPS (physical dimension 2)
+	@test bond_dimensions(xd) == min.(16, 2 .^ (1:L), 2 .^ (L-1:-1:0))
 	@test !svectors_uninitialized(xd)  # finalized in right-canonical form (FMA convention)
 	@test isrightcanonical(xd)
 	# state preserved up to the numerical accuracy of the SVD right-orthogonalization sweep
