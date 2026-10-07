@@ -68,13 +68,13 @@ function update_left_1(left::GrassmannMPS, pos::Int, x::Vector{<:GrassmannMPS}; 
 	tmp, left2 = update_left_util(left, pos, x)
 	# fuse boundary
 	left2[1] = _fuse_boundary(tmp[1])
-	return canonicalize!(GrassmannMPS(left2, scaling=scaling(left)), alg=Orthogonalize(trunc=trunc))
+	canonicalize!(GrassmannMPS(left2, scaling=scaling(left)), alg=Orthogonalize(trunc=trunc))[1]
 end
 function update_left_2(left::GrassmannMPS, pos::Int, x::Vector{<:GrassmannMPS}; trunc)
 	tmp, left2 = update_left_util(left, pos, x)
 	# trace physices
 	left2[1] = _trace_boundary(tmp[1])
-	return canonicalize!(GrassmannMPS(left2, scaling=scaling(left)), alg=Orthogonalize(trunc=trunc))
+	canonicalize!(GrassmannMPS(left2, scaling=scaling(left)), alg=Orthogonalize(trunc=trunc))[1]
 end
 
 function update_pair_left(left::GrassmannMPS, j::Int, xx::Vector{<:GrassmannMPS}; trunc=DefaultKTruncation)
@@ -100,12 +100,12 @@ end
 function update_right_1(right::GrassmannMPS, pos::Int, x::Vector{<:GrassmannMPS}; trunc)
 	tmp, right2 = update_right_util(right, pos, x)
 	right2[1] = _fuse_boundary(tmp[1])
-	return canonicalize!(GrassmannMPS(right2, scaling=scaling(right)), alg=Orthogonalize(trunc=trunc))
+	canonicalize!(GrassmannMPS(right2, scaling=scaling(right)), alg=Orthogonalize(trunc=trunc))[1]
 end
 function update_right_2(right::GrassmannMPS, pos::Int, x::Vector{<:GrassmannMPS}; trunc)
 	tmp, right2 = update_right_util(right, pos, x)
 	right2[1] = _trace_boundary(tmp[1], nt=false)
-	return canonicalize!(GrassmannMPS(right2, scaling=scaling(right)), alg=Orthogonalize(trunc=trunc))
+	canonicalize!(GrassmannMPS(right2, scaling=scaling(right)), alg=Orthogonalize(trunc=trunc))[1]
 end
 
 function update_pair_right(right::GrassmannMPS, j::Int, xx::Vector{<:GrassmannMPS}; trunc)

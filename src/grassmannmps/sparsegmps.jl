@@ -144,13 +144,14 @@ end
 # mult!
 # -----
 """
-	mult!(x::GrassmannMPS, y::SparseGMPS; trunc, verbosity) -> GrassmannMPS
+	mult!(x::GrassmannMPS, y::SparseGMPS; trunc, verbosity) -> (x, maxerr)
 
 In-place multiplication of a GrassmannMPS `x` by a SparseGMPS `y`,
 storing the result in `x`. Equivalent to
 `mult!(x, togmps(y, length(x)))`, but only the sites covered by the
 nontrivial tensors of `y` are recomputed: outside this window the site
-tensors of `x` are reused unchanged.
+tensors of `x` are reused unchanged. Returns `x` and the maximal
+truncation error of the local SVD sweep.
 
 Only the bonds inside the window are controlled by the truncation
 scheme; the bonds outside the window are inherited from `x`. The Schmidt
@@ -207,13 +208,16 @@ function mult!(x::GrassmannMPS, y::SparseGMPS; trunc::TruncationScheme=DefaultIT
 	x′ = GrassmannMPS(newdata, copy(x.s), scaling(x))
 
 	# --- local right-to-left SVD sweep with truncation over [p₀, p₁] ---
+	maxerr = 0.0
 	for i in p₁:-1:p₀+1
 		# single-site operation: fermionic twist + restore cancel exactly,
 		# so the plain bosonic tsvd on the permuted tensor is identical
 		u, s, v, err = tsvd(permute(x′[i], (1,), (2, 3); copy=true); alg=SDD(), trunc=trunc)
 		x′[i] = permute(v, (1, 2), (3,); copy=true)
 		nr = _renormalize!(x′, s, false)
-		(verbosity > 1) && println("SVD truncerror at bond $(i): ", sqrt(err * err / (nr * nr + err * err)))
+		rerror = sqrt(err * err / (nr * nr + err * err))
+		(verbosity > 1) && println("SVD truncerror at bond $(i): ", rerror)
+		maxerr = max(maxerr, rerror)
 		u2 = u * s
 		@grassmann tmp[-1,-2;-3] := x′[i-1][-1,-2,1] * u2[1,-3]
 		x′[i-1] = tmp
@@ -224,6 +228,6 @@ function mult!(x::GrassmannMPS, y::SparseGMPS; trunc::TruncationScheme=DefaultIT
 	copy!(x.data, x′.data)
 	copy!(x.s, x′.s)
 	setscaling!(x, scaling(x′))
-	return x
+	return x, maxerr
 end
 mult(x::GrassmannMPS, y::SparseGMPS; kwargs...) = mult!(copy(x), y; kwargs...)

@@ -38,7 +38,7 @@
 	model = ToulouseIM(ϵ_d=0.5)
 	mpsK = sysdynamics(lat, model, trunc=trunc)
 	mpsK = hybriddynamics!(mpsK, lat, corr, alg)
-	mpsK_ref = mult(sysdynamics(lat, model, trunc=trunc), mpsI4, trunc=trunc)
+	mpsK_ref = mult(sysdynamics(lat, model, trunc=trunc), mpsI4, trunc=trunc)[1]
 	@test relerr(mpsK, mpsK_ref) < 1.0e-6
 
 	# multi-band: construct on a single-band lattice, then fillband
@@ -91,7 +91,7 @@ end
 	model = ToulouseIM(ϵ_d=0.5)
 	mpsK = sysdynamics(lat, model, trunc=trunc)
 	mpsK = hybriddynamics!(mpsK, lat, corr, alg)
-	mpsK_ref = mult(sysdynamics(lat, model, trunc=trunc), mpsI4, trunc=trunc)
+	mpsK_ref = mult(sysdynamics(lat, model, trunc=trunc), mpsI4, trunc=trunc)[1]
 	@test relerr(mpsK, mpsK_ref) < 1.0e-3
 end
 
@@ -142,7 +142,7 @@ end
 	k = lat.k - 1
 	mps1 = vacuumstate(lat)
 	for i in 1:k
-		mps1 = mult!(mps1, partialif_hybrid(lat, i + 1, [0; view(corr.data, i, 1:k)]), trunc=trunc)
+		mps1 = mult!(mps1, partialif_hybrid(lat, i + 1, [0; view(corr.data, i, 1:k)]), trunc=trunc)[1]
 	end
 	@test relerr(mps1, hybriddynamics(lat, corr, trunc=trunc)) < 1.0e-8
 	a = partialif_hybrid(lat, 2, [0; view(corr.data, 1, 1:k)])

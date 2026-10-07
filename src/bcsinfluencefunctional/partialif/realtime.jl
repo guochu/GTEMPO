@@ -18,7 +18,7 @@
 # 			apply!(t, tmp)
 # 			canonicalize!(tmp, alg=orth)
 # 		end
-# 		gmps = mult!(gmps, tmp, trunc=trunc)
+# 			gmps = mult!(gmps, tmp, trunc=trunc)
 # 	end
 # 	return gmps
 # end
@@ -43,7 +43,7 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order
 			push!(coefs, coef)
 		end
 		tmp = partialmpo(pos1, pos2s, coefs) * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
-		gmps = mult!(gmps, tmp, trunc=trunc)
+		gmps = mult!(gmps, tmp, trunc=trunc)[1]
 	end
 	return gmps
 end

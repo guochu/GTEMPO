@@ -59,7 +59,7 @@ function _influenceoperatorstepper(lattice::ImagGrassmannLattice1Order, corr::Im
  	mpo1, mpo2 = influenceoperatorsteppers(lattice, corr, dt, alg, band=band, algexpan=algexpan)
 	mps1 = mpo1 * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 	mps2 = mpo2 * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
-	return mult(mps1, mps2, algmult)
+	return mult(mps1, mps2, algmult)[1]
 end
 
 function _fit_to_lattice(lattice::ImagGrassmannLattice, mpo::MPO, _JW::MPSBondTensor, band::Int, trunc::TruncationScheme=DefaultITruncation)

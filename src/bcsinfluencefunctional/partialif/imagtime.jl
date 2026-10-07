@@ -43,7 +43,7 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order
 			push!(coefs, coef)
 		end
 		tmp = partialmpo(pos1, pos2s, coefs) * vacuumstate(T, lattice)
-		gmps = mult!(gmps, tmp, trunc=trunc)
+		gmps = mult!(gmps, tmp, trunc=trunc)[1]
 	end
 	return gmps
 end

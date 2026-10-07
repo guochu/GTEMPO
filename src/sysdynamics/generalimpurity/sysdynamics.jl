@@ -49,7 +49,7 @@ function _sysdynamics_util(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice
 	t = (branch == :+) ? (idx - 1) * dt : (branch == :- ? (lattice.Nt - idx) * dt : nothing)
 	fm = (branch == :τ) ? fock_propagator(model, branch, dt) : fock_propagator(model, branch, dt, t)
 	sparse = _propagator_sparsegmps(lattice, fm, idx, branch, cache, t)
-	return mult!(gmps, sparse, trunc=trunc)
+	return mult!(gmps, sparse, trunc=trunc)[1]
 end
 
 function sysdynamics_forward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model;
@@ -194,7 +194,7 @@ function _baresysdynamics_util(gmps::GrassmannMPS, lattice::AbstractGrassmannLat
 	t = (branch == :+) ? (idx - 1) * dt : (branch == :- ? (lattice.Nt - idx) * dt : nothing)
 	fm = (branch == :τ) ? fock_propagator(model, branch, dt) : fock_propagator(model, branch, dt, t)
 	sparse = _bare_propagator_sparsegmps(lattice, fm, idx, branch, cache, t)
-	return mult!(gmps, sparse, trunc=trunc)
+	return mult!(gmps, sparse, trunc=trunc)[1]
 end
 
 """
@@ -375,7 +375,7 @@ function _fast_driver(lattice::AbstractGrassmannLattice{O}, model, branches;
 		if !any(isnothing, gs)
 			gmps = gs[1]
 			for i in 2:length(gs)
-				gmps = mult(gmps, gs[i], trunc=trunc)
+				gmps = mult(gmps, gs[i], trunc=trunc)[1]
 			end
 			return gmps
 		end
@@ -393,7 +393,7 @@ function _fast_driver(lattice::AbstractGrassmannLattice{O}, model, branches;
 		any(isnothing, gs2) && error("propagator windows overlap even in the canonical ordering")
 		gmps2 = gs2[1]
 		for i in 2:length(gs2)
-			gmps2 = mult(gmps2, gs2[i], trunc=trunc)
+			gmps2 = mult(gmps2, gs2[i], trunc=trunc)[1]
 		end
 	end
 	return changeordering(O, lattice2, gmps2, trunc=trunc)[2]

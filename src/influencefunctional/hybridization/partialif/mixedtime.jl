@@ -12,7 +12,7 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Orde
 			cols_b = [index(corr, i, j, b1=b1, b2=:-) for j in 1:kt]
 			cols_i = [index(corr, i, j, b1=b1, b2=:τ) for j in 1:Nτ]
 			tmp = partialif_hybrid(lattice, i, cols_f, cols_b, cols_i, b1=b1, band=band)
-			gmps = mult!(gmps, tmp, trunc=trunc)
+			gmps = mult!(gmps, tmp, trunc=trunc)[1]
 		end
 	end
 	b1 = :τ
@@ -21,9 +21,9 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Orde
 		cols_b = [index(corr, i, j, b1=b1, b2=:-) for j in 1:kt]
 		cols_i = [index(corr, i, j, b1=b1, b2=:τ) for j in 1:Nτ]
 		tmp = partialif_hybrid(lattice, i, cols_f, cols_b, cols_i, b1=b1, band=band)
-		gmps = mult!(gmps, tmp, trunc=trunc)
+		gmps = mult!(gmps, tmp, trunc=trunc)[1]
 	end
-	return gmps		
+	return gmps
 end
 
 function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::AbstractMixedCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
@@ -35,7 +35,7 @@ function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::MixedGrassmannLattic
 			cols_b = [index(corr, i, j, b1=b1, b2=:-) for j in 1:kt]
 			cols_i = [index(corr, i, j, b1=b1, b2=:τ) for j in 1:Nτ]
 			tmp = partialif_hybrid_naive(lattice, i, cols_f, cols_b, cols_i, b1=b1, band=band, trunc=trunc)
-			gmps = mult!(gmps, tmp, trunc=trunc)
+			gmps = mult!(gmps, tmp, trunc=trunc)[1]
 		end
 	end
 	b1 = :τ
@@ -44,7 +44,7 @@ function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::MixedGrassmannLattic
 		cols_b = [index(corr, i, j, b1=b1, b2=:-) for j in 1:kt]
 		cols_i = [index(corr, i, j, b1=b1, b2=:τ) for j in 1:Nτ]
 		tmp = partialif_hybrid_naive(lattice, i, cols_f, cols_b, cols_i, b1=b1, band=band, trunc=trunc)
-		gmps = mult!(gmps, tmp, trunc=trunc)
+		gmps = mult!(gmps, tmp, trunc=trunc)[1]
 	end
 	return gmps		
 end

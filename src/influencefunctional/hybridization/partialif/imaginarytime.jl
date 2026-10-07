@@ -9,7 +9,7 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order
 	k = lattice.k-1
 	for i in 1:k
 		tmp = partialif_hybrid(lattice, i+1, [0; view(corr, i, 1:k)], band=band)
-		gmps = mult!(gmps, tmp, trunc=trunc)
+		gmps = mult!(gmps, tmp, trunc=trunc)[1]
 	end
 	return gmps
 end
@@ -21,7 +21,7 @@ function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice
 	k = lattice.k-1
 	for i in 1:k
 		tmp = partialif_hybrid_naive(lattice, i+1, [0; view(corr, i, 1:k)], band=band, trunc=trunc)
-		gmps = mult!(gmps, tmp, trunc=trunc)
+		gmps = mult!(gmps, tmp, trunc=trunc)[1]
 	end
 	return gmps
 end

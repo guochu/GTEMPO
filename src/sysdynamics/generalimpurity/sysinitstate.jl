@@ -23,7 +23,7 @@ function sysinitialstate!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, foc
     bpos = [index(lattice, 1, conj=true, branch=:+, band=i) for i in 1:M]
     kpos = [index(lattice, 1, conj=false, branch=:-, band=i) for i in 1:M]
     sparse = _tosparsegmps(lattice, fockstate, bpos, kpos)
-    return mult!(gmps, sparse, trunc=trunc)
+    return mult!(gmps, sparse, trunc=trunc)[1]
 end
 
 """

@@ -1,8 +1,9 @@
 # standard multiplication and truncation using SVD
 """
-    mult!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme)
+    mult!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme) -> (x, maxerr)
 
-Multiplication of two GMPS x and y, and the result is stored in x
+Multiplication of two GMPS x and y; the result is stored in x. Returns `x` and the
+maximal truncation error of the finalizing SVD sweep.
 """
 function mult!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=DefaultITruncation, verbosity::Int=0)
     (length(x) == length(y)) || throw(DimensionMismatch())
@@ -17,8 +18,8 @@ function mult!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=Default
     end
     @tensor tmp[1,2;5] := tmp4[1,2,3,4] * conj(left[5,3,4])
     x[end] = tmp
-    _rightorth!(x, SVD(), trunc, false, verbosity)
+    maxerr = _rightorth!(x, SVD(), trunc, false, verbosity)[2]
     setscaling!(x, scaling(x) * scaling(y))
-    return x
+    return x, maxerr
 end
 mult(x::GrassmannMPS, y::GrassmannMPS; kwargs...) = mult!(copy(x), y; kwargs...)

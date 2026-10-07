@@ -6,7 +6,7 @@ include("realtime.jl")
 
 function hybriddynamics!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::XTRGIF; band::Int=1)
 	mps = hybriddynamics(lattice, corr, alg, band=band)
-	return mult!(gmps, mps, alg.algmult)
+	return mult!(gmps, mps, alg.algmult)[1]
 end
 
 function hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::XTRGIF; band::Int=1)
@@ -31,12 +31,12 @@ function _hybriddynamics_fast(lattice::AbstractGrassmannLattice, corr::AbstractC
 	
 	for i in 1:alg.k
 		if alg.verbosity > 1
-			t = @elapsed mps = mult(mps, mps, algmult)
+			t = @elapsed mps = mult(mps, mps, algmult)[1]
 			println("the $i-th iteration takes $t seconds, bond dimension is ", bond_dimension(mps))
 		else
-			mps = mult(mps, mps, algmult)
+			mps = mult(mps, mps, algmult)[1]
 		end
-	end	
+	end
 	return mps
 end
 
@@ -52,11 +52,11 @@ function _hybriddynamics_slow(lattice::AbstractGrassmannLattice, corr::AbstractC
 
 	for i in 1:2^(alg.k)-1
 		if alg.verbosity > 1
-			t = @elapsed mps = mult(mps, mps0, algmult)
+			t = @elapsed mps = mult(mps, mps0, algmult)[1]
 			println("the $i-th iteration takes $t seconds, bond dimension is ", bond_dimension(mps))
 		else
-			mps = mult(mps, mps0, algmult)
-		end		
+			mps = mult(mps, mps0, algmult)[1]
+		end
 	end
 	return mps
 end

@@ -6,14 +6,13 @@ export truncdimcutoff
 # GrassmannTensor
 export scalartype
 export @grassmann
-using Z2Tensors: NoTruncation
-export NoTruncation
 
 # Grassmann MPS
 export AbstractGTerm, GTerm, ExpGTerm, z2space
 export AbstractGMPS, AbstractFiniteGMPS, GrassmannMPS, SparseGMPS, togmps, scaling, setscaling!, randomgmps, changebond!
 export iscanonical, isleftcanonical, isrightcanonical
 export mult!, mult, DMRG1, DMRG2
+export leftorth!, rightorth!
 export GrassmannTransferMatrix
 export randomfockmps
 
@@ -88,7 +87,7 @@ export reweighting!, reweighting
 
 export MPO, PartialMPO, AbstractMPO, MPOHamiltonian, SchurMPOTensor, apply!
 export MPSTensor, MPSBondTensor, MPOTensor, SiteOperator
-export canonicalize, canonicalize!, physical_spaces, environments, expectationvalue, positions, physical_space
+export canonicalize, canonicalize!, truncate!, physical_spaces, environments, expectationvalue, positions, physical_space
 export ophysical_space, iphysical_space
 export svectors_uninitialized, unset_svectors!, mpotensortype, mpstensortype
 export SVDCompression

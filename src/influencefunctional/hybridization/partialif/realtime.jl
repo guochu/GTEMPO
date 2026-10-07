@@ -22,10 +22,10 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order
 		tmp1 = partialif_hybrid(lattice, i, view(η⁺⁺, i, 1:k), view(η⁺⁻, i, 1:k), b1=:+, band=band)
 		tmp3 = partialif_hybrid(lattice, i, view(η⁻⁺, i, 1:k), view(η⁻⁻, i, 1:k), b1=:-, band=band)
 
-		gmps = mult!(gmps, tmp1, trunc=trunc)
-		gmps = mult!(gmps, tmp3, trunc=trunc)
+		gmps = mult!(gmps, tmp1, trunc=trunc)[1]
+		gmps = mult!(gmps, tmp3, trunc=trunc)[1]
 	end
-	return gmps		
+	return gmps
 end
 
 function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
@@ -37,8 +37,8 @@ function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::RealGrassmannLattice
 		tmp1 = partialif_hybrid_naive(lattice, i, view(η⁺⁺, i, 1:k), view(η⁺⁻, i, 1:k), b1=:+, band=band, trunc=trunc)
 		tmp3 = partialif_hybrid_naive(lattice, i, view(η⁻⁺, i, 1:k), view(η⁻⁻, i, 1:k), b1=:-, band=band, trunc=trunc)
 
-		gmps = mult!(gmps, tmp1, trunc=trunc)
-		gmps = mult!(gmps, tmp3, trunc=trunc)
+		gmps = mult!(gmps, tmp1, trunc=trunc)[1]
+		gmps = mult!(gmps, tmp3, trunc=trunc)[1]
 	end
 	return gmps		
 end

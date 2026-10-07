@@ -41,7 +41,7 @@ function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::AbstractGrassmannLat
 					canonicalize!(tmp, alg=orth)
 				end
 			end
-			gmps = mult!(gmps, tmp, trunc=trunc)			
+			gmps = mult!(gmps, tmp, trunc=trunc)[1]			
 		end
 	end
 	return gmps

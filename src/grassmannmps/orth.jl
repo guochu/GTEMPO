@@ -61,7 +61,7 @@ function _rightorth!(psi::GrassmannMPS, alg::QR, trunc::TruncationScheme, normal
 	end
 	_renormalize!(psi, psi[1], normalize)
 	_renormalize_coeff!(psi, normalize)
-	return psi
+	return psi, 0.0
 end
 
 function _rightorth!(psi::GrassmannMPS, alg::SVD, trunc::TruncationScheme, normalize::Bool, verbosity::Int)
@@ -83,22 +83,40 @@ function _rightorth!(psi::GrassmannMPS, alg::SVD, trunc::TruncationScheme, norma
 		@grassmann tmp[-1 -2; -3] := psi[i-1][-1, -2, 1] * u2[1, -3]
 		psi[i-1] = tmp
 		psi.s[i] = s
-		maxerr = max(maxerr, err)
+		maxerr = max(maxerr, rerror)
 	end
 	(verbosity > 0) && println("Max SVD truncerror in rightorth: ", maxerr)
 	_renormalize!(psi, psi[1], normalize)
 	_renormalize_coeff!(psi, normalize)
-	return psi
+	return psi, maxerr
 end
 
 canonicalize(psi::GrassmannMPS; kwargs...) = canonicalize!(copy(psi); kwargs...)
-function canonicalize!(psi::GrassmannMPS; alg::Orthogonalize = Orthogonalize(trunc=DefaultITruncation, normalize=false))
+canonicalize!(psi::GrassmannMPS; alg::Orthogonalize = Orthogonalize(trunc=DefaultKTruncation, normalize=false)) =
+	_canonicalize!(psi; alg)
+"""
+	canonicalize!(psi::GrassmannMPS; alg=Orthogonalize(trunc=DefaultKTruncation, normalize=false)) -> (psi, err)
+
+Transform `psi` into canonical form (in place): one QR left-orthogonalization sweep
+(without truncation) followed by a right-orthogonalization sweep with `alg` (truncating
+when `alg.trunc` says so). After the call `psi` is right-canonical with all Schmidt
+values initialized. Returns `psi` and the maximal truncation error of the right sweep.
+"""
+function _canonicalize!(psi::GrassmannMPS; alg::Orthogonalize = Orthogonalize(trunc=DefaultKTruncation, normalize=false))
 	alg.normalize && @warn "canonicalize with renormalization not recommanded for GrassmannMPS"
-	L = length(psi)
 	_leftorth!(psi, QR(), NoTruncation(), alg.normalize, alg.verbosity)
-	_rightorth!(psi, alg.orth, alg.trunc, alg.normalize, alg.verbosity)
-	return psi
+	err = _rightorth!(psi, alg.orth, alg.trunc, alg.normalize, alg.verbosity)[2]
+	return psi, err
 end
+
+"""
+	truncate!(psi::GrassmannMPS; trunc=DefaultKTruncation) -> (psi, err)
+
+Truncate `psi` by canonicalizing with an SVD sweep under the truncation scheme `trunc`.
+Returns `psi` and the maximal truncation error.
+"""
+truncate!(psi::GrassmannMPS; trunc::TruncationScheme=DefaultKTruncation) =
+	_canonicalize!(psi; alg=Orthogonalize(SVD(), trunc; normalize=false))
 
 function _rescaling!(psi, n::Real)
 	L = length(psi)

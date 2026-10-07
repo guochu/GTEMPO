@@ -27,11 +27,11 @@ function hybriddynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattic
 	tmp3 = finalinfluencefunctional(lattice, η⁻⁺, trunc=trunc, b1=:-, b2=:+, band=band)
 	tmp4 = finalinfluencefunctional(lattice, η⁻⁻, trunc=trunc, b1=:-, b2=:-, band=band)
 
-	gmps = mult!(gmps, tmp1, trunc=trunc)
-	gmps = mult!(gmps, tmp2, trunc=trunc)
-	gmps = mult!(gmps, tmp3, trunc=trunc)
-	gmps = mult!(gmps, tmp4, trunc=trunc)
-	return gmps		
+	gmps = mult!(gmps, tmp1, trunc=trunc)[1]
+	gmps = mult!(gmps, tmp2, trunc=trunc)[1]
+	gmps = mult!(gmps, tmp3, trunc=trunc)[1]
+	gmps = mult!(gmps, tmp4, trunc=trunc)[1]
+	return gmps
 end
 
 function hybriddynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattice2Order, corr::RealCorrelationFunction; 
@@ -56,10 +56,10 @@ function hybriddynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattic
 	tmp3 = finalinfluencefunctional(lattice, η⁻⁺, finalize=finalize, trunc=trunc, b1=:-, b2=:+, band=band)
 	tmp4 = finalinfluencefunctional(lattice, η⁻⁻, finalize=finalize, trunc=trunc, b1=:-, b2=:-, band=band)
 
-	gmps = mult!(gmps, tmp1, trunc=trunc)
-	gmps = mult!(gmps, tmp2, trunc=trunc)
-	gmps = mult!(gmps, tmp3, trunc=trunc)
-	gmps = mult!(gmps, tmp4, trunc=trunc)
+	gmps = mult!(gmps, tmp1, trunc=trunc)[1]
+	gmps = mult!(gmps, tmp2, trunc=trunc)[1]
+	gmps = mult!(gmps, tmp3, trunc=trunc)[1]
+	gmps = mult!(gmps, tmp4, trunc=trunc)[1]
 
 	return gmps
 end
@@ -76,14 +76,14 @@ function finalinfluencefunctional(lattice::RealGrassmannLattice2Order, η::Abstr
 	rows, cols = finalize ? top_right_if_final(lattice, η) : top_right_if(lattice, η)
 	out1 = partialif_hybrid(lattice, lattice.k, cols; kwargs...)
 	out2 = partialif_hybrid(lattice, rows, lattice.k; kwargs...)
-	return mult(out1, out2, trunc=trunc)
+	return mult(out1, out2, trunc=trunc)[1]
 end
 function finalinfluencefunctional(lattice::RealGrassmannLattice1Order, η::AbstractMatrix; trunc::TruncationScheme=DefaultITruncation, kwargs...)
 	@assert lattice.k <= size(η, 1)
 	k = lattice.k
 	out1 = partialif_hybrid(lattice, k, [η[k, 1:k-1]; 0.5*η[k,k]]; kwargs...)
 	out2 = partialif_hybrid(lattice, [η[1:k-1, k]; 0.5*η[k,k]], k; kwargs...)
-	return mult(out1, out2, trunc=trunc)
+	return mult(out1, out2, trunc=trunc)[1]
 end
 
 function top_right_if_final(lattice::RealGrassmannLattice2Order, η::AbstractMatrix)
