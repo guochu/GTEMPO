@@ -233,7 +233,7 @@ function changebond!(x::GrassmannMPS, D::Int; noise::Real=0)
 	L = length(x)
 	# feasibility caps: the bond after site i is bounded by the products of the
 	# physical dimensions on both sides (FMA changebond!'s Dl/Dr logic)
-	ds = [dim(physical_space(x, j)) for j in 1:L]
+	ds = [dim(physpace(x, j)) for j in 1:L]
 	Dl = ones(Int, L + 1)
 	for i in 1:L
 		Dl[i+1] = min(D, Dl[i] * ds[i])
@@ -245,7 +245,7 @@ function changebond!(x::GrassmannMPS, D::Int; noise::Real=0)
 	caps = min.(Dl, Dr)
 	# 缩键的切片语义假设链处于规范规范（键的 leading 分量即主导 Schmidt 方向）；
 	# 存在需要缩键的键时，先做一次无截断正交化以保证切片是合法的截断
-	any(bond_dimensions(x)[i] > caps[i+1] for i in 1:L-1) &&
+	any(bonddims(x)[i] > caps[i+1] for i in 1:L-1) &&
 		canonicalize!(x, alg=Orthogonalize(SVD(), NoTruncation(); normalize=false))
 	Dh = div(D, 2)
 	ms = [begin

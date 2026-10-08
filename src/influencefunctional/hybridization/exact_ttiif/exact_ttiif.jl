@@ -32,7 +32,7 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, 
 	mpss = _influencefunctional(lattice, corr, alg; band=band)
 	for i in 1:length(mpss)
 		t = @elapsed gmps = mult!(gmps, mpss[i], alg.algmult)[1]
-		(alg.verbosity >= 2) && println("$i of $(length(mpss)) takes $t seconds, result mps of bond dimension: ", bond_dimension(gmps))
+		(alg.verbosity >= 2) && println("$i of $(length(mpss)) takes $t seconds, result mps of bond dimension: ", bonddim(gmps))
 	end
 	return gmps
 end

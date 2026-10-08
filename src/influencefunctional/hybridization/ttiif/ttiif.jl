@@ -24,7 +24,7 @@ function _hybriddynamics_fast(lattice::AbstractGrassmannLattice, corr::AbstractC
 	algmult = alg.algmult
 	if alg.verbosity > 1
 		t = @elapsed mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
-		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bond_dimension(mps))
+		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bonddim(mps))
 	else
 		mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
 	end
@@ -32,7 +32,7 @@ function _hybriddynamics_fast(lattice::AbstractGrassmannLattice, corr::AbstractC
 	for i in 1:alg.k
 		if alg.verbosity > 1
 			t = @elapsed mps = mult(mps, mps, algmult)[1]
-			println("the $i-th iteration takes $t seconds, bond dimension is ", bond_dimension(mps))
+			println("the $i-th iteration takes $t seconds, bond dimension is ", bonddim(mps))
 		else
 			mps = mult(mps, mps, algmult)[1]
 		end
@@ -44,7 +44,7 @@ function _hybriddynamics_slow(lattice::AbstractGrassmannLattice, corr::AbstractC
 	algmult = alg.algmult
 	if alg.verbosity > 1
 		t = @elapsed mps0 = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
-		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bond_dimension(mps))
+		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bonddim(mps))
 	else
 		mps0 = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
 	end
@@ -53,7 +53,7 @@ function _hybriddynamics_slow(lattice::AbstractGrassmannLattice, corr::AbstractC
 	for i in 1:2^(alg.k)-1
 		if alg.verbosity > 1
 			t = @elapsed mps = mult(mps, mps0, algmult)[1]
-			println("the $i-th iteration takes $t seconds, bond dimension is ", bond_dimension(mps))
+			println("the $i-th iteration takes $t seconds, bond dimension is ", bonddim(mps))
 		else
 			mps = mult(mps, mps0, algmult)[1]
 		end
@@ -69,7 +69,7 @@ end
 # 	# mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
 # 	if alg.verbosity > 1
 # 		t = @elapsed mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
-# 		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bond_dimension(mps))
+# 		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bonddim(mps))
 # 	else
 # 		mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
 # 	end
@@ -85,11 +85,11 @@ end
 # 		# mps = mult(mps, mps, algmult)
 # 		if alg.verbosity > 1
 # 			t = @elapsed mps = mult(mps, mps, algmult)
-# 			println("the $i-th iteration takes $t seconds, bond dimension is ", bond_dimension(mps))
+# 			println("the $i-th iteration takes $t seconds, bond dimension is ", bonddim(mps))
 # 		else
 # 			mps = mult(mps, mps, algmult)
 # 		end
-# 		# println("mps bond dimension is ", bond_dimension(mps), " at ", i, "-th iteration")
+# 		# println("mps bond dimension is ", bonddim(mps), " at ", i, "-th iteration")
 # 	end	
 # 	return mps
 # end
@@ -102,7 +102,7 @@ end
 # 	# mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
 # 	if alg.verbosity > 1
 # 		t = @elapsed mps0 = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
-# 		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bond_dimension(mps))
+# 		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bonddim(mps))
 # 	else
 # 		mps0 = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
 # 	end
@@ -111,7 +111,7 @@ end
 # 	for i in 1:2^(alg.k)-1
 # 		if alg.verbosity > 1
 # 			t = @elapsed mps = mult(mps, mps0, algmult0)
-# 			println("the $i-th iteration takes $t seconds, bond dimension is ", bond_dimension(mps))
+# 			println("the $i-th iteration takes $t seconds, bond dimension is ", bonddim(mps))
 # 		else
 # 			mps = mult(mps, mps0, algmult0)
 # 		end		

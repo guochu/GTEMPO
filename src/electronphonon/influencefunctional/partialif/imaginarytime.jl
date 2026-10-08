@@ -131,7 +131,7 @@ function _hybriddynamics_1band_naive!(gmps::FockMPS, lattice::ImagFockLattice1Or
 		end
 		
 		canonicalize!(gmps, alg=Orthogonalize(TK.SVD(), trunc))
-		# println(bond_dimension(gmps), " ", norm(gmps), " ", coef)
+		# println(bonddim(gmps), " ", norm(gmps), " ", coef)
 	end
 	return gmps
 end

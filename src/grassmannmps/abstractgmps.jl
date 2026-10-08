@@ -13,15 +13,15 @@ mpstensortype(m::AbstractGMPS) = mpstensortype(typeof(m))
 space_l(a::AbstractGMPS) = space_l(a[1])
 space_r(a::AbstractGMPS) = space_r(a[end])
 
-bond_dimension(a::AbstractGMPS, bond::Int) = begin
+bonddim(a::AbstractGMPS, bond::Int) = begin
 	((bond >= 1) && (bond <= length(a))) || throw(BoundsError(storage(a), bond))
 	dim(space(a[bond], 3))
 end 
-bond_dimensions(a::AbstractGMPS) = [bond_dimension(a, i) for i in 1:length(a)]
-bond_dimension(a::AbstractGMPS) = maximum(bond_dimensions(a))
+bonddims(a::AbstractGMPS) = [bonddim(a, i) for i in 1:length(a)]
+bonddim(a::AbstractGMPS) = maximum(bonddims(a))
 
-physical_space(a::AbstractGMPS, i::Int) = physical_space(a[i])
-physical_spaces(a::AbstractGMPS) = [physical_space(a[i]) for i in 1:length(a)]
+physpace(a::AbstractGMPS, i::Int) = physpace(a[i])
+physpaces(a::AbstractGMPS) = [physpace(a[i]) for i in 1:length(a)]
 left_virtualspace(a::AbstractGMPS, i::Int) = space_l(a[i])
 right_virtualspace(a::AbstractGMPS, i::Int) = space_r(a[i])
 left_virtualspaces(a::AbstractGMPS) = [left_virtualspace(a, i) for i in 1:length(a)]

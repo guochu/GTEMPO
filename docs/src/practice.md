@@ -326,7 +326,7 @@ All accept `algexpan` (ExpExp algorithm) and `algmult` (MPO compression);
 ## 6. Convergence rules of thumb
 
 1. `D`: increase until observables stop moving; monitor with
-   `bond_dimension(mpsI)`.
+   `bonddim(mpsI)`.
 2. `δt`/`δτ`: halve and compare; second-order lattices are more accurate per
    step but cost roughly twice per step.
 3. Expansion quality: `OverDeterminedProny(n=..., tol=...)` — increase `n`

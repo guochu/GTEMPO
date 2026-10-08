@@ -11,9 +11,9 @@ using LinearAlgebra: normalize!
 		@test length(x) == L
 		@test !isempty(x)
 		@test firstindex(x) == 1 && lastindex(x) == L
-		@test bond_dimensions(x) isa Vector{Int} && length(bond_dimensions(x)) == L
-		@test bond_dimension(x) == maximum(bond_dimensions(x))
-		@test bond_dimensions(x)[end] == 1
+		@test bonddims(x) isa Vector{Int} && length(bonddims(x)) == L
+		@test bonddim(x) == maximum(bonddims(x))
+		@test bonddims(x)[end] == 1
 		# virtual spaces chain: space_l(x[i+1]) == space_r(x[i])'
 		for i in 1:L-1
 			@test space_l(x[i+1]) == space_r(x[i])'
@@ -93,14 +93,14 @@ using LinearAlgebra: normalize!
 	xd = changebond!(x, 16)
 	# zero-padded bonds are trimmed by the finalizing rightorth! sweep down to the
 	# feasibility caps min(D, 2^i, 2^(L-i)) of the finite MPS (physical dimension 2)
-	@test bond_dimensions(xd) == min.(16, 2 .^ (1:L), 2 .^ (L-1:-1:0))
+	@test bonddims(xd) == min.(16, 2 .^ (1:L), 2 .^ (L-1:-1:0))
 	@test !svectors_uninitialized(xd)  # finalized in right-canonical form (FMA convention)
 	@test isrightcanonical(xd)
 	# state preserved up to the numerical accuracy of the SVD right-orthogonalization sweep
 	@test distance(xd, x0) / norm(x0) < 1.0e-7
 	# shrink: bonds are sliced down to the target profile
 	xs = changebond!(deepcopy(xd), 4)
-	@test maximum(bond_dimensions(xs)) == 4
+	@test maximum(bonddims(xs)) == 4
 
 	# --- permute!: stays mixed-canonical, inverse permute restores the state ---
 	truncbig = truncdimcutoff(D=256, ϵ=1.0e-12)
@@ -169,16 +169,16 @@ using LinearAlgebra: normalize!
 	@test x isa AbstractFiniteGMPS && x isa AbstractGMPS
 	m4 = zeros(Float64, z2space() ⊗ z2space() ← z2space() ⊗ z2space())
 	@test m4 isa MPOTensor && m4 isa SiteOperator
-	@test physical_space(m4) == z2space()
-	@test iphysical_space(m4) == z2space()'
-	@test ophysical_space(m4) == z2space()
-	@test physical_space(x, 3) == physical_space(x[3])
-	@test physical_spaces(x) == [physical_space(x[i]) for i in 1:length(x)]
+	@test physpace(m4) == z2space()
+	@test iphyspace(m4) == z2space()'
+	@test ophyspace(m4) == z2space()
+	@test physpace(x, 3) == physpace(x[3])
+	@test physpaces(x) == [physpace(x[i]) for i in 1:length(x)]
 
 	# NoTruncation keeps every Schmidt value
 	xn = randomgmps(4, D=4)
 	canonicalize!(xn, alg=Orthogonalize(trunc=NoTruncation(), normalize=false))
-	@test iscanonical(xn) && bond_dimension(xn) == 4
+	@test iscanonical(xn) && bonddim(xn) == 4
 
 		for p in perms
 			# non-mutating permute: result stays mixed-canonical

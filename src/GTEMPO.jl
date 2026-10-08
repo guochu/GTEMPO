@@ -87,13 +87,13 @@ export reweighting!, reweighting
 
 export MPO, PartialMPO, AbstractMPO, MPOHamiltonian, SchurMPOTensor, apply!
 export MPSTensor, MPSBondTensor, MPOTensor, SiteOperator
-export canonicalize, canonicalize!, truncate!, physical_spaces, environments, expectationvalue, positions, physical_space
-export ophysical_space, iphysical_space
+export canonicalize, canonicalize!, truncate!, physpaces, environments, expectationvalue, positions, physpace
+export ophyspace, iphyspace
 export svectors_uninitialized, unset_svectors!, mpotensortype, mpstensortype
 export SVDCompression
 export DMRGAlgorithm
 export timeevompo, WI, WII, ComplexStepper, FirstOrderStepper, complex_stepper
-export bond_dimension, bond_dimensions, distance, space_l, space_r, l_LL, r_RR, bondtensortype
+export bonddim, bonddims, distance, space_l, space_r, l_LL, r_RR, bondtensortype
 export Orthogonalize
 
 

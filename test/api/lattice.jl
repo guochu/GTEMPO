@@ -534,8 +534,8 @@ end
 	@test timesteps(Kr, latr) == latr.k
 
 	# physical space accessors
-	@test physical_space(Kr, 1) == physical_space(Kr[1])
-	@test physical_spaces(Kr) == [physical_space(Kr[i]) for i in 1:length(Kr)]
+	@test physpace(Kr, 1) == physpace(Kr[1])
+	@test physpaces(Kr) == [physpace(Kr[i]) for i in 1:length(Kr)]
 end
 
 

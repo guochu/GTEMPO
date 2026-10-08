@@ -23,7 +23,7 @@ for δ in (0.1, 0.05, 0.02)
 	end
 	err = norm(g - exactGτ) / norm(exactGτ)
 	println(@sprintf("δ=%.2f  IF构建: %6.1f s, 观测量: %5.1f s, 最大键维: %3d, 相对误差: %.3e",
-		δ, t, tobs, maximum(bond_dimensions(mpsI)), err))
+		δ, t, tobs, maximum(bonddims(mpsI)), err))
 end
 
 # ---------------- 实时 ----------------
@@ -50,5 +50,5 @@ for δ in (0.1, 0.05, 0.02)
 	ref = im .* exactGt[1:Nt-1]
 	err = norm(g - ref) / norm(ref)
 	println(@sprintf("δ=%.2f  IF构建: %6.1f s, 观测量: %5.1f s, 最大键维: %3d, 相对误差: %.3e",
-		δ, t, tobs, maximum(bond_dimensions(mpsI)), err))
+		δ, t, tobs, maximum(bonddims(mpsI)), err))
 end

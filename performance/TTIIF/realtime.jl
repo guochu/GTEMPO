@@ -42,7 +42,7 @@ algs = [
 
 # ------------------------------ 公共函数 -----------------------------------
 _relative_error(num, ref) = norm(num - ref) / norm(ref)
-_maxbond(mps) = maximum(bond_dimensions(mps))
+_maxbond(mps) = maximum(bonddims(mps))
 
 println("=" ^ 70)
 println("Toulouse 模型实时间基准: N=$N, δt=$δt, t=$(N*δt), β=$β, ϵ_d=$ϵ_d, μ=$μ")

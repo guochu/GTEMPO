@@ -28,12 +28,12 @@ l_LL(psiA::Dense1DTN, psiB::Dense1DTN) = FMA.isometry(promote_type(scalartype(ps
 l_LL(psi::Dense1DTN) = l_LL(psi, psi)
 
 
-bond_dimension(psi::Dense1DTN, bond::Int) = begin
+bonddim(psi::Dense1DTN, bond::Int) = begin
 	((bond >= 1) && (bond <= length(psi))) || throw(BoundsError())
 	space_r(psi[bond])
 end 
-bond_dimensions(psi::Dense1DTN) = [bond_dimension(psi, i) for i in 1:length(psi)]
-bond_dimension(psi::Dense1DTN) = maximum(bond_dimensions(psi))
+bonddims(psi::Dense1DTN) = [bonddim(psi, i) for i in 1:length(psi)]
+bonddim(psi::Dense1DTN) = maximum(bonddims(psi))
 
 
 function isleftcanonical(psij::DenseMPSTensor; kwargs...)

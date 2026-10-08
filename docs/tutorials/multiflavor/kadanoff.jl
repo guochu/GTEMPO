@@ -58,7 +58,7 @@ spectrum_func(D=1) = spectrum(ω -> J(D, ω), lb = -D, ub = D)
 		Serialization.serialize(mpspath, mpsI)
 	end
 
-	println("bond dimension of mpsI is ", bond_dimension(mpsI))
+	println("bond dimension of mpsI is ", bonddim(mpsI))
 
 	# fill (copy) the single-band IF onto each of the 4 bands
 	mpsI1 = fillband(lattice, mpsI, band=1)
@@ -69,7 +69,7 @@ spectrum_func(D=1) = spectrum(ω -> J(D, ω), lb = -D, ub = D)
 	# impurity evolution with a large MPO-compression bond dimension
 	trunc2 = truncdimcutoff(D=400, ϵ=1.0e-10, add_back=0)
 	@time mpsK = sysdynamics_fast(lattice, exact_model, trunc=trunc2)
-	println("bond dimension of mpsK is ", bond_dimension(mpsK))
+	println("bond dimension of mpsK is ", bonddim(mpsK))
 
 
 	# environments shared by all observables: K times all 4 band IFs
@@ -140,12 +140,12 @@ function main(t; β=5, δτ=0.1, δt = 0.1, chi=60, chi2=4*chi)
 		Serialization.serialize(mpspath, mpsI)
 	end
 
-	println("bond dimension of mpsI is ", bond_dimension(mpsI))
+	println("bond dimension of mpsI is ", bonddim(mpsI))
 
 	# impurity evolution with a large MPO-compression bond dimension
 	@time mpsK = sysdynamics_fast(lattice, exact_model, trunc=trunc2)
 	# mpsK = boundarycondition!(mpsK, lattice, band=1)
-	println("bond dimension of mpsK is ", bond_dimension(mpsK))
+	println("bond dimension of mpsK is ", bonddim(mpsK))
 	mps_adt = mpsK
 
 	lattice_tmp = lattice

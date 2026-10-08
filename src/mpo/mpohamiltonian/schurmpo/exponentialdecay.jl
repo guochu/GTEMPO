@@ -14,7 +14,7 @@ struct ExponentialDecayTerm{M1<:SiteOperator, M<:SiteOperator, M2, T <:Number} <
     coeff::T
 end
 
-function ExponentialDecayTerm(a::SiteOperator, b::SiteOperator; middle::MPSBondTensor=id(physical_space(a)), α::Number=1., coeff::Number=1.) 
+function ExponentialDecayTerm(a::SiteOperator, b::SiteOperator; middle::MPSBondTensor=id(physpace(a)), α::Number=1., coeff::Number=1.) 
     T = promote_type(typeof(α), typeof(coeff))
     check_a_b(a, b)
     return ExponentialDecayTerm(a, middle, b, convert(T, α), convert(T, coeff))
@@ -30,7 +30,7 @@ _op_adjoint(a::MPOTensor, m::MPSBondTensor, b::MPOTensor) = (unsafe_mpotensor_ad
 
 function _longrange_schurmpo_util(h1, h2s::Vector{<:ExponentialDecayTerm})
     isempty(h2s) && throw(ArgumentError("empty interactions."))
-	pspace = physical_space(h2s[1].a)
+	pspace = physpace(h2s[1].a)
 	N = length(h2s)
 	T = Float64
 	for item in h2s

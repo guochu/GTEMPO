@@ -36,7 +36,7 @@ function parint_mult(xs::GrassmannMPS...; cidx::Vector{Int}, trunc::TruncationSc
 	z.s[end] = DiagonalTensorMap{Float64}(ones, space_r(z[end])' )
 
     setscaling!(z, *(scaling.(xs)...) ^ (length(xs[1]) / length(z)) * scaling(z))
-    (verbosity >= 2) && println("bond dimension of intermediate GMPS: ", bond_dimension(z))
+    (verbosity >= 2) && println("bond dimension of intermediate GMPS: ", bonddim(z))
     _rightorth!(z, SVD(), trunc, false, verbosity)
     return z
 end

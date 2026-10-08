@@ -315,7 +315,7 @@ function multintegrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y
     data[end] = tmp
 
     z = GrassmannMPS(data)
-    (verbosity >= 2) && println("bond dimension of intermediate GMPS: ", bond_dimension(z))
+    (verbosity >= 2) && println("bond dimension of intermediate GMPS: ", bonddim(z))
     _rightorth!(z, SVD(), trunc, false, verbosity)
     return z
 end

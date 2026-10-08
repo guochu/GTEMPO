@@ -104,7 +104,7 @@ function leftsweep!(m::PartialIntegrateIterativeMultCache, alg::CuDMRG1)
         (alg.verbosity >= 2) && println("$ixs / $Lxs cost $rt Seconds")
     end
     
-    (alg.verbosity >= 2) && println("z of bond dimension: ", bond_dimension(z))
+    (alg.verbosity >= 2) && println("z of bond dimension: ", bonddim(z))
 	# println(kvals)
     return kvals    
 end
@@ -144,7 +144,7 @@ function rightsweep!(m::PartialIntegrateIterativeMultCache, alg::CuDMRG1)
         (alg.verbosity >= 2) && println("$ixs / $Lxs cost $rt Seconds")
     end
     z[1] = @tensor tmp[1,2;4] := z[1][1,2,3] * fromcu(l)[3,4]
-    (alg.verbosity >= 2) && println("z of bond dimension: ", bond_dimension(z))
+    (alg.verbosity >= 2) && println("z of bond dimension: ", bonddim(z))
     return kvals
 end
 
@@ -194,7 +194,7 @@ function rightsweep_final!(m::PartialIntegrateIterativeMultCache, alg::CuDMRG1)
     z.s[1] = DiagonalTensorMap{Float64}(ones, space_l(z[1]) )
 	z.s[end] = DiagonalTensorMap{Float64}(ones, space_r(z[end])' )
 
-    (alg.verbosity >= 2) && println("z of bond dimension: ", bond_dimension(z))
+    (alg.verbosity >= 2) && println("z of bond dimension: ", bonddim(z))
     return kvals
 end
 
@@ -239,6 +239,6 @@ function _cu_parint_svd_guess(xs::GrassmannMPS...; cidx::Vector{Int}, trunc::Tru
     _rightorth!(z, SVD(), trunc, false, verbosity)
     setscaling!(z, 1)
 
-    (verbosity >= 2) && println("initial z of bond dimension: ", bond_dimension(z))
+    (verbosity >= 2) && println("initial z of bond dimension: ", bonddim(z))
     return z
 end

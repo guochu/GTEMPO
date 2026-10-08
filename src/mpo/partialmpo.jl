@@ -62,11 +62,11 @@ function Base.complex(psi::PartialMPO)
 end
 
 
-ophysical_space(a::PartialMPO, i::Int) = ophysical_space(a[i])
-iphysical_space(a::PartialMPO, i::Int) = iphysical_space(a[i])
-function physical_spaces(psi::PartialMPO)
-	xs = ophysical_spaces(psi)
-	(xs == adjoint.(iphysical_spaces(psi))) || throw(SpaceMismatch("i and o physical dimension mismatch."))
+ophyspace(a::PartialMPO, i::Int) = ophyspace(a[i])
+iphyspace(a::PartialMPO, i::Int) = iphyspace(a[i])
+function physpaces(psi::PartialMPO)
+	xs = ophyspaces(psi)
+	(xs == adjoint.(iphyspaces(psi))) || throw(SpaceMismatch("i and o physical dimension mismatch."))
 	return xs
 end
 left_virtualspace(a::PartialMPO, i::Int) = space_l(a[i])
@@ -75,6 +75,6 @@ left_virtualspaces(a::PartialMPO) = [left_virtualspace(a, i) for i in 1:length(a
 right_virtualspaces(a::PartialMPO) = [right_virtualspace(a, i) for i in 1:length(a)]
 
 
-ophysical_spaces(psi::PartialMPO) = [ophysical_space(psi[i]) for i in 1:length(psi)]
-iphysical_spaces(psi::PartialMPO) = [iphysical_space(psi[i]) for i in 1:length(psi)]
+ophyspaces(psi::PartialMPO) = [ophyspace(psi[i]) for i in 1:length(psi)]
+iphyspaces(psi::PartialMPO) = [iphyspace(psi[i]) for i in 1:length(psi)]
 

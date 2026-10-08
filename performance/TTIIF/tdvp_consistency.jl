@@ -31,7 +31,7 @@ algs = [
 ]
 
 _relative_error(num, ref) = norm(num - ref) / norm(ref)
-_maxbond(mps) = maximum(bond_dimensions(mps))
+_maxbond(mps) = maximum(bonddims(mps))
 
 println("=" ^ 70)
 println("无截断一致性检验: N=$N, δτ=$δτ, β=$β (L=$(2N) sites, 可行键维上限 16)")
