@@ -2,6 +2,42 @@
 
 本轮重构涉及的接口更改汇总。所有更改均已通过全量测试验证（行为不变或数值等价）。
 
+## 第八批更新（2026-09-24 ~ 2026-10-07）：FockMPS/FockMPO 封装 FiniteMPSAlgorithms 与 changebond!/mult!/truncate! 接口统一
+
+### FockMPS / FockMPO 封装 FiniteMPSAlgorithms 后端
+
+- `FockMPS` 的存储改为内嵌 FiniteMPSAlgorithms 的 `CanonicalMPS`（字段 `.parent`；`.data`/`.s`/`.scaling` 经 `getproperty` 委托到 payload）；新增 `FockMPO` 内嵌 FMA 的 `MPO`。位点张量、Schmidt 值与逐位点 scaling 全部由 payload 携带，FMA 算法（`canonicalize!`、`hadamard`、`dot`/`norm`、`permute!`、`sum`、`apply!` 等）原地驱动；稠密张量原语（`tie`/`isometry`/…）同样来自 FMA。
+- `FiniteMPSAlgorithms` 改为限定引用 `FMA.xxx`（避免与 Grassmann 路径上 Z2Tensors 的导出名冲突），并加入 path 依赖。
+- 删除未使用的 `DenseMPO`/`PartialDenseMPO` 类型及其全部线代实现；`ExpNTerm` 直接经 `apply!` 作用。
+
+### `increase_bond!` → `changebond!`
+
+- 按 FMA 惯例更名；`FockMPS` 与 `GrassmannMPS` 均提供，`noise` 关键字默认为 0。
+- `GrassmannMPS` 的 `changebond!` 把键维调整到可行性上限 `min(D, ∏_{j≤i} d_j, ∏_{j>i} d_j)`（两端受边界约束，不再被 D 单独钳制）；需要缩键时先做无截断 `canonicalize!`（避免在非规范链上盲目切 leading 分量）；最后以无截断 `rightorth!` 定稿为右正则形式（正交中心在 site 1，整体范数由 `scaling` 携带），输出可直接作为迭代算法的初始猜测，无需再 canonicalize/rightorth。
+
+### TDVPIF：去尾部规范化和 Schmidt 值重置
+
+- 删除 TDVPIF 虚时流结束处冗余的最终 `canonicalize!(z)`；改为 `unset_svectors!(z)` 重置流后不再匹配的 Schmidt 值。
+- 删除 `DMRG1` 与 `TDVPIF` 的 `callback` 字段。
+
+### `mult`/`mult!`/`truncate!` 返回值与默认值约定（对齐 FMA）
+
+- GrassmannMPS 的 `canonicalize!` 与 `truncate!`（新增，`truncate!(psi; trunc) = _canonicalize!(psi; alg=Orthogonalize(SVD(), trunc; normalize=false))`）的 `trunc` 默认为 `DefaultKTruncation`。
+- 返回值约定（全部调用点已同步更新，取第一个输出）：
+  - `mult(x, y;)`、`mult!(x, y;)`、`mult(x, y, SVDCompression)` → `(x, maxerr)`（`maxerr` 为定稿 SVD 扫描的最大截断相对误差）
+  - `iterativemult(x, y, alg)`、`mult(x, y, alg::DMRGAlgorithm)`、`mult!(x, y, alg::DMRGAlgorithm)` → `(x, info)`，`info` 为 FMA 提供的 `ALSConvergenceInfo`（字段 `niter`/`converged`/`losses`/`itererr`/`residual`）；收敛判据为相邻两轮 sweep 损失的相对变化 `|lₙ-lₙ₋₁|/|lₙ₋₁| < alg.tol`
+- `mult!(x, y, alg::DMRGAlgorithm)` 现在把结果真正写回 x（`copy!` 位点张量与 Schmidt 值并 `setscaling!`），不再只返回新对象的别名。
+- 导出 `leftorth!`、`rightorth!`；删除主模块的 `using Z2Tensors: NoTruncation` / `export NoTruncation`（Z2Tensors 已导出）。
+
+### 键维/物理空间访问器更名
+
+| 旧名 | 新名 |
+|---|---|
+| `bond_dimension` / `bond_dimensions` | `bonddim` / `bonddims` |
+| `physical_space` / `physical_spaces` | `physpace` / `physpaces` |
+| `ophysical_space` / `ophysical_spaces` | `ophyspace` / `ophyspaces` |
+| `iphysical_space` / `iphysical_spaces` | `iphyspace` / `iphyspaces` |
+
 ## 测试容差调整：实轴 `bare + bulkconnection == sysdynamics`（2026-09-17）
 
 `test/api/sysdynamics.jl` 中 "impurity hamiltonians & steppers" 的实轴断言由绝对阈值 `< 1.0e-8` 改为相对阈值 `< distance/norm(K) < 1.0e-6`，与虚轴对应断言一致。原因：Z2Tensors 近期更新（norm/fusiontensor/⊗ 修复）改变了 contraction 内部的浮点求和顺序，使 bare+bulkconnection 与 sysdynamics 两条独立构造路径从"逐位一致"变为存在 ~1e-6 的浮点水平差异（相对误差约 2e-8），原绝对阈值对实现顺序过敏。
