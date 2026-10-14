@@ -1,4 +1,4 @@
-function partialmpo_retardedinteract(row::Tuple{Int, Int}, cols::Vector{Tuple{Int, Int}}, coefs::Vector{<:Number}; trunc::TruncationScheme=DefaultITruncation)
+function partialmpo_retardedinteract(row::Tuple{Int, Int}, cols::Vector{Tuple{Int, Int}}, coefs::Vector{<:Number}; trunc::TruncationScheme=Defaults.alg_trunc_if())
 	# println("row=", row, " cols ", cols)
 	@boundscheck begin
 		(length(cols) == length(coefs) >= 1) || throw(ArgumentError("coefs and cols size mismatch"))

@@ -1,5 +1,5 @@
 
-function parint_mult(xs::GrassmannMPS...; cidx::Vector{Int}, trunc::TruncationScheme=DefaultITruncation, verbosity::Int=0)
+function parint_mult(xs::GrassmannMPS...; cidx::Vector{Int}, trunc::TruncationScheme=Defaults.alg_trunc_if(), verbosity::Int=0)
     Lxs = length(xs[1])
     (unique(length.(xs)) == [Lxs,]) || throw(DimensionMismatch())
     check_contract_idx(Lxs, cidx)
@@ -44,7 +44,7 @@ end
 
 # multiply n GMPS together
 # left to right
-# function my_mult(xs::GrassmannMPS...; trunc::TruncationScheme=DefaultITruncation, verbosity::Int=0)
+# function my_mult(xs::GrassmannMPS...; trunc::TruncationScheme=Defaults.alg_trunc_if(), verbosity::Int=0)
 #     Lxs = length(xs[1])
 #     (unique(length.(xs)) == [Lxs,]) || throw(DimensionMismatch("unique($(length.(xs))) != [$Lxs,]"))
 #     res = copy(xs[1])
@@ -66,7 +66,7 @@ end
 #     return res
 # end
 # right to left
-# function my_mult2(xs::GrassmannMPS...; trunc::TruncationScheme=DefaultITruncation, verbosity::Int=0)
+# function my_mult2(xs::GrassmannMPS...; trunc::TruncationScheme=Defaults.alg_trunc_if(), verbosity::Int=0)
 #     nx = length(xs)
 #     Lxs = length(xs[1])
 #     (unique(length.(xs)) == [Lxs,]) || throw(DimensionMismatch("unique($(length.(xs))) != [$Lxs,]"))

@@ -6,7 +6,7 @@ include("realtime.jl")
 
 function hybriddynamics!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::XTRGIF; band::Int=1)
 	mps = hybriddynamics(lattice, corr, alg, band=band)
-	return mult!(gmps, mps, alg.algmult)[1]
+	return mult!(gmps, mps, alg.alg_mult)[1]
 end
 
 function hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::XTRGIF; band::Int=1)
@@ -21,57 +21,57 @@ function hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrela
 end
 
 function _hybriddynamics_fast(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::XTRGIF; band::Int=1)
-	algmult = alg.algmult
+	alg_mult = alg.alg_mult
 	if alg.verbosity > 1
-		t = @elapsed mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
+		t = @elapsed mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.alg_evo, alg_mult, band=band, alg_expan=alg.alg_expan)
 		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bonddim(mps))
 	else
-		mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
+		mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.alg_evo, alg_mult, band=band, alg_expan=alg.alg_expan)
 	end
 	
 	for i in 1:alg.k
 		if alg.verbosity > 1
-			t = @elapsed mps = mult(mps, mps, algmult)[1]
+			t = @elapsed mps = mult(mps, mps, alg_mult)[1]
 			println("the $i-th iteration takes $t seconds, bond dimension is ", bonddim(mps))
 		else
-			mps = mult(mps, mps, algmult)[1]
+			mps = mult(mps, mps, alg_mult)[1]
 		end
 	end
 	return mps
 end
 
 function _hybriddynamics_slow(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::XTRGIF; band::Int=1)
-	algmult = alg.algmult
+	alg_mult = alg.alg_mult
 	if alg.verbosity > 1
-		t = @elapsed mps0 = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
+		t = @elapsed mps0 = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.alg_evo, alg_mult, band=band, alg_expan=alg.alg_expan)
 		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bonddim(mps))
 	else
-		mps0 = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
+		mps0 = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.alg_evo, alg_mult, band=band, alg_expan=alg.alg_expan)
 	end
 	mps = mps0
 
 	for i in 1:2^(alg.k)-1
 		if alg.verbosity > 1
-			t = @elapsed mps = mult(mps, mps0, algmult)[1]
+			t = @elapsed mps = mult(mps, mps0, alg_mult)[1]
 			println("the $i-th iteration takes $t seconds, bond dimension is ", bonddim(mps))
 		else
-			mps = mult(mps, mps0, algmult)[1]
+			mps = mult(mps, mps0, alg_mult)[1]
 		end
 	end
 	return mps
 end
 
 # function _hybriddynamics_fast(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::XTRGIF; band::Int=1)
-# 	algmult0 = alg.algmult
+# 	algmult0 = alg.alg_mult
 # 	trunc0 = algmult0.trunc
 # 	D, ϵ0 = trunc0.D, trunc0.ϵ
-# 	algmult = changetrunc(algmult0, trunc=truncdimcutoff(D=D, ϵ=ϵ0/2^(alg.k)))
-# 	# mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
+# 	alg_mult = changetrunc(algmult0, trunc=truncdimcutoff(D=D, ϵ=ϵ0/2^(alg.k)))
+# 	# mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.alg_evo, alg_mult, band=band, alg_expan=alg.alg_expan)
 # 	if alg.verbosity > 1
-# 		t = @elapsed mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
+# 		t = @elapsed mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.alg_evo, alg_mult, band=band, alg_expan=alg.alg_expan)
 # 		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bonddim(mps))
 # 	else
-# 		mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
+# 		mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.alg_evo, alg_mult, band=band, alg_expan=alg.alg_expan)
 # 	end
 	
 
@@ -81,13 +81,13 @@ end
 # 		dtt *= scale
 # 		# mps = mult(mps, mps, trunc=truncdimcutoff(D=D, ϵ=ϵ0*dtt, add_back=0))
 # 		trunc = truncdimcutoff(D=D, ϵ=ϵ0 * dtt)
-# 		algmult = changetrunc(algmult0, trunc=trunc)
-# 		# mps = mult(mps, mps, algmult)
+# 		alg_mult = changetrunc(algmult0, trunc=trunc)
+# 		# mps = mult(mps, mps, alg_mult)
 # 		if alg.verbosity > 1
-# 			t = @elapsed mps = mult(mps, mps, algmult)
+# 			t = @elapsed mps = mult(mps, mps, alg_mult)
 # 			println("the $i-th iteration takes $t seconds, bond dimension is ", bonddim(mps))
 # 		else
-# 			mps = mult(mps, mps, algmult)
+# 			mps = mult(mps, mps, alg_mult)
 # 		end
 # 		# println("mps bond dimension is ", bonddim(mps), " at ", i, "-th iteration")
 # 	end	
@@ -95,16 +95,16 @@ end
 # end
 
 # function _hybriddynamics_slow(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::XTRGIF; band::Int=1)
-# 	algmult0 = alg.algmult
+# 	algmult0 = alg.alg_mult
 # 	trunc0 = algmult0.trunc
 # 	D, ϵ0 = trunc0.D, trunc0.ϵ
-# 	algmult = changetrunc(algmult0, trunc=truncdimcutoff(D=D, ϵ=ϵ0/2^(alg.k)))
-# 	# mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
+# 	alg_mult = changetrunc(algmult0, trunc=truncdimcutoff(D=D, ϵ=ϵ0/2^(alg.k)))
+# 	# mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.alg_evo, alg_mult, band=band, alg_expan=alg.alg_expan)
 # 	if alg.verbosity > 1
-# 		t = @elapsed mps0 = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
+# 		t = @elapsed mps0 = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.alg_evo, alg_mult, band=band, alg_expan=alg.alg_expan)
 # 		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bonddim(mps))
 # 	else
-# 		mps0 = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.algevo, algmult, band=band, algexpan=alg.algexpan)
+# 		mps0 = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.alg_evo, alg_mult, band=band, alg_expan=alg.alg_expan)
 # 	end
 # 	mps = mps0
 

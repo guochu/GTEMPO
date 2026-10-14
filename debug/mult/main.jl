@@ -5,7 +5,7 @@
 #   julia --startup-file=no --project=. debug/mult/main.jl
 #
 # Questions:
-#   1. Are the outputs of mult(x, y, DMRG1(...)) and mult(x, y, SVDCompression(...))
+#   1. Are the outputs of mult(x, y, DMRG1(trunc=...)) and mult(x, y, SVDCompression(trunc=...))
 #      strictly identical — even when the set bond dimension is too small and the
 #      results are inaccurate?
 #   2. Does the IDMRG1 loss function (kvals) decay monotonically throughout?
@@ -82,8 +82,8 @@ end
 function run_case(io, name, L, Dx, Dy, D; ntrial=3, maxiter=60)
 	trunc = truncdimcutoff(D=D, ϵ=1.0e-14)
 	truncbig = truncdimcutoff(D=4096, ϵ=1.0e-16)
-	alg_svd = SVDCompression(trunc)
-	alg_id = DMRG1(trunc, maxiter=maxiter, tol=1.0e-14, verbosity=-1)
+	alg_svd = SVDCompression(trunc=trunc)
+	alg_id = DMRG1(trunc=trunc, maxiter=maxiter, tol=1.0e-14, verbosity=-1)
 	tag = replace(lowercase(split(name, " (")[1]), " " => "_")
 	csv = open(joinpath(@__DIR__, "kvals_$(tag)_D$(D).csv"), "w")
 	println(csv, "trial,sweep,seg,pos,site,residual")

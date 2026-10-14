@@ -4,9 +4,9 @@ const _AllowedRealGrassmannOrdering = Union{A1Ā1a1ā1B1B̄1b1b̄1, A1Ā1B1B�
 # A1Ā1a1ā1B1B̄1b1b̄1 and A1Ā1B1B̄1a1ā1b1b̄1 (time descending),
 # a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2 (time ascending)
 function influenceoperators(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction; 
-							band::Int=1, algexpan::ExponentialExpansionAlgorithm=DefaultExpansionAlg)
+							band::Int=1, alg_expan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr, band)
-	mpoj1, mpoj2, mpoj3, mpoj4 = ti_mpotensor(η⁺⁺, algexpan), ti_mpotensor(η⁺⁻, algexpan), ti_mpotensor(η⁻⁺, algexpan), ti_mpotensor(η⁻⁻, algexpan)
+	mpoj1, mpoj2, mpoj3, mpoj4 = ti_mpotensor(η⁺⁺, alg_expan), ti_mpotensor(η⁺⁻, alg_expan), ti_mpotensor(η⁻⁺, alg_expan), ti_mpotensor(η⁻⁻, alg_expan)
 	# η⁺⁻ = CorrelationMatrix(η⁺⁻.ηₖⱼ, η⁺⁻.ηⱼₖ)
 	# η⁻⁺ = CorrelationMatrix(η⁻⁺.ηₖⱼ, η⁻⁺.ηⱼₖ)
 	h1, h2, h3, h4 = _get_mpo3(mpoj1), _get_mpo3(mpoj2), _get_mpo3(mpoj3), _get_mpo3(mpoj4)
@@ -20,9 +20,9 @@ function influenceoperators(lattice::RealGrassmannLattice{<:_AllowedRealGrassman
 end
 
 function influenceoperatorsteppers(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction, dt::Real, alg::FirstOrderStepper; 
-										band::Int=1, algexpan::ExponentialExpansionAlgorithm=DefaultExpansionAlg)
+										band::Int=1, alg_expan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr, band)
-	mpoj1, mpoj2, mpoj3, mpoj4 = ti_mpotensor(η⁺⁺, algexpan), ti_mpotensor(η⁺⁻, algexpan), ti_mpotensor(η⁻⁺, algexpan), ti_mpotensor(η⁻⁻, algexpan)
+	mpoj1, mpoj2, mpoj3, mpoj4 = ti_mpotensor(η⁺⁺, alg_expan), ti_mpotensor(η⁺⁻, alg_expan), ti_mpotensor(η⁻⁺, alg_expan), ti_mpotensor(η⁻⁻, alg_expan)
 	mpoj1, mpoj2, mpoj3, mpoj4 = timeevompo(mpoj1, dt, alg), timeevompo(mpoj2, dt, alg), timeevompo(mpoj3, dt, alg), timeevompo(mpoj4, dt, alg)
 	h1, h2, h3, h4 = _get_mpo3(mpoj1), _get_mpo3(mpoj2), _get_mpo3(mpoj3), _get_mpo3(mpoj4)
 	_JW = I2
@@ -34,9 +34,9 @@ function influenceoperatorsteppers(lattice::RealGrassmannLattice{<:_AllowedRealG
 	return mpo1, mpo2, mpo3, mpo4
 end
 function influenceoperatorsteppers(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction, dt::Real, alg::ComplexStepper; 
-										band::Int=1, algexpan::ExponentialExpansionAlgorithm=DefaultExpansionAlg)
+										band::Int=1, alg_expan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = _get_signed_corr(lattice, corr, band)
-	mpoj1, mpoj2, mpoj3, mpoj4 = ti_mpotensor(η⁺⁺, algexpan), ti_mpotensor(η⁺⁻, algexpan), ti_mpotensor(η⁻⁺, algexpan), ti_mpotensor(η⁻⁻, algexpan)
+	mpoj1, mpoj2, mpoj3, mpoj4 = ti_mpotensor(η⁺⁺, alg_expan), ti_mpotensor(η⁺⁻, alg_expan), ti_mpotensor(η⁻⁺, alg_expan), ti_mpotensor(η⁻⁻, alg_expan)
 	mpoj1a, mpoj1b = timeevompo(mpoj1, dt, alg)
 	mpoj2a, mpoj2b = timeevompo(mpoj2, dt, alg)
 	mpoj3a, mpoj3b = timeevompo(mpoj3, dt, alg)
@@ -53,57 +53,57 @@ function influenceoperatorsteppers(lattice::RealGrassmannLattice{<:_AllowedRealG
 	mpo4a, mpo4b = _fit_to_lattice(lattice, h4a, _JW, band, :-, :-), _fit_to_lattice(lattice, h4b, _JW, band, :-, :-) 
 	return (mpo1a, mpo1b), (mpo2a, mpo2b), (mpo3a, mpo3b), (mpo4a, mpo4b)
 end
-function influenceoperatorstepper(lattice::RealGrassmannLattice{O}, corr::RealCorrelationFunction, dt::Real, alg::TimeEvoMPOAlgorithm, algmult::DMRGAlgorithm;
-										band::Int=1, algexpan::ExponentialExpansionAlgorithm=DefaultExpansionAlg) where O
+function influenceoperatorstepper(lattice::RealGrassmannLattice{O}, corr::RealCorrelationFunction, dt::Real, alg::TimeEvoMPOAlgorithm, alg_mult::DMRGAlgorithm;
+										band::Int=1, alg_expan::ExponentialExpansionAlgorithm=Defaults.alg_expan()) where O
 	if !(OrderingStyle(lattice) isa _AllowedRealGrassmannOrdering)
 		lattice2 = similar(lattice, ordering = A1Ā1a1ā1B1B̄1b1b̄1())
-		mps = _influenceoperatorstepper(lattice2, corr, dt, alg, algmult; band=band, algexpan=algexpan)
-		_, mps2 = changeordering(O, lattice2, mps, trunc=algmult.trunc)
+		mps = _influenceoperatorstepper(lattice2, corr, dt, alg, alg_mult; band=band, alg_expan=alg_expan)
+		_, mps2 = changeordering(O, lattice2, mps, trunc=alg_mult.trunc)
 		return mps2
 	else
-		return _influenceoperatorstepper(lattice, corr, dt, alg, algmult; band=band, algexpan=algexpan)
+		return _influenceoperatorstepper(lattice, corr, dt, alg, alg_mult; band=band, alg_expan=alg_expan)
 	end
 end
 
 function _influenceoperatorstepper(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction, dt::Real, alg::FirstOrderStepper, 
-											algmult::DMRGAlgorithm; band::Int=1, algexpan::ExponentialExpansionAlgorithm=DefaultExpansionAlg)
-	h1, h2, h3, h4 = influenceoperatorsteppers(lattice, corr, dt, alg, band=band, algexpan=algexpan)
+											alg_mult::DMRGAlgorithm; band::Int=1, alg_expan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
+	h1, h2, h3, h4 = influenceoperatorsteppers(lattice, corr, dt, alg, band=band, alg_expan=alg_expan)
 	mps = h1 * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 	tmp = h2 * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
-	mps = mult(mps, tmp, algmult)[1]
+	mps = mult(mps, tmp, alg_mult)[1]
 	tmp = h3 * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
-	mps = mult(mps, tmp, algmult)[1]
+	mps = mult(mps, tmp, alg_mult)[1]
 	tmp = h4 * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
-	mps = mult(mps, tmp, algmult)[1]
+	mps = mult(mps, tmp, alg_mult)[1]
 	return mps
 end
 function _influenceoperatorstepper(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction, dt::Real, alg::ComplexStepper, 
-											algmult::DMRGAlgorithm; band::Int=1, algexpan::ExponentialExpansionAlgorithm=DefaultExpansionAlg)
-	(h1a, h1b), (h2a, h2b), (h3a, h3b), (h4a, h4b) = influenceoperatorsteppers(lattice, corr, dt, alg, band=band, algexpan=algexpan)
+											alg_mult::DMRGAlgorithm; band::Int=1, alg_expan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
+	(h1a, h1b), (h2a, h2b), (h3a, h3b), (h4a, h4b) = influenceoperatorsteppers(lattice, corr, dt, alg, band=band, alg_expan=alg_expan)
 	mps1 = h1a * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 	tmp = h1b * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
-	mps = mult(mps1, tmp, algmult)[1]
+	mps = mult(mps1, tmp, alg_mult)[1]
 
 	mps1 = h2a * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 	tmp = h2b * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
-	mps1 = mult(mps1, tmp, algmult)[1]
-	mps = mult(mps, mps1, algmult)[1]
+	mps1 = mult(mps1, tmp, alg_mult)[1]
+	mps = mult(mps, mps1, alg_mult)[1]
 
 	mps1 = h3a * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 	tmp = h3b * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
-	mps1 = mult(mps1, tmp, algmult)[1]
-	mps = mult(mps, mps1, algmult)[1]
+	mps1 = mult(mps1, tmp, alg_mult)[1]
+	mps = mult(mps, mps1, alg_mult)[1]
 
 	mps1 = h4a * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 	tmp = h4b * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
-	mps1 = mult(mps1, tmp, algmult)[1]
-	mps = mult(mps, mps1, algmult)[1]
+	mps1 = mult(mps1, tmp, alg_mult)[1]
+	mps = mult(mps, mps1, alg_mult)[1]
 
 	return mps
 end
 
 function _get_mpo3(mpoj)
-	# mpoj = ti_mpotensor(η, algexpan)
+	# mpoj = ti_mpotensor(η, alg_expan)
 	h = MPOHamiltonian([mpoj, mpoj, mpoj])
 	return MPO(h)
 end
@@ -124,7 +124,7 @@ function _get_signed_corr(lattice::RealGrassmannLattice, corr::RealCorrelationFu
 	return η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻
 end
 
-function _fit_to_lattice(lattice::RealGrassmannLattice, mpo::MPO, _JW::MPSBondTensor, band::Int, f1::Symbol, f2::Symbol, trunc::TruncationScheme=DefaultITruncation)
+function _fit_to_lattice(lattice::RealGrassmannLattice, mpo::MPO, _JW::MPSBondTensor, band::Int, f1::Symbol, f2::Symbol, trunc::TruncationScheme=Defaults.alg_trunc_if())
 	@assert length(mpo) == 3
 	(LayoutStyle(lattice) isa TimeLocalLayout) || throw(ArgumentError("only works lattice with TimeLocalLayout"))
 

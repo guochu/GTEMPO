@@ -53,7 +53,7 @@ function mult_cache(z::GrassmannMPS, x::GrassmannMPS, y::GrassmannMPS, lattice::
     return IntegrateBandIterativeMultCache(z, x, y, lattice, band, hstorage)
 end
 
-# multintegrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS; alg::DMRGAlgorithm=DefaultMultAlg, band::Int=1) = multintegrateband(lattice, x, y, alg, band=band)
+# multintegrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS; alg::DMRGAlgorithm=Defaults.alg_mult(), band::Int=1) = multintegrateband(lattice, x, y, alg, band=band)
 # multintegrateband(lattice::AbstractGrassmannLattice, x::GrassmannMPS, y::GrassmannMPS, alg::DMRGAlgorithm; band::Int=1) = iterativemultintegrate(x, y, lattice, alg, band=band)
 
 

@@ -72,7 +72,7 @@ vs 库 −0.87587i，以 `toulouse_Gt` 为准）。
 1. `GrassmannLattice(N, δt, contour=:real, order=1, bands=1)` +
    `FockLattice`（声子用 occupation-number 格点）；
 2. 费米浴 IF：`fermionicbath(spec_f, β=β)` → `correlationfunction` →
-   `ExactTTIIF(algmult=SVDCompression(trunc))`（单带格点）→ `fillband`；
+   `ExactTTIIF(alg_mult=SVDCompression(trunc=trunc))`（单带格点）→ `fillband`；
 3. 杂质动力学：`sysdynamics`（ToulouseIM）→ `systhermalstate!(β=β)` →
    `boundarycondition!`；
 4. 声子 IF：`bosonicbath(DiracDelta)` → `hybriddynamics(flat, …)` →
@@ -91,7 +91,7 @@ G^R(t) = G^>(t) − G^<(t) = −im · [ cached_greater(t) − cached_lesser(t) ]
 −⟨d† d⟩ = −0.500（n = 1/2）。
 
 截断参数：`truncdimcutoff(D=100, ϵ=1.0e-10)`；费米浴 IF 用
-`ExactTTIIF`（指数展开取默认 `DefaultExpansionAlg`）。
+`ExactTTIIF`（指数展开取默认 `Defaults.alg_expan()`）。
 
 ## 4. δt 收敛性结果
 

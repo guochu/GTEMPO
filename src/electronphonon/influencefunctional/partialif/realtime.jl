@@ -1,4 +1,4 @@
-function hybriddynamics!(gmps::FockMPS, lattice::RealFockLattice, corr::RealCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
+function hybriddynamics!(gmps::FockMPS, lattice::RealFockLattice, corr::RealCorrelationFunction; trunc::TruncationScheme=Defaults.alg_trunc_if())
 	for i in 1:lattice.Nt, b1 in branches(lattice), band1 in 1:lattice.bands
 		pos1 = index(lattice, i, band=band1, branch=b1)
 		pos2s = Int[]
@@ -16,7 +16,7 @@ function hybriddynamics!(gmps::FockMPS, lattice::RealFockLattice, corr::RealCorr
 end
 
 
-# function hybriddynamics!(gmps::FockMPS, lattice::RealFockLattice, corr::RealCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
+# function hybriddynamics!(gmps::FockMPS, lattice::RealFockLattice, corr::RealCorrelationFunction; trunc::TruncationScheme=Defaults.alg_trunc_if())
 # 	(lattice.bands in (1, 2)) || throw(ArgumentError("number of bands should be either 1 or 2"))
 # 	if lattice.bands == 1
 # 		return hybriddynamics_1band!(gmps, lattice, corr, trunc=trunc)
@@ -32,9 +32,9 @@ end
 
 
 # function _hybriddynamics_1band!(gmps::FockMPS, lattice::RealFockLattice, corr::RealCorrelationFunction, band::Int; 
-# 												trunc::TruncationScheme=DefaultITruncation)	
+# 												trunc::TruncationScheme=Defaults.alg_trunc_if())	
 # 	# (LayoutStyle(lattice) isa BandLocalLayout) || throw(ArgumentError("currently only TimelocalLayout support for this function"))
-# 	alg = Orthogonalize(TK.SVD(), trunc)
+# 	alg = Orthogonalize(orth=TK.SVD(), trunc=trunc)
 # 	for i in 1:lattice.Nt, b1 in branches(lattice)
 # 		pos1 = index(lattice, i, band=band, branch=b1)
 # 		# tmp = vacuumstate(lattice)
@@ -63,10 +63,10 @@ end
 # 	return gmps
 # end
 
-# function hybriddynamics_2band!(gmps::FockMPS, lattice::RealFockLattice, corr::RealCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
+# function hybriddynamics_2band!(gmps::FockMPS, lattice::RealFockLattice, corr::RealCorrelationFunction; trunc::TruncationScheme=Defaults.alg_trunc_if())
 # 	@assert lattice.bands == 2
 # 	_hybriddynamics_1band!(gmps, lattice, corr, 2, trunc=trunc)
-# 	alg = Orthogonalize(TK.SVD(), trunc)
+# 	alg = Orthogonalize(orth=TK.SVD(), trunc=trunc)
 # 	for i in 1:lattice.Nt, b1 in branches(lattice)
 # 		pos1 = index(lattice, i, band=1, branch=b1)
 # 		tmp = vacuumstate(lattice)
@@ -99,7 +99,7 @@ end
 
 
 # naive implementation with N^2 gate operations
-function hybriddynamics_naive!(gmps::FockMPS, lattice::RealFockLattice, corr::RealCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
+function hybriddynamics_naive!(gmps::FockMPS, lattice::RealFockLattice, corr::RealCorrelationFunction; trunc::TruncationScheme=Defaults.alg_trunc_if())
 	(lattice.bands in (1, 2)) || throw(ArgumentError("number of bands should be either 1 or 2"))
 	if lattice.bands == 1
 		return hybriddynamics_1band_naive!(gmps, lattice, corr, trunc=trunc)
@@ -115,9 +115,9 @@ end
 
 
 function _hybriddynamics_1band_naive!(gmps::FockMPS, lattice::RealFockLattice, corr::RealCorrelationFunction, band::Int; 
-												trunc::TruncationScheme=DefaultITruncation)	
+												trunc::TruncationScheme=Defaults.alg_trunc_if())	
 	# (LayoutStyle(lattice) isa BandLocalLayout) || throw(ArgumentError("currently only TimelocalLayout support for this function"))
-	alg = Orthogonalize(TK.SVD(), trunc)
+	alg = Orthogonalize(orth=TK.SVD(), trunc=trunc)
 	for b1 in branches(lattice), b2 in branches(lattice)
 		for i in 1:lattice.Nt, j in 1:lattice.Nt
 			pos1, pos2 = index(lattice, i, band=band, branch=b1), index(lattice, j, band=band, branch=b2)
@@ -135,12 +135,12 @@ function _hybriddynamics_1band_naive!(gmps::FockMPS, lattice::RealFockLattice, c
 end
 
 function hybriddynamics_2band_naive!(gmps::FockMPS, lattice::RealFockLattice, corr::RealCorrelationFunction; 
-											trunc::TruncationScheme=DefaultITruncation)
+											trunc::TruncationScheme=Defaults.alg_trunc_if())
 	@assert lattice.bands == 2
 	for band in 1:lattice.bands
 		_hybriddynamics_1band_naive!(gmps, lattice, corr, band, trunc=trunc)
 	end
-	alg = Orthogonalize(TK.SVD(), trunc)
+	alg = Orthogonalize(orth=TK.SVD(), trunc=trunc)
 	for i in 1:lattice.Nt, b1 in branches(lattice)
 		pos1 = index(lattice, i, band=1, branch=b1)
 		for j in 1:lattice.Nt, b2 in branches(lattice)

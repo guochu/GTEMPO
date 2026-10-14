@@ -1,12 +1,12 @@
 """
-	hybriddynamicsstepper!(gmps, lattice, corr; band=1, trunc=DefaultITruncation)
+	hybriddynamicsstepper!(gmps, lattice, corr; band=1, trunc=Defaults.alg_trunc_if())
 
 In-place single time step of the influence functional dynamics: applies the
 IF terms connecting the current time step to all previous steps onto `gmps`
 and moves it forward by one step. The non-mutating version
 `hybriddynamicsstepper` operates on a copy.
 """
-function hybriddynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
+function hybriddynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
 	@assert size(η⁺⁺) == size(η⁺⁻) == size(η⁻⁺) == size(η⁻⁻)
 	@assert length(lattice) == length(gmps) 
@@ -20,7 +20,7 @@ function hybriddynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattic
 		apply!(exp(GTerm(pos1, pos2, coeff=η⁻⁺[1,1])), gmps)
 		pos1, pos2 = index(lattice, 1, conj=true, branch=:-, band=band), index(lattice, 1, conj=false, branch=:-, band=band)
 		apply!(exp(GTerm(pos1, pos2, coeff=η⁻⁻[1,1])), gmps)
-		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
+		canonicalize!(gmps, alg=Orthogonalize(orth=SVD(), trunc=trunc))
 	end
 	tmp1 = finalinfluencefunctional(lattice, η⁺⁺, trunc=trunc, b1=:+, b2=:+, band=band)
 	tmp2 = finalinfluencefunctional(lattice, η⁺⁻, trunc=trunc, b1=:+, b2=:-, band=band)
@@ -35,7 +35,7 @@ function hybriddynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattic
 end
 
 function hybriddynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattice2Order, corr::RealCorrelationFunction; 
-		band::Int=1, finalize::Bool=false, trunc::TruncationScheme=DefaultITruncation)
+		band::Int=1, finalize::Bool=false, trunc::TruncationScheme=Defaults.alg_trunc_if())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
 	@assert size(η⁺⁺) == size(η⁺⁻) == size(η⁻⁺) == size(η⁻⁻)
 	@assert length(lattice) == length(gmps)
@@ -49,7 +49,7 @@ function hybriddynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattic
 		apply!(exp(GTerm(pos1, pos2, coeff=η⁻⁺[1,1])), gmps)
 		pos1, pos2 = index(lattice, 1, conj=true, branch=:-, band=band), index(lattice, 1, conj=false, branch=:-, band=band)
 		apply!(exp(GTerm(pos1, pos2, coeff=η⁻⁻[1,1])), gmps)
-		canonicalize!(gmps, alg=Orthogonalize(SVD(), trunc))
+		canonicalize!(gmps, alg=Orthogonalize(orth=SVD(), trunc=trunc))
 	end
 	tmp1 = finalinfluencefunctional(lattice, η⁺⁺, finalize=finalize, trunc=trunc, b1=:+, b2=:+, band=band)
 	tmp2 = finalinfluencefunctional(lattice, η⁺⁻, finalize=finalize, trunc=trunc, b1=:+, b2=:-, band=band)
@@ -72,13 +72,13 @@ end
 The top right of the influence functional
 """
 function finalinfluencefunctional(lattice::RealGrassmannLattice2Order, η::AbstractMatrix; 
-				finalize::Bool, trunc::TruncationScheme=DefaultITruncation, kwargs...)
+				finalize::Bool, trunc::TruncationScheme=Defaults.alg_trunc_if(), kwargs...)
 	rows, cols = finalize ? top_right_if_final(lattice, η) : top_right_if(lattice, η)
 	out1 = partialif_hybrid(lattice, lattice.k, cols; kwargs...)
 	out2 = partialif_hybrid(lattice, rows, lattice.k; kwargs...)
 	return mult(out1, out2, trunc=trunc)[1]
 end
-function finalinfluencefunctional(lattice::RealGrassmannLattice1Order, η::AbstractMatrix; trunc::TruncationScheme=DefaultITruncation, kwargs...)
+function finalinfluencefunctional(lattice::RealGrassmannLattice1Order, η::AbstractMatrix; trunc::TruncationScheme=Defaults.alg_trunc_if(), kwargs...)
 	@assert lattice.k <= size(η, 1)
 	k = lattice.k
 	out1 = partialif_hybrid(lattice, k, [η[k, 1:k-1]; 0.5*η[k,k]]; kwargs...)

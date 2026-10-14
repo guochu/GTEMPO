@@ -29,7 +29,7 @@ end
 Base.:-(x::FockMPS, y::FockMPS) = x + (-y)
 
 # 站点内容重排：委托给 FMA 的链级 permute!（内部经 canonicalize! 与相邻 swap!）
-function TK.permute!(x::FockMPS, perm::Vector{Int}; trunc::TruncationScheme=DefaultKTruncation)
+function TK.permute!(x::FockMPS, perm::Vector{Int}; trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	FMA.permute!(x.parent, perm; trunc=_fmatrunc(trunc))
 	return x
 end

@@ -3,7 +3,7 @@
 
 real-time MPS-IF for a single band 
 """
-function hybriddynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::AbstractMixedCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
+function hybriddynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::AbstractMixedCorrelationFunction; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
 	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	kt, Nτ = lattice.kt, lattice.Nτ
 	for b1 in (:+, :-)
@@ -26,7 +26,7 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Orde
 	return gmps
 end
 
-function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::AbstractMixedCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
+function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::AbstractMixedCorrelationFunction; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
 	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	kt, Nτ = lattice.kt, lattice.Nτ
 	for b1 in (:+, :-)
@@ -78,13 +78,13 @@ function partialif_hybrid(lattice::MixedGrassmannLattice, i::Int, cols_f::Abstra
 end
 
 function partialif_hybrid_naive(lattice::MixedGrassmannLattice, i::Int, cols_f::AbstractVector, cols_b::AbstractVector, cols_i::AbstractVector; 
-							b1::Symbol, band::Int=1, trunc::TruncationScheme=DefaultITruncation)
+							b1::Symbol, band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
 	@assert length(cols_f) == length(cols_b)
 	@assert length(cols_i) == lattice.Nτ
 	if b1 == :τ
 		i = i + 1
 	end
-	alg = Orthogonalize(TK.SVD(), trunc)
+	alg = Orthogonalize(orth=TK.SVD(), trunc=trunc)
 	gmps = vacuumstate(promote_type(scalartype(lattice), eltype(cols_f), eltype(cols_b), eltype(cols_i)), lattice)
 	for j in 1:length(cols_i)
 		pos1, pos2 = index(lattice, i, conj=true, branch=b1, band=band), index(lattice, j+1, conj=false, branch=:τ, band=band)

@@ -40,7 +40,7 @@ end
 	Z = integrate(lat3, x, y)
 
 	xy1 = multintegrateband(lat3, x, y; trunc=trunc)
-	xy2 = multintegrateband(lat3, x, y, SVDCompression(trunc))
+	xy2 = multintegrateband(lat3, x, y, SVDCompression(trunc=trunc))
 	@test length(xy1) == length(lat2) && length(xy2) == length(lat2)
 	@test relerr(Z, integrate(lat2, xy1)) < 1.0e-8
 	@test relerr(Z, integrate(lat2, xy2)) < 1.0e-8
@@ -58,7 +58,7 @@ end
 	Zxy = integrate(lat3, x, y)
 
 	# both the SVD compression and the iterative DMRG1 algorithm are supported
-	for alg in (SVDCompression(trunc), DMRG1(trunc))
+	for alg in (SVDCompression(trunc=trunc), DMRG1(trunc=trunc))
 		# two GMPS, integrating out a single band
 		xyp = partialintegrate(lat3, x, y; branchs=(:τ,), bands=(1,), alg=alg)
 		@test length(xyp) == length(lat2)

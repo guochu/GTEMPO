@@ -12,7 +12,7 @@ function _influencefunctional(lattice::ImagGrassmannLattice1Order{O}, corr::Imag
 		# change the ordering of all mpss
 		mpss2 = similar(mpss)
 		for i in 1:length(mpss)
-			_, mpss2[i] = changeordering(O, lattice2, mpss[i], trunc=alg.algmult.trunc)
+			_, mpss2[i] = changeordering(O, lattice2, mpss[i], trunc=alg.alg_mult.trunc)
 		end
 		return mpss2
 	else
@@ -24,7 +24,7 @@ function _influencefunctional_util(lattice::ImagGrassmannLattice1Order, corr::Im
 	@assert lattice.bands == 1
 
 	# get WII for each exponential decay term
-	mpoj = ti_mpotensor(corr.data, alg.algexpan).Os
+	mpoj = ti_mpotensor(corr.data, alg.alg_expan).Os
 	num = size(mpoj, 1)
 	mpss = map(2:num-1) do i
 		t = SchurMPOTensor(mpoj[[1,i,num], [1,i,num]])

@@ -92,17 +92,17 @@ function _rightorth!(psi::GrassmannMPS, alg::SVD, trunc::TruncationScheme, norma
 end
 
 canonicalize(psi::GrassmannMPS; kwargs...) = canonicalize!(copy(psi); kwargs...)
-canonicalize!(psi::GrassmannMPS; alg::Orthogonalize = Orthogonalize(trunc=DefaultKTruncation, normalize=false)) =
+canonicalize!(psi::GrassmannMPS; alg::Orthogonalize = Orthogonalize(trunc=Defaults.alg_trunc_sys(), normalize=false)) =
 	_canonicalize!(psi; alg)
 """
-	canonicalize!(psi::GrassmannMPS; alg=Orthogonalize(trunc=DefaultKTruncation, normalize=false)) -> (psi, err)
+	canonicalize!(psi::GrassmannMPS; alg=Orthogonalize(trunc=Defaults.alg_trunc_sys(), normalize=false)) -> (psi, err)
 
 Transform `psi` into canonical form (in place): one QR left-orthogonalization sweep
 (without truncation) followed by a right-orthogonalization sweep with `alg` (truncating
 when `alg.trunc` says so). After the call `psi` is right-canonical with all Schmidt
 values initialized. Returns `psi` and the maximal truncation error of the right sweep.
 """
-function _canonicalize!(psi::GrassmannMPS; alg::Orthogonalize = Orthogonalize(trunc=DefaultKTruncation, normalize=false))
+function _canonicalize!(psi::GrassmannMPS; alg::Orthogonalize = Orthogonalize(trunc=Defaults.alg_trunc_sys(), normalize=false))
 	alg.normalize && @warn "canonicalize with renormalization not recommanded for GrassmannMPS"
 	_leftorth!(psi, QR(), NoTruncation(), alg.normalize, alg.verbosity)
 	err = _rightorth!(psi, alg.orth, alg.trunc, alg.normalize, alg.verbosity)[2]
@@ -110,13 +110,13 @@ function _canonicalize!(psi::GrassmannMPS; alg::Orthogonalize = Orthogonalize(tr
 end
 
 """
-	truncate!(psi::GrassmannMPS; trunc=DefaultKTruncation) -> (psi, err)
+	truncate!(psi::GrassmannMPS; trunc=Defaults.alg_trunc_sys()) -> (psi, err)
 
 Truncate `psi` by canonicalizing with an SVD sweep under the truncation scheme `trunc`.
 Returns `psi` and the maximal truncation error.
 """
-truncate!(psi::GrassmannMPS; trunc::TruncationScheme=DefaultKTruncation) =
-	_canonicalize!(psi; alg=Orthogonalize(SVD(), trunc; normalize=false))
+truncate!(psi::GrassmannMPS; trunc::TruncationScheme=Defaults.alg_trunc_sys()) =
+	_canonicalize!(psi; alg=Orthogonalize(orth=SVD(), trunc=trunc; normalize=false))
 
 function _rescaling!(psi, n::Real)
 	L = length(psi)
@@ -147,7 +147,7 @@ function _renormalize_coeff!(psi, normalize::Bool)
 end
 
 function LinearAlgebra.normalize!(psi::GrassmannMPS)
-    alg = Orthogonalize(SVD(), normalize=true)
+    alg = Orthogonalize(orth=SVD(), normalize=true)
     open("/dev/null", "w") do devnull # slience the warning
         redirect_stderr(devnull) do
             canonicalize!(psi, alg=alg)

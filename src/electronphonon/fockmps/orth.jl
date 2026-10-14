@@ -16,7 +16,7 @@ _fmaorthalg(alg::Orthogonalize) = FMA.Orthogonalize(_fmaorth(alg.orth), _fmatrun
 TK.leftorth!(psi::FockMPS; alg::Orthogonalize = Orthogonalize()) = (FMA._leftorth!(psi.parent, _fmaorth(alg.orth), _fmatrunc(alg.trunc), alg.normalize, alg.verbosity); psi)
 TK.rightorth!(psi::FockMPS; alg::Orthogonalize = Orthogonalize()) = (FMA._rightorth!(psi.parent, _fmaorth(alg.orth), _fmatrunc(alg.trunc), alg.normalize, alg.verbosity); psi)
 
-function canonicalize!(psi::FockMPS; alg::Orthogonalize = Orthogonalize(trunc=DefaultITruncation, normalize=false))
+function canonicalize!(psi::FockMPS; alg::Orthogonalize = Orthogonalize(trunc=Defaults.alg_trunc_if(), normalize=false))
 	alg.normalize && @warn "canonicalize with renormalization not recommanded for FockMPS"
 	FMA._canonicalize!(psi.parent; alg=_fmaorthalg(alg))
 	return psi

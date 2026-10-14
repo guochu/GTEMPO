@@ -36,8 +36,8 @@ op = [0.0 0; 1 0]   # d
 # 四种待比较的影响泛函算法
 algs = [
 	"PartialIF" => PartialIF(trunc = trunc),
-	"XTRGIF"    => XTRGIF(k = 5, fast = true, algmult = SVDCompression(trunc)),
-	"ExactTTIIF" => ExactTTIIF(algmult = SVDCompression(trunc)),
+	"XTRGIF"    => XTRGIF(k = 5, fast = true, alg_mult = SVDCompression(trunc=trunc)),
+	"ExactTTIIF" => ExactTTIIF(alg_mult = SVDCompression(trunc=trunc)),
 	"TDVPIF"    => TDVPIF(trunc = trunc, δ = 0.1),
 ]
 

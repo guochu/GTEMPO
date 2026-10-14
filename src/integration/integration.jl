@@ -20,7 +20,7 @@ with the truncation scheme `trunc`.
 struct BMPSIntegrate{T<:TruncationScheme} <: IntegrationAlgorithm
 	trunc::T
 end
-BMPSIntegrate(; trunc::TruncationScheme=DefaultKTruncation) = BMPSIntegrate(trunc)
+BMPSIntegrate(; trunc::TruncationScheme=Defaults.alg_trunc_sys()) = BMPSIntegrate(trunc)
 
 
 
@@ -32,8 +32,6 @@ include("acintegrate/integrate4.jl")
 include("acintegrate/integrate5.jl")
 
 include("acintegrate/ac_bmps_integrate.jl")
-
-include("conversion.jl")
 
 """
 	integrate(alg::IntegrationAlgorithm, lattice::AbstractGrassmannLattice, x0::GrassmannMPS, x1::GrassmannMPS...; trunc)

@@ -1,4 +1,4 @@
-function hybriddynamics!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr::ImagCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
+function hybriddynamics!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr::ImagCorrelationFunction; trunc::TruncationScheme=Defaults.alg_trunc_if())
 	k = lattice.N
 	for i in 1:k, b1 in 1:lattice.bands
 		pos1 = index(lattice, i, band=b1)
@@ -17,7 +17,7 @@ function hybriddynamics!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr::Im
 end
 
 
-# function hybriddynamics!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr::ImagCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
+# function hybriddynamics!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr::ImagCorrelationFunction; trunc::TruncationScheme=Defaults.alg_trunc_if())
 # 	(lattice.bands in (1, 2)) || throw(ArgumentError("number of bands should be either 1 or 2"))
 # 	if lattice.bands == 1
 # 		return hybriddynamics_1band!(gmps, lattice, corr, trunc=trunc)
@@ -31,7 +31,7 @@ end
 # 	return _hybriddynamics_1band!(gmps, lattice, corr, 1; kwargs...)
 # end 
 
-# function _hybriddynamics_1band!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr1::ImagCorrelationFunction, band::Int; trunc::TruncationScheme=DefaultITruncation)
+# function _hybriddynamics_1band!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr1::ImagCorrelationFunction, band::Int; trunc::TruncationScheme=Defaults.alg_trunc_if())
 # 	corr = corr1.data
 # 	k = lattice.N
 
@@ -47,7 +47,7 @@ end
 # 		# 		t = ExpNTerm(pos1, pos2, coeff=coef)
 # 		# 	end
 # 		# 	apply!(t, tmp)
-# 		# 	canonicalize!(tmp, alg=Orthogonalize(TK.SVD(), trunc))
+# 		# 	canonicalize!(tmp, alg=Orthogonalize(orth=TK.SVD(), trunc=trunc))
 # 		# end
 
 # 		pos1 = index(lattice, i, band=band)
@@ -65,7 +65,7 @@ end
 # 	return gmps
 # end
 
-# function hybriddynamics_2band!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr1::ImagCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
+# function hybriddynamics_2band!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr1::ImagCorrelationFunction; trunc::TruncationScheme=Defaults.alg_trunc_if())
 # 	@assert lattice.bands == 2
 # 	_hybriddynamics_1band!(gmps, lattice, corr1, 2, trunc=trunc)
 
@@ -83,7 +83,7 @@ end
 # 		# 		t = ExpNTerm(pos1, pos2, coeff=coef)
 # 		# 	end
 # 		# 	apply!(t, tmp)
-# 		# 	canonicalize!(tmp, alg=Orthogonalize(TK.SVD(), trunc))			
+# 		# 	canonicalize!(tmp, alg=Orthogonalize(orth=TK.SVD(), trunc=trunc))			
 # 		# end
 # 		pos2s = Int[]
 # 		coefs = scalartype(corr)[]
@@ -101,7 +101,7 @@ end
 
 
 # naive implementation with N^2 gate operations
-function hybriddynamics_naive!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr::ImagCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
+function hybriddynamics_naive!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr::ImagCorrelationFunction; trunc::TruncationScheme=Defaults.alg_trunc_if())
 	(lattice.bands in (1, 2)) || throw(ArgumentError("number of bands should be either 1 or 2"))
 	if lattice.bands == 1
 		return hybriddynamics_1band_naive!(gmps, lattice, corr, trunc=trunc)
@@ -115,7 +115,7 @@ function hybriddynamics_1band_naive!(gmps::FockMPS, lattice::ImagFockLattice1Ord
 	return _hybriddynamics_1band_naive!(gmps, lattice, corr, 1; kwargs...)
 end 
 
-function _hybriddynamics_1band_naive!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr1::ImagCorrelationFunction, band::Int; trunc::TruncationScheme=DefaultITruncation)
+function _hybriddynamics_1band_naive!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr1::ImagCorrelationFunction, band::Int; trunc::TruncationScheme=Defaults.alg_trunc_if())
 	corr = corr1.data
 	k = lattice.N
 	for i in 1:k, j in 1:k
@@ -130,13 +130,13 @@ function _hybriddynamics_1band_naive!(gmps::FockMPS, lattice::ImagFockLattice1Or
 			apply!(t, gmps)
 		end
 		
-		canonicalize!(gmps, alg=Orthogonalize(TK.SVD(), trunc))
+		canonicalize!(gmps, alg=Orthogonalize(orth=TK.SVD(), trunc=trunc))
 		# println(bonddim(gmps), " ", norm(gmps), " ", coef)
 	end
 	return gmps
 end
 
-function hybriddynamics_2band_naive!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr1::ImagCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
+function hybriddynamics_2band_naive!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr1::ImagCorrelationFunction; trunc::TruncationScheme=Defaults.alg_trunc_if())
 	@assert lattice.bands == 2
 	for band in 1:lattice.bands
 		_hybriddynamics_1band_naive!(gmps, lattice, corr1, band, trunc=trunc)
@@ -151,7 +151,7 @@ function hybriddynamics_2band_naive!(gmps::FockMPS, lattice::ImagFockLattice1Ord
 		coef = exp(corr[i, j] + corr[j, i]) 
 		t = ExpNTerm(pos1, pos2, coeff=coef)
 		apply!(t, gmps)
-		canonicalize!(gmps, alg=Orthogonalize(TK.SVD(), trunc))
+		canonicalize!(gmps, alg=Orthogonalize(orth=TK.SVD(), trunc=trunc))
 	end
 	return gmps	
 end

@@ -12,7 +12,7 @@ function _influencefunctional(lattice::RealGrassmannLattice{O}, corr::RealCorrel
 		# change the ordering of all mpss
 		mpss2 = similar(mpss)
 		for i in 1:length(mpss)
-			_, mpss2[i] = changeordering(O, lattice2, mpss[i], trunc=alg.algmult.trunc)
+			_, mpss2[i] = changeordering(O, lattice2, mpss[i], trunc=alg.alg_mult.trunc)
 		end
 		return mpss2
 	else
@@ -27,7 +27,7 @@ function _influencefunctional_util(lattice::RealGrassmannLattice{<:_AllowedRealG
 	# get WII for each exponential decay term
 	f12 = ((:+, :+), (:-, :+), (:+, :-), (:-, :-))
 	mpss = map(1:4) do n
-		mpoj = ti_mpotensor(ηs[n], alg.algexpan).Os
+		mpoj = ti_mpotensor(ηs[n], alg.alg_expan).Os
 		num = size(mpoj, 1)
 		map(2:num-1) do i
 			t = SchurMPOTensor(mpoj[[1,i,num], [1,i,num]])

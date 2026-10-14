@@ -1,4 +1,4 @@
-function hybriddynamics!(gmps::FockMPS, lattice::MixedFockLattice1Order, corr::AbstractMixedCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
+function hybriddynamics!(gmps::FockMPS, lattice::MixedFockLattice1Order, corr::AbstractMixedCorrelationFunction; trunc::TruncationScheme=Defaults.alg_trunc_if())
 	for b1 in branches(lattice)
 		k1 = ifelse(b1==:τ, lattice.Nτ, lattice.Nt)
 		for i in 1:k1, band1 in 1:lattice.bands
@@ -21,7 +21,7 @@ function hybriddynamics!(gmps::FockMPS, lattice::MixedFockLattice1Order, corr::A
 	return gmps
 end
 
-# function hybriddynamics!(gmps::FockMPS, lattice::MixedFockLattice1Order, corr::AbstractMixedCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
+# function hybriddynamics!(gmps::FockMPS, lattice::MixedFockLattice1Order, corr::AbstractMixedCorrelationFunction; trunc::TruncationScheme=Defaults.alg_trunc_if())
 # 	(lattice.bands in (1, 2)) || throw(ArgumentError("number of bands should be either 1 or 2"))
 # 	if lattice.bands == 1
 # 		return hybriddynamics_1band!(gmps, lattice, corr, trunc=trunc)
@@ -37,9 +37,9 @@ end
 
 
 # function _hybriddynamics_1band!(gmps::FockMPS, lattice::MixedFockLattice1Order, corr::AbstractMixedCorrelationFunction, band::Int; 
-# 												trunc::TruncationScheme=DefaultITruncation)	
+# 												trunc::TruncationScheme=Defaults.alg_trunc_if())	
 # 	# (LayoutStyle(lattice) isa BandLocalLayout) || throw(ArgumentError("currently only TimelocalLayout support for this function"))
-# 	alg = Orthogonalize(TK.SVD(), trunc)
+# 	alg = Orthogonalize(orth=TK.SVD(), trunc=trunc)
 # 	for b1 in branches(lattice)
 # 		k1 = ifelse(b1==:τ, lattice.Nτ, lattice.Nt)
 # 		for i in 1:k1
@@ -79,10 +79,10 @@ end
 # end
 
 # function hybriddynamics_2band!(gmps::FockMPS, lattice::MixedFockLattice1Order, corr::AbstractMixedCorrelationFunction; 
-# 												trunc::TruncationScheme=DefaultITruncation)
+# 												trunc::TruncationScheme=Defaults.alg_trunc_if())
 # 	@assert lattice.bands == 2
 # 	_hybriddynamics_1band!(gmps, lattice, corr, 2, trunc=trunc)
-# 	alg = Orthogonalize(TK.SVD(), trunc)
+# 	alg = Orthogonalize(orth=TK.SVD(), trunc=trunc)
 
 # 	for b1 in branches(lattice)
 # 		k1 = ifelse(b1==:τ, lattice.Nτ, lattice.Nt)
@@ -124,7 +124,7 @@ end
 # end
 
 # naive version
-function hybriddynamics_naive!(gmps::FockMPS, lattice::MixedFockLattice1Order, corr::AbstractMixedCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
+function hybriddynamics_naive!(gmps::FockMPS, lattice::MixedFockLattice1Order, corr::AbstractMixedCorrelationFunction; trunc::TruncationScheme=Defaults.alg_trunc_if())
 	(lattice.bands in (1, 2)) || throw(ArgumentError("number of bands should be either 1 or 2"))
 	if lattice.bands == 1
 		return hybriddynamics_1band_naive!(gmps, lattice, corr, trunc=trunc)
@@ -140,9 +140,9 @@ end
 
 
 function _hybriddynamics_1band_naive!(gmps::FockMPS, lattice::MixedFockLattice1Order, corr::AbstractMixedCorrelationFunction, band::Int; 
-												trunc::TruncationScheme=DefaultITruncation)	
+												trunc::TruncationScheme=Defaults.alg_trunc_if())	
 	# (LayoutStyle(lattice) isa BandLocalLayout) || throw(ArgumentError("currently only TimelocalLayout support for this function"))
-	alg = Orthogonalize(TK.SVD(), trunc)
+	alg = Orthogonalize(orth=TK.SVD(), trunc=trunc)
 	for b1 in branches(lattice), b2 in branches(lattice)
 		k1 = ifelse(b1==:τ, lattice.Nτ, lattice.Nt)
 		k2 = ifelse(b2==:τ, lattice.Nτ, lattice.Nt)
@@ -162,12 +162,12 @@ function _hybriddynamics_1band_naive!(gmps::FockMPS, lattice::MixedFockLattice1O
 end
 
 function hybriddynamics_2band_naive!(gmps::FockMPS, lattice::MixedFockLattice1Order, corr::AbstractMixedCorrelationFunction; 
-												trunc::TruncationScheme=DefaultITruncation)
+												trunc::TruncationScheme=Defaults.alg_trunc_if())
 	@assert lattice.bands == 2
 	for band in 1:lattice.bands
 		_hybriddynamics_1band_naive!(gmps, lattice, corr, band, trunc=trunc)
 	end
-	alg = Orthogonalize(TK.SVD(), trunc)
+	alg = Orthogonalize(orth=TK.SVD(), trunc=trunc)
 
 	for b1 in branches(lattice), b2 in branches(lattice)
 		k1 = ifelse(b1==:τ, lattice.Nτ, lattice.Nt)

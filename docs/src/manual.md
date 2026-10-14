@@ -65,9 +65,9 @@ algorithms:
 | `ExactTTIIF` | exact exponentiation of the TI kernel | most accurate TI form |
 | `TDVPIF` | second-order single-site TDVP flow | alternative to XTRGIF |
 
-All of them take the exponential expansion algorithm (`algexpan`, an
+All of them take the exponential expansion algorithm (`alg_expan`, an
 `ExponentialExpansionAlgorithm` from ExpExp) and an MPO compression algorithm
-(`algmult`, e.g. `SVDCompression`).
+(`alg_mult`, e.g. `SVDCompression`).
 
 Every algorithm also offers the in-place `hybriddynamics!(gmps, lattice, corr,
 alg; band)`, which multiplies the influence functional directly into an
@@ -214,7 +214,7 @@ lattice = GrassmannLattice(N=10, δt=0.05, contour=:real, bands=2)
 trunc = truncdimcutoff(D=100, ϵ=1e-9)
 
 corr = correlationfunction(bath, lattice)
-I = hybriddynamics(lattice, corr, ExactTTIIF(algmult=SVDCompression(trunc)))
+I = hybriddynamics(lattice, corr, ExactTTIIF(alg_mult=SVDCompression(trunc=trunc)))
 K = sysdynamics(lattice, model, trunc=trunc)
 K = boundarycondition!(K, lattice)
 gt = [greater(lattice, t, K, I) for t in 1:lattice.k]
@@ -258,7 +258,7 @@ time `N` from the storage and construction cost:
 The IF construction shared by these papers has two ingredients:
 
 1. a **Prony (exponential) expansion** of the hybridization,
-   `η_x ≈ Σ_l α_l λ_l^|x|` — this is `algexpan` (`OverDeterminedProny` from
+   `η_x ≈ Σ_l α_l λ_l^|x|` — this is `alg_expan` (`OverDeterminedProny` from
    ExpExp) in the algorithm structs;
 2. a **doubling trick** (analogous to XTRG): build `e^{δF}` for a tiny step
    `δ = 1/2^k` and square the infinite GMPS `k` times to reach `I = e^F`.
@@ -267,8 +267,8 @@ The `XTRGIF` algorithm in this package implements this translationally
 invariant construction (it is named after the XTRG-style doubling):
 
 ```julia
-I = hybriddynamics(lattice, corr, XTRGIF(algexpan=OverDeterminedProny(n=15, tol=1e-4),
-                                         algmult=SVDCompression(trunc), k=5))
+I = hybriddynamics(lattice, corr, XTRGIF(alg_expan=OverDeterminedProny(n=15, tol=1e-4),
+                                         alg_mult=SVDCompression(trunc=trunc), k=5))
 ```
 
 The `ExactTTIIF` algorithm is the follow-up construction of Sun, Li & Guo

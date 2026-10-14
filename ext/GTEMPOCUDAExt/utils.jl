@@ -4,7 +4,7 @@ struct CuSVDCompression <: DMRGAlgorithm
 	CuSVDCompression(alg::SVDCompression) = new(alg)
 end
 Cu(alg::SVDCompression) = CuSVDCompression(alg)
-CuSVDCompression(args...; kwargs...) = Cu(SVDCompression(args...; kwargs...))
+CuSVDCompression(args...; kwargs...) = Cu(SVDCompression(trunc=args...; kwargs...))
 
 abstract type CuDMRGMultAlgorithm <: DMRGAlgorithm end
 
@@ -13,7 +13,7 @@ struct CuDMRG1 <: CuDMRGMultAlgorithm
 	CuDMRG1(alg::DMRG1) = new(alg)
 end
 Cu(alg::DMRG1) = CuDMRG1(alg)
-CuDMRG1(args...; kwargs...) = Cu(DMRG1(args...; kwargs...))
+CuDMRG1(args...; kwargs...) = Cu(DMRG1(trunc=args...; kwargs...))
 
 
 CuAlgs = Union{CuSVDCompression, CuDMRG1}

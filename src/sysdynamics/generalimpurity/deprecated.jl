@@ -1,14 +1,14 @@
 # Deprecated Trotterized impurity dynamics (superseded by the exact sysdynamics/baresysdynamics)
 
-function sysdynamics_imaginary_deprecated!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, h::ImpurityHamiltonian; trunc::TruncationScheme=DefaultKTruncation)
+function sysdynamics_imaginary_deprecated!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, h::ImpurityHamiltonian; trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	(lattice.bands == h.bands) || throw(ArgumentError("lattice bands and ImpurityHamiltonian bands mismatch"))
 	return sysdynamics_util!(gmps, lattice, h, lattice.N, -lattice.δτ, :τ, trunc)
 end
-function sysdynamics_forward_deprecated!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, h::ImpurityHamiltonian; trunc::TruncationScheme=DefaultKTruncation)
+function sysdynamics_forward_deprecated!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, h::ImpurityHamiltonian; trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	(lattice.bands == h.bands) || throw(ArgumentError("lattice bands and ImpurityHamiltonian bands mismatch"))
 	return sysdynamics_util!(gmps, lattice, h, lattice.Nt, -im*lattice.δt, :+, trunc)
 end
-function sysdynamics_backward_deprecated!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, h::ImpurityHamiltonian; trunc::TruncationScheme=DefaultKTruncation)
+function sysdynamics_backward_deprecated!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, h::ImpurityHamiltonian; trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	(lattice.bands == h.bands) || throw(ArgumentError("lattice bands and ImpurityHamiltonian bands mismatch"))
 	return sysdynamics_util!(gmps, lattice, h, lattice.Nt, im*lattice.δt, :-, trunc)
 end
@@ -28,13 +28,13 @@ baresysdynamics_deprecated! is an inplace version of this function
 """
 baresysdynamics_deprecated(lattice::AbstractGrassmannLattice, h::ImpurityHamiltonian; kwargs...) = baresysdynamics_deprecated!(vacuumstate(lattice), lattice, h; kwargs...)
 
-function baresysdynamics_deprecated!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, h::ImpurityHamiltonian; trunc::TruncationScheme=DefaultKTruncation)
+function baresysdynamics_deprecated!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, h::ImpurityHamiltonian; trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	(lattice.bands == h.bands) || throw(ArgumentError("lattice bands and ImpurityHamiltonian bands mismatch"))
 	return baresysdynamics_util!(gmps, lattice, h, lattice.N, -lattice.δτ, :τ, trunc)
 end
 
 function baresysdynamics_deprecated!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, h::ImpurityHamiltonian; 
-						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
+						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	(lattice.bands == h.bands) || throw(ArgumentError("lattice bands and ImpurityHamiltonian bands mismatch"))
 	if isnothing(branch)
 		baresysdynamics_util!(gmps, lattice, h, lattice.N, -im*lattice.δt, :+, trunc)
@@ -50,7 +50,7 @@ function baresysdynamics_deprecated!(gmps::GrassmannMPS, lattice::RealGrassmannL
 end
 
 function baresysdynamics_deprecated!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, h::ImpurityHamiltonian; 
-						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
+						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	(lattice.bands == h.bands) || throw(ArgumentError("lattice bands and ImpurityHamiltonian bands mismatch"))
 	if isnothing(branch)
 		baresysdynamics_util!(gmps, lattice, h, lattice.Nt, -im*lattice.δt, :+, trunc)

@@ -112,7 +112,7 @@ function main(t; β=5, δt = 0.1, chi=60, chi2=4*chi)
 	trunc = truncdimcutoff(D=chi, ϵ=1.0e-10, add_back=0)
 	trunc2 = truncdimcutoff(D=chi2, ϵ=1.0e-10, add_back=0)
 	# DMRG1: DMRG-style compression algorithm for multiplying two GMPS
-	algmult = DMRG1(trunc=trunc2)
+	alg_mult = DMRG1(trunc=trunc2)
 
 	# 2*norb = 4 impurity bands on the real-time (Keldysh) contour
 	lattice = GrassmannLattice(N=N, δt=δt, bands=2*norb, contour=:Keldysh)
@@ -159,7 +159,7 @@ function main(t; β=5, δt = 0.1, chi=60, chi2=4*chi)
 		mps_adt = boundarycondition!(mps_adt, lattice_tmp, band=1)
 		mpsI1 = fillband(lattice_tmp, mpsI, band=1)
 
-		mps_adt = multintegrateband(lattice_tmp, mps_adt, mpsI1, algmult, band=1)
+		mps_adt = multintegrateband(lattice_tmp, mps_adt, mpsI1, alg_mult, band=1)
 		lattice_tmp = similar(lattice_tmp, bands=lattice_tmp.bands-1)
 	end
 	mps_adt = boundarycondition!(mps_adt, lattice1, band=1)

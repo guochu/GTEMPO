@@ -49,18 +49,18 @@ lat_t = GrassmannLattice(N=Nt, δt=δt, contour=:real)
 corr_t = correlationfunction(bath, lat_t)
 gt_ed_ref, lt_ed_ref = greater_lesser_ed(H, a, adag, H0, 0:δt:(Nt*δt), β)
 
-algexpan = OverDeterminedProny(n=30, tol=1.0e-8, verbosity=0)
-algmult(D::Int) = SVDCompression(truncdimcutoff(D=D, ϵ=1.0e-12))
+alg_expan = OverDeterminedProny(n=30, tol=1.0e-8, verbosity=0)
+alg_mult(D::Int) = SVDCompression(trunc=truncdimcutoff(D=D, ϵ=1.0e-12))
 truncscheme(D::Int) = truncdimcutoff(D=D, ϵ=1.0e-12)
 
 # converged (large-D) references for each contour, default multorder
 println("building converged D=$Dref references ...")
-mpsI_ref_τ = hybriddynamics(lat_τ, corr_τ, ExactTTIIF(algexpan=algexpan, algmult=algmult(Dref), multorder=:αSM))
+mpsI_ref_τ = hybriddynamics(lat_τ, corr_τ, ExactTTIIF(alg_expan=alg_expan, alg_mult=alg_mult(Dref), multorder=:αSM))
 mpsK_ref_τ = sysdynamics(lat_τ, model, trunc=truncscheme(Dref))
 mpsK_ref_τ = boundarycondition!(mpsK_ref_τ, lat_τ)
 gτ_conv = gτ_series(lat_τ, mpsK_ref_τ, mpsI_ref_τ)
 
-mpsI_ref_t = hybriddynamics(lat_t, corr_t, ExactTTIIF(algexpan=algexpan, algmult=algmult(Dref), multorder=:αSM))
+mpsI_ref_t = hybriddynamics(lat_t, corr_t, ExactTTIIF(alg_expan=alg_expan, alg_mult=alg_mult(Dref), multorder=:αSM))
 mpsK_ref_t = sysdynamics(lat_t, model, trunc=truncscheme(Dref))
 mpsK_ref_t = boundarycondition!(mpsK_ref_t, lat_t)
 mpsK_ref_t = systhermalstate!(mpsK_ref_t, lat_t, model, trunc=truncscheme(Dref), β=β)
@@ -68,8 +68,8 @@ gt_conv, lt_conv = gtlt_series(lat_t, mpsK_ref_t, mpsI_ref_t)
 
 # ----------------------------- helpers ------------------------------------
 function run_case(contour, order, D)
-	multalg = algmult(D)
-	alg = ExactTTIIF(algexpan=algexpan, algmult=multalg, multorder=order)
+	multalg = alg_mult(D)
+	alg = ExactTTIIF(alg_expan=alg_expan, alg_mult=multalg, multorder=order)
 	# K (and the thermal state) always use a generous truncation, so that all
 	# measured errors are due to the IF construction alone
 	tscheme = truncscheme(Dref)

@@ -18,8 +18,8 @@ ordering：虚时 `A1Ā1B1B̄1`，实时 `A1Ā1a1ā1B1B̄1b1b̄1`。
 四种算法：
 
 - `PartialIF(trunc)`：partial-MPO 逐个乘入（2^N-1 次乘法）
-- `XTRGIF(k=5, fast=true, algmult=SVDCompression(trunc))`：树形二分，5 次乘法
-- `ExactTTIIF(algmult=SVDCompression(trunc))`：影响算符精确指数化（解析 MPO 指数）
+- `XTRGIF(k=5, fast=true, alg_mult=SVDCompression(trunc=trunc))`：树形二分，5 次乘法
+- `ExactTTIIF(alg_mult=SVDCompression(trunc=trunc))`：影响算符精确指数化（解析 MPO 指数）
 - `TDVPIF(trunc, δ=0.1)`：TDVP 虚时流 dz/dτ = H·z（10 步，流中不截断，流结束后最后一次 sweep 用 SVD 截断压缩）
 
 **参考解**（ImpurityModelBase）：

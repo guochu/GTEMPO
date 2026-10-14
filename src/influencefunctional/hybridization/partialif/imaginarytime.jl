@@ -3,7 +3,7 @@
 
 imaginary-time MPS-IF for a single band 
 """
-function hybriddynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr1::ImagCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
+function hybriddynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr1::ImagCorrelationFunction; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
 	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	corr = corr1.data
 	k = lattice.k-1
@@ -15,7 +15,7 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order
 end
 
 
-function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr1::ImagCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
+function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr1::ImagCorrelationFunction; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
 	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	corr = corr1.data
 	k = lattice.k-1
@@ -39,13 +39,13 @@ function partialif_hybrid(lattice::ImagGrassmannLattice1Order, i::Int, cols::Abs
 	return mpo * vacuumstate(promote_type(scalartype(lattice), eltype(cols)), lattice)
 end
 
-function partialif_hybrid_naive(lattice::ImagGrassmannLattice1Order, i::Int, cols::AbstractVector; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
+function partialif_hybrid_naive(lattice::ImagGrassmannLattice1Order, i::Int, cols::AbstractVector; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
 	gmps = vacuumstate(promote_type(scalartype(lattice), eltype(cols)), lattice)
 	for j in 1:lattice.k
 		pos1, pos2 = index(lattice, i, conj=true, band=band), index(lattice, j, conj=false, band=band)
 		t = exp(GTerm(pos1, pos2, coeff=cols[j]))
 		apply!(t, gmps)
-		canonicalize!(gmps, alg=Orthogonalize(TK.SVD(), trunc))
+		canonicalize!(gmps, alg=Orthogonalize(orth=TK.SVD(), trunc=trunc))
 	end
 	return gmps
 end

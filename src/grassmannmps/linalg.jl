@@ -116,7 +116,7 @@ Base.:-(x::GrassmannMPS, y::GrassmannMPS) = x + (-y)
 #     return ts
 # end
 
-function _permute!(x::AbstractGMPS, perm::Vector{Int}; trunc::TruncationScheme=DefaultKTruncation)
+function _permute!(x::AbstractGMPS, perm::Vector{Int}; trunc::TruncationScheme=Defaults.alg_trunc_sys())
     @assert length(x) == length(perm)
     if svectors_uninitialized(x)
         canonicalize!(x, alg=Orthogonalize(trunc=trunc, normalize=false))

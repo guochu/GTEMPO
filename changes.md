@@ -2,6 +2,54 @@
 
 本轮重构涉及的接口更改汇总。所有更改均已通过全量测试验证（行为不变或数值等价）。
 
+## 第九批更新（2026-10-07）：算法类型 @kwdef 化与 Defaults 接口函数化
+
+### Defaults 接口函数化
+
+- `Defaults` 模块统一提供默认算法的构造函数：`alg_trunc_if(; D, ϵ, add_back)`（= `truncdimcutoff`）、`alg_trunc_sys(; ϵ)`（= `truncrelerr`）、**`alg_evo()`**（= `WII()`，新增）、`alg_mult(; trunc)`（= `DMRG1(trunc=trunc)`）、`alg_expan(; n, tol, verbosity)`（= `OverDeterminedProny`）。
+- **删除**模块外的 4 个默认常数 `DefaultITruncation` / `DefaultKTruncation` / `DefaultExpansionAlg` / `DefaultMultAlg`，全部调用点（src/ext/test/performance/docs）改为对应的 `Defaults.alg_*()`。kwdef 字段默认值与关键字默认值在**构造/调用时**求值，每次返回新实例（原先为共享 const 实例；截断方案等均为 immutable，行为等价）。
+- Julia 嵌套模块对外层模块的绑定（含 `using` 导入与本模块定义）**完全不可见**，`Defaults` 内显式 `using Z2Tensors: ...`、`using ExpExp: OverDeterminedProny`、`import ..DMRG1, ..WII`。
+- `include("defaults.jl")` 移到 `include("mpo/mpo.jl")` 之后（`import ..WII` 要求 WII 已定义）；mpo 内对 `Defaults.*` 的引用均为关键字默认值（惰性求值），不受影响。
+
+### 压缩/正交化算法类型 @kwdef 化
+
+- `DMRG1`、`DMRG2`、`SVDCompression`、`Orthogonalize` 改为 `@kwdef` 定义（字段默认值内联），**删除**全部位置参数便捷构造器与 `Base.similar`；构造一律使用关键字形式。删除随之无用的 `AllowedInitGuesses`（`initguess` 的合法性改由 `iterativemult` 运行时检查）。
+- `Orthogonalize` 的 `trunc` 默认值由 `NoTruncation()` 改为 **`Defaults.alg_trunc_sys()`**。
+- 调用形式迁移（全仓库同步）：
+
+  | 旧写法（已失效） | 新写法 |
+  |---|---|
+  | `SVDCompression(trunc)` | `SVDCompression(trunc=trunc)` |
+  | `DMRG1(trunc)` / `DMRG1(trunc, maxiter=30)` | `DMRG1(trunc=trunc)` / `DMRG1(trunc=trunc, maxiter=30)` |
+  | `DMRG2(trunc)` | `DMRG2(trunc=trunc)` |
+  | `Orthogonalize(SVD(), trunc)` | `Orthogonalize(orth=SVD(), trunc=trunc)` |
+
+  `DMRG1(trunc=truncerr(ϵ))` 等不带键维的方案仍为 `MethodError`（`trunc::TruncationWithD` 类型约束不变）。
+
+### 影响泛函算法类型 @kwdef 化与字段改名
+
+- `XTRGIF`、`ExactTTIIF`、`TDVPIF`、`PartialIF` 全部改为 `@kwdef` 定义，删除手写的关键字构造器。
+- 字段与关键字统一改名（含 `influenceoperators` / `influenceoperatorstepper(s)` 的关键字参数及全部调用点、测试、性能脚本与文档）：
+
+  | 旧名 | 新名 |
+  |---|---|
+  | `algexpan` | `alg_expan` |
+  | `algevo` | `alg_evo` |
+  | `algmult` | `alg_mult` |
+
+- `TDVPIF` 的 `alg_expan` 由抽象类型字段改为类型参数：**`TDVPIF{T<:ExponentialExpansionAlgorithm}`**；构造器中 δ 的归一化校验移除（`_tdvpif_flow!` 内部本就以 `nsteps = round(Int, 1/δ)` 取整，数值行为不变）。
+
+### 文件清理
+
+- **删除两个 `conversion.jl`**：`src/integration/conversion.jl` 的 `changeordering` / `toadjacentordering` 移至 `src/lattices/changeordering.jl`（include 顺延到 lattice 类型定义之后）；`src/electronphonon/conversion.jl` 的 `reweighting` 系列移至 `src/electronphonon/reweighting.jl`。附带清理 `focktograssmann`、`_abba2aabb` 等注释死代码。
+- **删除 `changetrunc`**（仅剩注释引用）：改用 `DMRG1(trunc=..., ...)` 等关键字构造。
+
+### 迁移指南
+
+- `DefaultITruncation` → `Defaults.alg_trunc_if()`；`DefaultKTruncation` → `Defaults.alg_trunc_sys()`；`DefaultExpansionAlg` → `Defaults.alg_expan()`；`DefaultMultAlg` → `Defaults.alg_mult()`。
+- 压缩/正交化算法一律关键字构造（见上表）；`similar(alg; trunc=...)` → 直接重新构造。
+- `XTRGIF(algmult=..., algexpan=...)` → `XTRGIF(alg_mult=..., alg_expan=...)`；`alg.algmult` → `alg.alg_mult`，其余字段同理。
+
 ## 第八批更新（2026-09-24 ~ 2026-10-07）：FockMPS/FockMPO 封装 FiniteMPSAlgorithms 与 changebond!/mult!/truncate! 接口统一
 
 ### FockMPS / FockMPO 封装 FiniteMPSAlgorithms 后端

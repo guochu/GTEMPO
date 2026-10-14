@@ -16,8 +16,8 @@
 		# naive construction
 		mpsI2 = hybriddynamics_naive(lat, corr, trunc=trunc)
 		# XTRGIF, ExactTTIIF, TDVPIF
-		mpsI3 = hybriddynamics(lat, corr, XTRGIF(k=2, algmult=SVDCompression(trunc), verbosity=0))
-		mpsI4 = hybriddynamics(lat, corr, ExactTTIIF(algmult=SVDCompression(trunc), verbosity=0))
+		mpsI3 = hybriddynamics(lat, corr, XTRGIF(k=2, alg_mult=SVDCompression(trunc=trunc), verbosity=0))
+		mpsI4 = hybriddynamics(lat, corr, ExactTTIIF(alg_mult=SVDCompression(trunc=trunc), verbosity=0))
 		mpsI5 = hybriddynamics(lat, corr, TDVPIF(trunc=trunc, δ=0.1, verbosity=0))
 		for mps in (mpsI1, mpsI2, mpsI3, mpsI4, mpsI5)
 			@test norm(mps) > 0
@@ -32,7 +32,7 @@
 	# passed in, e.g. the impurity dynamics obtained from sysdynamics
 	lat = GrassmannLattice(N=N, δτ=β/N, contour=:imag)
 	corr = correlationfunction(bath, lat)
-	alg = ExactTTIIF(algmult=SVDCompression(trunc), verbosity=0)
+	alg = ExactTTIIF(alg_mult=SVDCompression(trunc=trunc), verbosity=0)
 	mpsI4 = hybriddynamics(lat, corr, alg)
 	@test relerr(hybriddynamics!(vacuumstate(lat), lat, corr, alg), mpsI4) < 1.0e-12
 	model = ToulouseIM(ϵ_d=0.5)
@@ -53,8 +53,8 @@
 
 	# ExactTTIIF builds its terms on a single-band lattice internally and
 	# expands them to the full lattice via fillband
-	mpsI3 = hybriddynamics(lat, corr, ExactTTIIF(algmult=SVDCompression(trunc), verbosity=0))
-	mpsI3_ref = fillband(lat, hybriddynamics(lat1, corr, ExactTTIIF(algmult=SVDCompression(trunc), verbosity=0)), band=1)
+	mpsI3 = hybriddynamics(lat, corr, ExactTTIIF(alg_mult=SVDCompression(trunc=trunc), verbosity=0))
+	mpsI3_ref = fillband(lat, hybriddynamics(lat1, corr, ExactTTIIF(alg_mult=SVDCompression(trunc=trunc), verbosity=0)), band=1)
 	@test relerr(mpsI3, mpsI3_ref) < 1.0e-12
 end
 
@@ -72,8 +72,8 @@ end
 		@test length(mpsI) == length(lat)
 		mpsI1 = hybriddynamics(lat, corr, PartialIF(trunc=trunc))
 		mpsI2 = hybriddynamics_naive(lat, corr, trunc=trunc)
-		mpsI3 = hybriddynamics(lat, corr, XTRGIF(k=2, algmult=SVDCompression(trunc), verbosity=0))
-		mpsI4 = hybriddynamics(lat, corr, ExactTTIIF(algmult=SVDCompression(trunc), verbosity=0))
+		mpsI3 = hybriddynamics(lat, corr, XTRGIF(k=2, alg_mult=SVDCompression(trunc=trunc), verbosity=0))
+		mpsI4 = hybriddynamics(lat, corr, ExactTTIIF(alg_mult=SVDCompression(trunc=trunc), verbosity=0))
 		mpsI5 = hybriddynamics(lat, corr, TDVPIF(trunc=trunc, δ=0.1, verbosity=0))
 		for mps in (mpsI1, mpsI2, mpsI3, mpsI4, mpsI5)
 			@test norm(mps) > 0
@@ -85,7 +85,7 @@ end
 	# from sysdynamics, on the real-time (Keldysh) contour
 	lat = GrassmannLattice(N=N, δt=δt, contour=:real)
 	corr = correlationfunction(bath, lat)
-	alg = ExactTTIIF(algmult=SVDCompression(trunc), verbosity=0)
+	alg = ExactTTIIF(alg_mult=SVDCompression(trunc=trunc), verbosity=0)
 	mpsI4 = hybriddynamics(lat, corr, alg)
 	@test relerr(hybriddynamics!(vacuumstate(lat), lat, corr, alg), mpsI4) < 1.0e-12
 	model = ToulouseIM(ϵ_d=0.5)
@@ -134,7 +134,7 @@ end
 	@test length(ops1) == 1 && ops1[1] isa MPO
 	ops2 = influenceoperatorsteppers(lat, corr, 0.05, ComplexStepper(WII(tol=1.0e-14, maxiter=100000)))
 	@test length(ops2) == 2 && all(op -> op isa MPO, ops2)
-	mps = influenceoperatorstepper(lat, corr, 0.05, WII(tol=1.0e-14, maxiter=100000), SVDCompression(trunc))
+	mps = influenceoperatorstepper(lat, corr, 0.05, WII(tol=1.0e-14, maxiter=100000), SVDCompression(trunc=trunc))
 	@test mps isa GrassmannMPS && length(mps) == length(lat)
 	@test relerr(mps, ops1[1] * vacuumstate(lat)) < 1.0e-8
 

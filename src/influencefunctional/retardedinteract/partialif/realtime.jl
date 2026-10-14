@@ -1,4 +1,4 @@
-function retardedinteractdynamics_naive!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, corr::RealCorrelationFunction; trunc::TruncationScheme=DefaultITruncation)
+function retardedinteractdynamics_naive!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, corr::RealCorrelationFunction; trunc::TruncationScheme=Defaults.alg_trunc_if())
 	(lattice.bands in (1, 2)) || throw(ArgumentError("number of bands should be either 1 or 2"))
 	if lattice.bands == 1
 		return retardedinteractdynamics_naive_1band!(gmps, lattice, corr, trunc=trunc)
@@ -14,9 +14,9 @@ end
 
 
 function _retardedinteractdynamics_naive_1band!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, corr::RealCorrelationFunction, band::Int; 
-											trunc::TruncationScheme=DefaultITruncation)	
+											trunc::TruncationScheme=Defaults.alg_trunc_if())	
 	# (LayoutStyle(lattice) isa BandLocalLayout) || throw(ArgumentError("currently only TimelocalLayout support for this function"))
-	alg = Orthogonalize(TK.SVD(), trunc)
+	alg = Orthogonalize(orth=TK.SVD(), trunc=trunc)
 	for i in 1:lattice.kt-1, b1 in (:+, :-)
 		tmp = vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 		pos1a, pos1b, c1 = get_pair_pos(lattice, i, band, b1)
@@ -37,11 +37,11 @@ function _retardedinteractdynamics_naive_1band!(gmps::GrassmannMPS, lattice::Rea
 end
 
 function retardedinteractdynamics_naive_2band!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, corr::RealCorrelationFunction; 
-											trunc::TruncationScheme=DefaultITruncation)
+											trunc::TruncationScheme=Defaults.alg_trunc_if())
 	@assert lattice.bands == 2
 	_retardedinteractdynamics_naive_1band!(gmps, lattice, corr, 2, trunc=trunc)
 
-	alg = Orthogonalize(TK.SVD(), trunc)
+	alg = Orthogonalize(orth=TK.SVD(), trunc=trunc)
 	for i in 1:lattice.kt-1, b1 in branches(lattice)
 		tmp = vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 		pos1a, pos1b, c1 = get_pair_pos(lattice, i, 1, b1)
@@ -67,11 +67,11 @@ function retardedinteractdynamics_naive_2band!(gmps::GrassmannMPS, lattice::Real
 end
 
 # function retardedinteractdynamics_naive_2band!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, corr::RealCorrelationFunction; 
-# 											trunc::TruncationScheme=DefaultITruncation)
+# 											trunc::TruncationScheme=Defaults.alg_trunc_if())
 # 	@assert lattice.bands == 2
 # 	_retardedinteractdynamics_naive_1band!(gmps, lattice, corr, 2, trunc=trunc)
 
-# 	alg = Orthogonalize(TK.SVD(), trunc)
+# 	alg = Orthogonalize(orth=TK.SVD(), trunc=trunc)
 # 	for i in 1:lattice.kt-1, b1 in (:+, :-)
 # 		tmp = vacuumstate(lattice)
 # 		pos1a, pos1b, c1 = get_pair_pos(lattice, i, 1, b1)

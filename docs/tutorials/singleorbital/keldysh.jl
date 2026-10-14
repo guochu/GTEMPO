@@ -34,10 +34,10 @@ function main(t; β=Inf, δt=0.1, chi=60, U=1, ϵ_d=-U/2)
 	# @time mpsI = hybriddynamics(lattice1, corr, trunc=trunc, band=1)
 
 	# exponential expansion of the hybridization (Prony-type fit) ...
-	algexpan = OverDeterminedProny(n=20, tol=1.0e-5, verbosity=4)
+	alg_expan = OverDeterminedProny(n=20, tol=1.0e-5, verbosity=4)
 	# ... feeding the translationally-invariant IF algorithm ExactTTIIF,
 	# whose MPO products are compressed with SVD
-	alg = ExactTTIIF(algmult=SVDCompression(trunc),algexpan=algexpan)
+	alg = ExactTTIIF(alg_mult=SVDCompression(trunc=trunc),alg_expan=alg_expan)
 
 	# build the influence functional (IF) on the single-band lattice
 	@time mpsI = hybriddynamics(lattice1, corr, alg, band=1)

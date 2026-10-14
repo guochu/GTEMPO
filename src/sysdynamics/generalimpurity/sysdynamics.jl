@@ -40,7 +40,7 @@ function _propagator_sparsegmps(lattice::AbstractGrassmannLattice, fm::FockMatri
 end
 
 function _sysdynamics_util(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model;
-								idx::Int=1, branch::Symbol=:+, trunc::TruncationScheme=DefaultKTruncation,
+								idx::Int=1, branch::Symbol=:+, trunc::TruncationScheme=Defaults.alg_trunc_sys(),
 								cache::Union{Nothing, Dict}=nothing)
 	dt = branch == :τ ? lattice.δτ : lattice.δt
 	# left endpoint of the physical time interval of this step (only used by
@@ -53,7 +53,7 @@ function _sysdynamics_util(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice
 end
 
 function sysdynamics_forward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model;
-									trunc::TruncationScheme=DefaultKTruncation)
+									trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	cache = Dict{Tuple, Any}()
 	for i in 1:lattice.Nt
 		gmps = _sysdynamics_util(gmps, lattice, model; idx=i, branch=:+, trunc=trunc, cache=cache)
@@ -61,7 +61,7 @@ function sysdynamics_forward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLatt
 	return gmps
 end
 function sysdynamics_backward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model;
-									trunc::TruncationScheme=DefaultKTruncation)
+									trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	cache = Dict{Tuple, Any}()
 	for i in 1:lattice.Nt
 		gmps = _sysdynamics_util(gmps, lattice, model; idx=i, branch=:-, trunc=trunc, cache=cache)
@@ -69,7 +69,7 @@ function sysdynamics_backward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLat
 	return gmps
 end
 function sysdynamics_imaginary!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model;
-									trunc::TruncationScheme=DefaultKTruncation)
+									trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	cache = Dict{Tuple, Any}()
 	for i in 1:lattice.Nτ
 		gmps = _sysdynamics_util(gmps, lattice, model; idx=i, branch=:τ, trunc=trunc, cache=cache)
@@ -86,13 +86,13 @@ into a SparseGMPS (`_tosparsegmps`) which is multiplied into the
 accumulating state with the sparse `mult!`.
 """
 function sysdynamics(lattice::ImagGrassmannLattice, model::AbstractImpurityHamiltonian;
-							trunc::TruncationScheme=DefaultKTruncation)
+							trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	gmps = vacuumstate(lattice)
 	return sysdynamics_imaginary!(gmps, lattice, model; trunc=trunc)
 end
 
 function sysdynamics(lattice::RealGrassmannLattice, model::AbstractImpurityHamiltonian;
-							branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
+							branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	gmps = vacuumstate(lattice)
 	if isnothing(branch)
 		gmps = sysdynamics_forward!(gmps, lattice, model; trunc=trunc)
@@ -105,7 +105,7 @@ function sysdynamics(lattice::RealGrassmannLattice, model::AbstractImpurityHamil
 end
 
 function sysdynamics(lattice::MixedGrassmannLattice, model::AbstractImpurityHamiltonian;
-							branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
+							branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	gmps = vacuumstate(lattice)
 	if isnothing(branch)
 		gmps = sysdynamics_forward!(gmps, lattice, model; trunc=trunc)
@@ -143,7 +143,7 @@ function _bare_window_sparsegmps(lattice::AbstractGrassmannLattice, fm::FockMatr
 	for band in 1:length(bwin)
 		apply!(exp(GTerm(bwin[band], kwin[band], coeff=-1)), state)
 	end
-	canonicalize!(state, alg=Orthogonalize(SVD(), trunc=NoTruncation(), normalize=false))
+	canonicalize!(state, alg=Orthogonalize(orth=SVD(), trunc=NoTruncation(), normalize=false))
 
 	# fold the scaling into the site tensors (SparseGMPS carries no scaling
 	# field): the window GrassmannMPS of length Lw satisfies
@@ -185,7 +185,7 @@ function _bare_propagator_sparsegmps(lattice::AbstractGrassmannLattice, fm::Fock
 end
 
 function _baresysdynamics_util(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model;
-									idx::Int=1, branch::Symbol=:+, trunc::TruncationScheme=DefaultKTruncation,
+									idx::Int=1, branch::Symbol=:+, trunc::TruncationScheme=Defaults.alg_trunc_sys(),
 									cache::Union{Nothing, Dict}=nothing)
 	dt = branch == :τ ? lattice.δτ : lattice.δt
 	# left endpoint of the physical time interval of this step (only used by
@@ -204,7 +204,7 @@ In-place: multiply the bare propagators (without the coherent-state
 bra-ket overlaps) of all time steps of the forward branch into `gmps`.
 """
 function baresysdynamics_forward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model;
-										trunc::TruncationScheme=DefaultKTruncation)
+										trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	cache = Dict{Tuple, Any}()
 	for i in 1:lattice.Nt
 		gmps = _baresysdynamics_util(gmps, lattice, model; idx=i, branch=:+, trunc=trunc, cache=cache)
@@ -218,7 +218,7 @@ In-place: multiply the bare propagators of all time steps of the
 backward branch into `gmps`.
 """
 function baresysdynamics_backward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model;
-										trunc::TruncationScheme=DefaultKTruncation)
+										trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	cache = Dict{Tuple, Any}()
 	for i in 1:lattice.Nt
 		gmps = _baresysdynamics_util(gmps, lattice, model; idx=i, branch=:-, trunc=trunc, cache=cache)
@@ -232,7 +232,7 @@ In-place: multiply the bare propagators of all imaginary-time steps
 into `gmps`.
 """
 function baresysdynamics_imaginary!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model;
-										trunc::TruncationScheme=DefaultKTruncation)
+										trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	cache = Dict{Tuple, Any}()
 	for i in 1:lattice.Nτ
 		gmps = _baresysdynamics_util(gmps, lattice, model; idx=i, branch=:τ, trunc=trunc, cache=cache)
@@ -249,13 +249,13 @@ Applying `bulkconnection` to its output gives `sysdynamics`, exactly
 as `bulkconnection` on `baresysdynamics` gives `sysdynamics`.
 """
 function baresysdynamics(lattice::ImagGrassmannLattice, model::AbstractImpurityHamiltonian;
-								trunc::TruncationScheme=DefaultKTruncation)
+								trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	gmps = vacuumstate(lattice)
 	return baresysdynamics_imaginary!(gmps, lattice, model; trunc=trunc)
 end
 
 function baresysdynamics(lattice::RealGrassmannLattice, model::AbstractImpurityHamiltonian;
-								branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
+								branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	gmps = vacuumstate(lattice)
 	if isnothing(branch)
 		gmps = baresysdynamics_forward!(gmps, lattice, model; trunc=trunc)
@@ -268,7 +268,7 @@ function baresysdynamics(lattice::RealGrassmannLattice, model::AbstractImpurityH
 end
 
 function baresysdynamics(lattice::MixedGrassmannLattice, model::AbstractImpurityHamiltonian;
-								branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
+								branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	gmps = vacuumstate(lattice)
 	if isnothing(branch)
 		gmps = baresysdynamics_forward!(gmps, lattice, model; trunc=trunc)
@@ -358,7 +358,7 @@ function _try_tile(lattice::AbstractGrassmannLattice, windows::Vector{<:SparseGM
 end
 
 function _fast_driver(lattice::AbstractGrassmannLattice{O}, model, branches;
-							bare::Bool=false, trunc::TruncationScheme=DefaultKTruncation) where {O}
+							bare::Bool=false, trunc::TruncationScheme=Defaults.alg_trunc_sys()) where {O}
 	branches = Tuple(b for b in branches if (b == :τ ? lattice.Nτ : lattice.Nt) > 0)
 	isempty(branches) && return vacuumstate(lattice)
 
@@ -412,12 +412,12 @@ A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄1A1B1 for mixed contours) and transformed to
 the requested ordering with `changeordering`.
 """
 function sysdynamics_fast(lattice::ImagGrassmannLattice, model::ConstImpurityHamiltonian;
-								trunc::TruncationScheme=DefaultKTruncation)
+								trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	return _fast_driver(lattice, model, (:τ,); trunc=trunc)
 end
 
 function sysdynamics_fast(lattice::RealGrassmannLattice, model::ConstImpurityHamiltonian;
-								branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
+								branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	if isnothing(branch)
 		branches = (:+, :-)
 	else
@@ -428,7 +428,7 @@ function sysdynamics_fast(lattice::RealGrassmannLattice, model::ConstImpurityHam
 end
 
 function sysdynamics_fast(lattice::MixedGrassmannLattice, model::ConstImpurityHamiltonian;
-								branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
+								branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	if isnothing(branch)
 		branches = (:+, :-, :τ)
 	elseif branch in (:+, :-, :τ)
@@ -447,12 +447,12 @@ bare propagator windows (see `sysdynamics_fast`). Applying
 `bulkconnection` to its output gives `sysdynamics_fast`.
 """
 function baresysdynamics_fast(lattice::ImagGrassmannLattice, model::ConstImpurityHamiltonian;
-									trunc::TruncationScheme=DefaultKTruncation)
+									trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	return _fast_driver(lattice, model, (:τ,); bare=true, trunc=trunc)
 end
 
 function baresysdynamics_fast(lattice::RealGrassmannLattice, model::ConstImpurityHamiltonian;
-									branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
+									branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	if isnothing(branch)
 		branches = (:+, :-)
 	else
@@ -463,7 +463,7 @@ function baresysdynamics_fast(lattice::RealGrassmannLattice, model::ConstImpurit
 end
 
 function baresysdynamics_fast(lattice::MixedGrassmannLattice, model::ConstImpurityHamiltonian;
-									branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=DefaultKTruncation)
+									branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	if isnothing(branch)
 		branches = (:+, :-, :τ)
 	elseif branch in (:+, :-, :τ)

@@ -42,7 +42,7 @@ observables take a single GMPS:
 ```julia
 mpsK = sysdynamics(lat, model, trunc=trunc)
 mpsK = boundarycondition!(mpsK, lat)
-hybriddynamics!(mpsK, lat, corr, ExactTTIIF(algmult=SVDCompression(trunc), verbosity=0))
+hybriddynamics!(mpsK, lat, corr, ExactTTIIF(alg_mult=SVDCompression(trunc=trunc), verbosity=0))
 Z  = integrate(lat, mpsK)
 gtau = [gf(lat, (ContourIndex(i, conj=false, branch=:τ, band=1),
                  ContourIndex(1, conj=true,  branch=:τ, band=1)), mpsK, Z=Z)
@@ -292,13 +292,13 @@ while integrating out a band), shrinking the lattice until a single band
 remains:
 
 ```julia
-algmult = DMRG1(trunc=trunc2)                # DMRG-style compression
+alg_mult = DMRG1(trunc=trunc2)                # DMRG-style compression
 mps_adt = mpsK
 lattice_tmp = lat
 for band in 1:lat.bands-1
     mps_adt = boundarycondition!(mps_adt, lattice_tmp, band=1)
     mpsI1 = fillband(lattice_tmp, mpsI, band=1)
-    mps_adt = multintegrateband(lattice_tmp, mps_adt, mpsI1, algmult, band=1)
+    mps_adt = multintegrateband(lattice_tmp, mps_adt, mpsI1, alg_mult, band=1)
     lattice_tmp = similar(lattice_tmp, bands=lattice_tmp.bands-1)
 end
 mps_adt = boundarycondition!(mps_adt, lattice1, band=1)
@@ -320,7 +320,7 @@ is the recommended way to handle multi-orbital problems.
 | `ExactTTIIF` | moderate | highest accuracy in the TI sector |
 | `TDVPIF(δ=0.1)` | moderate | alternative second-order flow |
 
-All accept `algexpan` (ExpExp algorithm) and `algmult` (MPO compression);
+All accept `alg_expan` (ExpExp algorithm) and `alg_mult` (MPO compression);
 `verbosity > 0` prints expansion diagnostics.
 
 ## 6. Convergence rules of thumb

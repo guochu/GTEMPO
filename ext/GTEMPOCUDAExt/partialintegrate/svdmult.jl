@@ -1,5 +1,5 @@
 
-function cu_parint_mult(xs::GrassmannMPS...; cidx::Vector{Int}, trunc::TruncationScheme=DefaultITruncation, verbosity::Int=0)
+function cu_parint_mult(xs::GrassmannMPS...; cidx::Vector{Int}, trunc::TruncationScheme=Defaults.alg_trunc_if(), verbosity::Int=0)
     Lxs = length(xs[1])
     (unique(length.(xs)) == [Lxs,]) || throw(DimensionMismatch())
     check_contract_idx(Lxs, cidx)

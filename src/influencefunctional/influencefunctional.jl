@@ -10,36 +10,28 @@ abstract type InfluenceFunctionalAlgorithm end
 Build the IF as the product of partial MPOs, each with D=2
 see [SciPost Phys. Core 7, 063 (2024)]
 """
-struct PartialIF <: InfluenceFunctionalAlgorithm 
-	trunc::TruncateDimCutoff
-	verbosity::Int
+@kwdef struct PartialIF <: InfluenceFunctionalAlgorithm
+	trunc::TruncateDimCutoff = Defaults.alg_trunc_if()
+	verbosity::Int = 0
 end
-PartialIF(; trunc::TruncateDimCutoff=DefaultITruncation, verbosity::Int=0) = PartialIF(trunc, verbosity)
 """
 	struct XTRGIF
 
 Build the IF as a translational variant MPO
 see [SciPost Phys. Core 7, 063 (2024)]
 """
-struct XTRGIF{T<:ExponentialExpansionAlgorithm, E<:TimeEvoMPOAlgorithm, M<:DMRGAlgorithm} <: InfluenceFunctionalAlgorithm 
-	algexpan::T
-	algevo::E
-	algmult::M
-	# trunc::TruncateDimCutoff
-	k::Int
-	fast::Bool
-	verbosity::Int
+@kwdef struct XTRGIF{T<:ExponentialExpansionAlgorithm, E<:TimeEvoMPOAlgorithm, M<:DMRGAlgorithm} <: InfluenceFunctionalAlgorithm
+	alg_expan::T = Defaults.alg_expan()
+	alg_evo::E = Defaults.alg_evo()
+	alg_mult::M = Defaults.alg_mult()
+	k::Int = 5
+	fast::Bool = true
+	verbosity::Int = 0
 end
-XTRGIF(; algexpan::ExponentialExpansionAlgorithm=DefaultExpansionAlg, 
-						 algevo::TimeEvoMPOAlgorithm=WII(), 
-						 algmult::DMRGAlgorithm=DefaultMultAlg,
-						 k::Int=5, 
-						 fast::Bool=true,
-						 verbosity::Int=0) = XTRGIF(algexpan, algevo, algmult, k, fast, verbosity)
 
 function Base.getproperty(x::XTRGIF, s::Symbol)
 	if s == :trunc
-		return x.algmult.trunc
+		return x.alg_mult.trunc
 	else
 		getfield(x, s)
 	end
@@ -53,16 +45,12 @@ Build the IF as a translationally invariant MPO by exactly exponentiating the
 Trotter decomposition of the quadratic IF kernel. `multorder` controls the
 ordering of the exponential decay terms (`:αSM` by default).
 """
-struct ExactTTIIF{T<:ExponentialExpansionAlgorithm, M<:DMRGAlgorithm} <: InfluenceFunctionalAlgorithm
-	algexpan::T
-	algmult::M
-	multorder::Symbol
-	verbosity::Int
+@kwdef struct ExactTTIIF{T<:ExponentialExpansionAlgorithm, M<:DMRGAlgorithm} <: InfluenceFunctionalAlgorithm
+	alg_expan::T = Defaults.alg_expan()
+	alg_mult::M = Defaults.alg_mult()
+	multorder::Symbol = :αSM
+	verbosity::Int = 0
 end
-ExactTTIIF(; algexpan::ExponentialExpansionAlgorithm=DefaultExpansionAlg, 
-					 algmult::DMRGAlgorithm=DefaultMultAlg,
-					 multorder::Symbol = :αSM,
-					 verbosity::Int=0) = ExactTTIIF(algexpan, algmult, multorder, verbosity)
 # allowed order:
 # :λLM, λ large first
 # :λSM, λ small first
@@ -86,7 +74,7 @@ is zero-padded to bond dimension `trunc.D` before the flow, so the bond
 dimension grows with the correlations up to `trunc.D`.
 
 # Fields
-- `algexpan::ExponentialExpansionAlgorithm`: exponential (Prony) expansion algorithm for the bath correlation function.
+- `alg_expan::ExponentialExpansionAlgorithm`: exponential (Prony) expansion algorithm for the bath correlation function.
 - `trunc::TruncateDimCutoff`: bond dimension of the flow manifold / final influence functional.
 - `δ::Float64`: imaginary-time step of the flow (0 < δ ≤ 1, adjusted so that 1/δ is an integer).
 - `verbosity::Int`: verbosity level of the output.
@@ -95,31 +83,12 @@ On real-time lattices the influence operator driving the flow is the sum of
 the 4 branch MPOs returned by `influenceoperators` ((+,+), (+,−), (−,+),
 (−,−)), since the site-wise product algebra satisfies e^a∘e^b = e^{a+b}.
 """
-struct TDVPIF <: InfluenceFunctionalAlgorithm
-	algexpan::ExponentialExpansionAlgorithm
-	trunc::TruncateDimCutoff      # bond dimension of the flow manifold / final IF
-	δ::Float64                      # imaginary-time step of the flow (0 < δ ≤ 1, adjusted so that 1/δ is an integer)
-	verbosity::Int
+@kwdef struct TDVPIF{T<:ExponentialExpansionAlgorithm} <: InfluenceFunctionalAlgorithm
+	alg_expan::T = Defaults.alg_expan()
+	trunc::TruncateDimCutoff = Defaults.alg_trunc_if()   # bond dimension of the flow manifold / final IF
+	δ::Float64 = 0.1                                # imaginary-time step of the flow (0 < δ ≤ 1; 1/δ is rounded to an integer number of steps)
+	verbosity::Int = 0
 end
-"""
-	TDVPIF(; algexpan, trunc, δ, verbosity)
-
-Keyword constructor for `TDVPIF`; all parameters have default values and usually need not be passed explicitly.
-"""
-function TDVPIF(; algexpan::ExponentialExpansionAlgorithm=DefaultExpansionAlg,
-				trunc::TruncateDimCutoff=DefaultITruncation,
-				δ::Real=0.1,
-				verbosity::Int=0)
-	(0 < δ <= 1) || throw(ArgumentError("δ must be a real number in (0, 1], got $δ"))
-	# adjust δ so that 1/δ is an integer number of steps
-	n = max(round(Int, 1 / δ), 1)
-	return TDVPIF(algexpan, trunc, 1 / n, verbosity)
-end
-
-# temporary solution
-changetrunc(x::DMRG1; trunc=x.trunc) = similar(x, trunc=trunc)
-changetrunc(x::DMRG2; trunc=x.trunc) = similar(x, trunc=trunc)
-changetrunc(x::SVDCompression; trunc=x.trunc) = similar(x, D=trunc.D, tol=trunc.ϵ)
 
 
 include("hybridization/hybridization.jl")

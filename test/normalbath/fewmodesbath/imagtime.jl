@@ -112,7 +112,7 @@ end
 	model = ToulouseIM(ϵ_d=μ)
 	lat = GrassmannLattice(N=N, δτ=δτ, contour=:imag)
 	corr = correlationfunction(bath, lat)
-	alg = ExactTTIIF(algmult=SVDCompression(trunc), verbosity=0)
+	alg = ExactTTIIF(alg_mult=SVDCompression(trunc=trunc), verbosity=0)
 
 	mpsK = sysdynamics(lat, model, trunc=trunc)
 	mpsK = boundarycondition!(mpsK, lat)

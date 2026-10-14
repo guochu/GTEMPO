@@ -1,7 +1,7 @@
 """
-    hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; band=1, trunc=DefaultITruncation)
+    hybriddynamics(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; band=1, trunc=Defaults.alg_trunc_if())
     hybriddynamics(lattice::AbstractGrassmannLattice, corr, alg::InfluenceFunctionalAlgorithm; band=1)
-    hybriddynamics!(gmps, lattice, corr; band=1, trunc=DefaultITruncation)
+    hybriddynamics!(gmps, lattice, corr; band=1, trunc=Defaults.alg_trunc_if())
 
 Build the Grassmann MPS representation `I` of the hybridization influence
 functional from the discretized bath correlation function `corr` on `lattice`.
@@ -13,7 +13,7 @@ functional from the discretized bath correlation function `corr` on `lattice`.
   as the third positional argument selects that construction algorithm; see the
   docstrings of the individual algorithm types for the available options.
 """
-function hybriddynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
+function hybriddynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
 	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
 	@assert size(η⁺⁺) == size(η⁺⁻) == size(η⁻⁺) == size(η⁻⁻)
@@ -28,7 +28,7 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order
 	return gmps
 end
 
-function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction; band::Int=1, trunc::TruncationScheme=DefaultITruncation)
+function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
 	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
 	@assert size(η⁺⁺) == size(η⁺⁻) == size(η⁻⁺) == size(η⁻⁻)
@@ -65,9 +65,9 @@ function partialif_hybrid(lattice::RealGrassmannLattice, i::Int, cols_f::Abstrac
 	return mpo * vacuumstate(promote_type(scalartype(lattice), eltype(cols)), lattice)
 end
 function partialif_hybrid_naive(lattice::RealGrassmannLattice, i::Int, cols_f::AbstractVector, cols_b::AbstractVector; 
-							b1::Symbol, band::Int=1, trunc::TruncationScheme=DefaultITruncation)
+							b1::Symbol, band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
 	@assert length(cols_f) == length(cols_b)
-	alg = Orthogonalize(TK.SVD(), trunc)
+	alg = Orthogonalize(orth=TK.SVD(), trunc=trunc)
 	gmps = vacuumstate(promote_type(scalartype(lattice), eltype(cols_f), eltype(cols_b)), lattice)
 	for j in length(cols_f):-1:1
 		pos1, pos2 = index(lattice, i, conj=true, branch=b1, band=band), index(lattice, j, conj=false, branch=:+, band=band)

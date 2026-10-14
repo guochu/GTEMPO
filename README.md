@@ -58,7 +58,7 @@ lattice = GrassmannLattice(N = 10, δt = 0.05, contour = :real, bands = 2)
 
 # bath correlation function and influence functional
 corr = correlationfunction(bath, lattice)
-I    = hybriddynamics(lattice, corr, ExactTTIIF(algmult = SVDCompression(truncdimcutoff(D = 100, ϵ = 1e-9))))
+I    = hybriddynamics(lattice, corr, ExactTTIIF(alg_mult = SVDCompression(trunc=truncdimcutoff(D = 100, ϵ = 1e-9))))
 
 # impurity dynamics and boundary condition
 K = sysdynamics(lattice, model, trunc = truncdimcutoff(D = 100, ϵ = 1e-9))

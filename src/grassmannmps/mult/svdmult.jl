@@ -5,7 +5,7 @@
 Multiplication of two GMPS x and y; the result is stored in x. Returns `x` and the
 maximal truncation error of the finalizing SVD sweep.
 """
-function mult!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=DefaultITruncation, verbosity::Int=0)
+function mult!(x::GrassmannMPS, y::GrassmannMPS; trunc::TruncationScheme=Defaults.alg_trunc_if(), verbosity::Int=0)
     (length(x) == length(y)) || throw(DimensionMismatch())
     left = isomorphism(scalartype(x), fuse(space_l(x), space_l(y)), space_l(x) ⊗ space_l(y) )
     tmp5 = g_fuse(_mult_site(x[1], y[1]), 3)

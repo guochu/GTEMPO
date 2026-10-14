@@ -158,7 +158,7 @@ scheme; the bonds outside the window are inherited from `x`. The Schmidt
 values (svectors) are refreshed inside the window only, so they may
 become stale elsewhere (the next `canonicalize!` recomputes them).
 """
-function mult!(x::GrassmannMPS, y::SparseGMPS; trunc::TruncationScheme=DefaultITruncation, verbosity::Int=0)
+function mult!(x::GrassmannMPS, y::SparseGMPS; trunc::TruncationScheme=Defaults.alg_trunc_if(), verbosity::Int=0)
 	L = length(x)
 	(isempty(y.data) || all(p -> 1 <= p <= L, y.positions)) || throw(BoundsError())
 	# the unit element: x * 1 = x

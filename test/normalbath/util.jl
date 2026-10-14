@@ -102,8 +102,8 @@ end
 # the four influence-functional construction algorithms (imaginary/real time)
 if_algs(trunc) = [
 	("PartialIF",  PartialIF(trunc=trunc)),
-	("XTRGIF",     XTRGIF(k=3, algmult=SVDCompression(trunc), verbosity=0)),
-	("ExactTTIIF", ExactTTIIF(algmult=SVDCompression(trunc), verbosity=0)),
+	("XTRGIF",     XTRGIF(k=3, alg_mult=SVDCompression(trunc=trunc), verbosity=0)),
+	("ExactTTIIF", ExactTTIIF(alg_mult=SVDCompression(trunc=trunc), verbosity=0)),
 	("TDVPIF",     TDVPIF(trunc=trunc, δ=0.1, verbosity=0)),
 ]
 

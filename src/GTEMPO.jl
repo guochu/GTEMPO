@@ -133,9 +133,9 @@ using LinearAlgebra: LinearAlgebra, eigen, Diagonal
 include("auxiliary/linalg.jl")
 include("auxiliary/mpstensors.jl")
 include("algorithms.jl")
-include("defaults.jl") # default constants (DefaultMultAlg requires DMRG1 from algorithms.jl)
 
 include("mpo/mpo.jl")
+include("defaults.jl") # after mpo (needs WII); Defaults.* in kw defaults are evaluated lazily
 
 
 # # TEMPO algorithm

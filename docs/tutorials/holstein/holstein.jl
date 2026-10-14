@@ -82,7 +82,7 @@ function run_gtempo(δt; tmax=1.0, with_phonon=true)
 	fbath = fermionicbath(spec_f, β=β)
 	lattice1 = similar(lattice, bands=1)
 	fcorr = correlationfunction(fbath, lattice1)
-	alg = ExactTTIIF(algmult=SVDCompression(trunc))
+	alg = ExactTTIIF(alg_mult=SVDCompression(trunc=trunc))
 	mpsI_e = hybriddynamics(lattice1, fcorr, alg)
 	Is = [fillband(lattice, mpsI_e, band=b) for b in 1:bands]
 

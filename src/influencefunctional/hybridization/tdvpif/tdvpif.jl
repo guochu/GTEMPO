@@ -39,11 +39,11 @@
 function _tdvpif_hamiltonian(lattice::ImagGrassmannLattice1Order{O}, corr::ImagCorrelationFunction, alg::TDVPIF; band::Int=1) where O
 	T = scalartype(corr)
 	if LayoutStyle(lattice) isa TimeLocalLayout
-		H = only(influenceoperators(lattice, corr, band=band, algexpan=alg.algexpan))
+		H = only(influenceoperators(lattice, corr, band=band, alg_expan=alg.alg_expan))
 		return H * vacuumstate(T, lattice)
 	else
 		lattice2 = similar(lattice, ordering=A1Ā1B1B̄1())
-		H = only(influenceoperators(lattice2, corr, band=band, algexpan=alg.algexpan)) * vacuumstate(T, lattice2)
+		H = only(influenceoperators(lattice2, corr, band=band, alg_expan=alg.alg_expan)) * vacuumstate(T, lattice2)
 		_, H2 = changeordering(O, lattice2, H, trunc=alg.trunc)
 		return H2
 	end
@@ -59,7 +59,7 @@ end
 # NOTE: the direct-sum bond dimensions of the four branches add up, so the
 # branches are summed one by one, compressing with SVD canonicalization after
 # each addition to keep the bond dimension bounded. The compression uses the
-# tight `DefaultITruncation` (not `alg.trunc`): the compression error of H
+# tight `Defaults.alg_trunc_if()` (not `alg.trunc`): the compression error of H
 # is exponentially amplified by the flow (IF = e^H), so a loose tolerance
 # would degrade the accuracy of the influence functional.
 function _tdvpif_hamiltonian(lattice::RealGrassmannLattice{O}, corr::RealCorrelationFunction, alg::TDVPIF; band::Int=1) where O
@@ -75,8 +75,8 @@ function _tdvpif_hamiltonian(lattice::RealGrassmannLattice{O}, corr::RealCorrela
 end
 
 function _tdvpif_hamiltonian_timelocal(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction, alg::TDVPIF, T; band::Int=1)
-	h1, h2, h3, h4 = influenceoperators(lattice, corr, band=band, algexpan=alg.algexpan)
-	orth = Orthogonalize(SVD(), DefaultKTruncation; normalize=false)
+	h1, h2, h3, h4 = influenceoperators(lattice, corr, band=band, alg_expan=alg.alg_expan)
+	orth = Orthogonalize(orth=SVD(), trunc=Defaults.alg_trunc_sys(); normalize=false)
 	H = h1 * vacuumstate(T, lattice)
 	H = H + h2 * vacuumstate(T, lattice)
 	canonicalize!(H, alg=orth)

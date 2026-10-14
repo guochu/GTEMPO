@@ -246,7 +246,7 @@ function changebond!(x::GrassmannMPS, D::Int; noise::Real=0)
 	# 缩键的切片语义假设链处于规范规范（键的 leading 分量即主导 Schmidt 方向）；
 	# 存在需要缩键的键时，先做一次无截断正交化以保证切片是合法的截断
 	any(bonddims(x)[i] > caps[i+1] for i in 1:L-1) &&
-		canonicalize!(x, alg=Orthogonalize(SVD(), NoTruncation(); normalize=false))
+		canonicalize!(x, alg=Orthogonalize(orth=SVD(), trunc=NoTruncation(); normalize=false))
 	Dh = div(D, 2)
 	ms = [begin
 		dh = min(Dh, div(caps[site+1], 2))
@@ -260,7 +260,7 @@ function changebond!(x::GrassmannMPS, D::Int; noise::Real=0)
 		@tensor tmp[1,3;5] := ms[site-1][1,2] * x[site][2,3,4] * conj(ms[site][5,4])
 		x[site] = tmp
 	end
-	rightorth!(x, alg=Orthogonalize(SVD(), NoTruncation(); normalize=false))
+	rightorth!(x, alg=Orthogonalize(orth=SVD(), trunc=NoTruncation(); normalize=false))
 	return x
 end
 
@@ -282,7 +282,7 @@ end
 # 	return x
 # end
 
-function swap!(x::AbstractGMPS, bond::Int; trunc::TruncationScheme=DefaultITruncation)
+function swap!(x::AbstractGMPS, bond::Int; trunc::TruncationScheme=Defaults.alg_trunc_if())
 	x[bond], x.s[bond+1], x[bond+1] = _swap_gate(x.s[bond], x[bond], x.s[bond+1], x[bond+1], trunc=trunc)
         # x[bond], x[bond+1] = _swap_gate(x[bond], x[bond+1], trunc=trunc)
         return x

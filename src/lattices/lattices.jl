@@ -20,6 +20,8 @@ include("imaginarytime.jl")
 include("realtime.jl")
 include("mixedtime.jl")
 
+include("changeordering.jl")
+
 
 """
 	GrassmannLattice(; contour::Symbol, kwargs...)

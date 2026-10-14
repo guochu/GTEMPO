@@ -22,5 +22,5 @@ include("correlationfunction.jl")
 # influencefunctional
 include("influencefunctional/influencefunctional.jl")
 
-# convert FockMPS into GrassmannMPS
-include("conversion.jl")
+# reweighting the bare impurity dynamics with the phonon IF
+include("reweighting.jl")

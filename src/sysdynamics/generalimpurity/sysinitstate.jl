@@ -17,7 +17,7 @@ variables on the backward branch at time slice 1, and multiplied into
 `gmps` with the sparse `mult!` using the truncation scheme `trunc`.
 """
 function sysinitialstate!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, fockstate::FockMatrix;
-						trunc::TruncationScheme=DefaultKTruncation)
+						trunc::TruncationScheme=Defaults.alg_trunc_sys())
     (fockstate.bands == lattice.bands) || throw(DimensionMismatch("FockMatrix bands $(fockstate.bands) do not match lattice bands $(lattice.bands)"))
     M = lattice.bands
     bpos = [index(lattice, 1, conj=true, branch=:+, band=i) for i in 1:M]
@@ -43,7 +43,7 @@ In-place: multiply the normalized impurity thermal equilibrium state
 `fock_thermalstate`) into the GrassmannMPS `gmps`.
 """
 function systhermalstate!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::AbstractImpurityHamiltonian;
-							β::Real, trunc::TruncationScheme=DefaultKTruncation)
+							β::Real, trunc::TruncationScheme=Defaults.alg_trunc_sys())
     return sysinitialstate!(gmps, lattice, fock_thermalstate(model, β); trunc=trunc)
 end
 

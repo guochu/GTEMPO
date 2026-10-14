@@ -15,7 +15,7 @@
 	# TDVPIF (real time, continuous bath) is the most expensive construction;
 	# the full algorithm set is covered by the single-mode bath tests
 	for (name, alg) in [("PartialIF", PartialIF(trunc=trunc)),
-					    ("ExactTTIIF", ExactTTIIF(algmult=SVDCompression(trunc), verbosity=0))]
+					    ("ExactTTIIF", ExactTTIIF(alg_mult=SVDCompression(trunc=trunc), verbosity=0))]
 		mpsI = hybriddynamics(lat, corr, alg)
 		mpsK = sysdynamics(lat, model, trunc=trunc)
 		mpsK = boundarycondition!(mpsK, lat)

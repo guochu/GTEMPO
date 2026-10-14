@@ -201,7 +201,7 @@ end
 
 
 
-function _cu_parint_svd_guess(xs::GrassmannMPS...; cidx::Vector{Int}, trunc::TruncationScheme=DefaultITruncation, verbosity::Int=0)
+function _cu_parint_svd_guess(xs::GrassmannMPS...; cidx::Vector{Int}, trunc::TruncationScheme=Defaults.alg_trunc_if(), verbosity::Int=0)
     Lxs = length(xs[1])
     (unique(length.(xs)) == [Lxs,]) || throw(DimensionMismatch("unique($(length.(xs))) != [$Lxs,]"))
     check_contract_idx(Lxs, cidx)

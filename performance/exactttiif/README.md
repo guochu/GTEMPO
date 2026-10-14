@@ -3,7 +3,7 @@
 `ExactTTIIF` builds the translationally invariant influence functional by exactly
 exponentiating every Prony decay term `(α, λ)` of the hybridization function into
 a small term-MPO and multiplying all term-MPOs together with SVD compression
-(`algmult`). Each intermediate product is truncated to bond dimension `D`, so the
+(`alg_mult`). Each intermediate product is truncated to bond dimension `D`, so the
 sequence of the multiplications determines **how the truncation error
 accumulates**. `multorder` selects that sequence:
 
