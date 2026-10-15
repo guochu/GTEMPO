@@ -44,6 +44,12 @@
 - **删除两个 `conversion.jl`**：`src/integration/conversion.jl` 的 `changeordering` / `toadjacentordering` 移至 `src/lattices/changeordering.jl`（include 顺延到 lattice 类型定义之后）；`src/electronphonon/conversion.jl` 的 `reweighting` 系列移至 `src/electronphonon/reweighting.jl`。附带清理 `focktograssmann`、`_abba2aabb` 等注释死代码。
 - **删除 `changetrunc`**（仅剩注释引用）：改用 `DMRG1(trunc=..., ...)` 等关键字构造。
 
+### 追加：DMRG2 扫掠复用单站点融合因子
+
+- DMRG2 的两站点扫掠不再使用独立的 `g_ac_prime2` 两站点收缩（其内部构造左右融合因子后，环境更新又经 `updatemultleft`/`updatemultright` 重复构造同样的因子），改为复用单站点融合原语 `get_left_xy`/`get_xy_right`：两点张量按 `twositemps[1,2;3,4] := left_xy[1,2,5,6] * xy_right[6,5,3,4]` 组装，每步的左右因子构造一次、两站点张量与环境更新双用——与 DMRG1 扫掠及 InfiniteGTEMPO 无限 DMRG2 引擎（`_mk_mult_local_AC2`/`_mk_mult_idmrg2_sweep!`）的复用模式完全一致。两站点的补偿差异由收缩网络自然吸收。
+- 删除死代码 `g_ac_prime2`；`updatemultleft`/`updatemultright` 保留（TDVPIF 的 hstorage 更新与 InfiniteGTEMPO 的转移映射不动点仍在使用）。
+- 验证：与原 `g_ac_prime2` 实现在固定随机种子下逐位一致（z 位点张量、Schmidt 值、scaling、sweep 损失历史全部 `isequal`）。
+
 ### 迁移指南
 
 - `DefaultITruncation` → `Defaults.alg_trunc_if()`；`DefaultKTruncation` → `Defaults.alg_trunc_sys()`；`DefaultExpansionAlg` → `Defaults.alg_expan()`；`DefaultMultAlg` → `Defaults.alg_mult()`。

@@ -183,12 +183,19 @@ function leftsweep!(m::GMPSIterativeMultCache, alg::DMRG2)
     trunc = alg.trunc
     for site in 1:L-1
         (alg.verbosity >= 4) && println("Sweeping from left to right at bond: $site")
-        twositemps = g_ac_prime2(x[site], x[site+1], y[site], y[site+1], hstorage[site], hstorage[site+2])
+        # two-site window (site, site+1) assembled from the single-site fused
+        # factors (same reuse pattern as the DMRG1 sweep and the infinite-DMRG2
+        # engine of InfiniteGTEMPO)
+        left_xy = get_left_xy(hstorage[site], x[site], y[site])
+        xy_right = get_xy_right(hstorage[site+2], x[site+1], y[site+1])
+        @tensor twositemps[1,2;3,4] := left_xy[1,2,5,6] * xy_right[6,5,3,4]
         push!(kvals, norm(twositemps))
         (alg.verbosity >= 3) && println("residual is $(kvals[end])...")
         u, s, v, _ = tsvd(twositemps; alg=SDD(), trunc=trunc)
         z[site] = u
-        hstorage[site+1] = updatemultleft(hstorage[site], z[site], x[site], y[site])
+        # hstorage[site+1] = updatemultleft(hstorage[site], z[site], x[site], y[site])
+        @tensor tmp[5,3;4] := left_xy[1,2,3,4] * conj(z[site][1,2,5])
+        hstorage[site+1] = tmp
     end
     return kvals    
 end
@@ -201,7 +208,9 @@ function rightsweep!(m::GMPSIterativeMultCache, alg::DMRG2)
     trunc = alg.trunc
     for site in L-1:-1:1
         (alg.verbosity >= 4) && println("Sweeping from right to left at bond: $site")
-        twositemps = g_ac_prime2(x[site], x[site+1], y[site], y[site+1], hstorage[site], hstorage[site+2])
+        left_xy = get_left_xy(hstorage[site], x[site], y[site])
+        xy_right = get_xy_right(hstorage[site+2], x[site+1], y[site+1])
+        @tensor twositemps[1,2;3,4] := left_xy[1,2,5,6] * xy_right[6,5,3,4]
         push!(kvals, norm(twositemps))
         (alg.verbosity >= 3) && println("residual is $(kvals[end])...")
         u, s, v, _ = tsvd(twositemps; alg=SDD(), trunc=trunc)
@@ -210,7 +219,9 @@ function rightsweep!(m::GMPSIterativeMultCache, alg::DMRG2)
             z[1] = u * s
         end
         z.s[site+1] = normalize!(s)
-        hstorage[site+1] = updatemultright(hstorage[site+2], z[site+1], x[site+1], y[site+1])
+        # hstorage[site+1] = updatemultright(hstorage[site+2], z[site+1], x[site+1], y[site+1])
+        @tensor tmp[4,5;1] := conj(z[site+1][1,2,3]) * xy_right[4,5,2,3]
+        hstorage[site+1] = tmp
     end
     # println("norm of r is $(norm(r))")
     return kvals    
@@ -255,26 +266,8 @@ function g_c_prime(left::MPSTensor, right::MPSTensor)
     @tensor tmp[1; 4] := left[1,2,3] * right[3,2,4]
 end
 
-function g_ac_prime2(xj1::MPSTensor, xj2::MPSTensor, yj1::MPSTensor, yj2::MPSTensor, left::MPSTensor, right::MPSTensor)
-    @tensor tmp1[1,5,4;2] := left[1,2,3] * yj1[3,4,5]
-    compensate_twists!(tmp1, (2, 4), (3, 4), (2, 3))
-    @tensor tmp2[1,3,5;6,2] := tmp1[1,2,3,4] * xj1[4,5,6]
-    compensate_twists!(tmp2, (2, 5), (3, 5), (4, 5))
-
-    tmp3 = g_fuse(tmp2, 2)
-
-
-    @tensor tmp4[4; 1 2 5] := yj2[1,2,3] * right[3,4,5]
-    compensate_twists!(tmp4, (1, 2), (1, 3))
-    @tensor tmp5[4 1 2 5; 6] := xj2[1,2,3] * tmp4[3,4,5,6]
-    compensate_twists!(tmp5, (1, 2), (1, 3))
-    tmp4 = g_fuse(tmp5, 3)
-
-
-    @tensor tmp2[1,2;5,6] := tmp3[1,2,3,4] * tmp4[4,3,5,6]
-    return tmp2
-end
-
+# single-site environment updates; also used by TDVPIF (hstorage updates) and
+# InfiniteGTEMPO (transfer-map fixed points)
 function updatemultleft(left::MPSTensor, zj::MPSTensor, xj::MPSTensor, yj::MPSTensor)
     @tensor tmp1[1,5,4;2] := left[1,2,3] * yj[3,4,5]
     compensate_twists!(tmp1, (2, 4), (3, 4), (2, 3))
@@ -282,15 +275,6 @@ function updatemultleft(left::MPSTensor, zj::MPSTensor, xj::MPSTensor, yj::MPSTe
     compensate_twists!(tmp2, (2, 5), (3, 5), (4, 5))
     tmp3 = g_fuse(tmp2, 2)
     @tensor tmp2[5,3;4] := tmp3[1,2,3,4] * conj(zj[1,2,5])
-    # for (f1, f2) in fusiontrees(tmp2)
-    #     coef1 = (isodd(f1.uncoupled[2].n) && isodd(f1.uncoupled[1].n)) ? -1 : 1
-    #     coef2 = (isodd(f2.uncoupled[1].n) && isodd(f1.uncoupled[1].n)) ? -1 : 1
-        
-    #     coef = coef1 * coef2 
-    #     if coef != 1
-    #         lmul!(coef, tmp2[f1, f2])
-    #     end
-    # end
     return tmp2
 end
 
