@@ -11,6 +11,7 @@ export @grassmann
 export AbstractGTerm, GTerm, ExpGTerm, z2space
 export AbstractGMPS, AbstractFiniteGMPS, GrassmannMPS, SparseGMPS, togmps, scaling, setscaling!, randomgmps, changebond!
 export iscanonical, isleftcanonical, isrightcanonical
+export entanglement_entropy, entanglement_spectrum, schmidt_values
 export mult!, mult, DMRG1, DMRG2
 export leftorth!, rightorth!
 export GrassmannTransferMatrix
@@ -114,6 +115,7 @@ const TK = Z2Tensors
 import FiniteMPSAlgorithms
 const FMA = FiniteMPSAlgorithms
 using FiniteMPSAlgorithms: CanonicalMPS, tie, ⊙
+import FiniteMPSAlgorithms: entanglement_entropy, entanglement_spectrum, schmidt_values
 using TensorOperations: TensorOperations, IndexTuple, Index2Tuple, linearize, AbstractBackend # for Grassmann Tensors
 const TO = TensorOperations
 # @reexport using DMRG, ImpurityModelBase, QuAPI
@@ -152,6 +154,7 @@ include("grassmannmps/grassmannterms.jl")
 include("grassmannmps/abstractgmps.jl")
 include("grassmannmps/grassmannmps.jl")
 include("grassmannmps/orth.jl")
+include("grassmannmps/entropy.jl")
 include("grassmannmps/linalg.jl")
 include("grassmannmps/transfer.jl")
 include("grassmannmps/mult/mult.jl")

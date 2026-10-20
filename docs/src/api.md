@@ -138,6 +138,14 @@ cached_lesser_fast
 operator as a bond-dimension-2 MPO (`build_current_mpo`) instead of summing
 the two-point correlators term by term.
 
+## Entanglement entropy of a GMPS
+
+```@docs
+entanglement_entropy
+entanglement_spectrum
+schmidt_values
+```
+
 ## Integration of GMPS products
 
 ```@docs

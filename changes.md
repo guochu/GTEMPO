@@ -2,6 +2,12 @@
 
 本轮重构涉及的接口更改汇总。所有更改均已通过全量测试验证（行为不变或数值等价）。
 
+## 新增：GrassmannMPS 的纠缠熵（2026-10-20）
+
+- 新增 `entanglement_entropy(psi::GrassmannMPS; bond, α=1)`、`entanglement_spectrum`、`schmidt_values`，签名与语义对齐 `FiniteMPSAlgorithms` 的同名函数（Rényi 参数 `α`、自然对数、未初始化 Schmidt 值时就地 `canonicalize!`）。
+- 实现对 Z2 分块 `DiagonalTensorMap` 按 `fusiontrees` 逐扇区提取对角谱；熵内核复用 `FMA.renyi_entropy`。
+- 对由 `hybriddynamics` 构造的影响泛函，该值即相应时间割上的 OSEE；与 QuAPI 侧基于 hybridization function 的高斯态 OSEE 在虚时/实时/混合/BCS 四条路径上一致到 1e-13~1e-10（验证脚本见 `osee/`）。
+
 ## 第九批更新（2026-10-07）：算法类型 @kwdef 化与 Defaults 接口函数化
 
 ### Defaults 接口函数化
