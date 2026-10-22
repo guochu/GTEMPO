@@ -33,10 +33,10 @@ abstract type AbstractLatticeIndex end
     ContourIndex(j::Int; conj::Bool, branch::Symbol=:τ, band::Int=1)
 
 Reference to a Grassmann variable on a lattice: the `j`-th discretized time
-step (0-based, with `j = 0` the traced boundary), on contour `branch`
-(`:+`/`:-` for real-time, `:τ` for imaginary time), in `band` `band`.
-`conj = false` denotes an annihilation-like GV `a`, `conj = true` a
-creation-like GV `a†`. Contour indices support contour ordering via `isless`.
+step (`1 ≤ j ≤ k`) on contour `branch` (`:+`/`:-` for real-time, `:τ` for
+imaginary time), in band `band`. `conj = false` denotes an annihilation-like
+GV `a`, `conj = true` a creation-like GV `a†`. Contour indices support
+contour ordering via `isless`.
 """
 struct ContourIndex <: AbstractLatticeIndex
 	j::Int

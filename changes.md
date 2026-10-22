@@ -2,6 +2,51 @@
 
 本轮重构涉及的接口更改汇总。所有更改均已通过全量测试验证（行为不变或数值等价）。
 
+## 移除 Grassmann lattice 的辅助 index-0 位点（2026-10-22）
+
+### 动机
+
+`index(lattice, 0)` 不是 contour 离散化产生的真实时间片，而是为了标记配分函数最后的 trace/闭合而额外引入的一对辅助 GV（`a₀, ā₀`）。它在整张 lattice 上只出现在 `boundarycondition!` 中；对这对 GV 做 Berezin 积分后可精确化为两个真实端点 GV 之间的双线性项。因此该辅助位点被整体移除，contour 闭合改为由 `boundarycondition!` 直接连接物理端点。
+
+### 接口变更
+
+- **时间步编号**：所有 lattice 的 `index(lattice, j; ...)` 中 `j` 范围由 `0:k` 改为 **`1:k`**（mixed 的实轴分支为 `1:kt`、虚轴分支为 `1:kτ`）。`index(lattice, 0; ...)` 现在抛 `BoundsError`；`ContourIndex(0, ...)` 的 contour 排序仍按原样抛 `ArgumentError`。
+- **`boundarycondition!` / `boundarycondition`**：不再作用于辅助位点，直接连接物理端点（数学上与原实现严格等价）：
+  - 虚时：`exp(-ā₁ a_k)`（原为 `exp(-ā₀ a_k) · exp(ā₁ a₀)`）
+  - 实轴：`exp(-ā_k⁻ a_k⁺)`（Keldysh 折返点；原为 `exp(-ā₀ a_k⁺) · exp(ā_k⁻ a₀)`）
+  - 混合：折返点 `exp(ā_{kt}⁻ a_{kt}⁺)`、`τ=0 ↔ t=0` 的 `exp(ā_{1,τ} a_1⁻)` 不变；闭合项改为 `exp(-ā_1⁺ a_{kτ,τ})`
+  - 每个 band 的 `apply! + canonicalize!` 次数减少（虚时/实时 2→1，混合 2→1，但混合仍有 3 个连接项）
+- **删除 `boundarycondition_branching`**：虚时版本的分支唯一来源就是辅助对，移除后只剩单支且仓库内无调用点；标量/向量两个方法与文档条目一并删除。
+- **`band_boundary(lattice, j)`**：不再接受 `j = 0`；实轴版本中 `j == 0` 的专用分支删除。
+- **`length(lattice)` 变化**（每 band）：
+
+  | lattice | 旧 | 新 |
+  |---|---|---|
+  | `ImagGrassmannLattice` | `2b(k+1)` | `2b·k` |
+  | `RealGrassmannLattice` | `4b·k + 2b` | `4b·k` |
+  | `MixedGrassmannLattice` | `4b·kt + 2b + 2b(Nτ+1)` | `4b·kt + 2b·kτ` |
+
+  所有 `index` 返回的位点相应整体前移 `2b`（实轴/mixed 的少数 `length(x)` 基准表达式随新长度自动适配）。
+- **打印**：site 符号链不再出现 `a₀/ā₀…`；mixed 的虚/实分界由 `2b(kτ+1)` 改为 `2b·kτ`。
+- **`timesteps(gmps, ::RealGrassmannLattice)`**：不再扣除辅助块（`L = length(gmps)`）。
+
+### 内部同步调整
+
+- `ttiif` 的 `_fit_to_lattice`（虚时、实轴）删除给辅助块填恒等张量的循环，时间块从位置 1 开始。
+- `partialintegrate` 的收缩索引由 `0:lattice.k` 改为 `1:lattice.k`。
+- `indexmappings`、`swapbandperm`、`fillband`、`changeordering` 等基于 `indexmappings` 的逻辑自动适配。
+
+### 迁移指南
+
+- 删除用户代码中任何 `index(lattice, 0, ...)` / `ContourIndex(0, ...)` 的使用；trace/闭合已由 `boundarycondition!` 内部处理。
+- 若代码硬编码了 `length(lattice)` 或位点编号，按上表减去 `2b`（每 band 的辅助对）。
+- 不再使用 `boundarycondition_branching`；需要“分支求和”的场景直接用 `boundarycondition!`。
+
+### 验证
+
+- 基线（`cd125bb`）全量测试通过；仅替换 `boundarycondition!` 后全量测试通过；移除 index 0 后全量测试再次通过（无 Fail/Error）。
+- Toulouse 杂质 + 单浴模的端到端对比：虚时 `Z = 1.664543186559…`、实轴 `Z = 1.008242880733…`、混合 `Z = 1.640682444049… − 1.629e-4i`，与基线差 ~1e-14；`gτ / gt / lt` 逐点一致（差异来自有限键维下 canonicalize 次序变化）。
+
 ## 新增：GrassmannMPS 的纠缠熵（2026-10-20）
 
 - 新增 `entanglement_entropy(psi::GrassmannMPS; bond, α=1)`、`entanglement_spectrum`、`schmidt_values`，签名与语义对齐 `FiniteMPSAlgorithms` 的同名函数（Rényi 参数 `α`、自然对数、未初始化 Schmidt 值时就地 `canonicalize!`）。

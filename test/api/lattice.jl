@@ -7,7 +7,7 @@
 	@test lat.β ≈ 0.6
 	@test collect(lat.τs) ≈ collect(0:0.1:0.6)
 	@test lat.bands == 1
-	@test length(lat) == 2 * lat.bands * (lat.k + 1)
+	@test length(lat) == 2 * lat.bands * lat.k
 	@test scalartype(lat) == Float64
 	@test branches(lat) == (:τ,)
 
@@ -24,7 +24,7 @@
 	@test lat.ts == 0:0.1:0.5
 	@test scalartype(lat) == ComplexF64
 	@test branches(lat) == (:+, :-)
-	@test length(lat) == 4 * lat.bands * lat.k + 2 * lat.bands
+	@test length(lat) == 4 * lat.bands * lat.k
 
 	lat = GrassmannLattice(N=5, δt=0.1, contour=:Keldysh)
 	@test lat isa RealGrassmannLattice1Order
@@ -36,7 +36,7 @@
 	@test lat.kt == 5 && lat.kτ == 6
 	@test lat.t ≈ 0.4 && lat.β ≈ 0.25
 	@test branches(lat) == (:+, :-, :τ)
-	@test length(lat) == 4*lat.bands*lat.kt + 2*lat.bands + 2*lat.bands*(lat.Nτ+1)
+	@test length(lat) == 4*lat.bands*lat.kt + 2*lat.bands*lat.kτ
 
 	lat = GrassmannLattice(Nt=4, δt=0.1, Nτ=5, δτ=0.05, contour=:Kadanoff)
 	@test lat.kt == 5 && lat.kτ == 6
@@ -59,12 +59,12 @@
 	# index consistency: indexmappings must be a bijection over all variables
 	lat = GrassmannLattice(N=3, δτ=0.1, bands=2, contour=:imag)
 	m = indexmappings(lat)
-	@test length(m) == (lat.k + 1) * 2 * lat.bands
+	@test length(m) == lat.k * 2 * lat.bands
 	@test length(unique(values(m))) == length(m)
 
 	lat = GrassmannLattice(N=3, δt=0.1, contour=:real, bands=2)
 	m = indexmappings(lat)
-	@test length(m) == 2 * lat.bands + 4 * lat.bands * lat.k  # i=0 has no branch
+	@test length(m) == 4 * lat.bands * lat.k
 	@test length(unique(values(m))) == length(m)
 
 	# ContourIndex: construction and contour ordering semantics
@@ -127,124 +127,109 @@ const all_mixed_orderings = [A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2
 	end
 end
 
-# helper: compare an expected site-position map against index().
-# real-time lattices reject branch :τ; their i=0 positions do not depend on the
-# branch, so for :τ entries the kwarg is omitted there.
+# helper: compare an expected site-position map against index()
 check_indexmap(lat, expected::Dict) = all(
-	let p = pos
-		(br == :τ && lat isa RealGrassmannLattice) ? index(lat, i, conj=c, band=b) == p :
-		index(lat, i, conj=c, branch=br, band=b) == p
-	end
+	index(lat, i, conj=c, branch=br, band=b) == pos
 	for ((i, c, br, b), pos) in expected)
 
 @testset "API: lattice index maps, imaginary time (all orderings)" begin
 	# a\bar{a}b\bar{b} a_3\bar{a}_3b_3\bar{b}_3 a_2\bar{a}_2b_2\bar{b}_2 a_1\bar{a}_1b_1\bar{b}_1
 	lat = GrassmannLattice(N=2, δτ=0.05, bands=2, contour=:imag, ordering=A1Ā1B1B̄1())
-	@test length(lat) == 16 && lat.k == 3 && lat.β == 0.1 && lat.T == 10
+	@test length(lat) == 12 && lat.k == 3 && lat.β == 0.1 && lat.T == 10
 	@test lat.τs == 0:0.05:0.1 && lat.bands == 2 && lat.δτ == 0.05
 	@test check_indexmap(lat, Dict(
-		(0, false, :τ, 1) => 1,  (0, true, :τ, 1) => 2,  (0, false, :τ, 2) => 3,  (0, true, :τ, 2) => 4,
-		(3, false, :τ, 1) => 5,  (3, true, :τ, 1) => 6,  (3, false, :τ, 2) => 7,  (3, true, :τ, 2) => 8,
-		(2, false, :τ, 1) => 9,  (2, true, :τ, 1) => 10, (2, false, :τ, 2) => 11, (2, true, :τ, 2) => 12,
-		(1, false, :τ, 1) => 13, (1, true, :τ, 1) => 14, (1, false, :τ, 2) => 15, (1, true, :τ, 2) => 16))
+		(3, false, :τ, 1) => 1,  (3, true, :τ, 1) => 2,  (3, false, :τ, 2) => 3,  (3, true, :τ, 2) => 4,
+		(2, false, :τ, 1) => 5,  (2, true, :τ, 1) => 6,  (2, false, :τ, 2) => 7,  (2, true, :τ, 2) => 8,
+		(1, false, :τ, 1) => 9,  (1, true, :τ, 1) => 10, (1, false, :τ, 2) => 11, (1, true, :τ, 2) => 12))
 	@test integrate(lat, vacuumstate(lat)) ≈ 1 atol = 1.0e-6
 
 	# ab\bar{b}\bar{a} a_3b_3\bar{b}_3\bar{a}_3 a_2b_2\bar{b}_2\bar{a}_2 a_1b_1\bar{b}_1\bar{a}_1
 	lat = GrassmannLattice(N=2, δτ=0.05, bands=2, contour=:imag, ordering=A1B1B̄1Ā1())
-	@test length(lat) == 16 && lat.k == 3 && lat.β == 0.1 && lat.T == 10
+	@test length(lat) == 12 && lat.k == 3 && lat.β == 0.1 && lat.T == 10
 	@test check_indexmap(lat, Dict(
-		(0, false, :τ, 1) => 1,  (0, false, :τ, 2) => 2,  (0, true, :τ, 2) => 3,  (0, true, :τ, 1) => 4,
-		(3, false, :τ, 1) => 5,  (3, false, :τ, 2) => 6,  (3, true, :τ, 2) => 7,  (3, true, :τ, 1) => 8,
-		(2, false, :τ, 1) => 9,  (2, false, :τ, 2) => 10, (2, true, :τ, 2) => 11, (2, true, :τ, 1) => 12,
-		(1, false, :τ, 1) => 13, (1, false, :τ, 2) => 14, (1, true, :τ, 2) => 15, (1, true, :τ, 1) => 16))
+		(3, false, :τ, 1) => 1,  (3, false, :τ, 2) => 2,  (3, true, :τ, 2) => 3,  (3, true, :τ, 1) => 4,
+		(2, false, :τ, 1) => 5,  (2, false, :τ, 2) => 6,  (2, true, :τ, 2) => 7,  (2, true, :τ, 1) => 8,
+		(1, false, :τ, 1) => 9,  (1, false, :τ, 2) => 10, (1, true, :τ, 2) => 11, (1, true, :τ, 1) => 12))
 	@test integrate(lat, vacuumstate(lat)) ≈ 1 atol = 1.0e-6
 
 	# aābb̄ a₃b₃ ā₃a₂b̄₃b₂ ā₂a₁b̄₂b₁ ā₁b̄₁ (retarded-interaction ordering)
 	lat = GrassmannLattice(N=2, δτ=0.05, bands=2, contour=:imag, ordering=Ā2A1B̄2B1())
-	@test length(lat) == 16 && lat.k == 3 && lat.β == 0.1 && lat.T == 10
+	@test length(lat) == 12 && lat.k == 3 && lat.β == 0.1 && lat.T == 10
 	@test check_indexmap(lat, Dict(
-		(0, false, :τ, 1) => 1,  (0, true, :τ, 1) => 2,  (0, false, :τ, 2) => 3,  (0, true, :τ, 2) => 4,
-		(3, false, :τ, 1) => 5,  (3, false, :τ, 2) => 6,
-		(3, true, :τ, 1) => 7,   (2, false, :τ, 1) => 8, (3, true, :τ, 2) => 9,   (2, false, :τ, 2) => 10,
-		(2, true, :τ, 1) => 11,  (1, false, :τ, 1) => 12, (2, true, :τ, 2) => 13, (1, false, :τ, 2) => 14,
-		(1, true, :τ, 1) => 15,  (1, true, :τ, 2) => 16))
+		(3, false, :τ, 1) => 1,  (3, false, :τ, 2) => 2,
+		(3, true, :τ, 1) => 3,   (2, false, :τ, 1) => 4, (3, true, :τ, 2) => 5,   (2, false, :τ, 2) => 6,
+		(2, true, :τ, 1) => 7,   (1, false, :τ, 1) => 8, (2, true, :τ, 2) => 9,   (1, false, :τ, 2) => 10,
+		(1, true, :τ, 1) => 11,  (1, true, :τ, 2) => 12))
 end
 
 @testset "API: lattice index maps, real time (all orderings)" begin
 	# a\bar{a} a_3^+\bar{a}_3^+a_3^-\bar{a}_3^- a_2^+... a_1^+...
 	lat = GrassmannLattice(N=2, δt=0.05, contour=:real, ordering=A1Ā1B1B̄1a1ā1b1b̄1())
-	@test length(lat) == 14 && lat.k == 3 && lat.t == 0.1
+	@test length(lat) == 12 && lat.k == 3 && lat.t == 0.1
 	@test check_indexmap(lat, Dict(
-		(0, false, :τ, 1) => 1,  (0, true, :τ, 1) => 2,
-		(3, false, :+, 1) => 3,  (3, true, :+, 1) => 4,  (3, false, :-, 1) => 5,  (3, true, :-, 1) => 6,
-		(2, false, :+, 1) => 7,  (2, true, :+, 1) => 8,  (2, false, :-, 1) => 9,  (2, true, :-, 1) => 10,
-		(1, false, :+, 1) => 11, (1, true, :+, 1) => 12, (1, false, :-, 1) => 13, (1, true, :-, 1) => 14))
+		(3, false, :+, 1) => 1,  (3, true, :+, 1) => 2,  (3, false, :-, 1) => 3,  (3, true, :-, 1) => 4,
+		(2, false, :+, 1) => 5,  (2, true, :+, 1) => 6,  (2, false, :-, 1) => 7,  (2, true, :-, 1) => 8,
+		(1, false, :+, 1) => 9,  (1, true, :+, 1) => 10, (1, false, :-, 1) => 11, (1, true, :-, 1) => 12))
 	@test integrate(lat, vacuumstate(lat)) ≈ 1 atol = 1.0e-6
 
 	# aābb̄ a₂+ā₂+a₂-ā₂-b₂+b̄₂+b₂-b̄₂- a₁+...
 	lat = GrassmannLattice(N=1, δt=0.1, bands=2, contour=:real, ordering=A1Ā1a1ā1B1B̄1b1b̄1())
-	@test length(lat) == 20 && lat.k == 2 && lat.t == 0.1
+	@test length(lat) == 16 && lat.k == 2 && lat.t == 0.1
 	@test check_indexmap(lat, Dict(
-		(0, false, :τ, 1) => 1,  (0, true, :τ, 1) => 2,  (0, false, :τ, 2) => 3,  (0, true, :τ, 2) => 4,
-		(2, false, :+, 1) => 5,  (2, true, :+, 1) => 6,  (2, false, :-, 1) => 7,  (2, true, :-, 1) => 8,
-		(2, false, :+, 2) => 9,  (2, true, :+, 2) => 10, (2, false, :-, 2) => 11, (2, true, :-, 2) => 12,
-		(1, false, :+, 1) => 13, (1, true, :+, 1) => 14, (1, false, :-, 1) => 15, (1, true, :-, 1) => 16,
-		(1, false, :+, 2) => 17, (1, true, :+, 2) => 18, (1, false, :-, 2) => 19, (1, true, :-, 2) => 20))
+		(2, false, :+, 1) => 1,  (2, true, :+, 1) => 2,  (2, false, :-, 1) => 3,  (2, true, :-, 1) => 4,
+		(2, false, :+, 2) => 5,  (2, true, :+, 2) => 6,  (2, false, :-, 2) => 7,  (2, true, :-, 2) => 8,
+		(1, false, :+, 1) => 9,  (1, true, :+, 1) => 10, (1, false, :-, 1) => 11, (1, true, :-, 1) => 12,
+		(1, false, :+, 2) => 13, (1, true, :+, 2) => 14, (1, false, :-, 2) => 15, (1, true, :-, 2) => 16))
 	@test integrate(lat, vacuumstate(lat)) ≈ 1 atol = 1.0e-6
 
 	# ābb̄ a₁-ā₁-a₁+ā₁+b₁-b̄₁-b₁+b̄₁+ a₂-ā₂-a₂+ā₂+b₂-b̄₂-b₂+b̄₂+
 	lat = GrassmannLattice(N=1, δt=0.1, bands=2, contour=:real, ordering=a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2())
-	@test length(lat) == 20 && lat.k == 2 && lat.t == 0.1
+	@test length(lat) == 16 && lat.k == 2 && lat.t == 0.1
 	@test check_indexmap(lat, Dict(
-		(0, false, :τ, 1) => 1,  (0, true, :τ, 1) => 2,  (0, false, :τ, 2) => 3,  (0, true, :τ, 2) => 4,
-		(1, false, :-, 1) => 5,  (1, true, :-, 1) => 6,  (1, false, :+, 1) => 7,  (1, true, :+, 1) => 8,
-		(1, false, :-, 2) => 9,  (1, true, :-, 2) => 10, (1, false, :+, 2) => 11, (1, true, :+, 2) => 12,
-		(2, false, :-, 1) => 13, (2, true, :-, 1) => 14, (2, false, :+, 1) => 15, (2, true, :+, 1) => 16,
-		(2, false, :-, 2) => 17, (2, true, :-, 2) => 18, (2, false, :+, 2) => 19, (2, true, :+, 2) => 20))
+		(1, false, :-, 1) => 1,  (1, true, :-, 1) => 2,  (1, false, :+, 1) => 3,  (1, true, :+, 1) => 4,
+		(1, false, :-, 2) => 5,  (1, true, :-, 2) => 6,  (1, false, :+, 2) => 7,  (1, true, :+, 2) => 8,
+		(2, false, :-, 1) => 9,  (2, true, :-, 1) => 10, (2, false, :+, 1) => 11, (2, true, :+, 1) => 12,
+		(2, false, :-, 2) => 13, (2, true, :-, 2) => 14, (2, false, :+, 2) => 15, (2, true, :+, 2) => 16))
 	@test integrate(lat, vacuumstate(lat)) ≈ 1 atol = 1.0e-6
 
 	# aā a₃+ā₃-ā₃+a₃⁻- ... (impurity-dynamics time-local ordering)
 	lat = GrassmannLattice(N=2, δt=0.05, contour=:real, ordering=A1B1ā1b̄1Ā1B̄1a1b1())
-	@test length(lat) == 14 && lat.k == 3 && lat.t == 0.1
+	@test length(lat) == 12 && lat.k == 3 && lat.t == 0.1
 	@test check_indexmap(lat, Dict(
-		(0, false, :τ, 1) => 1,  (0, true, :τ, 1) => 2,
-		(3, false, :+, 1) => 3,  (3, true, :-, 1) => 4,  (3, true, :+, 1) => 5,  (3, false, :-, 1) => 6,
-		(2, false, :+, 1) => 7,  (2, true, :-, 1) => 8,  (2, true, :+, 1) => 9,  (2, false, :-, 1) => 10,
-		(1, false, :+, 1) => 11, (1, true, :-, 1) => 12, (1, true, :+, 1) => 13, (1, false, :-, 1) => 14))
+		(3, false, :+, 1) => 1,  (3, true, :-, 1) => 2,  (3, true, :+, 1) => 3,  (3, false, :-, 1) => 4,
+		(2, false, :+, 1) => 5,  (2, true, :-, 1) => 6,  (2, true, :+, 1) => 7,  (2, false, :-, 1) => 8,
+		(1, false, :+, 1) => 9,  (1, true, :-, 1) => 10, (1, true, :+, 1) => 11, (1, false, :-, 1) => 12))
 	@test integrate(lat, vacuumstate(lat)) ≈ 1 atol = 1.0e-6
 
 	# a₂+b₂+ā₂-b̄₂-ā₂+b̄₂+a₂-b₂- with bands
 	lat = GrassmannLattice(N=1, δt=0.1, bands=2, contour=:real, ordering=A1B1ā1b̄1Ā1B̄1a1b1())
-	@test length(lat) == 20 && lat.k == 2 && lat.t == 0.1
+	@test length(lat) == 16 && lat.k == 2 && lat.t == 0.1
 	@test check_indexmap(lat, Dict(
-		(0, false, :τ, 1) => 1,  (0, true, :τ, 1) => 2,  (0, false, :τ, 2) => 3,  (0, true, :τ, 2) => 4,
-		(2, false, :+, 1) => 5,  (2, false, :+, 2) => 6,  (2, true, :-, 1) => 7,  (2, true, :-, 2) => 8,
-		(2, true, :+, 1) => 9,   (2, true, :+, 2) => 10,  (2, false, :-, 1) => 11, (2, false, :-, 2) => 12,
-		(1, false, :+, 1) => 13, (1, false, :+, 2) => 14, (1, true, :-, 1) => 15, (1, true, :-, 2) => 16,
-		(1, true, :+, 1) => 17,  (1, true, :+, 2) => 18,  (1, false, :-, 1) => 19, (1, false, :-, 2) => 20))
+		(2, false, :+, 1) => 1,  (2, false, :+, 2) => 2,  (2, true, :-, 1) => 3,  (2, true, :-, 2) => 4,
+		(2, true, :+, 1) => 5,   (2, true, :+, 2) => 6,   (2, false, :-, 1) => 7, (2, false, :-, 2) => 8,
+		(1, false, :+, 1) => 9,  (1, false, :+, 2) => 10, (1, true, :-, 1) => 11, (1, true, :-, 2) => 12,
+		(1, true, :+, 1) => 13,  (1, true, :+, 2) => 14,  (1, false, :-, 1) => 15, (1, false, :-, 2) => 16))
 	@test integrate(lat, vacuumstate(lat)) ≈ 1 atol = 1.0e-6
 
 
 	# aābb̄ a₃+ā₃-b₃+b̄₃- ā₃+a₂+ā₂-a₃-b̄₃+b₂+b̄₂-b₃- ... (retarded interaction)
 	lat = GrassmannLattice(N=2, δt=0.05, contour=:real, ordering=Ā2A1ā1a2B̄2B1b̄1b̄2())
-	@test length(lat) == 14 && lat.k == 3 && lat.t == 0.1
+	@test length(lat) == 12 && lat.k == 3 && lat.t == 0.1
 	@test check_indexmap(lat, Dict(
-		(0, false, :τ, 1) => 1,  (0, true, :τ, 1) => 2,
-		(3, false, :+, 1) => 3,  (3, true, :-, 1) => 4,
-		(3, true, :+, 1) => 5,   (2, false, :+, 1) => 6, (2, true, :-, 1) => 7,  (3, false, :-, 1) => 8,
-		(2, true, :+, 1) => 9,   (1, false, :+, 1) => 10, (1, true, :-, 1) => 11, (2, false, :-, 1) => 12,
-		(1, true, :+, 1) => 13,  (1, false, :-, 1) => 14))
+		(3, false, :+, 1) => 1,  (3, true, :-, 1) => 2,
+		(3, true, :+, 1) => 3,   (2, false, :+, 1) => 4, (2, true, :-, 1) => 5,  (3, false, :-, 1) => 6,
+		(2, true, :+, 1) => 7,   (1, false, :+, 1) => 8, (1, true, :-, 1) => 9,  (2, false, :-, 1) => 10,
+		(1, true, :+, 1) => 11,  (1, false, :-, 1) => 12))
 	@test integrate(lat, vacuumstate(lat)) ≈ 1 atol = 1.0e-6
 
 	# retarded-interaction ordering with bands
 	lat = GrassmannLattice(N=1, δt=0.1, bands=2, contour=:real, ordering=Ā2A1ā1a2B̄2B1b̄1b̄2())
-	@test length(lat) == 20 && lat.k == 2 && lat.t == 0.1
+	@test length(lat) == 16 && lat.k == 2 && lat.t == 0.1
 	@test check_indexmap(lat, Dict(
-		(0, false, :τ, 1) => 1,  (0, true, :τ, 1) => 2,  (0, false, :τ, 2) => 3,  (0, true, :τ, 2) => 4,
-		(2, false, :+, 1) => 5,  (2, true, :-, 1) => 6,  (2, false, :+, 2) => 7,  (2, true, :-, 2) => 8,
-		(2, true, :+, 1) => 9,   (1, false, :+, 1) => 10, (1, true, :-, 1) => 11, (2, false, :-, 1) => 12,
-		(2, true, :+, 2) => 13,  (1, false, :+, 2) => 14, (1, true, :-, 2) => 15, (2, false, :-, 2) => 16,
-		(1, true, :+, 1) => 17,  (1, false, :-, 1) => 18, (1, true, :+, 2) => 19, (1, false, :-, 2) => 20))
+		(2, false, :+, 1) => 1,  (2, true, :-, 1) => 2,  (2, false, :+, 2) => 3,  (2, true, :-, 2) => 4,
+		(2, true, :+, 1) => 5,   (1, false, :+, 1) => 6,  (1, true, :-, 1) => 7,  (2, false, :-, 1) => 8,
+		(2, true, :+, 2) => 9,   (1, false, :+, 2) => 10, (1, true, :-, 2) => 11, (2, false, :-, 2) => 12,
+		(1, true, :+, 1) => 13,  (1, false, :-, 1) => 14, (1, true, :+, 2) => 15, (1, false, :-, 2) => 16))
 	@test integrate(lat, vacuumstate(lat)) ≈ 1 atol = 1.0e-6
 end
 
@@ -252,86 +237,80 @@ end
 	# imag: aābb̄ a₂ā₂b₂b̄₂ a₁ā₁b₁b̄₁ / real: a₃+ā₃+a₃-ā₃- ... ascending in time
 	lat = GrassmannLattice(Nt=2, δt=0.05, Nτ=2, δτ=0.1, contour=:mixed,
 						   ordering=A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2())
-	@test length(lat) == 20 && lat.Nt == 2 && lat.Nτ == 2
+	@test length(lat) == 18 && lat.Nt == 2 && lat.Nτ == 2
 	@test lat.t == 0.1 && lat.β == 0.2 && lat.ts == 0:0.05:0.1 && lat.τs == 0:0.1:0.2
 	@test check_indexmap(lat, Dict(
-		(0, false, :τ, 1) => 1,  (0, true, :τ, 1) => 2,
-		(3, false, :τ, 1) => 3,  (3, true, :τ, 1) => 4,  (2, false, :τ, 1) => 5,  (2, true, :τ, 1) => 6,
-		(1, false, :τ, 1) => 7,  (1, true, :τ, 1) => 8,
-		(1, false, :+, 1) => 9,  (1, true, :+, 1) => 10, (1, false, :-, 1) => 11, (1, true, :-, 1) => 12,
-		(2, false, :+, 1) => 13, (2, true, :+, 1) => 14, (2, false, :-, 1) => 15, (2, true, :-, 1) => 16,
-		(3, false, :+, 1) => 17, (3, true, :+, 1) => 18, (3, false, :-, 1) => 19, (3, true, :-, 1) => 20))
+		(3, false, :τ, 1) => 1,  (3, true, :τ, 1) => 2,  (2, false, :τ, 1) => 3,  (2, true, :τ, 1) => 4,
+		(1, false, :τ, 1) => 5,  (1, true, :τ, 1) => 6,
+		(1, false, :+, 1) => 7,  (1, true, :+, 1) => 8,  (1, false, :-, 1) => 9,  (1, true, :-, 1) => 10,
+		(2, false, :+, 1) => 11, (2, true, :+, 1) => 12, (2, false, :-, 1) => 13, (2, true, :-, 1) => 14,
+		(3, false, :+, 1) => 15, (3, true, :+, 1) => 16, (3, false, :-, 1) => 17, (3, true, :-, 1) => 18))
 	@test integrate(lat, vacuumstate(lat)) ≈ 1 atol = 1.0e-6
 
 	lat = GrassmannLattice(Nt=1, δt=0.1, Nτ=2, δτ=0.1, bands=2, contour=:mixed,
 						   ordering=A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2())
-	@test length(lat) == 32 && lat.Nt == 1 && lat.Nτ == 2
+	@test length(lat) == 28 && lat.Nt == 1 && lat.Nτ == 2
 	@test lat.t == 0.1 && lat.β == 0.2
 	@test check_indexmap(lat, Dict(
-		(0, false, :τ, 1) => 1,  (0, true, :τ, 1) => 2,  (0, false, :τ, 2) => 3,  (0, true, :τ, 2) => 4,
-		(3, false, :τ, 1) => 5,  (3, true, :τ, 1) => 6,  (3, false, :τ, 2) => 7,  (3, true, :τ, 2) => 8,
-		(2, false, :τ, 1) => 9,  (2, true, :τ, 1) => 10, (2, false, :τ, 2) => 11, (2, true, :τ, 2) => 12,
-		(1, false, :τ, 1) => 13, (1, true, :τ, 1) => 14, (1, false, :τ, 2) => 15, (1, true, :τ, 2) => 16,
-		(1, false, :+, 1) => 17, (1, true, :+, 1) => 18, (1, false, :-, 1) => 19, (1, true, :-, 1) => 20,
-		(1, false, :+, 2) => 21, (1, true, :+, 2) => 22, (1, false, :-, 2) => 23, (1, true, :-, 2) => 24,
-		(2, false, :+, 1) => 25, (2, true, :+, 1) => 26, (2, false, :-, 1) => 27, (2, true, :-, 1) => 28,
-		(2, false, :+, 2) => 29, (2, true, :+, 2) => 30, (2, false, :-, 2) => 31, (2, true, :-, 2) => 32))
+		(3, false, :τ, 1) => 1,  (3, true, :τ, 1) => 2,  (3, false, :τ, 2) => 3,  (3, true, :τ, 2) => 4,
+		(2, false, :τ, 1) => 5,  (2, true, :τ, 1) => 6,  (2, false, :τ, 2) => 7,  (2, true, :τ, 2) => 8,
+		(1, false, :τ, 1) => 9,  (1, true, :τ, 1) => 10, (1, false, :τ, 2) => 11, (1, true, :τ, 2) => 12,
+		(1, false, :+, 1) => 13, (1, true, :+, 1) => 14, (1, false, :-, 1) => 15, (1, true, :-, 1) => 16,
+		(1, false, :+, 2) => 17, (1, true, :+, 2) => 18, (1, false, :-, 2) => 19, (1, true, :-, 2) => 20,
+		(2, false, :+, 1) => 21, (2, true, :+, 1) => 22, (2, false, :-, 1) => 23, (2, true, :-, 1) => 24,
+		(2, false, :+, 2) => 25, (2, true, :+, 2) => 26, (2, false, :-, 2) => 27, (2, true, :-, 2) => 28))
 	@test integrate(lat, vacuumstate(lat)) ≈ 1 atol = 1.0e-6
 
 	# imag: aābb̄ / real: a₃-ā₃-... ascending (branches swapped)
 	lat = GrassmannLattice(Nt=2, δt=0.05, Nτ=2, δτ=0.1, contour=:mixed,
 						   ordering=A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2())
-	@test length(lat) == 20 && lat.Nt == 2 && lat.Nτ == 2
+	@test length(lat) == 18 && lat.Nt == 2 && lat.Nτ == 2
 	@test check_indexmap(lat, Dict(
-		(0, false, :τ, 1) => 1,  (0, true, :τ, 1) => 2,
-		(3, false, :τ, 1) => 3,  (3, true, :τ, 1) => 4,  (2, false, :τ, 1) => 5,  (2, true, :τ, 1) => 6,
-		(1, false, :τ, 1) => 7,  (1, true, :τ, 1) => 8,
-		(1, false, :-, 1) => 9,  (1, true, :-, 1) => 10, (1, false, :+, 1) => 11, (1, true, :+, 1) => 12,
-		(2, false, :-, 1) => 13, (2, true, :-, 1) => 14, (2, false, :+, 1) => 15, (2, true, :+, 1) => 16,
-		(3, false, :-, 1) => 17, (3, true, :-, 1) => 18, (3, false, :+, 1) => 19, (3, true, :+, 1) => 20))
+		(3, false, :τ, 1) => 1,  (3, true, :τ, 1) => 2,  (2, false, :τ, 1) => 3,  (2, true, :τ, 1) => 4,
+		(1, false, :τ, 1) => 5,  (1, true, :τ, 1) => 6,
+		(1, false, :-, 1) => 7,  (1, true, :-, 1) => 8,  (1, false, :+, 1) => 9,  (1, true, :+, 1) => 10,
+		(2, false, :-, 1) => 11, (2, true, :-, 1) => 12, (2, false, :+, 1) => 13, (2, true, :+, 1) => 14,
+		(3, false, :-, 1) => 15, (3, true, :-, 1) => 16, (3, false, :+, 1) => 17, (3, true, :+, 1) => 18))
 	@test integrate(lat, vacuumstate(lat)) ≈ 1 atol = 1.0e-6
 
 	lat = GrassmannLattice(Nt=1, δt=0.1, Nτ=2, δτ=0.1, bands=2, contour=:mixed,
 						   ordering=A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2())
-	@test length(lat) == 32 && lat.Nt == 1 && lat.Nτ == 2
+	@test length(lat) == 28 && lat.Nt == 1 && lat.Nτ == 2
 	@test check_indexmap(lat, Dict(
-		(0, false, :τ, 1) => 1,  (0, true, :τ, 1) => 2,  (0, false, :τ, 2) => 3,  (0, true, :τ, 2) => 4,
-		(3, false, :τ, 1) => 5,  (3, true, :τ, 1) => 6,  (3, false, :τ, 2) => 7,  (3, true, :τ, 2) => 8,
-		(2, false, :τ, 1) => 9,  (2, true, :τ, 1) => 10, (2, false, :τ, 2) => 11, (2, true, :τ, 2) => 12,
-		(1, false, :τ, 1) => 13, (1, true, :τ, 1) => 14, (1, false, :τ, 2) => 15, (1, true, :τ, 2) => 16,
-		(1, false, :-, 1) => 17, (1, true, :-, 1) => 18, (1, false, :+, 1) => 19, (1, true, :+, 1) => 20,
-		(1, false, :-, 2) => 21, (1, true, :-, 2) => 22, (1, false, :+, 2) => 23, (1, true, :+, 2) => 24,
-		(2, false, :-, 1) => 25, (2, true, :-, 1) => 26, (2, false, :+, 1) => 27, (2, true, :+, 1) => 28,
-		(2, false, :-, 2) => 29, (2, true, :-, 2) => 30, (2, false, :+, 2) => 31, (2, true, :+, 2) => 32))
+		(3, false, :τ, 1) => 1,  (3, true, :τ, 1) => 2,  (3, false, :τ, 2) => 3,  (3, true, :τ, 2) => 4,
+		(2, false, :τ, 1) => 5,  (2, true, :τ, 1) => 6,  (2, false, :τ, 2) => 7,  (2, true, :τ, 2) => 8,
+		(1, false, :τ, 1) => 9,  (1, true, :τ, 1) => 10, (1, false, :τ, 2) => 11, (1, true, :τ, 2) => 12,
+		(1, false, :-, 1) => 13, (1, true, :-, 1) => 14, (1, false, :+, 1) => 15, (1, true, :+, 1) => 16,
+		(1, false, :-, 2) => 17, (1, true, :-, 2) => 18, (1, false, :+, 2) => 19, (1, true, :+, 2) => 20,
+		(2, false, :-, 1) => 21, (2, true, :-, 1) => 22, (2, false, :+, 1) => 23, (2, true, :+, 1) => 24,
+		(2, false, :-, 2) => 25, (2, true, :-, 2) => 26, (2, false, :+, 2) => 27, (2, true, :+, 2) => 28))
 	@test integrate(lat, vacuumstate(lat)) ≈ 1 atol = 1.0e-6
 
 
 	# retarded-interaction mixed-time ordering
 	lat = GrassmannLattice(Nt=2, δt=0.05, Nτ=2, δτ=0.1, contour=:mixed,
 						   ordering=Ā3A2B̄3B2Ā2A1B̄2B1_ā1a2Ā2A1b̄1b2B̄2B1ā2a3Ā3A2b̄2b3B̄3B2())
-	@test length(lat) == 20 && lat.Nt == 2 && lat.Nτ == 2
+	@test length(lat) == 18 && lat.Nt == 2 && lat.Nτ == 2
 	@test check_indexmap(lat, Dict(
-		(0, false, :τ, 1) => 1,  (0, true, :τ, 1) => 2,
-		(3, false, :τ, 1) => 3,  (1, true, :τ, 1) => 4,
-		(1, false, :-, 1) => 5,  (1, true, :+, 1) => 6,
-		(3, true, :τ, 1) => 7,   (2, false, :τ, 1) => 8, (2, true, :τ, 1) => 9,  (1, false, :τ, 1) => 10,
-		(1, true, :-, 1) => 11,  (2, false, :-, 1) => 12, (2, true, :+, 1) => 13, (1, false, :+, 1) => 14,
-		(2, true, :-, 1) => 15,  (3, false, :-, 1) => 16, (3, true, :+, 1) => 17, (2, false, :+, 1) => 18,
-		(3, true, :-, 1) => 19,  (3, false, :+, 1) => 20))
+		(3, false, :τ, 1) => 1,  (1, true, :τ, 1) => 2,
+		(1, false, :-, 1) => 3,  (1, true, :+, 1) => 4,
+		(3, true, :τ, 1) => 5,   (2, false, :τ, 1) => 6, (2, true, :τ, 1) => 7,  (1, false, :τ, 1) => 8,
+		(1, true, :-, 1) => 9,   (2, false, :-, 1) => 10, (2, true, :+, 1) => 11, (1, false, :+, 1) => 12,
+		(2, true, :-, 1) => 13,  (3, false, :-, 1) => 14, (3, true, :+, 1) => 15, (2, false, :+, 1) => 16,
+		(3, true, :-, 1) => 17,  (3, false, :+, 1) => 18))
 
 	lat = GrassmannLattice(Nt=1, δt=0.1, Nτ=2, δτ=0.1, bands=2, contour=:mixed,
 						   ordering=Ā3A2B̄3B2Ā2A1B̄2B1_ā1a2Ā2A1b̄1b2B̄2B1ā2a3Ā3A2b̄2b3B̄3B2())
-	@test length(lat) == 32 && lat.Nt == 1 && lat.Nτ == 2
+	@test length(lat) == 28 && lat.Nt == 1 && lat.Nτ == 2
 	@test check_indexmap(lat, Dict(
-		(0, false, :τ, 1) => 1,  (0, true, :τ, 1) => 2,  (0, false, :τ, 2) => 3,  (0, true, :τ, 2) => 4,
-		(3, false, :τ, 1) => 5,  (3, false, :τ, 2) => 6,
-		(1, true, :τ, 1) => 7,   (1, true, :τ, 2) => 8,
-		(1, false, :-, 1) => 9,  (1, true, :+, 1) => 10, (1, false, :-, 2) => 11, (1, true, :+, 2) => 12,
-		(3, true, :τ, 1) => 13,  (2, false, :τ, 1) => 14, (3, true, :τ, 2) => 15, (2, false, :τ, 2) => 16,
-		(2, true, :τ, 1) => 17,  (1, false, :τ, 1) => 18, (2, true, :τ, 2) => 19, (1, false, :τ, 2) => 20,
-		(1, true, :-, 1) => 21,  (2, false, :-, 1) => 22, (2, true, :+, 1) => 23, (1, false, :+, 1) => 24,
-		(1, true, :-, 2) => 25,  (2, false, :-, 2) => 26, (2, true, :+, 2) => 27, (1, false, :+, 2) => 28,
-		(2, true, :-, 1) => 29,  (2, false, :+, 1) => 30, (2, true, :-, 2) => 31, (2, false, :+, 2) => 32))
+		(3, false, :τ, 1) => 1,  (3, false, :τ, 2) => 2,
+		(1, true, :τ, 1) => 3,   (1, true, :τ, 2) => 4,
+		(1, false, :-, 1) => 5,  (1, true, :+, 1) => 6,  (1, false, :-, 2) => 7,  (1, true, :+, 2) => 8,
+		(3, true, :τ, 1) => 9,   (2, false, :τ, 1) => 10, (3, true, :τ, 2) => 11, (2, false, :τ, 2) => 12,
+		(2, true, :τ, 1) => 13,  (1, false, :τ, 1) => 14, (2, true, :τ, 2) => 15, (1, false, :τ, 2) => 16,
+		(1, true, :-, 1) => 17,  (2, false, :-, 1) => 18, (2, true, :+, 1) => 19, (1, false, :+, 1) => 20,
+		(1, true, :-, 2) => 21,  (2, false, :-, 2) => 22, (2, true, :+, 2) => 23, (1, false, :+, 2) => 24,
+		(2, true, :-, 1) => 25,  (2, false, :+, 1) => 26, (2, true, :-, 2) => 27, (2, false, :+, 2) => 28))
 end
 
 # indexmappings must agree with index() and be a bijection for every ordering
@@ -339,30 +318,26 @@ end
 	for o in all_imag_orderings
 		lat = GrassmannLattice(N=2, δτ=0.1, bands=2, contour=:imag, ordering=o)
 		m = indexmappings(lat)
-		@test length(m) == length(lat) == 2 * lat.bands * (lat.k + 1)
+		@test length(m) == length(lat) == 2 * lat.bands * lat.k
 		@test length(unique(values(m))) == length(m)
 		@test all(m[(i, c, :τ, b)] == index(lat, i, conj=c, band=b)
-				  for i in 0:lat.k for c in (true, false) for b in 1:lat.bands)
+				  for i in 1:lat.k for c in (true, false) for b in 1:lat.bands)
 	end
 	for o in all_real_orderings
 		lat = GrassmannLattice(N=2, δt=0.1, bands=2, contour=:real, ordering=o)
 		m = indexmappings(lat)
-		@test length(m) == length(lat) == 4 * lat.bands * lat.k + 2 * lat.bands
+		@test length(m) == length(lat) == 4 * lat.bands * lat.k
 		@test length(unique(values(m))) == length(m)
-		@test all(m[(0, c, :+, b)] == index(lat, 0, conj=c, branch=:+, band=b)
-				  for c in (true, false) for b in 1:lat.bands)
 		@test all(m[(i, c, br, b)] == index(lat, i, conj=c, branch=br, band=b)
 				  for i in 1:lat.k for c in (true, false) for br in (:+, :-) for b in 1:lat.bands)
 	end
 	for o in all_mixed_orderings
 		lat = GrassmannLattice(Nt=2, δt=0.1, Nτ=2, δτ=0.1, bands=2, contour=:mixed, ordering=o)
 		m = indexmappings(lat)
-		@test length(m) == length(lat)
+		@test length(m) == length(lat) == 4 * lat.bands * lat.kt + 2 * lat.bands * lat.kτ
 		@test length(unique(values(m))) == length(m)
 		@test all(m[(i, c, :τ, b)] == index(lat, i, conj=c, branch=:τ, band=b)
 				  for i in 1:lat.kτ for c in (true, false) for b in 1:lat.bands)
-		@test all(m[(0, c, :+, b)] == index(lat, 0, conj=c, branch=:+, band=b)
-				  for c in (true, false) for b in 1:lat.bands)
 		@test all(m[(i, c, br, b)] == index(lat, i, conj=c, branch=br, band=b)
 				  for i in 1:lat.kt for c in (true, false) for br in (:+, :-) for b in 1:lat.bands)
 	end
@@ -549,22 +524,22 @@ end
 	chain_fixtures = [
 		# imaginary time, adjacent conjugation (descending), bands=2, N=2
 		(GrassmannLattice(contour=:imag, N=2, δτ=0.05, bands=2, ordering=A1Ā1B1B̄1()),
-		 "a\u2080a\u0304\u2080b\u2080b\u0304\u2080a\u2083a\u0304\u2083b\u2083b\u0304\u2083a\u2082a\u0304\u2082b\u2082b\u0304\u2082a\u2081a\u0304\u2081b\u2081b\u0304\u2081"),
+		 "a\u2083a\u0304\u2083b\u2083b\u0304\u2083a\u2082a\u0304\u2082b\u2082b\u0304\u2082a\u2081a\u0304\u2081b\u2081b\u0304\u2081"),
 		# imaginary time, general conjugation (conjugate pairs separated)
 		(GrassmannLattice(contour=:imag, N=2, δτ=0.05, bands=2, ordering=A1B1B̄1Ā1()),
-		 "a\u2080b\u2080b\u0304\u2080a\u0304\u2080a\u2083b\u2083b\u0304\u2083a\u0304\u2083a\u2082b\u2082b\u0304\u2082a\u0304\u2082a\u2081b\u2081b\u0304\u2081a\u0304\u2081"),
+		 "a\u2083b\u2083b\u0304\u2083a\u0304\u2083a\u2082b\u2082b\u0304\u2082a\u0304\u2082a\u2081b\u2081b\u0304\u2081a\u0304\u2081"),
 		# real time, canonical time-local ordering (descending, + before -)
 		(GrassmannLattice(contour=:real, N=2, δt=0.05, ordering=A1Ā1B1B̄1a1ā1b1b̄1()),
-		 "a\u2080a\u0304\u2080a\u2083\u207aa\u0304\u2083\u207aa\u2083\u207ba\u0304\u2083\u207ba\u2082\u207aa\u0304\u2082\u207aa\u2082\u207ba\u0304\u2082\u207ba\u2081\u207aa\u0304\u2081\u207aa\u2081\u207ba\u0304\u2081\u207b"),
+		 "a\u2083\u207aa\u0304\u2083\u207aa\u2083\u207ba\u0304\u2083\u207ba\u2082\u207aa\u0304\u2082\u207aa\u2082\u207ba\u0304\u2082\u207ba\u2081\u207aa\u0304\u2081\u207aa\u2081\u207ba\u0304\u2081\u207b"),
 		# real time, ascending time-local ordering, bands=3, N=2
 		(RealGrassmannLattice1Order(δt=0.1, N=2, bands=3, ordering=a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2()),
-		 "a\u2080a\u0304\u2080b\u2080b\u0304\u2080c\u2080c\u0304\u2080a\u2081\u207ba\u0304\u2081\u207ba\u2081\u207aa\u0304\u2081\u207ab\u2081\u207bb\u0304\u2081\u207bb\u2081\u207ab\u0304\u2081\u207ac\u2081\u207bc\u0304\u2081\u207bc\u2081\u207ac\u0304\u2081\u207aa\u2082\u207ba\u0304\u2082\u207ba\u2082\u207aa\u0304\u2082\u207ab\u2082\u207bb\u0304\u2082\u207bb\u2082\u207ab\u0304\u2082\u207ac\u2082\u207bc\u0304\u2082\u207bc\u2082\u207ac\u0304\u2082\u207aa\u2083\u207ba\u0304\u2083\u207ba\u2083\u207aa\u0304\u2083\u207ab\u2083\u207bb\u0304\u2083\u207bb\u2083\u207ab\u0304\u2083\u207ac\u2083\u207bc\u0304\u2083\u207bc\u2083\u207ac\u0304\u2083\u207a"),
+		 "a\u2081\u207ba\u0304\u2081\u207ba\u2081\u207aa\u0304\u2081\u207ab\u2081\u207bb\u0304\u2081\u207bb\u2081\u207ab\u0304\u2081\u207ac\u2081\u207bc\u0304\u2081\u207bc\u2081\u207ac\u0304\u2081\u207aa\u2082\u207ba\u0304\u2082\u207ba\u2082\u207aa\u0304\u2082\u207ab\u2082\u207bb\u0304\u2082\u207bb\u2082\u207ab\u0304\u2082\u207ac\u2082\u207bc\u0304\u2082\u207bc\u2082\u207ac\u0304\u2082\u207aa\u2083\u207ba\u0304\u2083\u207ba\u2083\u207aa\u0304\u2083\u207ab\u2083\u207bb\u0304\u2083\u207bb\u2083\u207ab\u0304\u2083\u207ac\u2083\u207bc\u0304\u2083\u207bc\u2083\u207ac\u0304\u2083\u207a"),
 		# mixed time, default ordering, bands=1, Nt=2, Nτ=2
 		(GrassmannLattice(contour=:mixed, Nt=2, δt=0.05, Nτ=2, δτ=0.1),
-		 "a\u2080a\u0304\u2080a\u2083a\u0304\u2083a\u2082a\u0304\u2082a\u2081a\u0304\u2081_a\u2081\u207aa\u0304\u2081\u207aa\u2081\u207ba\u0304\u2081\u207ba\u2082\u207aa\u0304\u2082\u207aa\u2082\u207ba\u0304\u2082\u207ba\u2083\u207aa\u0304\u2083\u207aa\u2083\u207ba\u0304\u2083\u207b"),
+		 "a\u2083a\u0304\u2083a\u2082a\u0304\u2082a\u2081a\u0304\u2081_a\u2081\u207aa\u0304\u2081\u207aa\u2081\u207ba\u0304\u2081\u207ba\u2082\u207aa\u0304\u2082\u207aa\u2082\u207ba\u0304\u2082\u207ba\u2083\u207aa\u0304\u2083\u207aa\u2083\u207ba\u0304\u2083\u207b"),
 		# mixed time, fast-propagator ordering (interleaved branches), Nt=1, Nτ=2
 		(GrassmannLattice(contour=:mixed, Nt=1, δt=0.1, Nτ=2, δτ=0.1, ordering=A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄1A1B1()),
-		 "a\u2080a\u0304\u2080a\u2083a\u0304\u2083a\u2082a\u0304\u2082a\u2081a\u0304\u2081_a\u2081\u207ba\u0304\u2081\u207aa\u0304\u2081\u207ba\u2081\u207aa\u2082\u207ba\u0304\u2082\u207aa\u0304\u2082\u207ba\u2082\u207a"),
+		 "a\u2083a\u0304\u2083a\u2082a\u0304\u2082a\u2081a\u0304\u2081_a\u2081\u207ba\u0304\u2081\u207aa\u0304\u2081\u207ba\u2081\u207aa\u2082\u207ba\u0304\u2082\u207aa\u0304\u2082\u207ba\u2082\u207a"),
 	]
 	for (lat, expected_chain) in chain_fixtures
 		chain = sprint(show, lat)
@@ -580,9 +555,9 @@ end
 	# multiline text/plain show: bare type name (no module prefix), parameters,
 	# total site count, then the symbol chain on the next line
 	plain_cases = [
-		(1, "ImagGrassmannLattice1Order (bands=2, N=2, δτ=0.05, 16 sites):\n  "),
-		(4, "RealGrassmannLattice1Order (bands=3, N=2, δt=0.1, 42 sites):\n  "),
-		(5, "MixedGrassmannLattice1Order (bands=1, Nt=2, δt=0.05, Nτ=2, δτ=0.1, 20 sites):\n  "),
+		(1, "ImagGrassmannLattice1Order (bands=2, N=2, δτ=0.05, 12 sites):\n  "),
+		(4, "RealGrassmannLattice1Order (bands=3, N=2, δt=0.1, 36 sites):\n  "),
+		(5, "MixedGrassmannLattice1Order (bands=1, Nt=2, δt=0.05, Nτ=2, δτ=0.1, 18 sites):\n  "),
 	]
 	for (idx, header) in plain_cases
 		lat, chain = chain_fixtures[idx]

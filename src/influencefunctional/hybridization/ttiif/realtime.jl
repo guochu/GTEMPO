@@ -135,16 +135,10 @@ function _fit_to_lattice(lattice::RealGrassmannLattice, mpo::MPO, _JW::MPSBondTe
 	data2 = Vector{typeof(u_middle)}(undef, L)
 	leftspace = oneunit(z2space())
 
-	posa, posb = band_boundary(lattice, 0)
-	for pos in posa:posb
-		vd2 = id(leftspace)
-		data2[pos] = @tensor tmp[1,3;2,4] := vd2[1,2] * I2[3,4]
-	end
 	# fill the time blocks in physical site order: on a time-descending
-	# lattice the boundary block i=0 is followed by the block j=k, while on
-	# a time-ascending lattice it is followed by j=1. The 3-site bath MPO
-	# starts with (u_left, v_left) at the boundary side and ends with
-	# (u_right, v_right) at the far end.
+	# lattice the first block is j=k, while on a time-ascending lattice it
+	# is j=1. The 3-site bath MPO starts with (u_left, v_left) at the left
+	# boundary and ends with (u_right, v_right) at the far end.
 	ascending = RealTimeOrderingStyle(lattice) isa TimeAscending
 	jfirst = ascending ? 1 : lattice.k
 	jlast  = ascending ? lattice.k : 1

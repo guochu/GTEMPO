@@ -73,11 +73,6 @@ function _fit_to_lattice(lattice::ImagGrassmannLattice, mpo::MPO, _JW::MPSBondTe
 	data2 = Vector{typeof(u_middle)}(undef, L)
 	leftspace = oneunit(z2space())
 
-	posa, posb = band_boundary(lattice, 0)
-	for pos in posa:posb
-		vd2 = id(leftspace)
-		data2[pos] = @tensor tmp[1,3;2,4] := vd2[1,2] * I2[3,4]
-	end
 	j = lattice.k
 	posa, posb = band_boundary(lattice, j)
 	pos1, pos2 = index(lattice, j, conj=false, band=band), index(lattice, j, conj=true, band=band)

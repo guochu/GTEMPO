@@ -5,7 +5,6 @@ TimeOrderingStyle(x::RealGrassmannLattice) = RealTimeOrderingStyle(x)
 
 # k is the number of discretization, nbands is the number of bands
 # pos is the position within a band
-# k+1 due to the grassmann number on the boundary for the final trace
 
 """
 	struct RealGrassmannLattice1Order <: RealGrassmannLattice
@@ -61,9 +60,9 @@ function Base.getproperty(x::RealGrassmannLattice, s::Symbol)
 		getfield(x, s)
 	end
 end
-Base.length(x::RealGrassmannLattice) = 4*x.bands * x.k + 2 * x.bands
+Base.length(x::RealGrassmannLattice) = 4*x.bands * x.k
 # Base.length(x::RealGrassmannLattice) = _length(x.bands, x.k)
-# _length(bands::Int, k::Int) = 4*bands*k + 2*bands
+# _length(bands::Int, k::Int) = 4*bands*k
 function RealGrassmannLattice(; order::Int=1, kwargs...)
 	(order in (1, 2)) || throw(ArgumentError("order must be 1 or 2"))
 	if order == 1
@@ -112,7 +111,7 @@ end
 Return the current time step k of GrassmannMPS
 """
 function timesteps(gmps::GrassmannMPS, x::RealGrassmannLattice)
-	L = length(gmps) - 2 * x.bands
+	L = length(gmps)
 	@assert L % (4*x.bands) == 0
 	return div(L, 4*x.bands)
 end
@@ -127,14 +126,10 @@ function index(x::RealGrassmannLattice{<:A1B1ā1b̄1Ā1B̄1a1b1}, i::Int; conj
 	end
 	TL = length(x)
 	bands = x.bands
-	if i == 0
-		ifelse(conj, 2*band, 2*band-1)
+	if branch == :+
+		ifelse(conj, TL-4i*bands+2*bands+band, TL-4i*bands+band)
 	else
-		if branch == :+
-			ifelse(conj, TL-4i*bands+2*bands+band, TL-4i*bands+band)
-		else
-			ifelse(conj, TL-4i*bands+bands+band, TL-4i*bands+3*bands+band)
-		end
+		ifelse(conj, TL-4i*bands+bands+band, TL-4i*bands+3*bands+band)
 	end
 end
 
@@ -147,14 +142,10 @@ function index(x::RealGrassmannLattice{<:A1Ā1a1ā1B1B̄1b1b̄1}, i::Int; conj
 	end
 	TL = length(x)
 	bands = x.bands
-	if i == 0
-		ifelse(conj, 2*band, 2*band-1)
+	if branch == :+
+		ifelse(conj, TL-4i*bands+2+4*(band-1), TL-4i*bands+1+4*(band-1))
 	else
-		if branch == :+
-			ifelse(conj, TL-4i*bands+2+4*(band-1), TL-4i*bands+1+4*(band-1))
-		else
-			ifelse(conj, TL-4i*bands+4+4*(band-1), TL-4i*bands+3+4*(band-1))
-		end
+		ifelse(conj, TL-4i*bands+4+4*(band-1), TL-4i*bands+3+4*(band-1))
 	end
 end
 
@@ -167,15 +158,11 @@ function index(x::RealGrassmannLattice{<:a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b
 		(branch in (:+, :-)) || throw(ArgumentError("branch must be :+ or :-"))
 	end
 	bands = x.bands
-	if i == 0
-		ifelse(conj, 2*band, 2*band-1)
+	base = 4*(i-1)*bands
+	if branch == :-
+		ifelse(conj, base+2+4*(band-1), base+1+4*(band-1))
 	else
-		base = 2bands + 4*(i-1)*bands
-		if branch == :-
-			ifelse(conj, base+2+4*(band-1), base+1+4*(band-1))
-		else
-			ifelse(conj, base+4+4*(band-1), base+3+4*(band-1))
-		end
+		ifelse(conj, base+4+4*(band-1), base+3+4*(band-1))
 	end
 end
 
@@ -188,14 +175,10 @@ function index(x::RealGrassmannLattice{<:A1Ā1B1B̄1a1ā1b1b̄1}, i::Int; conj
 	end
 	TL = length(x)
 	bands = x.bands
-	if i == 0
-		ifelse(conj, 2*band, 2*band-1)
+	if branch == :+
+		ifelse(conj, TL-4i*bands+2+2*(band-1), TL-4i*bands+1+2*(band-1))
 	else
-		if branch == :+
-			ifelse(conj, TL-4i*bands+2+2*(band-1), TL-4i*bands+1+2*(band-1))
-		else
-			ifelse(conj, TL-4i*bands+2*bands+2+2*(band-1), TL-4i*bands+2*bands+1+2*(band-1))
-		end
+		ifelse(conj, TL-4i*bands+2*bands+2+2*(band-1), TL-4i*bands+2*bands+1+2*(band-1))
 	end
 end
 
@@ -208,23 +191,19 @@ function index(x::RealGrassmannLattice{<:Ā2A1ā1a2B̄2B1b̄1b̄2}, i::Int; co
 	end
 	TL = length(x)
 	bands = x.bands
-	if i == 0
-		ifelse(conj, 2*band, 2*band-1)
+	if (i == 1) && conj && (branch==:+)
+		length(x) - 2bands + 2*(band-1)+1
+	elseif (i == 1) && (!conj) && (branch==:-)
+		length(x) - 2bands + 2*band
+	elseif (i == x.k) && (!conj) && (branch==:+)
+		2*(band-1)+1
+	elseif (i == x.k) && conj && (branch==:-)
+		2*band
 	else
-		if (i == 1) && conj && (branch==:+)
-			length(x) - 2bands + 2*(band-1)+1
-		elseif (i == 1) && (!conj) && (branch==:-)
-			length(x) - 2bands + 2*band
-		elseif (i == x.k) && (!conj) && (branch==:+)
-			2bands + 2*(band-1)+1
-		elseif (i == x.k) && conj && (branch==:-)
-			2bands + 2*band
+		if branch == :+
+			ifelse(conj, (x.k-i)*4*bands + 4*(band-1)+1, (x.k-i-1)*4*bands + 4*(band-1)+2) + 2bands
 		else
-			if branch == :+
-				ifelse(conj, (x.k-i)*4*bands + 4*(band-1)+1, (x.k-i-1)*4*bands + 4*(band-1)+2) + 4bands
-			else
-				ifelse(conj, (x.k-i-1)*4*bands + 4*(band-1)+3, (x.k-i)*4*bands + 4*band) + 4bands
-			end
+			ifelse(conj, (x.k-i-1)*4*bands + 4*(band-1)+3, (x.k-i)*4*bands + 4*band) + 2bands
 		end
 	end
 end
@@ -232,15 +211,11 @@ end
 # key is timestep, conj, branch, band
 function indexmappings(lattice::RealGrassmannLattice)
 	r = Dict{Tuple{Int, Bool, Symbol, Int}, Int}()
-	for i in 0:lattice.k
+	for i in 1:lattice.k
 		for c in (true, false)
 			for band in 1:lattice.bands
-				if i == 0
-					r[(i, c, :+, band)] = index(lattice, i, conj=c, band=band)
-				else
-					for f in (:+, :-)
-						r[(i, c, f, band)] = index(lattice, i, conj=c, branch=f, band=band)
-					end
+				for f in (:+, :-)
+					r[(i, c, f, band)] = index(lattice, i, conj=c, branch=f, band=band)
 				end
 			end
 		end
@@ -249,32 +224,17 @@ function indexmappings(lattice::RealGrassmannLattice)
 end
 
 function band_boundary(lattice::RealGrassmannLattice{<:A1Ā1a1ā1B1B̄1b1b̄1}, j::Int)
-    if j == 0
-        posa = index(lattice, j, conj=false, band=1)
-        posb = index(lattice, j, conj=true, band=lattice.bands)
-    else
-        posa = index(lattice, j, conj=false, branch=:+, band=1)
-        posb = index(lattice, j, conj=true, branch=:-, band=lattice.bands)
-    end
+    posa = index(lattice, j, conj=false, branch=:+, band=1)
+    posb = index(lattice, j, conj=true, branch=:-, band=lattice.bands)
     return posa, posb
 end
 function band_boundary(lattice::RealGrassmannLattice{<:A1Ā1B1B̄1a1ā1b1b̄1}, j::Int)
-    if j == 0
-        posa = index(lattice, j, conj=false, band=1)
-        posb = index(lattice, j, conj=true, band=lattice.bands)
-    else
-        posa = index(lattice, j, conj=false, branch=:+, band=1)
-        posb = index(lattice, j, conj=true, branch=:-, band=lattice.bands)
-    end
+    posa = index(lattice, j, conj=false, branch=:+, band=1)
+    posb = index(lattice, j, conj=true, branch=:-, band=lattice.bands)
     return posa, posb
 end
 function band_boundary(lattice::RealGrassmannLattice{<:a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2}, j::Int)
-    if j == 0
-        posa = index(lattice, j, conj=false, band=1)
-        posb = index(lattice, j, conj=true, band=lattice.bands)
-    else
-        posa = index(lattice, j, conj=false, branch=:-, band=1)
-        posb = index(lattice, j, conj=true, branch=:+, band=lattice.bands)
-    end
+    posa = index(lattice, j, conj=false, branch=:-, band=1)
+    posb = index(lattice, j, conj=true, branch=:+, band=lattice.bands)
     return posa, posb
 end

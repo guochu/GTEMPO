@@ -10,8 +10,10 @@ Detailed tensor conventions are described in
 Every discretized point of the time contour carries two Grassmann variables
 (GVs), `a` and `a†`. A GV is addressed by a [`ContourIndex`](@ref):
 
-- `j`: the time step. `j ≥ 1` are bulk time steps; `j = 0` is the traced
-  boundary connecting the two ends of the contour.
+- `j`: the time step, `1 ≤ j ≤ k` for the `k` discretized points of the
+  contour. The contour closure (trace, or the turning-point connection) is not
+  a site of the lattice: `boundarycondition` applies it directly between the
+  physical end GVs.
 - `branch`: `:τ` on the imaginary axis, `:+` / `:-` on the forward/backward
   real-time branches.
 - `band`: multi-orbital problems use several independent bands.

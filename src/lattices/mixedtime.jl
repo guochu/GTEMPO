@@ -58,7 +58,7 @@ function Base.getproperty(x::MixedGrassmannLattice1Order, s::Symbol)
 	end
 end
 
-Base.length(x::MixedGrassmannLattice1Order) = 4*x.bands * x.kt + 2 * x.bands + 2*x.bands * (x.Nτ+1)
+Base.length(x::MixedGrassmannLattice1Order) = 4*x.bands * x.kt + 2*x.bands * x.kτ
 
 # acending order for real branch, descending order for imag time
 function index(x::MixedGrassmannLattice1Order{<:A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
@@ -75,22 +75,12 @@ function index(x::MixedGrassmannLattice1Order{<:A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b
 	end
 
 	bands = x.bands
-	if i == 0
-		ifelse(conj, 2*band, 2*band-1) 
+	if branch == :+
+		ifelse(conj, 4*(i-1)*bands+2+4*(band-1), 4*(i-1)*bands+1+4*(band-1)) + 2*x.bands*x.kτ
+	elseif branch == :-
+		ifelse(conj, 4*(i-1)*bands+4+4*(band-1), 4*(i-1)*bands+3+4*(band-1)) + 2*x.bands*x.kτ
 	else
-		k = x.Nt + 1
-		if branch == :+
-			ifelse(conj, 4*(i-1)*bands+2+4*(band-1), 4*(i-1)*bands+1+4*(band-1)) + 2*x.bands*(x.kτ+1)
-		elseif branch == :-
-			ifelse(conj, 4*(i-1)*bands+4+4*(band-1), 4*(i-1)*bands+3+4*(band-1)) + 2*x.bands*(x.kτ+1)
-		else
-			# if i == 1
-			# 	index(x, 1, conj=conj, branch=:-, band=band)
-			# else
-			# 	ifelse(conj, (x.Nτ+1-i)*2*bands + 2*band, (x.Nτ+1-i)*2*bands + 2*band-1) + 2*x.bands
-			# end
-			ifelse(conj, (x.Nτ+1-i)*2*bands + 2*band, (x.Nτ+1-i)*2*bands + 2*band-1) + 2*x.bands
-		end
+		ifelse(conj, (x.Nτ+1-i)*2*bands + 2*band, (x.Nτ+1-i)*2*bands + 2*band-1)
 	end
 end
 
@@ -108,22 +98,12 @@ function index(x::MixedGrassmannLattice1Order{<:A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B
 	end
 
 	bands = x.bands
-	if i == 0
-		ifelse(conj, 2*band, 2*band-1) 
+	if branch == :-
+		ifelse(conj, 4*(i-1)*bands+2+4*(band-1), 4*(i-1)*bands+1+4*(band-1)) + 2*x.bands*x.kτ
+	elseif branch == :+
+		ifelse(conj, 4*(i-1)*bands+4+4*(band-1), 4*(i-1)*bands+3+4*(band-1)) + 2*x.bands*x.kτ
 	else
-		k = x.Nt + 1
-		if branch == :-
-			ifelse(conj, 4*(i-1)*bands+2+4*(band-1), 4*(i-1)*bands+1+4*(band-1)) + 2*x.bands*(x.kτ+1)
-		elseif branch == :+
-			ifelse(conj, 4*(i-1)*bands+4+4*(band-1), 4*(i-1)*bands+3+4*(band-1)) + 2*x.bands*(x.kτ+1)
-		else
-			# if i == 1
-			# 	index(x, 1, conj=conj, branch=:-, band=band)
-			# else
-			# 	ifelse(conj, (x.Nτ+1-i)*2*bands + 2*band, (x.Nτ+1-i)*2*bands + 2*band-1) + 2*x.bands
-			# end
-			ifelse(conj, (x.Nτ+1-i)*2*bands + 2*band, (x.Nτ+1-i)*2*bands + 2*band-1) + 2*x.bands
-		end
+		ifelse(conj, (x.Nτ+1-i)*2*bands + 2*band, (x.Nτ+1-i)*2*bands + 2*band-1)
 	end
 end
 
@@ -145,34 +125,30 @@ function index(x::MixedGrassmannLattice1Order{<:Ā3A2B̄3B2Ā2A1B̄2B1_ā1a2A
 	end
 	
 	bands = x.bands
-	if i == 0
-		ifelse(conj, 2*band, 2*band-1) 
-	else
-		if branch == :τ
-			if (i == 1) && conj
-				3bands + band
-			elseif (i == x.kτ) && (!conj)
-				2bands + band
-			else
-				ifelse(conj, (x.kτ-i)*2*bands + 2*(band-1)+1, (x.kτ-i-1)*2*bands + 2*band) + 6bands
-			end
+	if branch == :τ
+		if (i == 1) && conj
+			bands + band
+		elseif (i == x.kτ) && (!conj)
+			band
 		else
-			n_imag = 2bands*(x.kτ+1)
-			kt = x.kt			
-			if (i == 1) && conj && (branch==:+)
-				2*band + 4bands
-			elseif (i == 1) && (!conj) && (branch==:-)
-				2*(band-1)+1 + 4bands
-			elseif (i == kt) && (!conj) && (branch==:+)
-				length(x) - 2bands + 2*band
-			elseif (i == kt) && conj && (branch==:-)
-				length(x) - 2bands + 2*(band-1)+1
+			ifelse(conj, (x.kτ-i)*2*bands + 2*(band-1)+1, (x.kτ-i-1)*2*bands + 2*band) + 4bands
+		end
+	else
+		n_imag = 2bands*x.kτ
+		kt = x.kt
+		if (i == 1) && conj && (branch==:+)
+			2*band + 2bands
+		elseif (i == 1) && (!conj) && (branch==:-)
+			2*(band-1)+1 + 2bands
+		elseif (i == kt) && (!conj) && (branch==:+)
+			length(x) - 2bands + 2*band
+		elseif (i == kt) && conj && (branch==:-)
+			length(x) - 2bands + 2*(band-1)+1
+		else
+			if branch == :-
+				ifelse(conj, (i-1)*4*bands + 4*(band-1)+1, (i-2)*4*bands + 4*(band-1)+2) + n_imag + 2bands
 			else
-				if branch == :-
-					ifelse(conj, (i-1)*4*bands + 4*(band-1)+1, (i-2)*4*bands + 4*(band-1)+2) + n_imag + 2bands
-				else
-					ifelse(conj, (i-2)*4*bands + 4*(band-1)+3, (i-1)*4*bands + 4*band) + n_imag + 2bands
-				end
+				ifelse(conj, (i-2)*4*bands + 4*(band-1)+3, (i-1)*4*bands + 4*band) + n_imag + 2bands
 			end
 		end
 	end
@@ -194,16 +170,12 @@ function index(x::MixedGrassmannLattice1Order{<:A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄
 	end
 	TL = length(x)
 	bands = x.bands
-	if i == 0
-		ifelse(conj, 2*bands+1-band, band)
+	if branch == :-
+		ifelse(conj, 4i*bands+2*bands+band, 4i*bands+band) + (x.Nτ-1)*2*bands
+	elseif branch == :+
+		ifelse(conj, 4i*bands+bands+band, 4i*bands+3*bands+band) + (x.Nτ-1)*2*bands
 	else
-		if branch == :-
-			ifelse(conj, 4i*bands+2*bands+band, 4i*bands+band) + (x.Nτ)*2*bands
-		elseif branch == :+
-			ifelse(conj, 4i*bands+bands+band, 4i*bands+3*bands+band) + (x.Nτ)*2*bands
-		else
-			ifelse(conj, (x.Nτ+1-i)*2*bands + 2bands+1-band, (x.Nτ+1-i)*2*bands + band) + 2*x.bands
-		end
+		ifelse(conj, (x.Nτ+1-i)*2*bands + 2bands+1-band, (x.Nτ+1-i)*2*bands + band)
 	end
 end
 
@@ -218,15 +190,11 @@ function indexmappings(lattice::MixedGrassmannLattice1Order)
 			end
 		end
 	end
-	for i in 0:lattice.kt
+	for i in 1:lattice.kt
 		for c in (true, false)
 			for band in 1:lattice.bands
-				if i == 0
-					r[(i, c, :+, band)] = index(lattice, i, conj=c, branch=:+, band=band)
-				else
-					for f in (:+, :-)
-						r[(i, c, f, band)] = index(lattice, i, conj=c, branch=f, band=band)
-					end
+				for f in (:+, :-)
+					r[(i, c, f, band)] = index(lattice, i, conj=c, branch=f, band=band)
 				end
 			end
 		end

@@ -109,10 +109,11 @@ application, `partialintegrate`, the AC-integration kernels):
 * the τ columns `j` are placed at lattice positions `j + 1`,
 * real-branch (+/−) rows and columns are placed **without** a shift.
 
-Equivalently: the correlation index `i` of every branch maps to the lattice
-site `i + 1` for τ but to the site `i` for the real branches. The site `i=0`
-of every branch is the boundary/junction GV glued by `boundarycondition!`
-and receives no IF gate.
+Equivalently: the correlation index `i` of every branch maps to the time
+slice `i + 1` for τ but to the slice `i` for the real branches. The τ slice
+`i = 1` (τ = 0) carries no IF gate: it is the junction with the real part of
+the Kadanoff contour, and the closure back to τ = β is applied directly
+between the physical end GVs by `boundarycondition!`.
 
 ### 3.2 Why the shift exists
 

@@ -24,7 +24,7 @@ function ImagGrassmannLattice(; order::Int=1, kwargs...)
 	end
 end
 
-Base.length(x::ImagGrassmannLattice) = 2*x.bands * (x.k+1)
+Base.length(x::ImagGrassmannLattice) = 2*x.bands * x.k
 function Base.getproperty(x::ImagGrassmannLattice1Order, s::Symbol)
 	if (s == :k) || ( s == :kτ)
 		return x.N+1
@@ -53,58 +53,45 @@ end
 function index(x::ImagGrassmannLattice{<:A1B1B̄1Ā1}, i::Int; conj::Bool, band::Int=1, branch::Symbol=:τ)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
-		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
+		(1 <= i <= x.k) || throw(BoundsError(1:x.k, i))
 		(branch == :τ) || throw(ArgumentError("branch must be :τ"))
 	end
 	# TL = length(x)
 	bands = x.bands
-	if i == 0
-		ifelse(conj, 2bands+1-band, band)
-	else
-		ifelse(conj, (x.k-i)*2*bands + 2bands+1-band, (x.k-i)*2*bands + band) + 2*bands
-	end	
+	ifelse(conj, (x.k-i)*2*bands + 2bands+1-band, (x.k-i)*2*bands + band)
 end
 # a\bar{a}b\bar{b} a_2\bar{a}_2b_2\bar{b}_2 a_1\bar{a}_1b_1\bar{b}_1
 function index(x::ImagGrassmannLattice{<:A1Ā1B1B̄1}, i::Int; conj::Bool, band::Int=1, branch::Symbol=:τ)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
-		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
+		(1 <= i <= x.k) || throw(BoundsError(1:x.k, i))
 		(branch == :τ) || throw(ArgumentError("branch must be :τ"))
 	end
 	# TL = length(x)
 	bands = x.bands
-	if i == 0
-		ifelse(conj, 2*band, 2*band-1)
-	else
-		ifelse(conj, (x.k-i)*2*bands + 2*band, (x.k-i)*2*bands + 2*band-1) + 2*bands
-	end	
+	ifelse(conj, (x.k-i)*2*bands + 2*band, (x.k-i)*2*bands + 2*band-1)
 end
 
 function index(x::ImagGrassmannLattice{<:Ā2A1B̄2B1}, i::Int; conj::Bool, band::Int=1, branch::Symbol=:τ)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
-		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
+		(1 <= i <= x.k) || throw(BoundsError(1:x.k, i))
 		(branch == :τ) || throw(ArgumentError("branch must be :τ"))
 	end
-	n = 2 * x.k 
 	bands = x.bands
-	if i == 0
-		ifelse(conj, 2*band, 2*band-1)
+	if (i == 1) && conj
+		length(x) - bands + band
+	elseif (i == x.k) && (!conj)
+		band
 	else
-		if (i == 1) && conj
-			length(x) - bands + band
-		elseif (i == x.k) && (!conj)
-			2*bands + band
-		else
-			ifelse(conj, (x.k-i)*2*bands + 2*(band-1)+1, (x.k-i-1)*2*bands + 2*band) + 3*bands
-		end
-	end	
+		ifelse(conj, (x.k-i)*2*bands + 2*(band-1)+1, (x.k-i-1)*2*bands + 2*band) + bands
+	end
 end
 
 
 function indexmappings(lattice::ImagGrassmannLattice)
 	r = Dict{Tuple{Int, Bool, Symbol, Int}, Int}()
-	for i in 0:lattice.k
+	for i in 1:lattice.k
 		for c in (true, false)
 			for band in 1:lattice.bands
 				r[(i, c, :τ, band)] = index(lattice, i, conj=c, band=band)

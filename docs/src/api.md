@@ -12,9 +12,10 @@ families are available:
 | mixed (Kadanoff–Baym)   | `contour = :mixed` / `:Kadanoff` | `MixedGrassmannLattice`   |
 
 Each lattice is fully determined by a set of *Grassmann variables* (GVs), one
-per site, addressed through [`ContourIndex`](@ref): a time step `j` (0-based,
-with the traced boundary at `j = 0`), a `branch` (`:τ`, `:+`, `:-`), a
-`band` index and a conjugation flag distinguishing `a` from `a†`.
+per site, addressed through [`ContourIndex`](@ref): a time step `1 ≤ j ≤ k`
+on the discretized contour, a `branch` (`:τ`, `:+`, `:-`), a `band` index and
+a conjugation flag distinguishing `a` from `a†`. The contour closure is not a
+site: [`boundarycondition`](@ref) connects the physical end GVs directly.
 
 ```@docs
 GrassmannLattice
@@ -88,7 +89,6 @@ num_bands
 ```@docs
 boundarycondition
 boundarycondition!
-boundarycondition_branching
 bulkconnection
 bulkconnection!
 ```
