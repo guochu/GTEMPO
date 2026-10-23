@@ -38,4 +38,3 @@ const mixed_ac_grassmann_orderings = [A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā
 
 include("grassmannmps.jl")
 include("partialintegrate.jl")
-include("cached_gf_fast2.jl")

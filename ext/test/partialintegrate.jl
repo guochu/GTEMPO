@@ -2,12 +2,14 @@ println("------------------------------------")
 println("|    Partial Integrate in CUDA     |")
 println("------------------------------------")
 
+using LinearAlgebra: normalize!
+
 
 
 function _dis(mps1, mps2)
     mps1, mps2 = deepcopy(mps1), deepcopy(mps2)
-    _normalize!(mps1)
-    _normalize!(mps2)
+    normalize!(mps1)
+    normalize!(mps2)
     return distance(mps1, mps2)
 end
 
@@ -30,14 +32,14 @@ end
 	for T in (Float64, ComplexF64)
         N = 5
         psi = randomgmps(T, L, D=4)
-        _normalize!(psi)
+        normalize!(psi)
         setscaling!(psi, 0.98)
         res0 = psi
         xs = [psi]
     
         for i in 2:N
             psi = randomgmps(T, L, D=4)
-            _normalize!(psi)
+            normalize!(psi)
             setscaling!(psi, 0.98)
             push!(xs, psi)
             res0 = mult(res0, psi, trunc=trunc1)

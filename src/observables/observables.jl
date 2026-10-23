@@ -1,7 +1,6 @@
 # cached environments shared with the integration machinery
 include("envs/util.jl")
 include("envs/ac_cached_integrate.jl")
-include("envs/ac_cached_integrate2.jl")
 
 include("insertn.jl") # special treatment of the "n" operator
 
@@ -9,7 +8,6 @@ include("insertn.jl") # special treatment of the "n" operator
 include("gf.jl")
 include("cached_gf.jl")
 include("cached_gf_fast.jl")
-include("cached_gf_fast2.jl")
 
 # occupations
 include("occupation.jl")
