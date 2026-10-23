@@ -16,7 +16,7 @@ with the bra (conjugated) variables on the forward branch and the ket
 variables on the backward branch at time slice 1, and multiplied into
 `gmps` with the sparse `mult!` using the truncation scheme `trunc`.
 """
-function sysinitialstate!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, fockstate::FockMatrix;
+function sysinitialstate!(gmps::GrassmannMPS, lattice::AbstractRealGrassmannLattice, fockstate::FockMatrix;
 						trunc::TruncationScheme=Defaults.alg_trunc_sys())
     (fockstate.bands == lattice.bands) || throw(DimensionMismatch("FockMatrix bands $(fockstate.bands) do not match lattice bands $(lattice.bands)"))
     M = lattice.bands
@@ -32,7 +32,7 @@ end
 The Fock-space operator `fockstate` as a GrassmannMPS on `lattice`,
 built by applying `sysinitialstate!` to the vacuum state.
 """
-sysinitialstate(lattice::RealGrassmannLattice, fockstate::FockMatrix; kwargs...) =
+sysinitialstate(lattice::AbstractRealGrassmannLattice, fockstate::FockMatrix; kwargs...) =
 	sysinitialstate!(vacuumstate(lattice), lattice, fockstate; kwargs...)
 
 """
@@ -42,7 +42,7 @@ In-place: multiply the normalized impurity thermal equilibrium state
 `exp(-βĤ)/tr(exp(-βĤ))` (for `β == Inf` the ground state projector, see
 `fock_thermalstate`) into the GrassmannMPS `gmps`.
 """
-function systhermalstate!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::AbstractImpurityHamiltonian;
+function systhermalstate!(gmps::GrassmannMPS, lattice::AbstractRealGrassmannLattice, model::AbstractImpurityHamiltonian;
 							β::Real, trunc::TruncationScheme=Defaults.alg_trunc_sys())
     return sysinitialstate!(gmps, lattice, fock_thermalstate(model, β); trunc=trunc)
 end
@@ -53,5 +53,5 @@ end
 The impurity thermal equilibrium state as a GrassmannMPS on `lattice`,
 built by applying `systhermalstate!` to the vacuum state.
 """
-systhermalstate(lattice::RealGrassmannLattice, model::AbstractImpurityHamiltonian; kwargs...) =
+systhermalstate(lattice::AbstractRealGrassmannLattice, model::AbstractImpurityHamiltonian; kwargs...) =
 	systhermalstate!(vacuumstate(lattice), lattice, model; kwargs...)

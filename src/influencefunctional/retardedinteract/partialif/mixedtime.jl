@@ -1,4 +1,4 @@
-function retardedinteractdynamics_naive!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::AbstractMixedCorrelationFunction; trunc::TruncationScheme=Defaults.alg_trunc_if())
+function retardedinteractdynamics_naive!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice, corr::AbstractMixedCorrelationFunction; trunc::TruncationScheme=Defaults.alg_trunc_if())
 	(lattice.bands in (1, 2)) || throw(ArgumentError("number of bands should be either 1 or 2"))
 	if lattice.bands == 1
 		return retardedinteractdynamics_naive_1band!(gmps, lattice, corr, trunc=trunc)
@@ -7,12 +7,12 @@ function retardedinteractdynamics_naive!(gmps::GrassmannMPS, lattice::MixedGrass
 	end
 end
 
-function retardedinteractdynamics_naive_1band!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::AbstractMixedCorrelationFunction; kwargs...)
+function retardedinteractdynamics_naive_1band!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice, corr::AbstractMixedCorrelationFunction; kwargs...)
 	@assert lattice.bands == 1
 	return _retardedinteractdynamics_naive_1band!(gmps, lattice, corr, 1; kwargs...)
 end 
 
-function _retardedinteractdynamics_naive_1band!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::AbstractMixedCorrelationFunction, band::Int; 
+function _retardedinteractdynamics_naive_1band!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice, corr::AbstractMixedCorrelationFunction, band::Int; 
 											trunc::TruncationScheme=Defaults.alg_trunc_if())	
 	# (LayoutStyle(lattice) isa BandLocalLayout) || throw(ArgumentError("currently only TimelocalLayout support for this function"))
 	alg = Orthogonalize(orth=TK.SVD(), trunc=trunc)
@@ -42,7 +42,7 @@ function _retardedinteractdynamics_naive_1band!(gmps::GrassmannMPS, lattice::Mix
 	return gmps
 end
 
-# function _retardedinteractdynamics_naive_1band!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::AbstractMixedCorrelationFunction, band::Int; 
+# function _retardedinteractdynamics_naive_1band!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice, corr::AbstractMixedCorrelationFunction, band::Int; 
 # 											trunc::TruncationScheme=Defaults.alg_trunc_if())	
 # 	# (LayoutStyle(lattice) isa BandLocalLayout) || throw(ArgumentError("currently only TimelocalLayout support for this function"))
 # 	alg = Orthogonalize(orth=TK.SVD(), trunc=trunc)
@@ -98,7 +98,7 @@ end
 # 	return gmps
 # end
 
-function retardedinteractdynamics_naive_2band!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::AbstractMixedCorrelationFunction; 
+function retardedinteractdynamics_naive_2band!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice, corr::AbstractMixedCorrelationFunction; 
 											trunc::TruncationScheme=Defaults.alg_trunc_if())
 	@assert lattice.bands == 2
 	_retardedinteractdynamics_naive_1band!(gmps, lattice, corr, 2, trunc=trunc)
@@ -134,7 +134,7 @@ function retardedinteractdynamics_naive_2band!(gmps::GrassmannMPS, lattice::Mixe
 	return gmps
 end
 
-# function retardedinteractdynamics_naive_2band!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::AbstractMixedCorrelationFunction; 
+# function retardedinteractdynamics_naive_2band!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice, corr::AbstractMixedCorrelationFunction; 
 # 											trunc::TruncationScheme=Defaults.alg_trunc_if())
 # 	@assert lattice.bands == 2
 # 	_retardedinteractdynamics_naive_1band!(gmps, lattice, corr, 2, trunc=trunc)

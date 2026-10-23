@@ -1,9 +1,9 @@
 """
-	hybriddynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice, corr::ImagCorrelationFunction; band, trunc)
+	hybriddynamics!(gmps::GrassmannMPS, lattice::AbstractImagGrassmannLattice, corr::ImagCorrelationFunction; band, trunc)
 
 imaginary-time MPS-IF for a single band 
 """
-function hybriddynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr1::ImagCorrelationFunction; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
+function hybriddynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice, corr1::ImagCorrelationFunction; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
 	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	k = lattice.k-1
 	for i in 1:k
@@ -15,7 +15,7 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order
 end
 
 
-function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr1::ImagCorrelationFunction; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
+function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice, corr1::ImagCorrelationFunction; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
 	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	k = lattice.k-1
 	for i in 1:k
@@ -27,19 +27,19 @@ function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice
 end
 
 """
-	partialif_hybrid(lattice::ImagGrassmannLattice1Order, i::Int, cols::AbstractVector; band)
+	partialif_hybrid(lattice::ImagGrassmannLattice, i::Int, cols::AbstractVector; band)
 
 Build the partial IF I = e^{āᵢΣⱼΔᵢⱼaⱼ} analytically as an MPO with bond dimension 2
 cols: the i-th row of the hybridization function Δᵢⱼ
 """
-function partialif_hybrid(lattice::ImagGrassmannLattice1Order, i::Int, cols::AbstractVector; band::Int=1)
+function partialif_hybrid(lattice::ImagGrassmannLattice, i::Int, cols::AbstractVector; band::Int=1)
 	row = lattice[GrassmannContourIndex(i, :τ, band, true)]
 	col_pos = [lattice[GrassmannContourIndex(j, :τ, band, false)] for j in length(cols):-1:1]
 	mpo = partialmpo(row, col_pos, reverse(cols))
 	return mpo * vacuumstate(promote_type(scalartype(lattice), eltype(cols)), lattice)
 end
 
-function partialif_hybrid_naive(lattice::ImagGrassmannLattice1Order, i::Int, cols::AbstractVector; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
+function partialif_hybrid_naive(lattice::ImagGrassmannLattice, i::Int, cols::AbstractVector; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
 	gmps = vacuumstate(promote_type(scalartype(lattice), eltype(cols)), lattice)
 	for j in 1:lattice.k
 		pos1, pos2 = lattice[GrassmannContourIndex(i, :τ, band, true)], lattice[GrassmannContourIndex(j, :τ, band, false)]

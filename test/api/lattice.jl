@@ -1,7 +1,7 @@
 @testset "API: GrassmannLattice" begin
 	# imaginary-time contour
 	lat = GrassmannLattice(N=6, δτ=0.1, contour=:imag)
-	@test lat isa ImagGrassmannLattice1Order
+	@test lat isa ImagGrassmannLattice
 	@test lat.k == lat.kτ == 7
 	@test lat.N == lat.Nτ == 6
 	@test lat.β ≈ 0.6
@@ -18,7 +18,7 @@
 
 	# real-time contour
 	lat = GrassmannLattice(N=5, δt=0.1, contour=:real)
-	@test lat isa RealGrassmannLattice1Order
+	@test lat isa RealGrassmannLattice
 	@test lat.k == lat.kt == 6
 	@test lat.t == 0.5 && lat.Nt == 5
 	@test lat.ts == 0:0.1:0.5
@@ -27,9 +27,7 @@
 	@test length(lat) == 4 * lat.bands * lat.k
 
 	lat = GrassmannLattice(N=5, δt=0.1, contour=:Keldysh)
-	@test lat isa RealGrassmannLattice1Order
-	lat = GrassmannLattice(N=5, δt=0.1, contour=:real, order=2)
-	@test lat isa RealGrassmannLattice2Order
+	@test lat isa RealGrassmannLattice
 
 	# mixed (Kadanoff) contour
 	lat = GrassmannLattice(Nt=4, δt=0.1, Nτ=5, δτ=0.05, contour=:mixed)
@@ -99,7 +97,7 @@ const all_mixed_orderings = [A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2
 							 (A1B1B̄1Ā1(), GeneralConjugation, TimeLocalLayout),
 							 (Ā2A1B̄2B1(), GeneralConjugation, GeneralLayout))
 		lat = GrassmannLattice(N=2, δτ=0.1, contour=:imag, ordering=o)
-		@test lat isa ImagGrassmannLattice
+		@test lat isa AbstractImagGrassmannLattice
 		@test scalartype(lat) == Float64
 		@test ConjugationStyle(lat) isa conj
 		@test LayoutStyle(lat) isa layout
@@ -110,7 +108,7 @@ const all_mixed_orderings = [A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2
 							  (A1B1ā1b̄1Ā1B̄1a1b1(), GeneralConjugation, TimeLocalLayout),
 							  (Ā2A1ā1a2B̄2B1b̄1b̄2(), GeneralConjugation, GeneralLayout))
 		lat = GrassmannLattice(N=2, δt=0.05, contour=:real, ordering=o)
-		@test lat isa RealGrassmannLattice
+		@test lat isa AbstractRealGrassmannLattice
 		@test scalartype(lat) == ComplexF64
 		@test ConjugationStyle(lat) isa conj
 		@test LayoutStyle(lat) isa layout
@@ -120,7 +118,7 @@ const all_mixed_orderings = [A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2
 							  (Ā3A2B̄3B2Ā2A1B̄2B1_ā1a2Ā2A1b̄1b2B̄2B1ā2a3Ā3A2b̄2b3B̄3B2(), GeneralConjugation, GeneralLayout),
 							  (A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄1A1B1(), GeneralConjugation, TimeLocalLayout))
 		lat = GrassmannLattice(Nt=2, δt=0.05, Nτ=2, δτ=0.1, contour=:mixed, ordering=o)
-		@test lat isa MixedGrassmannLattice
+		@test lat isa AbstractMixedGrassmannLattice
 		@test scalartype(lat) == ComplexF64
 		@test ConjugationStyle(lat) isa conj
 		@test LayoutStyle(lat) isa layout
@@ -464,11 +462,10 @@ end
 	trunc = truncdimcutoff(D=64, ϵ=1.0e-12)
 
 	# direct lattice constructors and the abstract type hierarchy
-	lat_i = ImagGrassmannLattice1Order(δτ=0.1, N=4)
-	lat_r = RealGrassmannLattice1Order(δt=0.05, N=4)
-	lat_r2 = RealGrassmannLattice2Order(δt=0.05, N=4)
-	@test lat_i isa ImagGrassmannLattice && lat_i isa AbstractGrassmannLattice
-	@test lat_r isa RealGrassmannLattice && lat_r2 isa RealGrassmannLattice
+	lat_i = ImagGrassmannLattice(δτ=0.1, N=4)
+	lat_r = RealGrassmannLattice(δt=0.05, N=4)
+	@test lat_i isa AbstractImagGrassmannLattice && lat_i isa AbstractGrassmannLattice
+	@test lat_r isa AbstractRealGrassmannLattice
 	# concrete orderings belong to the exported ordering families
 	@test ImagGrassmannOrdering <: GrassmannOrdering
 	@test RealGrassmannOrdering <: GrassmannOrdering
@@ -480,10 +477,10 @@ end
 	# OrderingStyle returns the ordering instance of a lattice
 	@test OrderingStyle(lat_i) == lat_i.ordering
 	@test OrderingStyle(typeof(lat_i)) == lat_i.ordering
-	@test OrderingStyle(lat_r2) == lat_r2.ordering
+	@test OrderingStyle(lat_r) == lat_r.ordering
 
 	# swapband! (in place) agrees with swapband (copy)
-	lat2 = ImagGrassmannLattice1Order(δτ=0.1, N=2, bands=2)
+	lat2 = ImagGrassmannLattice(δτ=0.1, N=2, bands=2)
 	x = randomgmps(length(lat2), D=4)
 	@test distance(swapband(x, lat2, 1, 2; trunc=trunc), swapband!(deepcopy(x), lat2, 1, 2; trunc=trunc)) == 0
 
@@ -532,7 +529,7 @@ end
 		(GrassmannLattice(contour=:real, N=2, δt=0.05, ordering=A1Ā1B1B̄1a1ā1b1b̄1()),
 		 "a\u2083\u207aa\u0304\u2083\u207aa\u2083\u207ba\u0304\u2083\u207ba\u2082\u207aa\u0304\u2082\u207aa\u2082\u207ba\u0304\u2082\u207ba\u2081\u207aa\u0304\u2081\u207aa\u2081\u207ba\u0304\u2081\u207b"),
 		# real time, ascending time-local ordering, bands=3, N=2
-		(RealGrassmannLattice1Order(δt=0.1, N=2, bands=3, ordering=a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2()),
+		(RealGrassmannLattice(δt=0.1, N=2, bands=3, ordering=a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2()),
 		 "a\u2081\u207ba\u0304\u2081\u207ba\u2081\u207aa\u0304\u2081\u207ab\u2081\u207bb\u0304\u2081\u207bb\u2081\u207ab\u0304\u2081\u207ac\u2081\u207bc\u0304\u2081\u207bc\u2081\u207ac\u0304\u2081\u207aa\u2082\u207ba\u0304\u2082\u207ba\u2082\u207aa\u0304\u2082\u207ab\u2082\u207bb\u0304\u2082\u207bb\u2082\u207ab\u0304\u2082\u207ac\u2082\u207bc\u0304\u2082\u207bc\u2082\u207ac\u0304\u2082\u207aa\u2083\u207ba\u0304\u2083\u207ba\u2083\u207aa\u0304\u2083\u207ab\u2083\u207bb\u0304\u2083\u207bb\u2083\u207ab\u0304\u2083\u207ac\u2083\u207bc\u0304\u2083\u207bc\u2083\u207ac\u0304\u2083\u207a"),
 		# mixed time, default ordering, bands=1, Nt=2, Nτ=2
 		(GrassmannLattice(contour=:mixed, Nt=2, δt=0.05, Nτ=2, δτ=0.1),
@@ -555,9 +552,9 @@ end
 	# multiline text/plain show: bare type name (no module prefix), parameters,
 	# total site count, then the symbol chain on the next line
 	plain_cases = [
-		(1, "ImagGrassmannLattice1Order (bands=2, N=2, δτ=0.05, 12 sites):\n  "),
-		(4, "RealGrassmannLattice1Order (bands=3, N=2, δt=0.1, 36 sites):\n  "),
-		(5, "MixedGrassmannLattice1Order (bands=1, Nt=2, δt=0.05, Nτ=2, δτ=0.1, 18 sites):\n  "),
+		(1, "ImagGrassmannLattice (bands=2, N=2, δτ=0.05, 12 sites):\n  "),
+		(4, "RealGrassmannLattice (bands=3, N=2, δt=0.1, 36 sites):\n  "),
+		(5, "MixedGrassmannLattice (bands=1, Nt=2, δt=0.05, Nτ=2, δτ=0.1, 18 sites):\n  "),
 	]
 	for (idx, header) in plain_cases
 		lat, chain = chain_fixtures[idx]
@@ -579,10 +576,10 @@ end
 			@test occursin("bands=", plain)
 			@test occursin("$(length(lat)) sites):", plain)
 			@test endswith(plain, chain)
-			if lat isa RealGrassmannLattice
+			if lat isa AbstractRealGrassmannLattice
 				# only the real-time sites carry +/- branch superscripts
 				@test occursin("\u207a", chain) && occursin("\u207b", chain)
-			elseif lat isa ImagGrassmannLattice
+			elseif lat isa AbstractImagGrassmannLattice
 				@test !occursin("\u207a", chain) && !occursin("\u207b", chain)
 			else
 				# the L-shaped contour joins the imaginary and real parts once

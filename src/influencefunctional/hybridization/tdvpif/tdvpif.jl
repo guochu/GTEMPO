@@ -36,7 +36,7 @@
 # used by the flow. On lattices whose ordering is not time-local the operator
 # is built on the canonical ordering and rotated back with `changeordering`,
 # exactly as in `influenceoperatorstepper`.
-function _tdvpif_hamiltonian(lattice::ImagGrassmannLattice1Order{O}, corr::ImagCorrelationFunction, alg::TDVPIF; band::Int=1) where O
+function _tdvpif_hamiltonian(lattice::ImagGrassmannLattice{O}, corr::ImagCorrelationFunction, alg::TDVPIF; band::Int=1) where O
 	T = scalartype(corr)
 	if LayoutStyle(lattice) isa TimeLocalLayout
 		H = only(influenceoperators(lattice, corr, band=band, alg_expan=alg.alg_expan))
@@ -62,7 +62,7 @@ end
 # tight `Defaults.alg_trunc_if()` (not `alg.trunc`): the compression error of H
 # is exponentially amplified by the flow (IF = e^H), so a loose tolerance
 # would degrade the accuracy of the influence functional.
-function _tdvpif_hamiltonian(lattice::RealGrassmannLattice{O}, corr::RealCorrelationFunction, alg::TDVPIF; band::Int=1) where O
+function _tdvpif_hamiltonian(lattice::AbstractRealGrassmannLattice{O}, corr::RealCorrelationFunction, alg::TDVPIF; band::Int=1) where O
 	T = scalartype(corr)
 	if !(OrderingStyle(lattice) isa _AllowedRealGrassmannOrdering)
 		lattice2 = similar(lattice, ordering=A1Ā1a1ā1B1B̄1b1b̄1())
@@ -74,7 +74,7 @@ function _tdvpif_hamiltonian(lattice::RealGrassmannLattice{O}, corr::RealCorrela
 	end
 end
 
-function _tdvpif_hamiltonian_timelocal(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction, alg::TDVPIF, T; band::Int=1)
+function _tdvpif_hamiltonian_timelocal(lattice::AbstractRealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction, alg::TDVPIF, T; band::Int=1)
 	h1, h2, h3, h4 = influenceoperators(lattice, corr, band=band, alg_expan=alg.alg_expan)
 	orth = Orthogonalize(orth=SVD(), trunc=Defaults.alg_trunc_sys(); normalize=false)
 	H = h1 * vacuumstate(T, lattice)

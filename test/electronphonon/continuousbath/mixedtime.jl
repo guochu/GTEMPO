@@ -7,7 +7,7 @@
 	spec = Leggett(d=3, ωc=1)
 
 	for (U, bands) in ((0.0, 1), (1.0, 2))
-		lattice = GrassmannLattice(Nt=Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed, order=1, bands=bands)
+		lattice = GrassmannLattice(Nt=Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed, bands=bands)
 		flat = FockLattice(Nt=Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed, order=1, bands=bands)
 		bath = bosonicbath(spec, β=β)
 		corr = correlationfunction(bath, flat)

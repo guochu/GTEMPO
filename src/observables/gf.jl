@@ -33,12 +33,12 @@ function contour_ordered_gf(lattice::AbstractGrassmannLattice, a::GrassmannConto
 end
 
 """
-    greater(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
+    greater(lattice::Union{AbstractRealGrassmannLattice, AbstractMixedGrassmannLattice}, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
             band::Int=1, alg=ExactIntegrate(), Z = integrate(lattice, A, B..., alg=alg))
 
 Return the greater Green's function ⟨aᵢ bⱼ⟩ on the Keldysh or the Kadanoff-Baym contour
 """
-function greater(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
+function greater(lattice::Union{AbstractRealGrassmannLattice, AbstractMixedGrassmannLattice}, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
                  band::Union{Int, Tuple{Int, Int}}=1, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Number = integrate(lattice, A, B..., alg=alg))
     @assert i >= j
     band isa Int && (band = (band, band))
@@ -46,15 +46,15 @@ function greater(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i:
     b = GrassmannContourIndex(j, conj=true, branch=:+, band=band[2])
     return gf(lattice, (a, b), A, B...; alg=alg, Z=Z)
 end
-greater(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...) = greater(lattice, i, 1, A, B...; kwargs...)
+greater(lattice::Union{AbstractRealGrassmannLattice, AbstractMixedGrassmannLattice}, i::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...) = greater(lattice, i, 1, A, B...; kwargs...)
 
 """
-    lesser(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
+    lesser(lattice::Union{AbstractRealGrassmannLattice, AbstractMixedGrassmannLattice}, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
             band::Int=1, alg=ExactIntegrate(), Z = integrate(lattice, A, B..., alg=alg))
 
 Return the lesser Green's function ⟨aᵢ bⱼ⟩ on the Keldysh or the Kadanoff-Baym contour
 """
-function lesser(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
+function lesser(lattice::Union{AbstractRealGrassmannLattice, AbstractMixedGrassmannLattice}, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
                  band::Union{Int, Tuple{Int, Int}}=1, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Number = integrate(lattice, A, B..., alg=alg))
     @assert i <= j
     band isa Int && (band = (band, band))
@@ -62,7 +62,7 @@ function lesser(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::
     b = GrassmannContourIndex(j, conj=false, branch=:+, band=band[2])
     return gf(lattice, (a, b), A, B...; alg=alg, Z=Z)
 end
-lesser(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...) = lesser(lattice, 1, i, A, B...; kwargs...)
+lesser(lattice::Union{AbstractRealGrassmannLattice, AbstractMixedGrassmannLattice}, i::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...) = lesser(lattice, 1, i, A, B...; kwargs...)
 
 # other real-time observables
 

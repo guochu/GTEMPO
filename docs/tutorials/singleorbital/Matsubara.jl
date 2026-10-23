@@ -19,7 +19,7 @@ function main(;β=10, δτ=0.1, chi=60,  U=1, ϵ_d=-U/2)
 	# two bands: the Anderson impurity carries one band per spin direction
 	bands = 2
 	# discretize the imaginary (Matsubara) contour into N steps of size δτ
-	lattice = GrassmannLattice(N=N, δτ=δτ, contour=:imag, order=1, bands=bands)
+	lattice = GrassmannLattice(N=N, δτ=δτ, contour=:imag, bands=bands)
 	println("number of sites, ", length(lattice))
 
 

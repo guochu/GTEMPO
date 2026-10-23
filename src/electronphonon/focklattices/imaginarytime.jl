@@ -22,7 +22,7 @@ function ImagFockLattice(; order::Int=1, kwargs...)
 	if order == 1
 		return ImagFockLattice1Order(; kwargs...)
 	else
-		error("Second orderr ImagGrassmannLattice not implemented")
+		error("Second order ImagFockLattice not implemented")
 	end
 end
 

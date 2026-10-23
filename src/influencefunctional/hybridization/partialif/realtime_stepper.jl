@@ -6,7 +6,7 @@ IF terms connecting the current time step to all previous steps onto `gmps`
 and moves it forward by one step. The non-mutating version
 `hybriddynamicsstepper` operates on a copy.
 """
-function hybriddynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
+function hybriddynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, corr::RealCorrelationFunction; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
 	@assert size(η⁺⁺) == size(η⁺⁻) == size(η⁻⁺) == size(η⁻⁻)
 	@assert length(lattice) == length(gmps) 
@@ -34,51 +34,7 @@ function hybriddynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattic
 	return gmps
 end
 
-function hybriddynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattice2Order, corr::RealCorrelationFunction; 
-		band::Int=1, finalize::Bool=false, trunc::TruncationScheme=Defaults.alg_trunc_if())
-	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
-	@assert size(η⁺⁺) == size(η⁺⁻) == size(η⁻⁺) == size(η⁻⁻)
-	@assert length(lattice) == length(gmps)
-	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
-	if lattice.k == 2
-		pos1, pos2 = lattice[GrassmannContourIndex(1, :+, band, true)], lattice[GrassmannContourIndex(1, :+, band, false)]
-		apply!(exp(GTerm(pos1, pos2, coeff=η⁺⁺[1,1])), gmps)
-		pos1, pos2 = lattice[GrassmannContourIndex(1, :+, band, true)], lattice[GrassmannContourIndex(1, :-, band, false)]
-		apply!(exp(GTerm(pos1, pos2, coeff=η⁺⁻[1,1])), gmps)
-		pos1, pos2 = lattice[GrassmannContourIndex(1, :-, band, true)], lattice[GrassmannContourIndex(1, :+, band, false)]
-		apply!(exp(GTerm(pos1, pos2, coeff=η⁻⁺[1,1])), gmps)
-		pos1, pos2 = lattice[GrassmannContourIndex(1, :-, band, true)], lattice[GrassmannContourIndex(1, :-, band, false)]
-		apply!(exp(GTerm(pos1, pos2, coeff=η⁻⁻[1,1])), gmps)
-		canonicalize!(gmps, alg=Orthogonalize(orth=SVD(), trunc=trunc))
-	end
-	tmp1 = finalinfluencefunctional(lattice, η⁺⁺, finalize=finalize, trunc=trunc, b1=:+, b2=:+, band=band)
-	tmp2 = finalinfluencefunctional(lattice, η⁺⁻, finalize=finalize, trunc=trunc, b1=:+, b2=:-, band=band)
-	tmp3 = finalinfluencefunctional(lattice, η⁻⁺, finalize=finalize, trunc=trunc, b1=:-, b2=:+, band=band)
-	tmp4 = finalinfluencefunctional(lattice, η⁻⁻, finalize=finalize, trunc=trunc, b1=:-, b2=:-, band=band)
-
-	gmps = mult!(gmps, tmp1, trunc=trunc)[1]
-	gmps = mult!(gmps, tmp2, trunc=trunc)[1]
-	gmps = mult!(gmps, tmp3, trunc=trunc)[1]
-	gmps = mult!(gmps, tmp4, trunc=trunc)[1]
-
-	return gmps
-end
-
-
-
-"""
-	finalinfluencefunctional(lattice::RealGrassmannLattice2Order, η::AbstractMatrix; kwargs...)
-
-The top right of the influence functional
-"""
-function finalinfluencefunctional(lattice::RealGrassmannLattice2Order, η::AbstractMatrix; 
-				finalize::Bool, trunc::TruncationScheme=Defaults.alg_trunc_if(), kwargs...)
-	rows, cols = finalize ? top_right_if_final(lattice, η) : top_right_if(lattice, η)
-	out1 = partialif_hybrid(lattice, lattice.k, cols; kwargs...)
-	out2 = partialif_hybrid(lattice, rows, lattice.k; kwargs...)
-	return mult(out1, out2, trunc=trunc)[1]
-end
-function finalinfluencefunctional(lattice::RealGrassmannLattice1Order, η::AbstractMatrix; trunc::TruncationScheme=Defaults.alg_trunc_if(), kwargs...)
+function finalinfluencefunctional(lattice::RealGrassmannLattice, η::AbstractMatrix; trunc::TruncationScheme=Defaults.alg_trunc_if(), kwargs...)
 	@assert lattice.k <= size(η, 1)
 	k = lattice.k
 	out1 = partialif_hybrid(lattice, k, [η[k, 1:k-1]; 0.5*η[k,k]]; kwargs...)
@@ -86,33 +42,4 @@ function finalinfluencefunctional(lattice::RealGrassmannLattice1Order, η::Abstr
 	return mult(out1, out2, trunc=trunc)[1]
 end
 
-function top_right_if_final(lattice::RealGrassmannLattice2Order, η::AbstractMatrix)
-	@assert lattice.N <= div(size(η,1)-1, 2) 
-	k = lattice.k
-	cols = zeros(eltype(η), k)
-	rows = zeros(eltype(η), k)
-	cols[1] = η[2*k-2, 1]
-	rows[1] = η[1, 2*k-2]
-	for i in 2:k-1
-		cols[i] = η[2*k-2, 2*i-2] + η[2*k-2, 2*i-1]
-		rows[i] = η[2*i-2, 2*k-2] + η[2*i-1, 2*k-2]
-	end
-	cols[k] = rows[k] = 0.5 * η[2*k-2, 2*k-2]
-	return rows, cols
-end
 
-function top_right_if(lattice::RealGrassmannLattice2Order, η::AbstractMatrix)
-	@assert lattice.N <= div(size(η,1)-1, 2)
-	k = lattice.k
-	cols = zeros(eltype(η), k)
-	rows = zeros(eltype(η), k)
-	cols[1]	= η[2*k-2, 1] + η[2*k-1, 1]
-	rows[1] = η[1, 2*k-2] + η[1, 2*k-1]
-	for i in 2:k-1
-		cols[i] = η[2*k-2, 2*i-2] + η[2*k-2, 2*i-1] + η[2*k-1, 2*i-2] + η[2*k-1, 2*i-1]
-		rows[i] = η[2*i-2, 2*k-2] + η[2*i-2, 2*k-1] + η[2*i-1, 2*k-2] + η[2*i-1, 2*k-1]
-	end
-	tmp = η[2*k-2, 2*k-2] + η[2*k-2, 2*k-1] + η[2*k-1, 2*k-2] + η[2*k-1, 2*k-1]
-	cols[k] = rows[k] = 0.5 * tmp
-	return rows, cols
-end

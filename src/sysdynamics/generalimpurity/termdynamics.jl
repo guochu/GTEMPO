@@ -3,19 +3,19 @@
 # """
 # 	termdynamics!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, h::AbstractFTerm; trunc)
 # """
-# function termdynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, h::AbstractFTerm; kwargs...)
+# function termdynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice, h::AbstractFTerm; kwargs...)
 # 	for timestep in 1:lattice.Nτ
 # 		termdynamics!(gmps, lattice, h, timestep; kwargs...)
 # 	end
 # 	return gmps
 # end
-# function termdynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, h::AbstractFTerm, timestep::Int; trunc::TruncationScheme=Defaults.alg_trunc_sys())
+# function termdynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice, h::AbstractFTerm, timestep::Int; trunc::TruncationScheme=Defaults.alg_trunc_sys())
 # 	all(x->1<=x<=lattice.bands, positions(h)) || throw(BoundsError(1:lattice.bands, positions(h)))
 # 	(1 <= timestep <= lattice.Nτ) || throw(BoundsError(1:lattice.Nτ, timestep))
 # 	return termdynamics_util!(gmps, lattice, h, timestep, -lattice.δτ, :τ, trunc)
 # end
 
-# function termdynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, h::AbstractFTerm; 
+# function termdynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, h::AbstractFTerm; 
 # 						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 # 	if isnothing(branch)
 # 		for timestep in 1:lattice.Nt
@@ -29,7 +29,7 @@
 # 	end
 # 	return gmps
 # end
-# function termdynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, h::AbstractFTerm, timestep::Int; 
+# function termdynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, h::AbstractFTerm, timestep::Int; 
 # 						branch::Symbol, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 # 	all(x->1<=x<=lattice.bands, positions(h)) || throw(BoundsError(1:lattice.bands, positions(h)))
 # 	(branch in (:+, :-)) || throw(ArgumentError("branch must be one of :+ or :-"))
@@ -41,7 +41,7 @@
 # 	end
 # end
 
-# function termdynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, h::AbstractFTerm; 
+# function termdynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice, h::AbstractFTerm; 
 # 						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 # 	if isnothing(branch)
 # 		for timestep in 1:lattice.Nτ
@@ -64,7 +64,7 @@
 # 	end
 # 	return gmps
 # end
-# function termdynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, h::AbstractFTerm, timestep::Int; 
+# function termdynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice, h::AbstractFTerm, timestep::Int; 
 # 						branch::Symbol, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 # 	all(x->1<=x<=lattice.bands, positions(h)) || throw(BoundsError(1:lattice.bands, positions(h)))
 # 	(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))

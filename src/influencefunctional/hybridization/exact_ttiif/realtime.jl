@@ -1,4 +1,4 @@
-function _influencefunctional(lattice::RealGrassmannLattice{O}, corr::RealCorrelationFunction, alg::ExactTTIIF; band::Int=1) where O
+function _influencefunctional(lattice::AbstractRealGrassmannLattice{O}, corr::RealCorrelationFunction, alg::ExactTTIIF; band::Int=1) where O
 	if lattice.bands > 1
 		# the terms are built on a single-band lattice and expanded to the
 		# full lattice afterwards (influencefunctional_util only supports one band)
@@ -20,7 +20,7 @@ function _influencefunctional(lattice::RealGrassmannLattice{O}, corr::RealCorrel
 	end
 end
 
-function _influencefunctional_util(lattice::RealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction, alg::ExactTTIIF)
+function _influencefunctional_util(lattice::AbstractRealGrassmannLattice{<:_AllowedRealGrassmannOrdering}, corr::RealCorrelationFunction, alg::ExactTTIIF)
 	@assert lattice.bands == 1
 	ηs = _get_signed_corr(lattice, corr, 1)
 

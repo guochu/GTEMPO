@@ -22,7 +22,7 @@ function main(t; β=10, δτ=0.1, δt=0.1, chi=60,  U=1, ϵ_d=-U/2)
 	bands = 2
 	# discretize the mixed (Kadanoff) contour: imaginary branch (Nτ, δτ)
 	# followed by the real branch (Nt, δt)
-	lattice = GrassmannLattice(Nt=Nt, Nτ=Nτ, δτ=δτ, δt=δt, contour=:Kadanoff, order=1, bands=bands)
+	lattice = GrassmannLattice(Nt=Nt, Nτ=Nτ, δτ=δτ, δt=δt, contour=:Kadanoff, bands=bands)
 	println("number of sites, ", length(lattice))
 
 

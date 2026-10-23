@@ -5,7 +5,7 @@
 	spec = DiracDelta(ω=1, α=0.5)
 
 	for (U, bands) in ((0.0, 1), (1.0, 2))
-		lattice = GrassmannLattice(N=N, δτ=δτ, contour=:imag, order=1, bands=bands)
+		lattice = GrassmannLattice(N=N, δτ=δτ, contour=:imag, bands=bands)
 		flat = FockLattice(N=N, δτ=δτ, contour=:imag, order=1, bands=bands)
 		bath = bosonicbath(spec, β=β)
 		corr = correlationfunction(bath, flat)
@@ -55,7 +55,7 @@ end
 		H, a, adag, H0 = mixedbath_ed(μ=μ, U=U, ωf=ωf, αf=αf, ω₀=ω₀, α=α, d=8)
 		g_ed = gτ_ed(H, a, adag, 0:δτ:β, β)
 
-		lattice = GrassmannLattice(N=N, δτ=δτ, contour=:imag, order=1, bands=bands)
+		lattice = GrassmannLattice(N=N, δτ=δτ, contour=:imag, bands=bands)
 		flat = FockLattice(N=N, δτ=δτ, contour=:imag, order=1, bands=bands)
 
 		# fermionic bath IF (Grassmann path, replicated per band)

@@ -1,6 +1,6 @@
 
 
-# function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, corr::BCSCorrelationFunction{<:RealCorrelationFunction}; 
+# function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, corr::BCSCorrelationFunction{<:RealCorrelationFunction}; 
 # 									orbital::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
 # 	(1 <= orbital <= lattice.orbitals) || throw(BoundsError(1:lattice.orbitals, orbital))
 # 	orth = Orthogonalize(orth=TK.SVD(), trunc=trunc)
@@ -24,7 +24,7 @@
 # end
 
 
-function hybriddynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, corr::BCSCorrelationFunction{<:RealCorrelationFunction}; 
+function hybriddynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, corr::BCSCorrelationFunction{<:RealCorrelationFunction}; 
 									orbital::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
 	(1 <= orbital <= lattice.orbitals) || throw(BoundsError(1:lattice.orbitals, orbital))
 	orth = Orthogonalize(orth=TK.SVD(), trunc=trunc)

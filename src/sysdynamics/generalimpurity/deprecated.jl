@@ -28,12 +28,12 @@ baresysdynamics_deprecated! is an inplace version of this function
 """
 baresysdynamics_deprecated(lattice::AbstractGrassmannLattice, h::ImpurityHamiltonian; kwargs...) = baresysdynamics_deprecated!(vacuumstate(lattice), lattice, h; kwargs...)
 
-function baresysdynamics_deprecated!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, h::ImpurityHamiltonian; trunc::TruncationScheme=Defaults.alg_trunc_sys())
+function baresysdynamics_deprecated!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice, h::ImpurityHamiltonian; trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	(lattice.bands == h.bands) || throw(ArgumentError("lattice bands and ImpurityHamiltonian bands mismatch"))
 	return baresysdynamics_util!(gmps, lattice, h, lattice.N, -lattice.δτ, :τ, trunc)
 end
 
-function baresysdynamics_deprecated!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, h::ImpurityHamiltonian; 
+function baresysdynamics_deprecated!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, h::ImpurityHamiltonian; 
 						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	(lattice.bands == h.bands) || throw(ArgumentError("lattice bands and ImpurityHamiltonian bands mismatch"))
 	if isnothing(branch)
@@ -49,7 +49,7 @@ function baresysdynamics_deprecated!(gmps::GrassmannMPS, lattice::RealGrassmannL
 	end
 end
 
-function baresysdynamics_deprecated!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, h::ImpurityHamiltonian; 
+function baresysdynamics_deprecated!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice, h::ImpurityHamiltonian; 
 						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	(lattice.bands == h.bands) || throw(ArgumentError("lattice bands and ImpurityHamiltonian bands mismatch"))
 	if isnothing(branch)

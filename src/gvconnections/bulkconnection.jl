@@ -18,14 +18,14 @@ In-place version of `bulkconnection`: applies the bulk connection terms onto
 In-place version of `bulkconnection`: applies the bulk connection terms onto
 `gmps` directly and returns it.
 """
-function bulkconnection!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_sys())
+function bulkconnection!(gmps::GrassmannMPS, lattice::AbstractImagGrassmannLattice; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	return bulkconnection_util!(gmps, lattice, lattice.Nτ, band, :τ, trunc)
 end
-function bulkconnection!(gmps::GrassmannMPS, lattice::RealGrassmannLattice; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_sys())
+function bulkconnection!(gmps::GrassmannMPS, lattice::AbstractRealGrassmannLattice; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	gmps = bulkconnection_util!(gmps, lattice, lattice.Nt, band, :+, trunc)
 	return bulkconnection_util!(gmps, lattice, lattice.Nt, band, :-, trunc)
 end
-function bulkconnection!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_sys())
+function bulkconnection!(gmps::GrassmannMPS, lattice::AbstractMixedGrassmannLattice; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	gmps = bulkconnection_util!(gmps, lattice, lattice.Nt, band, :+, trunc)
 	gmps = bulkconnection_util!(gmps, lattice, lattice.Nt, band, :-, trunc)
 	return bulkconnection_util!(gmps, lattice, lattice.Nτ, band, :τ, trunc)

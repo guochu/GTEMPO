@@ -3,20 +3,20 @@
 
 Greater Green's function computed with the fast (`cached_gf_fast`) evaluation.
 """
-cached_greater_fast(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, A::GrassmannMPS, B::Vararg{GrassmannMPS}; kwargs...) = cached_gf_fast(
+cached_greater_fast(lattice::Union{AbstractRealGrassmannLattice, AbstractMixedGrassmannLattice}, A::GrassmannMPS, B::Vararg{GrassmannMPS}; kwargs...) = cached_gf_fast(
 	lattice, A, B...; b1=:+, b2=:+, c1=false, c2=true, kwargs...)
 """
 	cached_lesser_fast(lattice, A, B...; kwargs...)
 
 Lesser Green's function computed with the fast (`cached_gf_fast`) evaluation.
 """
-cached_lesser_fast(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, A::GrassmannMPS, B::Vararg{GrassmannMPS}; kwargs...) = -cached_gf_fast(
+cached_lesser_fast(lattice::Union{AbstractRealGrassmannLattice, AbstractMixedGrassmannLattice}, A::GrassmannMPS, B::Vararg{GrassmannMPS}; kwargs...) = -cached_gf_fast(
 	lattice, A, B...; b1=:+, b2=:-, c1=false, c2=true, kwargs...)
 
 
 
 """
-	cached_gf_fast(lattice::Union{ImagGrassmannLattice, RealGrassmannLattice}, A::GrassmannMPS, Bs::Vararg{GrassmannMPS}; kwargs...)
+	cached_gf_fast(lattice::Union{AbstractImagGrassmannLattice, AbstractRealGrassmannLattice}, A::GrassmannMPS, Bs::Vararg{GrassmannMPS}; kwargs...)
 
 Similar to cached_gf, but use a even faster version when calculating 
 many ⟨aᵢa₁⟩s with differen distances |i-1|, by more cleverly using the cache
@@ -26,14 +26,14 @@ avoid this situation
 In the future, we may either solve this problem or simply 
 throw an error when this situation is met
 """
-function cached_gf_fast(lattice::Union{ImagGrassmannLattice, RealGrassmannLattice}, A::GrassmannMPS, Bs::Vararg{GrassmannMPS}; kwargs...)
+function cached_gf_fast(lattice::Union{AbstractImagGrassmannLattice, AbstractRealGrassmannLattice}, A::GrassmannMPS, Bs::Vararg{GrassmannMPS}; kwargs...)
 	GFt = cached_gf_fast(lattice, lattice.k, A, Bs...; kwargs...)
-	if lattice isa ImagGrassmannLattice
+	if lattice isa AbstractImagGrassmannLattice
 		GFt[end] = 1 - GFt[1]
 	end
 	return GFt
 end 
-function cached_gf_fast(lattice::MixedGrassmannLattice, A::GrassmannMPS, Bs::Vararg{GrassmannMPS}; b1::Symbol, b2::Symbol,kwargs...)
+function cached_gf_fast(lattice::AbstractMixedGrassmannLattice, A::GrassmannMPS, Bs::Vararg{GrassmannMPS}; b1::Symbol, b2::Symbol,kwargs...)
 	if (b1 == :+) || (b1 == :-)
 		return cached_gf_fast(lattice, lattice.kt, A, Bs...; b1=b1, b2=b2, kwargs...)
 	else
@@ -57,19 +57,19 @@ function cached_gf_fast(lattice::AbstractGrassmannLattice, N::Int, A::GrassmannM
 	return GFt
 end
 
-# function cached_gf_fast(lattice::Union{ImagGrassmannLattice, RealGrassmannLattice}, A::GrassmannMPS, Bs::Vararg{GrassmannMPS}; kwargs...)
+# function cached_gf_fast(lattice::Union{AbstractImagGrassmannLattice, AbstractRealGrassmannLattice}, A::GrassmannMPS, Bs::Vararg{GrassmannMPS}; kwargs...)
 # 	if TimeOrderingStyle(lattice) isa TimeAscending
 # 		GFt = cached_gf_fast_normal_order(lattice, lattice.k, A, Bs...; kwargs...)
 # 	else
 # 		GFt = cached_gf_fast_reverse_order(lattice, lattice.k, A, Bs...; kwargs...)
 # 	end
-# 	if lattice isa ImagGrassmannLattice
+# 	if lattice isa AbstractImagGrassmannLattice
 # 		GFt[end] = 1 - GFt[1]
 # 	end
 # 	return GFt
 # end
 
-# function cached_gf_fast(lattice::MixedGrassmannLattice, A::GrassmannMPS, Bs::Vararg{GrassmannMPS}; b1::Symbol, b2::Symbol,kwargs...)
+# function cached_gf_fast(lattice::AbstractMixedGrassmannLattice, A::GrassmannMPS, Bs::Vararg{GrassmannMPS}; b1::Symbol, b2::Symbol,kwargs...)
 # 	if (b2 == :+) || (b2 == :-)
 # 		if RealTimeOrderingStyle(lattice) isa TimeAscending
 # 			GFt = cached_gf_fast_normal_order(lattice, lattice.kt, A, Bs...; b1=b1, b2=b2, kwargs...)

@@ -10,7 +10,7 @@
 		H, a, adag, H0 = phonon_ed(μ=μ, U=U, ω₀=1.0, α=0.5, d=8)
 		gt_ed, lt_ed = greater_lesser_ed(H, a, adag, H0, ts, β)
 
-		lattice = GrassmannLattice(N=Nt, δt=δt, contour=:real, order=1, bands=bands)
+		lattice = GrassmannLattice(N=Nt, δt=δt, contour=:real, bands=bands)
 		flat = FockLattice(N=Nt, δt=δt, contour=:real, order=1, bands=bands)
 		bath = bosonicbath(spec, β=β)
 		corr = correlationfunction(bath, flat)
@@ -45,7 +45,7 @@ end
 		H, a, adag, H0 = mixedbath_ed(μ=μ, U=U, ωf=ωf, αf=αf, ω₀=ω₀, α=α, d=8)
 		gt_ed, lt_ed = greater_lesser_ed(H, a, adag, H0, ts, β)
 
-		lattice = GrassmannLattice(N=Nt, δt=δt, contour=:real, order=1, bands=bands)
+		lattice = GrassmannLattice(N=Nt, δt=δt, contour=:real, bands=bands)
 		flat = FockLattice(N=Nt, δt=δt, contour=:real, order=1, bands=bands)
 
 		fbath = fermionicbath(DiracDelta(ω=ωf, α=αf), β=β)

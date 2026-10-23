@@ -1,6 +1,6 @@
 # # calculate all the green's functions, which are used for non-equilibrium DMFT
 
-# function cached_Gm(lattice::MixedGrassmannLattice, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
+# function cached_Gm(lattice::AbstractMixedGrassmannLattice, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
 # 					cache::AbstractExpectationCache=environments(lattice, A, B...), band::Int=1, kwargs...)
 # 	T = scalartype(lattice)
 # 	# G₁₁
@@ -59,7 +59,7 @@
 # 	return r
 # end
 
-# function cached_Gm_full(lattice::MixedGrassmannLattice, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
+# function cached_Gm_full(lattice::AbstractMixedGrassmannLattice, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
 # 					cache::AbstractExpectationCache=environments(lattice, A, B...), band::Int=1, kwargs...)
 # 	T = scalartype(lattice)
 # 	# G₁₁

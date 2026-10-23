@@ -3,9 +3,9 @@ TK.scalartype(::Type{<:MixedFockLattice}) = ComplexF64
 branches(::Type{<:MixedFockLattice}) = (:+, :-, :τ)
 
 """
-	struct MixedGrassmannLattice1Order <: MixedGrassmannLattice
+	struct MixedFockLattice1Order <: MixedFockLattice
 
-First order splitting of the real-time contour
+Mixed (Kadanoff–Baym) Fock lattice for the electron-phonon path.
 """
 struct MixedFockLattice1Order{O<:MixedFockOrdering} <: MixedFockLattice{O}
 	δt::Float64
@@ -33,7 +33,7 @@ function MixedFockLattice(; order::Int=1, kwargs...)
 	if order == 1
 		return MixedFockLattice1Order(; kwargs...)
 	else
-		error("Second orderr MixedGrassmannLattice not implemented")
+		error("Second order MixedFockLattice not implemented")
 	end
 end
 

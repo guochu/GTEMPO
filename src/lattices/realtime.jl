@@ -1,49 +1,30 @@
-abstract type RealGrassmannLattice{O<:RealGrassmannOrdering} <: AbstractGrassmannLattice{O} end
-TK.scalartype(::Type{<:RealGrassmannLattice}) = ComplexF64
-branches(::Type{<:RealGrassmannLattice}) = (:+, :-)
-TimeOrderingStyle(x::RealGrassmannLattice) = RealTimeOrderingStyle(x)
+abstract type AbstractRealGrassmannLattice{O<:RealGrassmannOrdering} <: AbstractGrassmannLattice{O} end
+TK.scalartype(::Type{<:AbstractRealGrassmannLattice}) = ComplexF64
+branches(::Type{<:AbstractRealGrassmannLattice}) = (:+, :-)
+TimeOrderingStyle(x::AbstractRealGrassmannLattice) = RealTimeOrderingStyle(x)
 
 # k is the number of discretization, nbands is the number of bands
 # pos is the position within a band
 
 """
-	struct RealGrassmannLattice1Order <: RealGrassmannLattice
+	struct RealGrassmannLattice <: AbstractRealGrassmannLattice
 
-First order splitting of the real-time contour
+Real-time (Keldysh) Grassmann lattice.
 """
-struct RealGrassmannLattice1Order{O<:RealGrassmannOrdering} <: RealGrassmannLattice{O}
+struct RealGrassmannLattice{O<:RealGrassmannOrdering} <: AbstractRealGrassmannLattice{O}
 	δt::Float64
 	bands::Int
 	N::Int
 	ordering::O
 
-	RealGrassmannLattice1Order(δt::Real, bands::Int, N::Int, ordering::RealGrassmannOrdering) = new{typeof(ordering)}(convert(Float64, δt), bands, N, ordering)
+	RealGrassmannLattice(δt::Real, bands::Int, N::Int, ordering::RealGrassmannOrdering) = new{typeof(ordering)}(convert(Float64, δt), bands, N, ordering)
 end
 
 # the default is that the system starts from 0 temperature (state 0)
-RealGrassmannLattice1Order(; δt::Real, N::Int, bands::Int=1, ordering::RealGrassmannOrdering=A1Ā1a1ā1B1B̄1b1b̄1()) = RealGrassmannLattice1Order(δt, bands, N, ordering)
-Base.similar(x::RealGrassmannLattice1Order; δt::Real=x.δt, bands::Int=x.bands, N::Int=x.N, ordering::RealGrassmannOrdering=x.ordering) = RealGrassmannLattice1Order(δt, bands, N, ordering)
+RealGrassmannLattice(; δt::Real, N::Int, bands::Int=1, ordering::RealGrassmannOrdering=A1Ā1a1ā1B1B̄1b1b̄1()) = RealGrassmannLattice(δt, bands, N, ordering)
+Base.similar(x::RealGrassmannLattice; δt::Real=x.δt, bands::Int=x.bands, N::Int=x.N, ordering::RealGrassmannOrdering=x.ordering) = RealGrassmannLattice(δt, bands, N, ordering)
 
-"""
-	struct RealGrassmannLattice2Order <: RealGrassmannLattice
-
-Second order splitting of the real-time contour,
-we use a symmetric splitting with the same number
-of discretization as first order, however, the 
-MPS-IF has to grow during runtime
-"""
-struct RealGrassmannLattice2Order{O<:RealGrassmannOrdering} <: RealGrassmannLattice{O}
-	δt::Float64
-	bands::Int
-	N::Int
-	ordering::O
-
-	RealGrassmannLattice2Order(δt::Real, bands::Int, N::Int, ordering::RealGrassmannOrdering) = new{typeof(ordering)}(convert(Float64, δt), bands, N, ordering)
-end
-RealGrassmannLattice2Order(; δt::Real, N::Int=0, bands::Int=1, ordering::RealGrassmannOrdering=A1Ā1a1ā1B1B̄1b1b̄1()) = RealGrassmannLattice2Order(δt, bands, N, ordering)
-Base.similar(x::RealGrassmannLattice2Order; δt::Real=x.δt, bands::Int=x.bands, N::Int=x.N, ordering::RealGrassmannOrdering=x.ordering) = RealGrassmannLattice2Order(δt, bands, N, ordering)
-
-function Base.getproperty(x::RealGrassmannLattice, s::Symbol)
+function Base.getproperty(x::AbstractRealGrassmannLattice, s::Symbol)
 	if (s == :k) || (s == :kt)
 		return x.N+1
 	elseif s == :t
@@ -60,28 +41,17 @@ function Base.getproperty(x::RealGrassmannLattice, s::Symbol)
 		getfield(x, s)
 	end
 end
-Base.length(x::RealGrassmannLattice) = 4*x.bands * x.k
-# Base.length(x::RealGrassmannLattice) = _length(x.bands, x.k)
+Base.length(x::AbstractRealGrassmannLattice) = 4*x.bands * x.k
+# Base.length(x::AbstractRealGrassmannLattice) = _length(x.bands, x.k)
 # _length(bands::Int, k::Int) = 4*bands*k
-function RealGrassmannLattice(; order::Int=1, kwargs...)
-	(order in (1, 2)) || throw(ArgumentError("order must be 1 or 2"))
-	if order == 1
-		return RealGrassmannLattice1Order(; kwargs...)
-	else
-		# error("Second orderr RealGrassmannLattice not implemented")
-		return RealGrassmannLattice2Order(; kwargs...)
-	end
-end
-
-makestep(x::RealGrassmannLattice1Order) = RealGrassmannLattice1Order(x.δt, x.bands, x.N+1, x.ordering)
-makestep(x::RealGrassmannLattice2Order) = RealGrassmannLattice2Order(x.δt, x.bands, x.N+1, x.ordering)
+makestep(x::RealGrassmannLattice) = RealGrassmannLattice(x.δt, x.bands, x.N+1, x.ordering)
 
 
 """
-	makestep(x::GrassmannMPS, lattice::RealGrassmannLattice)
+	makestep(x::GrassmannMPS, lattice::AbstractRealGrassmannLattice)
 Increase the time step of MPS-IF and the lattice by 1
 """
-function makestep(lattice::RealGrassmannLattice, x::GrassmannMPS...)
+function makestep(lattice::AbstractRealGrassmannLattice, x::GrassmannMPS...)
 	(all(v->length(v)==length(lattice), x)) || throw(DimensionMismatch())
 	(LayoutStyle(lattice) isa TimeLocalLayout) || throw(ArgumentError("makestep only implemented for TimeLocalLayout"))
 	# (length(x) < length(lattice)) || throw(ArgumentError("MPS-IF has reached amximum length"))
@@ -90,7 +60,7 @@ function makestep(lattice::RealGrassmannLattice, x::GrassmannMPS...)
 	return lattice2, x2...
 end
 
-function _makestep_util(lattice2::RealGrassmannLattice, x::GrassmannMPS)
+function _makestep_util(lattice2::AbstractRealGrassmannLattice, x::GrassmannMPS)
 	L = length(x)
 	x2 = GrassmannMPS(scalartype(x), length(lattice2))
 	if RealTimeOrderingStyle(lattice2) isa TimeAscending
@@ -106,11 +76,11 @@ function _makestep_util(lattice2::RealGrassmannLattice, x::GrassmannMPS)
 end
 
 """
-	timesteps(gmps::GrassmannMPS, x::RealGrassmannLattice)
+	timesteps(gmps::GrassmannMPS, x::AbstractRealGrassmannLattice)
 
 Return the current time step k of GrassmannMPS
 """
-function timesteps(gmps::GrassmannMPS, x::RealGrassmannLattice)
+function timesteps(gmps::GrassmannMPS, x::AbstractRealGrassmannLattice)
 	L = length(gmps)
 	@assert L % (4*x.bands) == 0
 	return div(L, 4*x.bands)
@@ -118,7 +88,7 @@ end
 
 
 # a\bar{a}b\bar{b} a₂^+b₂^+ā₂^-b̄₂^-ā₂^+b̄₂^+a₂^-b₂^-  a₁^+b₁^+ā₁^-b̄₁^-ā₁^+b̄₁^+a₁^-b₁^-
-function _index(x::RealGrassmannLattice{<:A1B1ā1b̄1Ā1B̄1a1b1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function _index(x::AbstractRealGrassmannLattice{<:A1B1ā1b̄1Ā1B̄1a1b1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
@@ -134,7 +104,7 @@ function _index(x::RealGrassmannLattice{<:A1B1ā1b̄1Ā1B̄1a1b1}, i::Int; con
 end
 
 # a\bar{a}b\bar{b} a_2^+\bar{a}_2^+a_2^-\bar{a}_2^-b_2^+\bar{b}_2^+b_2^-\bar{b}_2^- a_1^+\bar{a}_1^+a_1^-\bar{a}_1^-b_1^+\bar{b}_1^+b_1^-\bar{b}_1^-
-function _index(x::RealGrassmannLattice{<:A1Ā1a1ā1B1B̄1b1b̄1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function _index(x::AbstractRealGrassmannLattice{<:A1Ā1a1ā1B1B̄1b1b̄1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
@@ -151,7 +121,7 @@ end
 
 # a\bar{a}b\bar{b} a_1^-\bar{a}_1^-a_1^+\bar{a}_1^+b_1^-\bar{b}_1^-b_1^+\bar{b}_1^+ a_2^-\bar{a}_2^-a_2^+\bar{a}_2^+b_2^-\bar{b}_2^-b_2^+\bar{b}_2^+
 # time ascending: the block of time step 1 directly follows the boundary block
-function _index(x::RealGrassmannLattice{<:a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function _index(x::AbstractRealGrassmannLattice{<:a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
@@ -167,7 +137,7 @@ function _index(x::RealGrassmannLattice{<:a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2
 end
 
 # aābb̄ a₂^+ā₂^+b₂^+b̄₂^+a₂^-ā₂^-b₂^-b̄₂^- a₁^+ā₁^+b₁^+b̄₁^+a₁^-ā₁^-b₁^-b̄₁^-
-function _index(x::RealGrassmannLattice{<:A1Ā1B1B̄1a1ā1b1b̄1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function _index(x::AbstractRealGrassmannLattice{<:A1Ā1B1B̄1a1ā1b1b̄1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
@@ -183,7 +153,7 @@ function _index(x::RealGrassmannLattice{<:A1Ā1B1B̄1a1ā1b1b̄1}, i::Int; con
 end
 
 
-function _index(x::RealGrassmannLattice{<:Ā2A1ā1a2B̄2B1b̄1b̄2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function _index(x::AbstractRealGrassmannLattice{<:Ā2A1ā1a2B̄2B1b̄1b̄2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
@@ -209,7 +179,7 @@ function _index(x::RealGrassmannLattice{<:Ā2A1ā1a2B̄2B1b̄1b̄2}, i::Int; c
 end
 
 # key is timestep, conj, branch, band
-function indexmappings(lattice::RealGrassmannLattice)
+function indexmappings(lattice::AbstractRealGrassmannLattice)
 	r = Dict{Tuple{Int, Bool, Symbol, Int}, Int}()
 	for i in 1:lattice.k
 		for c in (true, false)
@@ -223,17 +193,17 @@ function indexmappings(lattice::RealGrassmannLattice)
 	return r
 end
 
-function band_boundary(lattice::RealGrassmannLattice{<:A1Ā1a1ā1B1B̄1b1b̄1}, j::Int)
+function band_boundary(lattice::AbstractRealGrassmannLattice{<:A1Ā1a1ā1B1B̄1b1b̄1}, j::Int)
     posa = lattice[GrassmannContourIndex(j, :+, 1, false)]
     posb = lattice[GrassmannContourIndex(j, :-, lattice.bands, true)]
     return posa, posb
 end
-function band_boundary(lattice::RealGrassmannLattice{<:A1Ā1B1B̄1a1ā1b1b̄1}, j::Int)
+function band_boundary(lattice::AbstractRealGrassmannLattice{<:A1Ā1B1B̄1a1ā1b1b̄1}, j::Int)
     posa = lattice[GrassmannContourIndex(j, :+, 1, false)]
     posb = lattice[GrassmannContourIndex(j, :-, lattice.bands, true)]
     return posa, posb
 end
-function band_boundary(lattice::RealGrassmannLattice{<:a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2}, j::Int)
+function band_boundary(lattice::AbstractRealGrassmannLattice{<:a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2}, j::Int)
     posa = lattice[GrassmannContourIndex(j, :-, 1, false)]
     posb = lattice[GrassmannContourIndex(j, :+, lattice.bands, true)]
     return posa, posb

@@ -24,13 +24,13 @@
 	mxfl = FockLattice(Nt=2, δt=0.05, Nτ=3, δτ=0.1, contour=:mixed)
 	@test mxfl isa MixedFockLattice
 	gl = similargrassmannlattice(flat)
-	@test gl isa ImagGrassmannLattice
+	@test gl isa AbstractImagGrassmannLattice
 	@test gl.ordering == similargrassmannordering(flat.ordering)
 	glr = similargrassmannlattice(rlat_f)
-	@test glr isa RealGrassmannLattice
+	@test glr isa AbstractRealGrassmannLattice
 	@test glr.ordering == similargrassmannordering(rlat_f.ordering)
 	glm = similargrassmannlattice(mxfl)
-	@test glm isa MixedGrassmannLattice
+	@test glm isa AbstractMixedGrassmannLattice
 	@test glm.ordering == similargrassmannordering(mxfl.ordering)
 end
 

@@ -27,7 +27,7 @@ ToulouseIM(; ϵ_d::Real) = ToulouseIM(ϵ_d)
 
 num_bands(::ToulouseIM) = 1
 
-# function hybriddynamics(gmps::GrassmannMPS, lattice::ImagGrassmannLattice, model::AndersonIM; 
+# function hybriddynamics(gmps::GrassmannMPS, lattice::AbstractImagGrassmannLattice, model::AndersonIM; 
 # 					corr::Union{Nothing, <:ImagCorrelationFunction}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_if())
 # 	@assert lattice.β == model.bath.β
 # 	if isnothing(corr)
@@ -36,7 +36,7 @@ num_bands(::ToulouseIM) = 1
 # 	return qim_hybriddynamics(gmps, lattice, corr, trunc=trunc)
 # end
 
-# function hybriddynamics(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::AndersonIM; 
+# function hybriddynamics(gmps::GrassmannMPS, lattice::AbstractRealGrassmannLattice, model::AndersonIM; 
 # 					corr::Union{Nothing, <:RealCorrelationFunction}=nothing, 
 # 					trunc::TruncationScheme=Defaults.alg_trunc_if())
 # 	if isnothing(corr)
@@ -45,7 +45,7 @@ num_bands(::ToulouseIM) = 1
 # 	return qim_hybriddynamics(gmps, lattice, corr, trunc=trunc)
 # end
 
-# function hybriddynamics(gmps::GrassmannMPS, lattice::MixedGrassmannLattice, model::AndersonIM; 
+# function hybriddynamics(gmps::GrassmannMPS, lattice::AbstractMixedGrassmannLattice, model::AndersonIM; 
 # 					corr::Union{Nothing, <:MixedCorrelationFunction}=nothing, 
 # 					trunc::TruncationScheme=Defaults.alg_trunc_if())
 # 	@assert lattice.β == model.bath.β
@@ -55,7 +55,7 @@ num_bands(::ToulouseIM) = 1
 # 	return qim_hybriddynamics(gmps, lattice, corr, trunc=trunc)
 # end
 
-# function hybriddynamics(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, model::SIDB; 
+# function hybriddynamics(gmps::GrassmannMPS, lattice::ImagGrassmannLattice, model::SIDB; 
 # 					corr::Union{Nothing, <:ImagCorrelationFunction}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_if())
 # 	if isnothing(corr)
 # 		corr = correlationfunction(model.leftbath, lattice) + correlationfunction(model.rightbath, lattice)
@@ -63,7 +63,7 @@ num_bands(::ToulouseIM) = 1
 # 	return qim_hybriddynamics(gmps, lattice, corr, trunc=trunc)
 # end
 
-# function hybriddynamics(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, model::SIDB; 
+# function hybriddynamics(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::SIDB; 
 # 					corr::Union{Nothing, <:RealCorrelationFunction}=nothing, 
 # 					trunc::TruncationScheme=Defaults.alg_trunc_if())
 # 	if isnothing(corr)
@@ -73,7 +73,7 @@ num_bands(::ToulouseIM) = 1
 # end
 
 
-# function sysdynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice, model::SingleImpurityModel; trunc::TruncationScheme=Defaults.alg_trunc_sys()) 
+# function sysdynamics!(gmps::GrassmannMPS, lattice::AbstractImagGrassmannLattice, model::SingleImpurityModel; trunc::TruncationScheme=Defaults.alg_trunc_sys()) 
 # 	ϵ_d, U = model.ϵ_d, model.U
 # 	a, b = siam_coeffs(ϵ_d, U, -lattice.δτ)
 # 	for band in 1:lattice.bands
@@ -104,7 +104,7 @@ num_bands(::ToulouseIM) = 1
 # end
 
 
-# function sysdynamics_forward!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::SingleImpurityModel; trunc::TruncationScheme=Defaults.alg_trunc_sys())
+# function sysdynamics_forward!(gmps::GrassmannMPS, lattice::AbstractRealGrassmannLattice, model::SingleImpurityModel; trunc::TruncationScheme=Defaults.alg_trunc_sys())
 # 	# free dynamics
 # 	ϵ_d, U = model.ϵ_d, model.U
 # 	a, b = siam_coeffs(ϵ_d, U, -im*lattice.δt) 
@@ -134,7 +134,7 @@ num_bands(::ToulouseIM) = 1
 # 	end
 # 	return gmps
 # end
-# function sysdynamics_backward!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::SingleImpurityModel; trunc::TruncationScheme=Defaults.alg_trunc_sys())
+# function sysdynamics_backward!(gmps::GrassmannMPS, lattice::AbstractRealGrassmannLattice, model::SingleImpurityModel; trunc::TruncationScheme=Defaults.alg_trunc_sys())
 # 	# free dynamics
 # 	ϵ_d, U = model.ϵ_d, model.U
 # 	# a = exp(-im*lattice.δt*ϵ_d)
@@ -289,7 +289,7 @@ function sysdynamics_backward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLat
 	return gmps
 end
 
-function si_sysdynamics_stepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattice; ϵ_d::Real, U::Real=0, trunc::Union{Nothing,TruncationScheme}=Defaults.alg_trunc_sys())
+function si_sysdynamics_stepper!(gmps::GrassmannMPS, lattice::AbstractRealGrassmannLattice; ϵ_d::Real, U::Real=0, trunc::Union{Nothing,TruncationScheme}=Defaults.alg_trunc_sys())
 	# free dynamics
 	a = exp(-im*lattice.δt*ϵ_d)
 	i = lattice.k - 1
@@ -330,14 +330,14 @@ function si_sysdynamics_stepper!(gmps::GrassmannMPS, lattice::RealGrassmannLatti
 	return gmps
 end
 """
-    sysdynamicsstepper!(gmps, lattice::RealGrassmannLattice, model::AndersonIM; trunc=Defaults.alg_trunc_sys())
+    sysdynamicsstepper!(gmps, lattice::AbstractRealGrassmannLattice, model::AndersonIM; trunc=Defaults.alg_trunc_sys())
 
 Single-step version of `sysdynamics` for the Anderson impurity model: apply the
 free (and, for two bands, the interaction) propagator of the current time step
 `lattice.k - 1` onto `gmps` in place. Intended for online/stepwise evolutions
 combined with `makestep` and `hybriddynamicsstepper!`.
 """
-sysdynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::AndersonIM; kwargs...) = si_sysdynamics_stepper!(gmps, lattice; ϵ_d=model.ϵ_d, U=model.U, kwargs...)
+sysdynamicsstepper!(gmps::GrassmannMPS, lattice::AbstractRealGrassmannLattice, model::AndersonIM; kwargs...) = si_sysdynamics_stepper!(gmps, lattice; ϵ_d=model.ϵ_d, U=model.U, kwargs...)
 
 
 function siam_coeffs(ϵ_d, U, dt)
@@ -357,7 +357,7 @@ an equivalent model from `ImpurityHamiltonian` and calling the generic
 `systhermalstate!` yields exactly the same result. For `β == Inf` the
 ground state projector is built via the generic Fock-space construction.
 """
-function systhermalstate!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::AndersonIM; β::Real, trunc::TruncationScheme=Defaults.alg_trunc_sys())
+function systhermalstate!(gmps::GrassmannMPS, lattice::AbstractRealGrassmannLattice, model::AndersonIM; β::Real, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	ϵ_d, U = model.ϵ_d, model.U
 	if β == Inf
 		return sysinitialstate!(gmps, lattice, fock_thermalstate(model, β); trunc=trunc)

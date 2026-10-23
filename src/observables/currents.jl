@@ -8,14 +8,14 @@ function _gf_ij(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::Union{Gras
 end
 
 """
-    electriccurrent(lattice::RealGrassmannLattice1Order, corr, k::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
+    electriccurrent(lattice::RealGrassmannLattice, corr, k::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
                          alg::IntegrationAlgorithm=ExactIntegrate(),
                          Z::Number = integrate(lattice, A, B..., alg=alg), band::Int=1, max_range::Int=10000)
 
 Return the electric current at time step k, which is calculated as the sum
 of a series of Green's functions
 """
-function electriccurrent(lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction, k::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
+function electriccurrent(lattice::RealGrassmannLattice, corr::RealCorrelationFunction, k::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
                          alg::IntegrationAlgorithm=ExactIntegrate(),
                          Z::Number = integrate(lattice, A, B..., alg=alg), band::Int=1)
     curr = complex(0.)
@@ -26,19 +26,19 @@ function electriccurrent(lattice::RealGrassmannLattice1Order, corr::RealCorrelat
     end
     return 2 * curr / lattice.δt
 end
-electriccurrent(lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; band::Int=1,
+electriccurrent(lattice::RealGrassmannLattice, corr::RealCorrelationFunction, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; band::Int=1,
                 alg::IntegrationAlgorithm=ExactIntegrate(), 
                 Z::Number = integrate(lattice, A, B..., alg=alg)) = [electriccurrent(lattice, corr, k, A, B...; alg=alg, Z=Z, band=band) for k in 2:lattice.k]
 
 """
-    electriccurrent_fast(lattice::RealGrassmannLattice1Order, corr, k::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
+    electriccurrent_fast(lattice::RealGrassmannLattice, corr, k::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
                          alg::IntegrationAlgorithm=ExactIntegrate(),
                          Z::Number = integrate(lattice, A, B..., alg=alg), band::Int=1, max_range::Int=10000)
 
 The same as electriccurrent, but use a very efficient algorithm which directly 
 builds the current operator as an MPO of bond dimension 2
 """
-function electriccurrent_fast(lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction, k::Int, A::GrassmannMPS, B::Vararg{GrassmannMPS}; band::Int=1, 
+function electriccurrent_fast(lattice::RealGrassmannLattice, corr::RealCorrelationFunction, k::Int, A::GrassmannMPS, B::Vararg{GrassmannMPS}; band::Int=1, 
                             alg::IntegrationAlgorithm=ExactIntegrate(), 
                             Z::Number = integrate(lattice, A, B..., alg=alg))
     mpo = build_current_mpo(lattice, corr, k, band)
@@ -46,19 +46,19 @@ function electriccurrent_fast(lattice::RealGrassmannLattice1Order, corr::RealCor
     curr = integrate(lattice, A2, B..., alg=alg) / Z
     return 2 * curr / lattice.δt
 end
-electriccurrent_fast(lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction, A::GrassmannMPS, B::Vararg{GrassmannMPS}; band::Int=1,
+electriccurrent_fast(lattice::RealGrassmannLattice, corr::RealCorrelationFunction, A::GrassmannMPS, B::Vararg{GrassmannMPS}; band::Int=1,
                    alg::IntegrationAlgorithm=ExactIntegrate(),
                    Z::Number = integrate(lattice, A, B..., alg=alg)) = [electriccurrent_fast(lattice, corr, k, A, B...; alg=alg, Z=Z, band=band) for k in 2:lattice.k]
 
 
 
 """
-	heatcorrelationfunction(bath::AbstractFermionicNormalBath, lattice::RealGrassmannLattice)
+	heatcorrelationfunction(bath::AbstractFermionicNormalBath, lattice::AbstractRealGrassmannLattice)
 
 Build the correlation function with the bath spectrum weighted by `ω`
 (the weight factor for heat currents), i.e. `J(ω) -> ω J(ω)`.
 """
-function heatcorrelationfunction(bath::AbstractFermionicNormalBath, lattice::RealGrassmannLattice)
+function heatcorrelationfunction(bath::AbstractFermionicNormalBath, lattice::AbstractRealGrassmannLattice)
     bath2 = similar(bath, _mult_w(bath.spectrum))
     corr = correlationfunction(bath2, lattice)
     return corr
@@ -69,60 +69,28 @@ _mult_w(x::DiracDelta) = similar(x, α=x.ω*x.α)
 
 
 # """
-#     heatcurrent_fast(lattice::RealGrassmannLattice1Order, bath::AbstractFermionicNormalBath, args...; kwargs...)
+#     heatcurrent_fast(lattice::RealGrassmannLattice, bath::AbstractFermionicNormalBath, args...; kwargs...)
 
 # The calculation of heat current is very similar to electric current, 
 # the only change one needs to make is to replace the spectrum function
 # as J(w) to w -> w * J(w)
 # """
 """
-	heatcurrent_fast(lattice::RealGrassmannLattice1Order, bath::AbstractFermionicNormalBath, args...; kwargs...)
+	heatcurrent_fast(lattice::RealGrassmannLattice, bath::AbstractFermionicNormalBath, args...; kwargs...)
 
 Heat current computed with the MPO-based (fast) current evaluation, using the
 `ω`-weighted correlation function built by `heatcorrelationfunction`.
 """
-heatcurrent_fast(lattice::RealGrassmannLattice1Order, bath::AbstractFermionicNormalBath, args...; kwargs...) = electriccurrent_fast(
+heatcurrent_fast(lattice::RealGrassmannLattice, bath::AbstractFermionicNormalBath, args...; kwargs...) = electriccurrent_fast(
                     lattice, heatcorrelationfunction(bath, lattice), args...; kwargs...)
 
 
 
 
-function electriccurrent(lattice::RealGrassmannLattice2Order, corr::RealCorrelationFunction, A::GrassmannMPS, B::Vararg{GrassmannMPS}; 
-                            alg::IntegrationAlgorithm=ExactIntegrate(), 
-                            Z::Number = integrate(lattice, A, B..., alg=alg), band::Int=1)
-    curr = complex(0.)
-    η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
-    @assert  lattice.N <= div(size(η⁺⁺,1)-1, 2) 
-    k = lattice.k
-    curr -= η⁺⁺[2*k-1, 1] * _gf_ij(lattice, k, 1, A, B...; b1=:-, b2=:+, Z=Z, band=band, alg=alg, c1=true, c2=false)
-    curr -= η⁺⁻[2*k-1, 1] * _gf_ij(lattice, k, 1, A, B..., b1=:-, b2=:-, Z=Z, band=band, alg=alg, c1=true, c2=false)
-    for j in 2:k-1
-        curr -= (η⁺⁺[2*k-1, 2*j-2] + η⁺⁺[2*k-1, 2*j-1]) * _gf_ij(lattice, k, j, A, B..., b1=:-, b2=:+, Z=Z, band=band, alg=alg, c1=true, c2=false)
-        curr -= (η⁺⁻[2*k-1, 2*j-2] + η⁺⁻[2*k-1, 2*j-1])  * _gf_ij(lattice, k, j, A, B..., b1=:-, b2=:-, Z=Z, band=band, alg=alg, c1=true, c2=false)
-    end
-    curr -= η⁺⁺[2*k-1, 2*k-2] * _gf_ij(lattice, k, k, A, B..., b1=:-, b2=:+, Z=Z, band=band, alg=alg, c1=true, c2=false)
-    curr -= η⁺⁻[2*k-1, 2*k-2] * _gf_ij(lattice, k, k, A, B..., b1=:-, b2=:-, Z=Z, band=band, alg=alg, c1=true, c2=false)
-    return 2 * curr / (0.5*lattice.δt)
-end
-
-function electriccurrent_fast(lattice::RealGrassmannLattice2Order, corr::RealCorrelationFunction, A::GrassmannMPS, B::Vararg{GrassmannMPS}; 
-                            alg::IntegrationAlgorithm=ExactIntegrate(), 
-                            Z::Number = integrate(lattice, A, B..., alg=alg), band::Int=1)
-    k = lattice.k
-    mpo = build_current_mpo(lattice, corr, k, band)
-    A2 = mpo * A
-    curr = integrate(lattice, A2, B..., alg=alg) / Z
-
-    η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
-    curr -= η⁺⁺[2*k-1, 2*k-2] * _gf_ij(lattice, k, k, A, B..., b1=:-, b2=:+, Z=Z, band=band, alg=alg, c1=true, c2=false)
-    curr -= η⁺⁻[2*k-1, 2*k-2] * _gf_ij(lattice, k, k, A, B..., b1=:-, b2=:-, Z=Z, band=band, alg=alg, c1=true, c2=false)
-    return 2 * curr / (0.5*lattice.δt)
-end
-
 # building the current operator as MPO
-build_current_mpo(lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction, k::Int, band::Int) = build_current_mpo_1order(lattice, corr, k, band)
+build_current_mpo(lattice::RealGrassmannLattice, corr::RealCorrelationFunction, k::Int, band::Int) = build_current_mpo_1order(lattice, corr, k, band)
 
-function build_current_mpo_1order(lattice::RealGrassmannLattice, corr::RealCorrelationFunction, k::Int, band::Int)
+function build_current_mpo_1order(lattice::AbstractRealGrassmannLattice, corr::RealCorrelationFunction, k::Int, band::Int)
     η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
     row = lattice[GrassmannContourIndex(k, :+, band, true)]
     cols = Int[]
@@ -135,31 +103,6 @@ function build_current_mpo_1order(lattice::RealGrassmannLattice, corr::RealCorre
         push!(cols, col2)
         push!(coefs, η⁺⁻[k, j])
     end
-    return two_body_mpo_row(row, cols, coefs)
-end
-
-function build_current_mpo(lattice::RealGrassmannLattice2Order, corr::RealCorrelationFunction, k::Int, band::Int)
-    η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
-    row = lattice[GrassmannContourIndex(k, :-, band, true)]
-    cols = Int[]
-    coefs = ComplexF64[]
-    # the last two terms are not includes
-    for j in k-1:-1:2
-        col1 = lattice[GrassmannContourIndex(j, :+, band, false)]
-        push!(cols, col1)
-        push!(coefs, -(η⁺⁺[2*k-1, 2*j-2] + η⁺⁺[2*k-1, 2*j-1]) )
-        col2 = lattice[GrassmannContourIndex(j, :-, band, false)]
-        push!(cols, col2)
-        push!(coefs, -((η⁺⁻[2*k-1, 2*j-2] + η⁺⁻[2*k-1, 2*j-1])))
-    end
-    j = 1
-    col1 = lattice[GrassmannContourIndex(j, :+, band, false)]
-    push!(cols, col1)
-    push!(coefs, -η⁺⁺[2*k-1, 2*j-1]) 
-    col2 = lattice[GrassmannContourIndex(j, :-, band, false)]
-    push!(cols, col2)
-    push!(coefs, -η⁺⁻[2*k-1, 2*j-1])
-   
     return two_body_mpo_row(row, cols, coefs)
 end
 

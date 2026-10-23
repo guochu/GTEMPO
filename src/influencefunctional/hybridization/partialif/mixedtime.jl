@@ -1,9 +1,9 @@
 """
-	hybriddynamics(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::MixedCorrelationFunction; band::Int, trunc)
+	hybriddynamics(gmps::GrassmannMPS, lattice::MixedGrassmannLattice, corr::MixedCorrelationFunction; band::Int, trunc)
 
 real-time MPS-IF for a single band 
 """
-function hybriddynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::AbstractMixedCorrelationFunction; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
+function hybriddynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice, corr::AbstractMixedCorrelationFunction; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
 	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	kt, Nτ = lattice.kt, lattice.Nτ
 	cols = _mixedcolumns(kt, Nτ, band)
@@ -20,7 +20,7 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Orde
 	return gmps
 end
 
-function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice1Order, corr::AbstractMixedCorrelationFunction; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
+function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice, corr::AbstractMixedCorrelationFunction; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
 	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	kt, Nτ = lattice.kt, lattice.Nτ
 	cols = _mixedcolumns(kt, Nτ, band)
@@ -52,7 +52,7 @@ function _mixedcolumns(kt::Int, Nτ::Int, band::Int)
 	return cols
 end
 
-function partialif_hybrid(lattice::MixedGrassmannLattice, i::GrassmannContourIndex,
+function partialif_hybrid(lattice::AbstractMixedGrassmannLattice, i::GrassmannContourIndex,
 						  cols::AbstractVector{<:GrassmannContourIndex}, corr)
 	@assert length(cols) == lattice.Nτ + 2*lattice.kt
 	row = lattice[_latticeindex(i, conj=true)]
@@ -62,7 +62,7 @@ function partialif_hybrid(lattice::MixedGrassmannLattice, i::GrassmannContourInd
 	return mpo * vacuumstate(promote_type(scalartype(lattice), eltype(coefs)), lattice)
 end
 
-function partialif_hybrid_naive(lattice::MixedGrassmannLattice, i::GrassmannContourIndex,
+function partialif_hybrid_naive(lattice::AbstractMixedGrassmannLattice, i::GrassmannContourIndex,
 						  cols::AbstractVector{<:GrassmannContourIndex}, corr;
 						  trunc::TruncationScheme=Defaults.alg_trunc_if())
 	@assert length(cols) == lattice.Nτ + 2*lattice.kt

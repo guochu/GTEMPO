@@ -7,9 +7,9 @@ families are available:
 
 | Contour                 | Keyword                          | Lattice type              |
 |-------------------------|----------------------------------|---------------------------|
-| imaginary (Matsubara)   | `contour = :imag`                | `ImagGrassmannLattice`    |
-| real (Keldysh)          | `contour = :real` / `:Keldysh`   | `RealGrassmannLattice`    |
-| mixed (Kadanoff–Baym)   | `contour = :mixed` / `:Kadanoff` | `MixedGrassmannLattice`   |
+| imaginary (Matsubara)   | `contour = :imag`                | `AbstractImagGrassmannLattice`    |
+| real (Keldysh)          | `contour = :real` / `:Keldysh`   | `AbstractRealGrassmannLattice`    |
+| mixed (Kadanoff–Baym)   | `contour = :mixed` / `:Kadanoff` | `AbstractMixedGrassmannLattice`   |
 
 Each lattice is fully determined by a set of *Grassmann variables* (GVs), one
 per site, addressed through [`GrassmannContourIndex`](@ref): a time step `1 ≤ j ≤ k`

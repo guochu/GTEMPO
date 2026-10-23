@@ -85,13 +85,13 @@ the Fock-space propagator (`fock_propagator`) is converted directly
 into a SparseGMPS (`_tosparsegmps`) which is multiplied into the
 accumulating state with the sparse `mult!`.
 """
-function sysdynamics(lattice::ImagGrassmannLattice, model::AbstractImpurityHamiltonian;
+function sysdynamics(lattice::AbstractImagGrassmannLattice, model::AbstractImpurityHamiltonian;
 							trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	gmps = vacuumstate(lattice)
 	return sysdynamics_imaginary!(gmps, lattice, model; trunc=trunc)
 end
 
-function sysdynamics(lattice::RealGrassmannLattice, model::AbstractImpurityHamiltonian;
+function sysdynamics(lattice::AbstractRealGrassmannLattice, model::AbstractImpurityHamiltonian;
 							branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	gmps = vacuumstate(lattice)
 	if isnothing(branch)
@@ -104,7 +104,7 @@ function sysdynamics(lattice::RealGrassmannLattice, model::AbstractImpurityHamil
 	end
 end
 
-function sysdynamics(lattice::MixedGrassmannLattice, model::AbstractImpurityHamiltonian;
+function sysdynamics(lattice::AbstractMixedGrassmannLattice, model::AbstractImpurityHamiltonian;
 							branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	gmps = vacuumstate(lattice)
 	if isnothing(branch)
@@ -248,13 +248,13 @@ coherent-state bra-ket overlaps (see `_bare_window_sparsegmps`).
 Applying `bulkconnection` to its output gives `sysdynamics`, exactly
 as `bulkconnection` on `baresysdynamics` gives `sysdynamics`.
 """
-function baresysdynamics(lattice::ImagGrassmannLattice, model::AbstractImpurityHamiltonian;
+function baresysdynamics(lattice::AbstractImagGrassmannLattice, model::AbstractImpurityHamiltonian;
 								trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	gmps = vacuumstate(lattice)
 	return baresysdynamics_imaginary!(gmps, lattice, model; trunc=trunc)
 end
 
-function baresysdynamics(lattice::RealGrassmannLattice, model::AbstractImpurityHamiltonian;
+function baresysdynamics(lattice::AbstractRealGrassmannLattice, model::AbstractImpurityHamiltonian;
 								branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	gmps = vacuumstate(lattice)
 	if isnothing(branch)
@@ -267,7 +267,7 @@ function baresysdynamics(lattice::RealGrassmannLattice, model::AbstractImpurityH
 	end
 end
 
-function baresysdynamics(lattice::MixedGrassmannLattice, model::AbstractImpurityHamiltonian;
+function baresysdynamics(lattice::AbstractMixedGrassmannLattice, model::AbstractImpurityHamiltonian;
 								branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	gmps = vacuumstate(lattice)
 	if isnothing(branch)
@@ -302,9 +302,9 @@ end
 
 # the canonical ordering in which the propagator windows of one branch
 # (for real time: of both branches together) are pairwise disjoint
-_fastordering(lattice::ImagGrassmannLattice) = A1B1B̄1Ā1()
-_fastordering(lattice::RealGrassmannLattice) = A1B1ā1b̄1Ā1B̄1a1b1()
-_fastordering(lattice::MixedGrassmannLattice) = A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄1A1B1()
+_fastordering(lattice::AbstractImagGrassmannLattice) = A1B1B̄1Ā1()
+_fastordering(lattice::AbstractRealGrassmannLattice) = A1B1ā1b̄1Ā1B̄1a1b1()
+_fastordering(lattice::AbstractMixedGrassmannLattice) = A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄1A1B1()
 
 # the propagator windows of all time steps of the given branches, in the
 # ordering of `lattice`; the per-branch window layout is cached, so each
@@ -411,12 +411,12 @@ ordering (A1B1B̄1Ā1 for imaginary time, A1B1ā1b̄1Ā1B̄1a1b1 for real tim
 A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄1A1B1 for mixed contours) and transformed to
 the requested ordering with `changeordering`.
 """
-function sysdynamics_fast(lattice::ImagGrassmannLattice, model::ConstImpurityHamiltonian;
+function sysdynamics_fast(lattice::AbstractImagGrassmannLattice, model::ConstImpurityHamiltonian;
 								trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	return _fast_driver(lattice, model, (:τ,); trunc=trunc)
 end
 
-function sysdynamics_fast(lattice::RealGrassmannLattice, model::ConstImpurityHamiltonian;
+function sysdynamics_fast(lattice::AbstractRealGrassmannLattice, model::ConstImpurityHamiltonian;
 								branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	if isnothing(branch)
 		branches = (:+, :-)
@@ -427,7 +427,7 @@ function sysdynamics_fast(lattice::RealGrassmannLattice, model::ConstImpurityHam
 	return _fast_driver(lattice, model, branches; trunc=trunc)
 end
 
-function sysdynamics_fast(lattice::MixedGrassmannLattice, model::ConstImpurityHamiltonian;
+function sysdynamics_fast(lattice::AbstractMixedGrassmannLattice, model::ConstImpurityHamiltonian;
 								branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	if isnothing(branch)
 		branches = (:+, :-, :τ)
@@ -446,12 +446,12 @@ Fast version of `baresysdynamics`, built by direct tiling of the
 bare propagator windows (see `sysdynamics_fast`). Applying
 `bulkconnection` to its output gives `sysdynamics_fast`.
 """
-function baresysdynamics_fast(lattice::ImagGrassmannLattice, model::ConstImpurityHamiltonian;
+function baresysdynamics_fast(lattice::AbstractImagGrassmannLattice, model::ConstImpurityHamiltonian;
 									trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	return _fast_driver(lattice, model, (:τ,); bare=true, trunc=trunc)
 end
 
-function baresysdynamics_fast(lattice::RealGrassmannLattice, model::ConstImpurityHamiltonian;
+function baresysdynamics_fast(lattice::AbstractRealGrassmannLattice, model::ConstImpurityHamiltonian;
 									branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	if isnothing(branch)
 		branches = (:+, :-)
@@ -462,7 +462,7 @@ function baresysdynamics_fast(lattice::RealGrassmannLattice, model::ConstImpurit
 	return _fast_driver(lattice, model, branches; bare=true, trunc=trunc)
 end
 
-function baresysdynamics_fast(lattice::MixedGrassmannLattice, model::ConstImpurityHamiltonian;
+function baresysdynamics_fast(lattice::AbstractMixedGrassmannLattice, model::ConstImpurityHamiltonian;
 									branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	if isnothing(branch)
 		branches = (:+, :-, :τ)

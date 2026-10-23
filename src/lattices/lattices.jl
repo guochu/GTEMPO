@@ -27,7 +27,7 @@ include("changeordering.jl")
 
 Return different Grassmann lattices depending on the "contour"
 there are three choices for "contour"
-real (or eauivalent Keldysh): return RealGrassmannLattice
+real (or equivalent Keldysh): return RealGrassmannLattice
 imag: return ImagGrassmannLattice
 mixed (or equivalent Kadanoff): return MixedGrassmannLattice
 The kwargs are different for different lattice types
@@ -81,9 +81,9 @@ indexmappings(lattice::AbstractGrassmannLattice) = error("indexmappings not impl
 	branches(lattice::AbstractGrassmannLattice) 
 
 Return all the possible branches of a lattice
-ImagGrassmannLattice contains a single branch :τ
-RealGrassmannLattice contains two branches :+ and :-
-MixedGrassmannLattice contains three branches :+, :- and :τ
+AbstractImagGrassmannLattice contains a single branch :τ
+AbstractRealGrassmannLattice contains two branches :+ and :-
+AbstractMixedGrassmannLattice contains three branches :+, :- and :τ
 """
 branches(lattice::AbstractGrassmannLattice) = branches(typeof(lattice))
 
@@ -205,7 +205,7 @@ function _site_symbols(lattice::AbstractGrassmannLattice)
 end
 
 _lattice_string(lattice::AbstractGrassmannLattice) = join(_site_symbols(lattice))
-function _lattice_string(lattice::MixedGrassmannLattice)
+function _lattice_string(lattice::AbstractMixedGrassmannLattice)
 	syms = _site_symbols(lattice)
 	cut = 2 * lattice.bands * lattice.kτ
 	return join(@view syms[1:cut]) * "_" * join(@view syms[cut+1:end])
@@ -220,10 +220,10 @@ function Base.show(io::IO, ::MIME"text/plain", lattice::AbstractGrassmannLattice
 	print(io, _lattice_string(lattice))
 end
 
-_show_lattice_params(io::IO, lattice::RealGrassmannLattice) =
+_show_lattice_params(io::IO, lattice::AbstractRealGrassmannLattice) =
 	print(io, "bands=", lattice.bands, ", N=", lattice.N, ", δt=", lattice.δt)
-_show_lattice_params(io::IO, lattice::ImagGrassmannLattice) =
+_show_lattice_params(io::IO, lattice::AbstractImagGrassmannLattice) =
 	print(io, "bands=", lattice.bands, ", N=", lattice.N, ", δτ=", lattice.δτ)
-_show_lattice_params(io::IO, lattice::MixedGrassmannLattice) =
+_show_lattice_params(io::IO, lattice::AbstractMixedGrassmannLattice) =
 	print(io, "bands=", lattice.bands, ", Nt=", lattice.Nt, ", δt=", lattice.δt,
 		  ", Nτ=", lattice.Nτ, ", δτ=", lattice.δτ)

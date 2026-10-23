@@ -66,12 +66,12 @@ sysdynamics_deprecated(lattice::AbstractGrassmannLattice, model::AbstractImpurit
 
 The inplace version of `sysdynamics_deprecated`.
 """
-function sysdynamics_deprecated!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice, model::AbstractImpurityHamiltonian; trunc::TruncationScheme=Defaults.alg_trunc_sys())
+function sysdynamics_deprecated!(gmps::GrassmannMPS, lattice::AbstractImagGrassmannLattice, model::AbstractImpurityHamiltonian; trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	return sysdynamics_imaginary_deprecated!(gmps, lattice, model; trunc=trunc)
 end
 
 
-function sysdynamics_deprecated!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, model::AbstractImpurityHamiltonian;
+function sysdynamics_deprecated!(gmps::GrassmannMPS, lattice::AbstractRealGrassmannLattice, model::AbstractImpurityHamiltonian;
 						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	if isnothing(branch)
 		sysdynamics_forward_deprecated!(gmps, lattice, model; trunc=trunc)
@@ -82,7 +82,7 @@ function sysdynamics_deprecated!(gmps::GrassmannMPS, lattice::RealGrassmannLatti
 	end
 end
 
-function sysdynamics_deprecated!(gmps::GrassmannMPS, lattice::MixedGrassmannLattice, model::AbstractImpurityHamiltonian;
+function sysdynamics_deprecated!(gmps::GrassmannMPS, lattice::AbstractMixedGrassmannLattice, model::AbstractImpurityHamiltonian;
 						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	if isnothing(branch)
 		sysdynamics_forward_deprecated!(gmps, lattice, model; trunc=trunc)

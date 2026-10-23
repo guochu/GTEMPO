@@ -1,9 +1,9 @@
 """
-	influenceoperators(lattice::ImagGrassmannLattice1Order{<:A1Ā1B1B̄1}, corr2::ImagCorrelationFunction; band, alg_expan)
+	influenceoperators(lattice::ImagGrassmannLattice{<:A1Ā1B1B̄1}, corr2::ImagCorrelationFunction; band, alg_expan)
 
 The influenceoperators ΣᵢⱼΔᵢⱼāᵢaⱼ as an MPO (returned in a 1-tuple), the bond dimension of MPO is 2n, where n is number of the prony expansion
 """
-function influenceoperators(lattice::ImagGrassmannLattice1Order, corr2::ImagCorrelationFunction; band::Int=1, alg_expan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
+function influenceoperators(lattice::ImagGrassmannLattice, corr2::ImagCorrelationFunction; band::Int=1, alg_expan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	corr = corr2.data
 	mpoj = ti_mpotensor(corr, alg_expan)
 	h = MPOHamiltonian([mpoj, mpoj, mpoj])
@@ -13,9 +13,9 @@ function influenceoperators(lattice::ImagGrassmannLattice1Order, corr2::ImagCorr
 end
 
 """
-	influenceoperatorsteppers(lattice::ImagGrassmannLattice1Order{<:A1Ā1B1B̄1}, corr2::ImagCorrelationFunction, dt, alg; band, alg_expan)
+	influenceoperatorsteppers(lattice::ImagGrassmannLattice{<:A1Ā1B1B̄1}, corr2::ImagCorrelationFunction, dt, alg; band, alg_expan)
 """
-function influenceoperatorsteppers(lattice::ImagGrassmannLattice1Order, corr2::ImagCorrelationFunction, dt::Real, alg::FirstOrderStepper;
+function influenceoperatorsteppers(lattice::ImagGrassmannLattice, corr2::ImagCorrelationFunction, dt::Real, alg::FirstOrderStepper;
 										band::Int=1, alg_expan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	corr = corr2.data
 	mpoj = ti_mpotensor(corr, alg_expan)
@@ -25,7 +25,7 @@ function influenceoperatorsteppers(lattice::ImagGrassmannLattice1Order, corr2::I
 	_JW = I2
 	return (_fit_to_lattice(lattice, mpo, _JW, band),)
 end
-function influenceoperatorsteppers(lattice::ImagGrassmannLattice1Order, corr2::ImagCorrelationFunction, dt::Real, alg::ComplexStepper; 
+function influenceoperatorsteppers(lattice::ImagGrassmannLattice, corr2::ImagCorrelationFunction, dt::Real, alg::ComplexStepper; 
 										band::Int=1, alg_expan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	corr = corr2.data
 	mpoj = ti_mpotensor(corr, alg_expan)
@@ -36,7 +36,7 @@ function influenceoperatorsteppers(lattice::ImagGrassmannLattice1Order, corr2::I
 	return _fit_to_lattice(lattice, mpo1, _JW, band), _fit_to_lattice(lattice, mpo2, _JW, band) 
 end
 
-function influenceoperatorstepper(lattice::ImagGrassmannLattice1Order{O}, corr::ImagCorrelationFunction, dt::Real, alg::TimeEvoMPOAlgorithm, alg_mult::DMRGAlgorithm; 
+function influenceoperatorstepper(lattice::ImagGrassmannLattice{O}, corr::ImagCorrelationFunction, dt::Real, alg::TimeEvoMPOAlgorithm, alg_mult::DMRGAlgorithm; 
 										band::Int=1, alg_expan::ExponentialExpansionAlgorithm=Defaults.alg_expan()) where O
 	if !(LayoutStyle(lattice) isa TimeLocalLayout)
 		lattice2 = similar(lattice, ordering = A1Ā1B1B̄1())
@@ -49,12 +49,12 @@ function influenceoperatorstepper(lattice::ImagGrassmannLattice1Order{O}, corr::
 end
 
 
-function _influenceoperatorstepper(lattice::ImagGrassmannLattice1Order, corr::ImagCorrelationFunction, dt::Real, alg::FirstOrderStepper, alg_mult::DMRGAlgorithm; 
+function _influenceoperatorstepper(lattice::ImagGrassmannLattice, corr::ImagCorrelationFunction, dt::Real, alg::FirstOrderStepper, alg_mult::DMRGAlgorithm; 
 										band::Int=1, alg_expan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
 	mps = only(influenceoperatorsteppers(lattice, corr, dt, alg, band=band, alg_expan=alg_expan)) * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
 	return mps
 end
-function _influenceoperatorstepper(lattice::ImagGrassmannLattice1Order, corr::ImagCorrelationFunction, dt::Real, alg::ComplexStepper, alg_mult::DMRGAlgorithm; 
+function _influenceoperatorstepper(lattice::ImagGrassmannLattice, corr::ImagCorrelationFunction, dt::Real, alg::ComplexStepper, alg_mult::DMRGAlgorithm; 
 										band::Int=1, alg_expan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
  	mpo1, mpo2 = influenceoperatorsteppers(lattice, corr, dt, alg, band=band, alg_expan=alg_expan)
 	mps1 = mpo1 * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
@@ -62,7 +62,7 @@ function _influenceoperatorstepper(lattice::ImagGrassmannLattice1Order, corr::Im
 	return mult(mps1, mps2, alg_mult)[1]
 end
 
-function _fit_to_lattice(lattice::ImagGrassmannLattice, mpo::MPO, _JW::MPSBondTensor, band::Int, trunc::TruncationScheme=Defaults.alg_trunc_if())
+function _fit_to_lattice(lattice::AbstractImagGrassmannLattice, mpo::MPO, _JW::MPSBondTensor, band::Int, trunc::TruncationScheme=Defaults.alg_trunc_if())
 	@assert length(mpo) == 3
 	(LayoutStyle(lattice) isa TimeLocalLayout) || throw(ArgumentError("only works lattice with TimeLocalLayout"))
 

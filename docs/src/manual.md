@@ -44,9 +44,9 @@ Three contours are available:
 
 | `contour` | branches | lattice types |
 |---|---|---|
-| `:imag` | `τ` | `ImagGrassmannLattice1Order/2Order` |
-| `:real` / `:Keldysh` | `+`, `-` | `RealGrassmannLattice1Order/2Order` |
-| `:mixed` / `:Kadanoff` | `τ`, `+`, `-` | `MixedGrassmannLattice1Order/2Order` |
+| `:imag` | `τ` | `ImagGrassmannLattice` |
+| `:real` / `:Keldysh` | `+`, `-` | `RealGrassmannLattice` |
+| `:mixed` / `:Kadanoff` | `τ`, `+`, `-` | `MixedGrassmannLattice` |
 
 Multi-band problems take a `bands` keyword (one band per orbital/spin
 species). The chain arrangement of the GVs is controlled by a

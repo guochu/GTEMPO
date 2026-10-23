@@ -17,7 +17,7 @@ onto `x` directly and returns it.
 Note that we have different boundary conditions for different contours
 """
 # imaginary-time
-function boundarycondition!(x::GrassmannMPS, lattice::ImagGrassmannLattice; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_sys())
+function boundarycondition!(x::GrassmannMPS, lattice::AbstractImagGrassmannLattice; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	# trace closure (antiperiodic boundary condition) directly between the
 	# last and the first physical time slice
 	pos1, pos2 = lattice[GrassmannContourIndex(1, :τ, band, true)], lattice[GrassmannContourIndex(lattice.k, :τ, band, false)]
@@ -27,7 +27,7 @@ function boundarycondition!(x::GrassmannMPS, lattice::ImagGrassmannLattice; band
 end
 
 # real-time
-function boundarycondition!(x::GrassmannMPS, lattice::RealGrassmannLattice; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_sys())
+function boundarycondition!(x::GrassmannMPS, lattice::AbstractRealGrassmannLattice; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	# connection at the turning point of the Keldysh contour
 	pos1, pos2 = lattice[GrassmannContourIndex(lattice.k, :-, band, true)], lattice[GrassmannContourIndex(lattice.k, :+, band, false)]
 	apply!(exp(GTerm(pos1, pos2, coeff=-1)), x)
@@ -35,7 +35,7 @@ function boundarycondition!(x::GrassmannMPS, lattice::RealGrassmannLattice; band
 	return x
 end
 # mixed-time
-function boundarycondition!(x::GrassmannMPS, lattice::MixedGrassmannLattice; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_sys())
+function boundarycondition!(x::GrassmannMPS, lattice::AbstractMixedGrassmannLattice; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_sys())
 	# turning point of the real-time part
 	pos1, pos2 = lattice[GrassmannContourIndex(lattice.kt, :-, band, true)], lattice[GrassmannContourIndex(lattice.kt, :+, band, false)]
 	apply!(exp(GTerm(pos1, pos2, coeff=1)), x)

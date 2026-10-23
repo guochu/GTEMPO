@@ -20,7 +20,7 @@ function main(t; β=Inf, δt=0.1, chi=60, U=1, ϵ_d=-U/2)
 	# two bands: one band per spin direction
 	bands = 2
 	# discretize the real-time (Keldysh) contour into N steps of size δt
-	lattice = GrassmannLattice(N=N, δt=δt, contour=:Keldysh, order=1, bands=bands)
+	lattice = GrassmannLattice(N=N, δt=δt, contour=:Keldysh, bands=bands)
 	println("number of sites, ", length(lattice))
 
 

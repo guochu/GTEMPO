@@ -171,18 +171,6 @@ end
 	# (small accumulated truncation differences between the two paths)
 	@test relerr(mpsI, hybriddynamics(lat_r, corr_r, trunc=trunc)) < 1.0e-5
 
-	# second-order lattice: finalized IF built on a copy of the carried state
-	lat_r2 = GrassmannLattice(N=2, δt=0.05, contour=:real, order=2)
-	corr_r2 = correlationfunction(bath, lat_r2)
-	lattice = similar(lat_r2, N=0)
-	mpsI2 = vacuumstate(lattice)
-	for k2 in 2:lat_r2.N+1
-		lattice, mpsI2 = makestep(lattice, mpsI2)
-		mpsI2 = hybriddynamicsstepper!(mpsI2, lattice, corr_r2, finalize=false, trunc=trunc)
-	end
-	mpsI2f = hybriddynamicsstepper!(copy(mpsI2), lattice, corr_r2, finalize=true, trunc=trunc)
-	@test length(mpsI2f) == length(lattice) && norm(mpsI2f) > 0
-
 	# retarded interaction (bosonic bath): naive construction, copy vs in-place
 	bblat = GrassmannLattice(N=3, δτ=0.1, contour=:imag)
 	bbath = bosonicbath(DiracDelta(ω=1, α=0.5), β=1.0)

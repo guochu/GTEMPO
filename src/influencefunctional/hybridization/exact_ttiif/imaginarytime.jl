@@ -1,4 +1,4 @@
-function _influencefunctional(lattice::ImagGrassmannLattice1Order{O}, corr::ImagCorrelationFunction, alg::ExactTTIIF; band::Int=1) where O
+function _influencefunctional(lattice::ImagGrassmannLattice{O}, corr::ImagCorrelationFunction, alg::ExactTTIIF; band::Int=1) where O
 	if lattice.bands > 1
 		# the terms are built on a single-band lattice and expanded to the
 		# full lattice afterwards (influencefunctional_util only supports one band)
@@ -20,7 +20,7 @@ function _influencefunctional(lattice::ImagGrassmannLattice1Order{O}, corr::Imag
 	end
 end
 
-function _influencefunctional_util(lattice::ImagGrassmannLattice1Order, corr::ImagCorrelationFunction, alg::ExactTTIIF)
+function _influencefunctional_util(lattice::ImagGrassmannLattice, corr::ImagCorrelationFunction, alg::ExactTTIIF)
 	@assert lattice.bands == 1
 
 	# get WII for each exponential decay term

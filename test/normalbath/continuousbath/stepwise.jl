@@ -1,12 +1,6 @@
 # stepwise (online) evolution on the real-time lattice: makestep + hybriddynamicsstepper!
 # + boundarycondition + sysdynamicsstepper!, benchmarked against the Toulouse ED reference
 # of ImpurityModelBase
-#
-# NOTE: the second-order stepwise recipe follows the archived test: the finalized
-# (full 2k-2 row) IF is built on a copy of the carried-over MPS for the observables,
-# then the carried-over MPS itself receives the full two-row (2k-2 + 2k-1) increment.
-# Calling hybriddynamicsstepper! in-place on the same MPS for both calls would apply
-# the 2k-2 row twice.
 
 @testset "Continuous bath, real time: stepwise evolution (Toulouse ED)" begin
 	β = 1.0
@@ -35,39 +29,24 @@
 	end
 
 	exact_model = AndersonIM(ϵ_d=ϵ_d, U=0)
-	for order in (1, 2)
-		lattice_o = GrassmannLattice(N=N, δt=δt, contour=:real, order=order)
-		corr = correlationfunction(bath, lattice_o)
+	lattice_o = GrassmannLattice(N=N, δt=δt, contour=:real)
+	corr = correlationfunction(bath, lattice_o)
 
-		lattice = similar(lattice_o, N=0)
-		mpsI = vacuumstate(lattice)
-		mpsK = vacuumstate(lattice)
-		ns = Float64[]
-		currents = ComplexF64[]
-		for k in 2:N+1
-			lattice, mpsI, mpsK = makestep(lattice, mpsI, mpsK)
-			@test k == timesteps(mpsI, lattice) == lattice.k
-			if order == 1
-				mpsI = hybriddynamicsstepper!(mpsI, lattice, corr, trunc=trunc)
-				mpsI′ = boundarycondition(mpsI, lattice)
-				mpsK = sysdynamicsstepper!(mpsK, lattice, exact_model, trunc=trunc)
-				push!(ns, real(occupation(lattice, k - 1, mpsK, mpsI′, branch=:+)))
-				push!(currents, electriccurrent_fast(lattice, corr, k, mpsK, mpsI′))
-			else
-				# see the NOTE above: the finalized IF goes to a copy of the carried MPS
-				mpsI2 = hybriddynamicsstepper!(copy(mpsI), lattice, corr, finalize=true, trunc=trunc)
-				mpsI2 = boundarycondition(mpsI2, lattice)
-				mpsI = hybriddynamicsstepper!(mpsI, lattice, corr, finalize=false, trunc=trunc)
-				mpsK = sysdynamicsstepper!(mpsK, lattice, exact_model, trunc=trunc)
-				cache = environments(lattice, mpsK, mpsI2)
-				# for the second-order lattice the cached observables are defined at the
-				# current (largest) time step only
-				push!(ns, real(cached_occupation(lattice, mpsK, mpsI2, cache=cache)))
-				push!(currents, cached_electriccurrent_fast(lattice, corr, mpsK, mpsI2, cache=cache))
-			end
-		end
-		@test length(ns) == length(currents) == N
-		@test norm(ns - ns_ed) / norm(ns_ed) < rtol
-		@test norm(currents - currents_ed) / norm(currents_ed) < rtol
+	lattice = similar(lattice_o, N=0)
+	mpsI = vacuumstate(lattice)
+	mpsK = vacuumstate(lattice)
+	ns = Float64[]
+	currents = ComplexF64[]
+	for k in 2:N+1
+		lattice, mpsI, mpsK = makestep(lattice, mpsI, mpsK)
+		@test k == timesteps(mpsI, lattice) == lattice.k
+		mpsI = hybriddynamicsstepper!(mpsI, lattice, corr, trunc=trunc)
+		mpsI′ = boundarycondition(mpsI, lattice)
+		mpsK = sysdynamicsstepper!(mpsK, lattice, exact_model, trunc=trunc)
+		push!(ns, real(occupation(lattice, k - 1, mpsK, mpsI′, branch=:+)))
+		push!(currents, electriccurrent_fast(lattice, corr, k, mpsK, mpsI′))
 	end
+	@test length(ns) == length(currents) == N
+	@test norm(ns - ns_ed) / norm(ns_ed) < rtol
+	@test norm(currents - currents_ed) / norm(currents_ed) < rtol
 end

@@ -113,7 +113,7 @@ jr = electriccurrent(lat, rcorr, mpsK, mpsI)
 Instead of building the full lattice, grow it step by step:
 
 ```julia
-lattice = GrassmannLattice(N=Nt, δt=dt, contour=:real, order=1)
+lattice = GrassmannLattice(N=Nt, δt=dt, contour=:real)
 lattice = similar(lattice, N=0)
 mpsI = vacuumstate(lattice); mpsK = vacuumstate(lattice)
 for k in 2:Nt+1
@@ -123,14 +123,6 @@ for k in 2:Nt+1
     mpsK  = sysdynamicsstepper!(mpsK, lattice, model, trunc=trunc)
     n_k   = real(occupation(lattice, k-1, mpsK, mpsI′, branch=:+))
 end
-```
-
-On a second-order lattice the finalized IF must be built on a *copy*:
-
-```julia
-mpsI2 = hybriddynamicsstepper!(copy(mpsI), lattice, corr, finalize=true, trunc=trunc)
-mpsI2 = boundarycondition(mpsI2, lattice)
-mpsI  = hybriddynamicsstepper!(mpsI, lattice, corr, finalize=false, trunc=trunc)
 ```
 
 ### 1.6 Quench and time-dependent impurities
@@ -327,8 +319,7 @@ All accept `alg_expan` (ExpExp algorithm) and `alg_mult` (MPO compression);
 
 1. `D`: increase until observables stop moving; monitor with
    `bonddim(mpsI)`.
-2. `δt`/`δτ`: halve and compare; second-order lattices are more accurate per
-   step but cost roughly twice per step.
+2. `δt`/`δτ`: halve and compare until the observables stop moving.
 3. Expansion quality: `OverDeterminedProny(n=..., tol=...)` — increase `n`
    until the IF stops changing.
 4. Cross-check algorithms: `PartialIF` vs `ExactTTIIF` should agree within

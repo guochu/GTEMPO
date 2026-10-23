@@ -21,7 +21,7 @@ hybriddynamics_naive(lattice::AbstractGrassmannLattice, corr::AbstractCorrelatio
 # ### for single impurity models
 
 # """
-# 	qim_hybriddynamics(gmps::GrassmannMPS, lattice::RealGrassmannLattice, corr::NTuple{4, <:AbstractMatrix}; trunc)
+# 	qim_hybriddynamics(gmps::GrassmannMPS, lattice::AbstractRealGrassmannLattice, corr::NTuple{4, <:AbstractMatrix}; trunc)
 
 # Real time hybrid dynamics for single impurity model, all the bands 
 # share the same bath 

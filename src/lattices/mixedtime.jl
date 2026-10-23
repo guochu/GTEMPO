@@ -1,13 +1,13 @@
-abstract type MixedGrassmannLattice{O<:MixedGrassmannOrdering} <: AbstractGrassmannLattice{O} end
-TK.scalartype(::Type{<:MixedGrassmannLattice}) = ComplexF64
-branches(::Type{<:MixedGrassmannLattice}) = (:+, :-, :τ)
+abstract type AbstractMixedGrassmannLattice{O<:MixedGrassmannOrdering} <: AbstractGrassmannLattice{O} end
+TK.scalartype(::Type{<:AbstractMixedGrassmannLattice}) = ComplexF64
+branches(::Type{<:AbstractMixedGrassmannLattice}) = (:+, :-, :τ)
 
 """
-	struct MixedGrassmannLattice1Order <: MixedGrassmannLattice
+	struct MixedGrassmannLattice <: AbstractMixedGrassmannLattice
 
-First order splitting of the real-time contour
+Mixed (Kadanoff–Baym) Grassmann lattice.
 """
-struct MixedGrassmannLattice1Order{O<:MixedGrassmannOrdering} <: MixedGrassmannLattice{O}
+struct MixedGrassmannLattice{O<:MixedGrassmannOrdering} <: AbstractMixedGrassmannLattice{O}
 	δt::Float64
 	Nt::Int
 	δτ::Float64
@@ -15,26 +15,17 @@ struct MixedGrassmannLattice1Order{O<:MixedGrassmannOrdering} <: MixedGrassmannL
 	bands::Int
 	ordering::O
 
-	MixedGrassmannLattice1Order(δt::Real, N::Int, δτ::Real, Ni::Int, bands::Int, ordering::MixedGrassmannOrdering) = new{typeof(ordering)}(
+	MixedGrassmannLattice(δt::Real, N::Int, δτ::Real, Ni::Int, bands::Int, ordering::MixedGrassmannOrdering) = new{typeof(ordering)}(
 								convert(Float64, δt), N, convert(Float64, δτ), Ni, bands, ordering)
 end
 
 # the default is that the system starts from 0 temperature (state 0)
-MixedGrassmannLattice1Order(; δt::Real, Nt::Int, δτ::Real, Nτ::Int, bands::Int=1, ordering::MixedGrassmannOrdering=A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2()) = MixedGrassmannLattice1Order(
+MixedGrassmannLattice(; δt::Real, Nt::Int, δτ::Real, Nτ::Int, bands::Int=1, ordering::MixedGrassmannOrdering=A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2()) = MixedGrassmannLattice(
 							δt, Nt, δτ, Nτ, bands, ordering)
-Base.similar(x::MixedGrassmannLattice1Order; δt::Real=x.δt, Nt::Int=x.Nt, δτ::Real=x.δτ, Nτ::Int=x.Nτ, bands::Int=x.bands, ordering::MixedGrassmannOrdering=x.ordering) = MixedGrassmannLattice1Order(
+Base.similar(x::MixedGrassmannLattice; δt::Real=x.δt, Nt::Int=x.Nt, δτ::Real=x.δτ, Nτ::Int=x.Nτ, bands::Int=x.bands, ordering::MixedGrassmannOrdering=x.ordering) = MixedGrassmannLattice(
 			δt, Nt, δτ, Nτ, bands, ordering)
 
-function MixedGrassmannLattice(; order::Int=1, kwargs...)
-	(order in (1, 2)) || throw(ArgumentError("order must be 1 or 2"))
-	if order == 1
-		return MixedGrassmannLattice1Order(; kwargs...)
-	else
-		error("Second orderr MixedGrassmannLattice not implemented")
-	end
-end
-
-function Base.getproperty(x::MixedGrassmannLattice1Order, s::Symbol)
+function Base.getproperty(x::MixedGrassmannLattice, s::Symbol)
 	if s == :t
 		return x.Nt * x.δt
 	elseif s == :β
@@ -58,10 +49,10 @@ function Base.getproperty(x::MixedGrassmannLattice1Order, s::Symbol)
 	end
 end
 
-Base.length(x::MixedGrassmannLattice1Order) = 4*x.bands * x.kt + 2*x.bands * x.kτ
+Base.length(x::MixedGrassmannLattice) = 4*x.bands * x.kt + 2*x.bands * x.kτ
 
 # acending order for real branch, descending order for imag time
-function _index(x::MixedGrassmannLattice1Order{<:A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function _index(x::MixedGrassmannLattice{<:A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
@@ -84,7 +75,7 @@ function _index(x::MixedGrassmannLattice1Order{<:A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1
 	end
 end
 
-function _index(x::MixedGrassmannLattice1Order{<:A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function _index(x::MixedGrassmannLattice{<:A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
@@ -110,7 +101,7 @@ end
 
 # internal site-position map; the public accessor is
 # `lattice[GrassmannContourIndex(i, branch, band, conj)]`
-function _index(x::MixedGrassmannLattice1Order{<:Ā3A2B̄3B2Ā2A1B̄2B1_ā1a2Ā2A1b̄1b2B̄2B1ā2a3Ā3A2b̄2b3B̄3B2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function _index(x::MixedGrassmannLattice{<:Ā3A2B̄3B2Ā2A1B̄2B1_ā1a2Ā2A1b̄1b2B̄2B1ā2a3Ā3A2b̄2b3B̄3B2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
@@ -155,7 +146,7 @@ end
 
 # A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄1A1B1: imaginary part A1B1B̄1Ā1, real part
 # interleaves the two branches (canonical ordering for the fast propagator)
-function _index(x::MixedGrassmannLattice1Order{<:A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄1A1B1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function _index(x::MixedGrassmannLattice{<:A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄1A1B1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
@@ -179,7 +170,7 @@ function _index(x::MixedGrassmannLattice1Order{<:A1B1B̄1Ā1_a1b1Ā1B̄1ā1b�
 end
 
 # key is timestep, conj, branch, band
-function indexmappings(lattice::MixedGrassmannLattice1Order)
+function indexmappings(lattice::MixedGrassmannLattice)
 	r = Dict{Tuple{Int, Bool, Symbol, Int}, Int}()
 	for i in 1:lattice.kτ
 		for c in (true, false)

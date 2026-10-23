@@ -13,7 +13,7 @@ functional from the discretized bath correlation function `corr` on `lattice`.
   as the third positional argument selects that construction algorithm; see the
   docstrings of the individual algorithm types for the available options.
 """
-function hybriddynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
+function hybriddynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, corr::RealCorrelationFunction; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
 	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
 	@assert size(η⁺⁺) == size(η⁺⁻) == size(η⁻⁺) == size(η⁻⁻)
@@ -28,7 +28,7 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order
 	return gmps
 end
 
-function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunction; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
+function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, corr::RealCorrelationFunction; band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
 	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
 	@assert size(η⁺⁺) == size(η⁺⁻) == size(η⁻⁺) == size(η⁻⁻)
@@ -43,13 +43,13 @@ function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::RealGrassmannLattice
 	return gmps		
 end
 
-function partialif_hybrid(lattice::RealGrassmannLattice, i::Int, cols::AbstractVector; b1::Symbol, b2::Symbol, band::Int=1)
+function partialif_hybrid(lattice::AbstractRealGrassmannLattice, i::Int, cols::AbstractVector; b1::Symbol, b2::Symbol, band::Int=1)
 	row = lattice[GrassmannContourIndex(i, b1, band, true)]
 	col_pos = [lattice[GrassmannContourIndex(j, b2, band, false)] for j in length(cols):-1:1]
 	mpo = partialmpo(row, col_pos, reverse(cols))
 	return mpo * vacuumstate(promote_type(scalartype(lattice), eltype(cols)), lattice)
 end
-function partialif_hybrid(lattice::RealGrassmannLattice, i::Int, cols_f::AbstractVector, cols_b::AbstractVector; b1::Symbol, band::Int=1)
+function partialif_hybrid(lattice::AbstractRealGrassmannLattice, i::Int, cols_f::AbstractVector, cols_b::AbstractVector; b1::Symbol, band::Int=1)
 	@assert length(cols_f) == length(cols_b)
 	row = lattice[GrassmannContourIndex(i, b1, band, true)]
 	cols = eltype(cols_f)[]
@@ -64,7 +64,7 @@ function partialif_hybrid(lattice::RealGrassmannLattice, i::Int, cols_f::Abstrac
 	mpo = partialmpo(row, col_pos, cols)
 	return mpo * vacuumstate(promote_type(scalartype(lattice), eltype(cols)), lattice)
 end
-function partialif_hybrid_naive(lattice::RealGrassmannLattice, i::Int, cols_f::AbstractVector, cols_b::AbstractVector; 
+function partialif_hybrid_naive(lattice::AbstractRealGrassmannLattice, i::Int, cols_f::AbstractVector, cols_b::AbstractVector; 
 							b1::Symbol, band::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
 	@assert length(cols_f) == length(cols_b)
 	alg = Orthogonalize(orth=TK.SVD(), trunc=trunc)
@@ -83,13 +83,13 @@ function partialif_hybrid_naive(lattice::RealGrassmannLattice, i::Int, cols_f::A
 end
 
 # reverse col and row, only used in stepper
-function partialif_hybrid(lattice::RealGrassmannLattice, rows::AbstractVector, j::Int; b1::Symbol, b2::Symbol, band::Int=1)
+function partialif_hybrid(lattice::AbstractRealGrassmannLattice, rows::AbstractVector, j::Int; b1::Symbol, b2::Symbol, band::Int=1)
 	col = lattice[GrassmannContourIndex(j, b2, band, false)]
 	row_pos = [lattice[GrassmannContourIndex(i, b1, band, true)] for i in length(rows):-1:1]
 	mpo = partialmpo(col, row_pos, -reverse(rows))
 	return mpo * vacuumstate(promote_type(scalartype(lattice), eltype(rows)), lattice)
 end
-function partialif_hybrid(lattice::RealGrassmannLattice, rows_f::AbstractVector, rows_b::AbstractVector, j::Int; b2::Symbol, band::Int=1)
+function partialif_hybrid(lattice::AbstractRealGrassmannLattice, rows_f::AbstractVector, rows_b::AbstractVector, j::Int; b2::Symbol, band::Int=1)
 	col = lattice[GrassmannContourIndex(j, b2, band, false)]
 	rows = eltype(rows_f)[]
 	row_pos = Int[]

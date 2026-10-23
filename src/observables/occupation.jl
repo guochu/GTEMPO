@@ -7,35 +7,25 @@
 #
 # # real-time first order
 # """
-#     occupation2(lattice::RealGrassmannLattice1Order, i::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
+#     occupation2(lattice::RealGrassmannLattice, i::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
 #             band::Int=1, alg=ExactIntegrate(), Z = integrate(lattice, A, B..., alg=alg))
 #
 # Return the occupation at time step i on the Keldysh contour
 # """
-# function occupation2(lattice::RealGrassmannLattice1Order, i::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; band::Int=1, kwargs...)
+# function occupation2(lattice::RealGrassmannLattice, i::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; band::Int=1, kwargs...)
 #     a = ContourIndex(i, conj=false, branch=:+, band=band)
 #     b = ContourIndex(i, conj=true, branch=:-, band=band)
 #     return real(gf(lattice, (a, b), A, B...; kwargs...))
 # end
-# occupation2(lattice::RealGrassmannLattice1Order, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; band::Int=1,
+# occupation2(lattice::RealGrassmannLattice, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; band::Int=1,
 #             alg::IntegrationAlgorithm=ExactIntegrate(),
 #             Z::Number = integrate(lattice, A, B..., alg=alg)) = [occupation2(lattice, i, A, B...; alg=alg, Z=Z, band=band) for i in 1:lattice.N]
 #
-# function occupation2(lattice::ImagGrassmannLattice1Order, i::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; band::Int=1, kwargs...)
+# function occupation2(lattice::ImagGrassmannLattice, i::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; band::Int=1, kwargs...)
 #     a = ContourIndex(i, conj=true, branch=:τ, band=band)
 #     b = ContourIndex(i, conj=false, branch=:τ, band=band)
 #     return 1 + gf(lattice, (a, b), A, B...; kwargs...)
 # end
-#
-#
-# # real-time second order
-# function occupation2(lattice::RealGrassmannLattice2Order, A::GrassmannMPS, B::Vararg{GrassmannMPS}; band::Int=1, kwargs...)
-#     i = lattice.k
-#     a = ContourIndex(i, conj=false, branch=:+, band=band)
-#     b = ContourIndex(i, conj=true, branch=:-, band=band)
-#     return real(gf(lattice, (a, b), A, B...; kwargs...))
-# end
-
 
 """
     occupation(lattice::AbstractGrassmannLattice, i::Int, A, B...; band=1, branch=:τ, alg=ExactIntegrate(), Z=integrate(lattice, A, B...))

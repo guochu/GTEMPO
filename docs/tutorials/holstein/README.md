@@ -69,7 +69,7 @@ vs 库 −0.87587i，以 `toulouse_Gt` 为准）。
 
 `docs/tutorials/holstein/holstein.jl` 中的 `run_gtempo(δt; with_phonon)`：
 
-1. `GrassmannLattice(N, δt, contour=:real, order=1, bands=1)` +
+1. `GrassmannLattice(N, δt, contour=:real, bands=1)` +
    `FockLattice`（声子用 occupation-number 格点）；
 2. 费米浴 IF：`fermionicbath(spec_f, β=β)` → `correlationfunction` →
    `ExactTTIIF(alg_mult=SVDCompression(trunc=trunc))`（单带格点）→ `fillband`；
