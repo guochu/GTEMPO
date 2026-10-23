@@ -19,7 +19,7 @@ export randomfockmps
 
 # definition of lattice and Ordering of grassmann numbers
 export GrassmannOrdering, ImagGrassmannOrdering, RealGrassmannOrdering, MixedGrassmannOrdering
-export AbstractGrassmannLattice, ImagGrassmannLattice, RealGrassmannLattice, MixedGrassmannLattice
+export AbstractGrassmannLattice, AbstractImagGrassmannLattice, AbstractRealGrassmannLattice, AbstractMixedGrassmannLattice
 export branches, matchindices, indexmappings, swapbandperm, swapband!, swapband, fillband
 export OrderingStyle, ConjugationStyle, AdjacentConjugation, GeneralConjugation
 export LayoutStyle, TimeLocalLayout, GeneralLayout
@@ -31,7 +31,9 @@ export a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2
 export A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2
 export A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2
 export vacuumstate, makestep, timesteps
-export ImagGrassmannLattice1Order, RealGrassmannLattice1Order, RealGrassmannLattice2Order, GrassmannLattice, index
+export ImagGrassmannLattice, RealGrassmannLattice, MixedGrassmannLattice, GrassmannLattice
+# Fock-lattice site map (Grassmann lattices use getindex with GrassmannContourIndex)
+export index
 
 # integration of GMPSs
 export integrate, integrateband, integratebands, partialintegrate, multintegrateband
@@ -120,7 +122,7 @@ using TensorOperations: TensorOperations, IndexTuple, Index2Tuple, linearize, Ab
 const TO = TensorOperations
 # @reexport using DMRG, ImpurityModelBase, QuAPI
 @reexport using ImpurityModelBase, QuAPI
-import QuAPI: branch, index
+import QuAPI: branch
 # using DMRG: TimeEvoMPOAlgorithm
 
 
