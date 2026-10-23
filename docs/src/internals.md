@@ -103,7 +103,8 @@ application, `partialintegrate`, the AC-integration kernels):
 
 `hybriddynamics` for the mixed contour places each influence-functional gate
 `exp(η(τ_i, τ_j) δτ² d† d)` on the chain as follows
-(`partialif/mixedtime.jl`):
+(`_latticeindex` in `partialif/util.jl`, used by the unified
+`hybriddynamics!` in `partialif/partialif.jl`):
 
 * the gate row of the τ branch `i` is placed at lattice position `i + 1`,
 * the τ columns `j` are placed at lattice positions `j + 1`,

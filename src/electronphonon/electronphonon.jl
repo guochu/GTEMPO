@@ -22,5 +22,8 @@ include("correlationfunction.jl")
 # influencefunctional
 include("influencefunctional/influencefunctional.jl")
 
+# retarded interaction (bosonic bath) IF, built on Grassmann lattices
+include("retardedinteract/retardedinteract.jl")
+
 # reweighting the bare impurity dynamics with the phonon IF
 include("reweighting.jl")

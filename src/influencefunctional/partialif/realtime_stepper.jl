@@ -1,3 +1,30 @@
+# ---------------------------------------------------------------------------
+# real-time partial IFs used by the stepper
+# ---------------------------------------------------------------------------
+
+# only used by finalinfluencefunctional (stepper): the coefficients are passed
+# directly instead of being read from a correlation function
+function partialif_hybrid(lattice::AbstractRealGrassmannLattice, i::Int, cols::AbstractVector; b1::Symbol, b2::Symbol, band::Int=1)
+	row = lattice[GrassmannContourIndex(i, b1, band, true)]
+	col_pos = [lattice[GrassmannContourIndex(j, b2, band, false)] for j in length(cols):-1:1]
+	mpo = partialmpo(row, col_pos, reverse(cols))
+	return mpo * vacuumstate(promote_type(scalartype(lattice), eltype(cols)), lattice)
+end
+
+
+# reverse col and row, only used in stepper
+function partialif_hybrid(lattice::AbstractRealGrassmannLattice, rows::AbstractVector, j::Int; b1::Symbol, b2::Symbol, band::Int=1)
+	col = lattice[GrassmannContourIndex(j, b2, band, false)]
+	row_pos = [lattice[GrassmannContourIndex(i, b1, band, true)] for i in length(rows):-1:1]
+	mpo = partialmpo(col, row_pos, -reverse(rows))
+	return mpo * vacuumstate(promote_type(scalartype(lattice), eltype(rows)), lattice)
+end
+
+
+# ---------------------------------------------------------------------------
+# one time step of the IF dynamics
+# ---------------------------------------------------------------------------
+
 """
 	hybriddynamicsstepper!(gmps, lattice, corr; band=1, trunc=Defaults.alg_trunc_if())
 
@@ -43,3 +70,16 @@ function finalinfluencefunctional(lattice::RealGrassmannLattice, η::AbstractMat
 end
 
 
+# ---------------------------------------------------------------------------
+# non-mutating wrapper
+# ---------------------------------------------------------------------------
+hybriddynamicsstepper(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = hybriddynamicsstepper!(copy(gmps), lattice, corr; kwargs...)
+
+
+# function qim_hybriddynamicsstepper!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...)
+# 	for band in 1:lattice.bands
+# 		gmps = hybriddynamicsstepper!(gmps, lattice, corr; band=band, kwargs...)
+# 	end
+# 	return gmps
+# end
+# qim_hybriddynamicsstepper(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction; kwargs...) = qim_hybriddynamicsstepper!(copy(gmps), lattice, corr; kwargs...)

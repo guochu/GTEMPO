@@ -140,15 +140,14 @@ end
 
 	# partialif_hybrid (analytic MPO) vs partialif_hybrid_naive (GTerm exponentials)
 	k = lat.k - 1
+	cols = [GrassmannContourIndex(j, :τ, 1, false) for j in 1:k]
 	mps1 = vacuumstate(lat)
 	for i in 1:k
-		row = [corr[GrassmannContourIndex(i, :τ, 1, false), GrassmannContourIndex(j, :τ, 1, true)] for j in 1:k]
-		mps1 = mult!(mps1, partialif_hybrid(lat, i + 1, [0; row]), trunc=trunc)[1]
+		mps1 = mult!(mps1, partialif_hybrid(lat, GrassmannContourIndex(i, :τ, 1, true), cols, corr), trunc=trunc)[1]
 	end
 	@test relerr(mps1, hybriddynamics(lat, corr, trunc=trunc)) < 1.0e-8
-	row1 = [corr[GrassmannContourIndex(1, :τ, 1, false), GrassmannContourIndex(j, :τ, 1, true)] for j in 1:k]
-	a = partialif_hybrid(lat, 2, [0; row1])
-	b = partialif_hybrid_naive(lat, 2, [0; row1], trunc=trunc)
+	a = partialif_hybrid(lat, GrassmannContourIndex(1, :τ, 1, true), cols, corr)
+	b = partialif_hybrid_naive(lat, GrassmannContourIndex(1, :τ, 1, true), cols, corr, trunc=trunc)
 	@test relerr(a, b) < 1.0e-8
 	# hybriddynamics_naive! (in place) agrees with hybriddynamics_naive
 	@test relerr(hybriddynamics_naive!(vacuumstate(lat), lat, corr, trunc=trunc),

@@ -64,6 +64,76 @@ shifted by one; the real-time branches are unchanged.
 _latticeindex(x::GrassmannContourIndex; conj::Bool=x.conj) =
 	GrassmannContourIndex(x.branch === :τ ? x.j + 1 : x.j, x.branch, x.band, conj)
 
+# The influence-functional exponent pairs the row leg āᵢ with the column legs
+# aⱼ, while the QuAPI correlation function is read with the a-ā convention
+# (x[a, ā] = Δ); conj flips the conjugation flags when looking up the contraction.
+
+"""
+	partialif_hybrid(lattice::AbstractGrassmannLattice, i::GrassmannContourIndex,
+					 cols::AbstractVector{<:GrassmannContourIndex}, corr)
+
+Build the partial IF contribution of the `i`-th row of the hybridization
+function, `exp(āᵢ Σⱼ Δᵢⱼ aⱼ)`, analytically as an MPO of bond dimension 2.
+
+`i` is the row leg and `cols` are the column legs it couples to. For a normal
+fermionic bath the row leg is the conjugate field `ā` (`conj=true`) and the
+columns are `a` (`conj=false`); BCS baths additionally use the anomalous
+combinations, where either leg can carry either conjugation. Each leg carries
+its own branch/time/band, so imaginary, real and mixed contours are all covered
+by this one function. `Δᵢⱼ` is read from `corr` as the contraction between the
+row leg and each column leg.
+"""
+function partialif_hybrid(lattice::AbstractGrassmannLattice, i::GrassmannContourIndex,
+						  cols::AbstractVector{<:GrassmannContourIndex}, corr::Union{AbstractCorrelationFunction, BCSCorrelationFunction})
+	row = lattice[_latticeindex(i)]
+	col_pos = [lattice[_latticeindex(c)] for c in cols]
+	coefs = [corr[conj(i), conj(c)] for c in cols]
+	mpo = partialmpo(row, col_pos, coefs)
+	return mpo * vacuumstate(promote_type(scalartype(lattice), eltype(coefs)), lattice)
+end
+
+"""
+	partialif_hybrid_naive(lattice::AbstractGrassmannLattice, i::GrassmannContourIndex,
+						   cols::AbstractVector{<:GrassmannContourIndex}, corr;
+						   trunc::TruncationScheme=Defaults.alg_trunc_if())
+
+Same partial IF as [`partialif_hybrid`](@ref), but built by applying the
+exponentials `exp(Δᵢⱼ āᵢ aⱼ)` one by one and canonicalizing after each step.
+"""
+function partialif_hybrid_naive(lattice::AbstractGrassmannLattice, i::GrassmannContourIndex,
+						  cols::AbstractVector{<:GrassmannContourIndex}, corr::Union{AbstractCorrelationFunction, BCSCorrelationFunction};
+						  trunc::TruncationScheme=Defaults.alg_trunc_if())
+	alg = Orthogonalize(orth=TK.SVD(), trunc=trunc)
+	gmps = vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
+	pos1 = lattice[_latticeindex(i)]
+	for c in cols
+		pos2 = lattice[_latticeindex(c)]
+		t = exp(GTerm(pos1, pos2, coeff=corr[conj(i), conj(c)]))
+		apply!(t, gmps)
+		canonicalize!(gmps, alg=alg)
+	end
+	return gmps
+end
+
+# column legs shared by all rows of the partial IF: the imaginary-time legs
+# first, then the two real-time branches interleaved per time step (the terms
+# within one row commute, so only the set of legs matters)
+function _columns(lattice::AbstractGrassmannLattice, band::Int)
+	cols = GrassmannContourIndex[]
+	if :τ in branches(lattice)
+		for j in 1:lattice.Nτ
+			push!(cols, GrassmannContourIndex(j, :τ, band, false))
+		end
+	end
+	if :+ in branches(lattice)
+		for j in 1:lattice.kt
+			push!(cols, GrassmannContourIndex(j, :+, band, false))
+			push!(cols, GrassmannContourIndex(j, :-, band, false))
+		end
+	end
+	return cols
+end
+
 
 function partialmpo(row::Int, cols::Vector{Int}, coefs::Vector{<:Number})
 	# println("row=", row, " cols ", cols)

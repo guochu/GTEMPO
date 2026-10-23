@@ -1,6 +1,5 @@
 # cached environments shared with the integration machinery
-include("envs/util.jl")
-include("envs/ac_cached_integrate.jl")
+include("envs.jl")
 
 include("insertn.jl") # special treatment of the "n" operator
 
