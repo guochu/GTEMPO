@@ -24,9 +24,9 @@ end
 
 function get_nn_contour_pos(lattice::AbstractGrassmannLattice, j::Int, band::Int, b::Symbol)
 	if b == :-
-		return ContourIndex(j, conj=true, branch=b, band=band), ContourIndex(j+1, conj=false, branch=b, band=band)
+		return GrassmannContourIndex(j, conj=true, branch=b, band=band), GrassmannContourIndex(j+1, conj=false, branch=b, band=band)
 	else
-		return ContourIndex(j+1, conj=true, branch=b, band=band), ContourIndex(j, conj=false, branch=b, band=band)
+		return GrassmannContourIndex(j+1, conj=true, branch=b, band=band), GrassmannContourIndex(j, conj=false, branch=b, band=band)
 	end
 end
 

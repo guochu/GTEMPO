@@ -12,7 +12,7 @@
 #     (orbital=1, two flavors per orbital) and enters the evaluation as a
 #     *single* IF, together with the Δ-independent path mpsK;
 #   * observables: normal G(τ) from `cached_gf_fast` (per band), anomalous
-#     G(τ) from point-wise `cached_gf` with cross-band ContourIndex pairs;
+#     G(τ) from point-wise `cached_gf` with cross-band index pairs;
 #   * Bethe self-consistency in Nambu convention (reference code):
 #         Δuu′ = t² G_uu ,   Δdd′ = −t² conj(G_dd) ,
 #         Δud′ = t² G_ud ,   Δdu′ = t² G_du .
@@ -124,12 +124,12 @@ function run_dmft(beta::Real, U::Real)
 
 		# anomalous components ⟨d₁(τ) d₂(0)⟩ / ⟨d₂(τ) d₁(0)⟩, point-wise
 		gud = [cached_gf(lattice,
-						 (ContourIndex(i, conj=false, branch=:τ, band=1),
-						  ContourIndex(1, conj=false, branch=:τ, band=2)),
+						 (GrassmannContourIndex(i, conj=false, branch=:τ, band=1),
+						  GrassmannContourIndex(1, conj=false, branch=:τ, band=2)),
 						 mpsK, mpsI; cache=cache) for i in 1:Nτ]
 		gdu = [cached_gf(lattice,
-						 (ContourIndex(i, conj=false, branch=:τ, band=2),
-						  ContourIndex(1, conj=false, branch=:τ, band=1)),
+						 (GrassmannContourIndex(i, conj=false, branch=:τ, band=2),
+						  GrassmannContourIndex(1, conj=false, branch=:τ, band=1)),
 						 mpsK, mpsI; cache=cache) for i in 1:Nτ]
 
 		# τ = β endpoints: the anomalous point-wise series covers

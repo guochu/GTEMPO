@@ -60,7 +60,7 @@ function _gt_vs_quapi(dense, lat, corr)
             iszero((m >> (q - 1)) & 1) && continue
             leg = qif.basis[q]
             i = (leg.branch === :τ) ? leg.j + 1 : leg.j
-            σ[index(lat, i, conj=leg.conj, branch=leg.branch, band=leg.band)] = true
+            σ[lat[GrassmannContourIndex(i, leg.branch, leg.band, leg.conj)]] = true
         end
         out[m+1] = dense[ntuple(p -> σ[p] ? 2 : 1, ndims(dense))...]
     end

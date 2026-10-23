@@ -46,9 +46,9 @@ function reweighting_one_step!(lattice2::AbstractGrassmannLattice, mps2::Grassma
 	pos = index(lattice, j, band=band, branch=b)
 	t = mps[pos] * scaling(mps)
 	if b == :-
-		pos1, pos2 = index(lattice2, j, band=band, branch=b, conj=true), index(lattice2, j+1, band=band, branch=b, conj=false)
+		pos1, pos2 = lattice2[GrassmannContourIndex(j, b, band, true)], lattice2[GrassmannContourIndex(j+1, b, band, false)]
 	else
-		pos1, pos2 = index(lattice2, j+1, band=band, branch=b, conj=true), index(lattice2, j, band=band, branch=b, conj=false)
+		pos1, pos2 = lattice2[GrassmannContourIndex(j+1, b, band, true)], lattice2[GrassmannContourIndex(j, b, band, false)]
 	end
 	(pos1 + 1 == pos2) || error("something wrong")
 

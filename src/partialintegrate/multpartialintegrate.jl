@@ -27,7 +27,7 @@ Integrate out all Grassmann variables on the given `branchs` and `bands`
 """
 function partialintegrate(lattice::AbstractGrassmannLattice, xs::Vararg{GrassmannMPS}; branchs::Tuple, bands::Tuple, alg::DMRGAlgorithm=Defaults.alg_mult())
     unique(length.(xs)) == [length(lattice),] || throw(DimensionMismatch("unique($(length.(xs))) != [$(length(lattice)),]"))
-    cidx = sort(unique([index(lattice, i; conj=false, band=band, branch=branch) for i in 1:lattice.k for band in bands for branch in branchs]))
+    cidx = sort(unique([lattice[GrassmannContourIndex(i, branch, band, false)] for i in 1:lattice.k for band in bands for branch in branchs]))
     _ac_partialintegrate(alg, xs...; cidx=cidx)
 end
 

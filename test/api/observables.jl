@@ -16,7 +16,7 @@
 	@test Zvalue(cache) ≈ Z rtol=1.0e-8
 	g1 = cached_gf_fast(lat, K, I; c1=false, c2=true, b1=:τ, b2=:τ, cache=cache)
 	@test length(g1) == lat.k
-	g2 = [gf(lat, (ContourIndex(i, conj=false, branch=:τ, band=1), ContourIndex(1, conj=true, branch=:τ, band=1)), K, I; Z=Z) for i in 1:lat.k]
+	g2 = [gf(lat, (GrassmannContourIndex(i, conj=false, branch=:τ, band=1), GrassmannContourIndex(1, conj=true, branch=:τ, band=1)), K, I; Z=Z) for i in 1:lat.k]
 	@test relerr(g1, g2) < 1.0e-8
 	# equilibrium occupation is time independent
 	occs = [occupation(lat, i, K, I, Z=Z) for i in 1:lat.k]
@@ -30,8 +30,8 @@
 	K = boundarycondition!(K, lat)
 	K = systhermalstate!(K, lat, model, trunc=trunc, β=1.0)
 	cache = environments(lat, K, I)
-	g1 = [cached_gf(lat, (ContourIndex(k, conj=false, branch=:+, band=1), ContourIndex(1, conj=true, branch=:+, band=1)), K, I; cache=cache) for k in 1:lat.k]
-	g2 = [gf(lat, (ContourIndex(k, conj=false, branch=:+, band=1), ContourIndex(1, conj=true, branch=:+, band=1)), K, I; Z=Zvalue(cache)) for k in 1:lat.k]
+	g1 = [cached_gf(lat, (GrassmannContourIndex(k, conj=false, branch=:+, band=1), GrassmannContourIndex(1, conj=true, branch=:+, band=1)), K, I; cache=cache) for k in 1:lat.k]
+	g2 = [gf(lat, (GrassmannContourIndex(k, conj=false, branch=:+, band=1), GrassmannContourIndex(1, conj=true, branch=:+, band=1)), K, I; Z=Zvalue(cache)) for k in 1:lat.k]
 	@test relerr(g1, g2) < 1.0e-8
 	gfast = cached_gf_fast(lat, K, I, c1=false, c2=true, b1=:+, b2=:+, cache=cache)
 	@test length(gfast) == lat.k
@@ -48,13 +48,13 @@
 	end
 	cache = environments(lat, K, I)
 	g1 = [cached_greater(lat, k, K, I, cache=cache) for k in 1:lat.kt]
-	g2 = [gf(lat, (ContourIndex(k, conj=false, branch=:+, band=1), ContourIndex(1, conj=true, branch=:+, band=1)), K, I; Z=Zvalue(cache)) for k in 1:lat.kt]
+	g2 = [gf(lat, (GrassmannContourIndex(k, conj=false, branch=:+, band=1), GrassmannContourIndex(1, conj=true, branch=:+, band=1)), K, I; Z=Zvalue(cache)) for k in 1:lat.kt]
 	@test relerr(g1, g2) < 1.0e-8
 	g3 = cached_gf_fast(lat, K, I; c1=false, c2=true, b1=:τ, b2=:τ, cache=cache)
 	g3[end] = 1 - g3[1]
 	@test length(g3) == lat.kτ
 	# the vectorized API agrees with per-point evaluation up to implementation details
-	g4 = [cached_gf(lat, (ContourIndex(k, conj=false, branch=:τ, band=1), ContourIndex(1, conj=true, branch=:τ, band=1)), K, I; cache=cache) for k in 1:lat.kτ]
+	g4 = [cached_gf(lat, (GrassmannContourIndex(k, conj=false, branch=:τ, band=1), GrassmannContourIndex(1, conj=true, branch=:τ, band=1)), K, I; cache=cache) for k in 1:lat.kτ]
 	@test relerr(g3, g4) < 5.0e-3
 end
 
@@ -71,19 +71,19 @@ end
 
 	# greater ⟨aᵢ bⱼ⟩ (i ≥ j, both variables on the + branch)
 	g1 = greater(lat, 3, 1, K, I; Z=Z)
-	@test g1 == gf(lat, (ContourIndex(3, conj=false, branch=:+, band=1), ContourIndex(1, conj=true, branch=:+, band=1)), K, I; Z=Z)
+	@test g1 == gf(lat, (GrassmannContourIndex(3, conj=false, branch=:+, band=1), GrassmannContourIndex(1, conj=true, branch=:+, band=1)), K, I; Z=Z)
 	# single-argument version defaults to j = 1
 	@test greater(lat, 3, K, I; Z=Z) == g1
 	# lesser requires i ≤ j
 	l1 = lesser(lat, 1, 3, K, I; Z=Z)
-	@test l1 == gf(lat, (ContourIndex(1, conj=true, branch=:-, band=1), ContourIndex(3, conj=false, branch=:+, band=1)), K, I; Z=Z)
+	@test l1 == gf(lat, (GrassmannContourIndex(1, conj=true, branch=:-, band=1), GrassmannContourIndex(3, conj=false, branch=:+, band=1)), K, I; Z=Z)
 	@test lesser(lat, 3, K, I; Z=Z) == l1
 	# contour ordering: a < b gives -(b, a), otherwise (a, b); conj(a)=false, conj(b)=true
-	x = ContourIndex(1, conj=false, branch=:+, band=1)
-	y = ContourIndex(3, conj=true, branch=:+, band=1)
+	x = GrassmannContourIndex(1, conj=false, branch=:+, band=1)
+	y = GrassmannContourIndex(3, conj=true, branch=:+, band=1)
 	@test contour_ordered_gf(lat, x, y, K, I; Z=Z) == -gf(lat, (y, x), K, I; Z=Z)
-	x2 = ContourIndex(3, conj=false, branch=:+, band=1)
-	y2 = ContourIndex(1, conj=true, branch=:+, band=1)
+	x2 = GrassmannContourIndex(3, conj=false, branch=:+, band=1)
+	y2 = GrassmannContourIndex(1, conj=true, branch=:+, band=1)
 	@test contour_ordered_gf(lat, x2, y2, K, I; Z=Z) == g1
 	@test_throws ArgumentError contour_ordered_gf(lat, y2, x2, K, I; Z=Z)
 	# cached versions agree with the direct evaluation (up to roundoff)
@@ -166,8 +166,8 @@ end
 	@test cached_nn(lat, 2, 3, K, I; cache=cache) ≈ v atol=1.0e-8
 	@test cached_nn2(lat, 2, 3, K, I; cache=cache) ≈ v2 atol=1.0e-8
 	# expectationvalue of the two-point GTerm ⟨d₂ d†₁⟩ from the cache
-	a = ContourIndex(2, conj=false, branch=:τ, band=1)
-	b = ContourIndex(1, conj=true, branch=:τ, band=1)
+	a = GrassmannContourIndex(2, conj=false, branch=:τ, band=1)
+	b = GrassmannContourIndex(1, conj=true, branch=:τ, band=1)
 	gref = gf(lat, (a, b), K, I; Z=Z)
 	@test expectationvalue(GTerm(lat[a], lat[b], coeff=1), cache) ≈ gref atol=1.0e-10
 	@test expectationvalue(convert(PartialMPO, GTerm(lat[a], lat[b], coeff=1)), cache) ≈ gref atol=1.0e-10

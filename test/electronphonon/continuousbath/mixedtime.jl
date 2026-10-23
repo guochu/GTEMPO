@@ -21,9 +21,9 @@
 		end
 
 		cache = environments(lattice, adt)
-		gt = [-im * cached_gf(lattice, (ContourIndex(k, conj=false, branch=:+, band=1), ContourIndex(1, conj=true, branch=:+, band=1)), adt; cache=cache) for k in 1:Nt+1]
-		lt = [im * cached_gf(lattice, (ContourIndex(1, conj=true, branch=:-, band=1), ContourIndex(k, conj=false, branch=:+, band=1)), adt; cache=cache) for k in 1:Nt+1]
-		gτ = [cached_gf(lattice, (ContourIndex(k, conj=false, branch=:τ, band=1), ContourIndex(1, conj=true, branch=:τ, band=1)), adt; cache=cache) for k in 1:Nτ+1]
+		gt = [-im * cached_gf(lattice, (GrassmannContourIndex(k, conj=false, branch=:+, band=1), GrassmannContourIndex(1, conj=true, branch=:+, band=1)), adt; cache=cache) for k in 1:Nt+1]
+		lt = [im * cached_gf(lattice, (GrassmannContourIndex(1, conj=true, branch=:-, band=1), GrassmannContourIndex(k, conj=false, branch=:+, band=1)), adt; cache=cache) for k in 1:Nt+1]
+		gτ = [cached_gf(lattice, (GrassmannContourIndex(k, conj=false, branch=:τ, band=1), GrassmannContourIndex(1, conj=true, branch=:τ, band=1)), adt; cache=cache) for k in 1:Nτ+1]
 
 		gt_ed = [independentbosons_greater_μ(spec, tj, β=β, μ=μ, U=U, bands=bands) for tj in ts]
 		lt_ed = [independentbosons_lesser_μ(spec, tj, β=β, μ=μ, U=U, bands=bands) for tj in ts]

@@ -8,7 +8,7 @@ Detailed tensor conventions are described in
 ## Grassmann variables on a contour
 
 Every discretized point of the time contour carries two Grassmann variables
-(GVs), `a` and `a†`. A GV is addressed by a [`ContourIndex`](@ref):
+(GVs), `a` and `a†`. A GV is addressed by a [`GrassmannContourIndex`](@ref):
 
 - `j`: the time step, `1 ≤ j ≤ k` for the `k` discretized points of the
   contour. The contour closure (trace, or the turning-point connection) is not
@@ -19,9 +19,9 @@ Every discretized point of the time contour carries two Grassmann variables
 - `band`: multi-orbital problems use several independent bands.
 - `conj`: `false` for `a`, `true` for `a†`.
 
-Contour indices are totally ordered (`ContourIndex <: AbstractLatticeIndex`
-implements `isless`), which is what makes contour-ordered Green's functions
-well defined.
+Contour indices are totally ordered (`GrassmannContourIndex` implements
+`isless`), which is what makes contour-ordered Green's functions well defined.
+A lattice site is accessed as `lattice[GrassmannContourIndex(j, branch, band, conj)]`.
 
 ## Lattice = GV set + ordering
 

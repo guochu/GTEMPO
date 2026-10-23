@@ -67,18 +67,18 @@
 	@test length(m) == 4 * lat.bands * lat.k
 	@test length(unique(values(m))) == length(m)
 
-	# ContourIndex: construction and contour ordering semantics
-	ci1 = ContourIndex(2, conj=false, branch=:+, band=1)
-	ci2 = ContourIndex(1, conj=true, branch=:+, band=1)
-	ci3 = ContourIndex(3, conj=false, branch=:-, band=1)
-	ci4 = ContourIndex(1, conj=false, branch=:τ, band=1)
-	@test ci1 == ContourIndex(2, band=1, conj=false, branch=:+)
+	# GrassmannContourIndex: construction and contour ordering semantics
+	ci1 = GrassmannContourIndex(2, conj=false, branch=:+, band=1)
+	ci2 = GrassmannContourIndex(1, conj=true, branch=:+, band=1)
+	ci3 = GrassmannContourIndex(3, conj=false, branch=:-, band=1)
+	ci4 = GrassmannContourIndex(1, conj=false, branch=:τ, band=1)
+	@test ci1 == GrassmannContourIndex(2, band=1, conj=false, branch=:+)
 	@test ci2 < ci1                      # + branch: ascending time, conj first
 	@test ci1 < ci3                      # + precedes -
 	@test ci3 < ci4                      # - precedes τ
-	@test ci4 < ContourIndex(3, conj=true, branch=:τ, band=1)
+	@test ci4 < GrassmannContourIndex(3, conj=true, branch=:τ, band=1)
 	@test branch(ci1) == :+
-	@test_throws ArgumentError ci1 < ContourIndex(0, conj=true, branch=:+, band=1)
+	@test_throws ArgumentError ci1 < GrassmannContourIndex(0, conj=true, branch=:+, band=1)
 end
 
 # all exported orderings of each contour, including the retarded-interaction
@@ -129,7 +129,7 @@ end
 
 # helper: compare an expected site-position map against index()
 check_indexmap(lat, expected::Dict) = all(
-	index(lat, i, conj=c, branch=br, band=b) == pos
+	lat[GrassmannContourIndex(i, br, b, c)] == pos
 	for ((i, c, br, b), pos) in expected)
 
 @testset "API: lattice index maps, imaginary time (all orderings)" begin
@@ -320,7 +320,7 @@ end
 		m = indexmappings(lat)
 		@test length(m) == length(lat) == 2 * lat.bands * lat.k
 		@test length(unique(values(m))) == length(m)
-		@test all(m[(i, c, :τ, b)] == index(lat, i, conj=c, band=b)
+		@test all(m[(i, c, :τ, b)] == lat[GrassmannContourIndex(i, :τ, b, c)]
 				  for i in 1:lat.k for c in (true, false) for b in 1:lat.bands)
 	end
 	for o in all_real_orderings
@@ -328,7 +328,7 @@ end
 		m = indexmappings(lat)
 		@test length(m) == length(lat) == 4 * lat.bands * lat.k
 		@test length(unique(values(m))) == length(m)
-		@test all(m[(i, c, br, b)] == index(lat, i, conj=c, branch=br, band=b)
+		@test all(m[(i, c, br, b)] == lat[GrassmannContourIndex(i, br, b, c)]
 				  for i in 1:lat.k for c in (true, false) for br in (:+, :-) for b in 1:lat.bands)
 	end
 	for o in all_mixed_orderings
@@ -336,9 +336,9 @@ end
 		m = indexmappings(lat)
 		@test length(m) == length(lat) == 4 * lat.bands * lat.kt + 2 * lat.bands * lat.kτ
 		@test length(unique(values(m))) == length(m)
-		@test all(m[(i, c, :τ, b)] == index(lat, i, conj=c, branch=:τ, band=b)
+		@test all(m[(i, c, :τ, b)] == lat[GrassmannContourIndex(i, :τ, b, c)]
 				  for i in 1:lat.kτ for c in (true, false) for b in 1:lat.bands)
-		@test all(m[(i, c, br, b)] == index(lat, i, conj=c, branch=br, band=b)
+		@test all(m[(i, c, br, b)] == lat[GrassmannContourIndex(i, br, b, c)]
 				  for i in 1:lat.kt for c in (true, false) for br in (:+, :-) for b in 1:lat.bands)
 	end
 end

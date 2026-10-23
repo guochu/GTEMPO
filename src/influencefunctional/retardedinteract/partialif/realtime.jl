@@ -22,7 +22,7 @@ function _retardedinteractdynamics_naive_1band!(gmps::GrassmannMPS, lattice::Rea
 		pos1a, pos1b, c1 = get_pair_pos(lattice, i, band, b1)
 		for j in 1:lattice.kt-1, b2 in (:+, :-)
 			pos2a, pos2b, c2 = get_pair_pos(lattice, j, band, b2)
-			c = index(corr, i, j, b1=b1, b2=b2) * c1 * c2
+			c = corr[GrassmannContourIndex(i, b1, band, false), GrassmannContourIndex(j, b2, band, true)] * c1 * c2
 			if (i == j) && (b1 == b2)
 				t = exp(GTerm(pos1a, pos1b, coeff=c))
 			else
@@ -48,9 +48,9 @@ function retardedinteractdynamics_naive_2band!(gmps::GrassmannMPS, lattice::Real
 		for j in 1:lattice.kt-1, b2 in branches(lattice), band2 in 1:lattice.bands
 			pos2a, pos2b, c2 = get_pair_pos(lattice, j, band2, b2)
 			if band2 == 1
-				c = index(corr, i, j, b1=b1, b2=b2) * c1 * c2
+				c = corr[GrassmannContourIndex(i, b1, band2, false), GrassmannContourIndex(j, b2, band2, true)] * c1 * c2
 			else
-				c = (index(corr, i, j, b1=b1, b2=b2) + index(corr, j, i, b1=b2, b2=b1) )  * c1 * c2
+				c = (corr[GrassmannContourIndex(i, b1, band2, false), GrassmannContourIndex(j, b2, band2, true)] + corr[GrassmannContourIndex(j, b2, band2, false), GrassmannContourIndex(i, b1, band2, true)]) * c1 * c2
 			end
 			if pos1a == pos2a
 				@assert pos1b == pos2b
@@ -102,9 +102,9 @@ end
 
 function get_pair_pos(lattice::AbstractGrassmannLattice, j::Int, band::Int, b::Symbol)
 	if b == :-
-		return index(lattice, j+1, band=band, conj=false, branch=b), index(lattice, j, band=band, conj=true, branch=b), -1
+		return lattice[GrassmannContourIndex(j+1, b, band, false)], lattice[GrassmannContourIndex(j, b, band, true)], -1
 	else
-		return index(lattice, j+1, band=band, conj=true, branch=b), index(lattice, j, band=band, conj=false, branch=b), 1
+		return lattice[GrassmannContourIndex(j+1, b, band, true)], lattice[GrassmannContourIndex(j, b, band, false)], 1
 	end
 end
 

@@ -20,7 +20,7 @@
 		mpsK = sysdynamics(lat, model, trunc=trunc)
 		mpsK = boundarycondition!(mpsK, lat)
 		mpsK = systhermalstate!(mpsK, lat, model, trunc=trunc, β=β)
-		gt = [gf(lat, (ContourIndex(k, conj=false, branch=:+, band=1), ContourIndex(1, conj=true, branch=:+, band=1)), mpsK, mpsI; Z=integrate(lat, mpsK, mpsI)) for k in 1:lat.k]
+		gt = [gf(lat, (GrassmannContourIndex(k, conj=false, branch=:+, band=1), GrassmannContourIndex(1, conj=true, branch=:+, band=1)), mpsK, mpsI; Z=integrate(lat, mpsK, mpsI)) for k in 1:lat.k]
 		@test relerr(gt, gt_ref) < 5.0e-2
 	end
 end

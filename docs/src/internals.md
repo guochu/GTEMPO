@@ -13,7 +13,7 @@ combinatorial picture.
 
 ```
 src/
-├── lattices/                 GrassmannLattice, ContourIndex, branch/ordering logic
+├── lattices/                 GrassmannLattice, contour indices, branch/ordering logic
 ├── grassmannmps/             GrassmannMPS, GTerm, canonicalization, mult!
 ├── mpo/mpohamiltonian/       MPO Hamiltonians (SchurMPOTensor), long-range terms
 ├── integration/              lattice contraction, TwosideExpectationCache

@@ -109,16 +109,16 @@ function _get_mpo3(mpoj)
 end
 function _get_signed_corr(lattice::RealGrassmannLattice, corr::RealCorrelationFunction, band::Int)
 	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
-	if index(lattice, 1, conj=false, branch=:+, band=band) > index(lattice, 1, conj=true, branch=:+, band=band)
+	if lattice[GrassmannContourIndex(1, :+, band, false)] > lattice[GrassmannContourIndex(1, :+, band, true)]
 		η⁺⁺ = -transpose(η⁺⁺)
 	end
-	if index(lattice, 1, conj=false, branch=:-, band=band) > index(lattice, 1, conj=true, branch=:+, band=band)
+	if lattice[GrassmannContourIndex(1, :-, band, false)] > lattice[GrassmannContourIndex(1, :+, band, true)]
 		η⁺⁻ = -transpose(η⁺⁻)
 	end
-	if index(lattice, 1, conj=false, branch=:+, band=band) > index(lattice, 1, conj=true, branch=:-, band=band)
+	if lattice[GrassmannContourIndex(1, :+, band, false)] > lattice[GrassmannContourIndex(1, :-, band, true)]
 		η⁻⁺ = -transpose(η⁻⁺)
 	end
-	if index(lattice, 1, conj=false, branch=:-, band=band) > index(lattice, 1, conj=true, branch=:-, band=band)
+	if lattice[GrassmannContourIndex(1, :-, band, false)] > lattice[GrassmannContourIndex(1, :-, band, true)]
 		η⁻⁻ = -transpose(η⁻⁻)
 	end
 	return η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻
@@ -146,7 +146,7 @@ function _fit_to_lattice(lattice::RealGrassmannLattice, mpo::MPO, _JW::MPSBondTe
 
 	function placeblock!(j, u, v, leftspace)
 		posa, posb = band_boundary(lattice, j)
-		pos1, pos2 = index(lattice, j, conj=false, branch=f1, band=band), index(lattice, j, conj=true, branch=f2, band=band)
+		pos1, pos2 = lattice[GrassmannContourIndex(j, f1, band, false)], lattice[GrassmannContourIndex(j, f2, band, true)]
 		if pos1 > pos2 # this sign has already been taken care of
 			pos1, pos2 = pos2, pos1
 		end

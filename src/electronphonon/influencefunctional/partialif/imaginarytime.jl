@@ -6,7 +6,7 @@ function hybriddynamics!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr::Im
 		coefs = scalartype(lattice)[]
 		for j in 1:k, b2 in 1:lattice.bands
 			pos2 = index(lattice, j, band=b2)
-			coef = index(corr, i, j)
+			coef = corr[GrassmannContourIndex(i, :τ, 1, false), GrassmannContourIndex(j, :τ, 1, true)]
 			push!(pos2s, pos2)
 			push!(coefs, coef)
 		end
@@ -116,12 +116,10 @@ function hybriddynamics_1band_naive!(gmps::FockMPS, lattice::ImagFockLattice1Ord
 end 
 
 function _hybriddynamics_1band_naive!(gmps::FockMPS, lattice::ImagFockLattice1Order, corr1::ImagCorrelationFunction, band::Int; trunc::TruncationScheme=Defaults.alg_trunc_if())
-	corr = corr1.data
 	k = lattice.N
 	for i in 1:k, j in 1:k
 		pos1, pos2 = index(lattice, i, band=band), index(lattice, j, band=band)
-		# coef = corr[i, j]
-		coef = exp(corr[i, j]) 
+		coef = exp(corr1[GrassmannContourIndex(i, :τ, band, false), GrassmannContourIndex(j, :τ, band, true)])
 		if i == j
 			t = ExpNTerm(pos1, coeff=coef)
 			apply!(t, gmps)
@@ -142,13 +140,10 @@ function hybriddynamics_2band_naive!(gmps::FockMPS, lattice::ImagFockLattice1Ord
 		_hybriddynamics_1band_naive!(gmps, lattice, corr1, band, trunc=trunc)
 	end
 
-	corr = corr1.data
 	k = lattice.N
 	for i in 1:k, j in 1:k
 		pos1, pos2 = index(lattice, i, band=1), index(lattice, j, band=2)
-		# coef = corr[i, j] + corr[j, i]
-		# coef = exp(corr[i, j]) + exp(corr[j, i]) - 2
-		coef = exp(corr[i, j] + corr[j, i]) 
+		coef = exp(corr1[GrassmannContourIndex(i, :τ, 1, false), GrassmannContourIndex(j, :τ, 1, true)] + corr1[GrassmannContourIndex(j, :τ, 1, false), GrassmannContourIndex(i, :τ, 1, true)])
 		t = ExpNTerm(pos1, pos2, coeff=coef)
 		apply!(t, gmps)
 		canonicalize!(gmps, alg=Orthogonalize(orth=TK.SVD(), trunc=trunc))

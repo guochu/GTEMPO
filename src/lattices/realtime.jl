@@ -118,7 +118,7 @@ end
 
 
 # a\bar{a}b\bar{b} a₂^+b₂^+ā₂^-b̄₂^-ā₂^+b̄₂^+a₂^-b₂^-  a₁^+b₁^+ā₁^-b̄₁^-ā₁^+b̄₁^+a₁^-b₁^-
-function index(x::RealGrassmannLattice{<:A1B1ā1b̄1Ā1B̄1a1b1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function _index(x::RealGrassmannLattice{<:A1B1ā1b̄1Ā1B̄1a1b1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
@@ -134,7 +134,7 @@ function index(x::RealGrassmannLattice{<:A1B1ā1b̄1Ā1B̄1a1b1}, i::Int; conj
 end
 
 # a\bar{a}b\bar{b} a_2^+\bar{a}_2^+a_2^-\bar{a}_2^-b_2^+\bar{b}_2^+b_2^-\bar{b}_2^- a_1^+\bar{a}_1^+a_1^-\bar{a}_1^-b_1^+\bar{b}_1^+b_1^-\bar{b}_1^-
-function index(x::RealGrassmannLattice{<:A1Ā1a1ā1B1B̄1b1b̄1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function _index(x::RealGrassmannLattice{<:A1Ā1a1ā1B1B̄1b1b̄1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
@@ -151,7 +151,7 @@ end
 
 # a\bar{a}b\bar{b} a_1^-\bar{a}_1^-a_1^+\bar{a}_1^+b_1^-\bar{b}_1^-b_1^+\bar{b}_1^+ a_2^-\bar{a}_2^-a_2^+\bar{a}_2^+b_2^-\bar{b}_2^-b_2^+\bar{b}_2^+
 # time ascending: the block of time step 1 directly follows the boundary block
-function index(x::RealGrassmannLattice{<:a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function _index(x::RealGrassmannLattice{<:a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
@@ -167,7 +167,7 @@ function index(x::RealGrassmannLattice{<:a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b
 end
 
 # aābb̄ a₂^+ā₂^+b₂^+b̄₂^+a₂^-ā₂^-b₂^-b̄₂^- a₁^+ā₁^+b₁^+b̄₁^+a₁^-ā₁^-b₁^-b̄₁^-
-function index(x::RealGrassmannLattice{<:A1Ā1B1B̄1a1ā1b1b̄1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function _index(x::RealGrassmannLattice{<:A1Ā1B1B̄1a1ā1b1b̄1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
@@ -183,7 +183,7 @@ function index(x::RealGrassmannLattice{<:A1Ā1B1B̄1a1ā1b1b̄1}, i::Int; conj
 end
 
 
-function index(x::RealGrassmannLattice{<:Ā2A1ā1a2B̄2B1b̄1b̄2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function _index(x::RealGrassmannLattice{<:Ā2A1ā1a2B̄2B1b̄1b̄2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(0 <= i <= x.k) || throw(BoundsError(0:x.k, i))
@@ -215,7 +215,7 @@ function indexmappings(lattice::RealGrassmannLattice)
 		for c in (true, false)
 			for band in 1:lattice.bands
 				for f in (:+, :-)
-					r[(i, c, f, band)] = index(lattice, i, conj=c, branch=f, band=band)
+					r[(i, c, f, band)] = lattice[GrassmannContourIndex(i, f, band, c)]
 				end
 			end
 		end
@@ -224,17 +224,17 @@ function indexmappings(lattice::RealGrassmannLattice)
 end
 
 function band_boundary(lattice::RealGrassmannLattice{<:A1Ā1a1ā1B1B̄1b1b̄1}, j::Int)
-    posa = index(lattice, j, conj=false, branch=:+, band=1)
-    posb = index(lattice, j, conj=true, branch=:-, band=lattice.bands)
+    posa = lattice[GrassmannContourIndex(j, :+, 1, false)]
+    posb = lattice[GrassmannContourIndex(j, :-, lattice.bands, true)]
     return posa, posb
 end
 function band_boundary(lattice::RealGrassmannLattice{<:A1Ā1B1B̄1a1ā1b1b̄1}, j::Int)
-    posa = index(lattice, j, conj=false, branch=:+, band=1)
-    posb = index(lattice, j, conj=true, branch=:-, band=lattice.bands)
+    posa = lattice[GrassmannContourIndex(j, :+, 1, false)]
+    posb = lattice[GrassmannContourIndex(j, :-, lattice.bands, true)]
     return posa, posb
 end
 function band_boundary(lattice::RealGrassmannLattice{<:a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2}, j::Int)
-    posa = index(lattice, j, conj=false, branch=:-, band=1)
-    posb = index(lattice, j, conj=true, branch=:+, band=lattice.bands)
+    posa = lattice[GrassmannContourIndex(j, :-, 1, false)]
+    posb = lattice[GrassmannContourIndex(j, :+, lattice.bands, true)]
     return posa, posb
 end

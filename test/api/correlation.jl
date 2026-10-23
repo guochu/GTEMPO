@@ -18,12 +18,12 @@
 	@test size(corr.G₊₊) == (lat.k, lat.k)   # branch block (+,+)
 	@test size(corr.G₋₊) == (lat.k, lat.k)   # branch block (-,+)
 
-	# mixed (Kadanoff) lattice: index(corr, i, j; b1, b2) over three branches
+	# mixed (Kadanoff) lattice: corr[GrassmannContourIndex, GrassmannContourIndex] over three branches
 	lat = GrassmannLattice(Nt=3, δt=0.1, Nτ=4, δτ=0.25, contour=:mixed)
 	corr = correlationfunction(fermionicbath(spectrum_func(), β=β, μ=0), lat)
 	@test corr isa MixedCorrelationFunction
 	for b1 in (:+, :-, :τ), b2 in (:+, :-, :τ)
-		@test index(corr, 1, 1, b1=b1, b2=b2) isa Number
+		@test corr[GrassmannContourIndex(1, b1, 1, false), GrassmannContourIndex(1, b2, 1, true)] isa Number
 	end
 end
 

@@ -20,8 +20,8 @@ function sysinitialstate!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, foc
 						trunc::TruncationScheme=Defaults.alg_trunc_sys())
     (fockstate.bands == lattice.bands) || throw(DimensionMismatch("FockMatrix bands $(fockstate.bands) do not match lattice bands $(lattice.bands)"))
     M = lattice.bands
-    bpos = [index(lattice, 1, conj=true, branch=:+, band=i) for i in 1:M]
-    kpos = [index(lattice, 1, conj=false, branch=:-, band=i) for i in 1:M]
+    bpos = [lattice[GrassmannContourIndex(1, :+, i, true)] for i in 1:M]
+    kpos = [lattice[GrassmannContourIndex(1, :-, i, false)] for i in 1:M]
     sparse = _tosparsegmps(lattice, fockstate, bpos, kpos)
     return mult!(gmps, sparse, trunc=trunc)[1]
 end

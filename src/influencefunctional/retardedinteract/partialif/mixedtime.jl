@@ -25,7 +25,7 @@ function _retardedinteractdynamics_naive_1band!(gmps::GrassmannMPS, lattice::Mix
 				k2 = ifelse(b2==:τ, lattice.Nτ, lattice.Nt)
 				for j in 1:k2
 					pos2a, pos2b, c2 = get_pair_pos(lattice, j, band, b2)
-					c = index(corr, i, j, b1=b1, b2=b2) * c1 * c2
+					c = corr[GrassmannContourIndex(i, b1, band, false), GrassmannContourIndex(j, b2, band, true)] * c1 * c2
 					if pos1a == pos2a
 						@assert pos1b == pos2b
 						t = exp(GTerm(pos1a, pos1b, coeff=c))
@@ -114,9 +114,9 @@ function retardedinteractdynamics_naive_2band!(gmps::GrassmannMPS, lattice::Mixe
 				for j in 1:k2, band2 in 1:lattice.bands
 					pos2a, pos2b, c2 = get_pair_pos(lattice, j, band2, b2)
 					if band2 == 1
-						c = index(corr, i, j, b1=b1, b2=b2) * c1 * c2
+						c = corr[GrassmannContourIndex(i, b1, band2, false), GrassmannContourIndex(j, b2, band2, true)] * c1 * c2
 					else
-						c = (index(corr, i, j, b1=b1, b2=b2) + index(corr, j, i, b1=b2, b2=b1)) * c1 * c2
+						c = (corr[GrassmannContourIndex(i, b1, band2, false), GrassmannContourIndex(j, b2, band2, true)] + corr[GrassmannContourIndex(j, b2, band2, false), GrassmannContourIndex(i, b1, band2, true)]) * c1 * c2
 					end
 					if pos1a == pos2a
 						@assert pos1b == pos2b

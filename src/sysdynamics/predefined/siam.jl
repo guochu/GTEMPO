@@ -142,7 +142,7 @@ num_bands(::ToulouseIM) = 1
 # 	a, b = siam_coeffs(ϵ_d, U, im*lattice.δt) 
 # 	for band in 1:lattice.bands
 # 		for i in 1:lattice.k-1
-# 			pos1, pos2 = index(lattice, i, conj=true, branch=:-, band=band), index(lattice, i+1, conj=false, branch=:-, band=band)
+# 			pos1, pos2 = lattice[GrassmannContourIndex(i, :-, band, true)], lattice[GrassmannContourIndex(i+1, :-, band, false)]
 # 			apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
 # 			canonicalize!(gmps, alg=Orthogonalize(orth=SVD(), trunc=trunc))	
 # 		end
@@ -183,7 +183,7 @@ function sysdynamics_imaginary!(gmps::GrassmannMPS, lattice::AbstractGrassmannLa
 	a, b = siam_coeffs(ϵ_d, U, -lattice.δτ)   
 	for band in 1:lattice.bands
 		for i in 1:lattice.kτ-1
-            pos1, pos2 = index(lattice, i+1, conj=true, branch=:τ, band=band), index(lattice, i, conj=false, branch=:τ, band=band)
+            pos1, pos2 = lattice[GrassmannContourIndex(i+1, :τ, band, true)], lattice[GrassmannContourIndex(i, :τ, band, false)]
             apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
             canonicalize!(gmps, alg=Orthogonalize(orth=SVD(), trunc=trunc))			
 		end
@@ -196,10 +196,10 @@ function sysdynamics_imaginary!(gmps::GrassmannMPS, lattice::AbstractGrassmannLa
 		# b = a^2 * (exp(-lattice.δτ*U) - 1)
 		for i in 1:lattice.Nτ
 			for band in 1:2:lattice.bands
-				pos1 = index(lattice, i+1, conj=true, branch=:τ, band=band)
-				pos2 = index(lattice, i+1, conj=true, branch=:τ, band=band+1)
-				pos3 = index(lattice, i, conj=false, branch=:τ, band=band+1)
-				pos4 = index(lattice, i, conj=false, branch=:τ, band=band)
+				pos1 = lattice[GrassmannContourIndex(i+1, :τ, band, true)]
+				pos2 = lattice[GrassmannContourIndex(i+1, :τ, band+1, true)]
+				pos3 = lattice[GrassmannContourIndex(i, :τ, band+1, false)]
+				pos4 = lattice[GrassmannContourIndex(i, :τ, band, false)]
 				apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=b)), gmps)
 				canonicalize!(gmps, alg=Orthogonalize(orth=SVD(), trunc=trunc))			
 			end
@@ -222,7 +222,7 @@ function sysdynamics_forward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLatt
 	a, b = siam_coeffs(ϵ_d, U, -im*lattice.δt) 
 	for band in 1:lattice.bands
 		for i in 1:lattice.Nt
-            pos1, pos2 = index(lattice, i+1, conj=true, branch=:+, band=band), index(lattice, i, conj=false, branch=:+, band=band)
+            pos1, pos2 = lattice[GrassmannContourIndex(i+1, :+, band, true)], lattice[GrassmannContourIndex(i, :+, band, false)]
             apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
             canonicalize!(gmps, alg=Orthogonalize(orth=SVD(), trunc=trunc))			
 		end
@@ -235,10 +235,10 @@ function sysdynamics_forward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLatt
 		# b = a^2 * (exp(-im*lattice.δt*U) - 1)
 		for i in 1:lattice.Nt
 			for band in 1:2:lattice.bands
-				pos1 = index(lattice, i+1, conj=true, branch=:+, band=band)
-				pos2 = index(lattice, i+1, conj=true, branch=:+, band=band+1)
-				pos3 = index(lattice, i, conj=false, branch=:+, band=band+1)
-				pos4 = index(lattice, i, conj=false, branch=:+, band=band)
+				pos1 = lattice[GrassmannContourIndex(i+1, :+, band, true)]
+				pos2 = lattice[GrassmannContourIndex(i+1, :+, band+1, true)]
+				pos3 = lattice[GrassmannContourIndex(i, :+, band+1, false)]
+				pos4 = lattice[GrassmannContourIndex(i, :+, band, false)]
 				apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=b)), gmps)
 				canonicalize!(gmps, alg=Orthogonalize(orth=SVD(), trunc=trunc))			
 			end
@@ -263,7 +263,7 @@ function sysdynamics_backward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLat
 	a, b = siam_coeffs(ϵ_d, U, im*lattice.δt) 
 	for band in 1:lattice.bands
 		for i in 1:lattice.Nt
-			pos1, pos2 = index(lattice, i, conj=true, branch=:-, band=band), index(lattice, i+1, conj=false, branch=:-, band=band)
+			pos1, pos2 = lattice[GrassmannContourIndex(i, :-, band, true)], lattice[GrassmannContourIndex(i+1, :-, band, false)]
 			apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
 			canonicalize!(gmps, alg=Orthogonalize(orth=SVD(), trunc=trunc))	
 		end
@@ -277,10 +277,10 @@ function sysdynamics_backward!(gmps::GrassmannMPS, lattice::AbstractGrassmannLat
 		# bc = conj(b)
 		for i in 1:lattice.Nt
 			for band in 1:2:lattice.bands
-				pos1 = index(lattice, i, conj=true, branch=:-, band=band)
-				pos2 = index(lattice, i, conj=true, branch=:-, band=band+1)
-				pos3 = index(lattice, i+1, conj=false, branch=:-, band=band+1)
-				pos4 = index(lattice, i+1, conj=false, branch=:-, band=band)
+				pos1 = lattice[GrassmannContourIndex(i, :-, band, true)]
+				pos2 = lattice[GrassmannContourIndex(i, :-, band+1, true)]
+				pos3 = lattice[GrassmannContourIndex(i+1, :-, band+1, false)]
+				pos4 = lattice[GrassmannContourIndex(i+1, :-, band, false)]
 				apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=b)), gmps)
 				canonicalize!(gmps, alg=Orthogonalize(orth=SVD(), trunc=trunc))			
 			end
@@ -294,12 +294,12 @@ function si_sysdynamics_stepper!(gmps::GrassmannMPS, lattice::RealGrassmannLatti
 	a = exp(-im*lattice.δt*ϵ_d)
 	i = lattice.k - 1
 	for band in 1:lattice.bands
-		pos1, pos2 = index(lattice, i+1, conj=true, branch=:+, band=band), index(lattice, i, conj=false, branch=:+, band=band)
+		pos1, pos2 = lattice[GrassmannContourIndex(i+1, :+, band, true)], lattice[GrassmannContourIndex(i, :+, band, false)]
 		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
 	end
 	ac = conj(a)
 	for band in 1:lattice.bands
-		pos1, pos2 = index(lattice, i, conj=true, branch=:-, band=band), index(lattice, i+1, conj=false, branch=:-, band=band)
+		pos1, pos2 = lattice[GrassmannContourIndex(i, :-, band, true)], lattice[GrassmannContourIndex(i+1, :-, band, false)]
 		apply!(exp(GTerm(pos1, pos2, coeff=ac)), gmps)
 	end	
 
@@ -310,19 +310,19 @@ function si_sysdynamics_stepper!(gmps::GrassmannMPS, lattice::RealGrassmannLatti
 		# a = -im*lattice.δt*U
 		b = a^2 * (exp(-im*lattice.δt*U) - 1)
 		for band in 1:2:lattice.bands
-			pos1 = index(lattice, i+1, conj=true, branch=:+, band=band)
-			pos2 = index(lattice, i+1, conj=true, branch=:+, band=band+1)
-			pos3 = index(lattice, i, conj=false, branch=:+, band=band+1)
-			pos4 = index(lattice, i, conj=false, branch=:+, band=band)
+			pos1 = lattice[GrassmannContourIndex(i+1, :+, band, true)]
+			pos2 = lattice[GrassmannContourIndex(i+1, :+, band+1, true)]
+			pos3 = lattice[GrassmannContourIndex(i, :+, band+1, false)]
+			pos4 = lattice[GrassmannContourIndex(i, :+, band, false)]
 			apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=b)), gmps)
 		end
 		# a = im*lattice.δt*U
 		bc = conj(b)
 		for band in 1:2:lattice.bands
-			pos1 = index(lattice, i, conj=true, branch=:-, band=band)
-			pos2 = index(lattice, i, conj=true, branch=:-, band=band+1)
-			pos3 = index(lattice, i+1, conj=false, branch=:-, band=band+1)
-			pos4 = index(lattice, i+1, conj=false, branch=:-, band=band)
+			pos1 = lattice[GrassmannContourIndex(i, :-, band, true)]
+			pos2 = lattice[GrassmannContourIndex(i, :-, band+1, true)]
+			pos3 = lattice[GrassmannContourIndex(i+1, :-, band+1, false)]
+			pos4 = lattice[GrassmannContourIndex(i+1, :-, band, false)]
 			apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=bc)), gmps)
 		end
 	end	
@@ -364,15 +364,15 @@ function systhermalstate!(gmps::GrassmannMPS, lattice::RealGrassmannLattice, mod
 	end
 	a, b = siam_coeffs(ϵ_d, U, -β)
 	for band in 1:lattice.bands
-		pos1, pos2 = index(lattice, 1, conj=true, branch=:+, band=band), index(lattice, 1, conj=false, branch=:-, band=band)
+		pos1, pos2 = lattice[GrassmannContourIndex(1, :+, band, true)], lattice[GrassmannContourIndex(1, :-, band, false)]
 		apply!(exp(GTerm(pos1, pos2, coeff=a)), gmps)
 	end
 	if U != zero(U)
 		(lattice.bands == 2) || throw(ArgumentError("lattice should have two bands"))
-		pos1 = index(lattice, 1, conj=true, branch=:+, band=1)
-		pos2 = index(lattice, 1, conj=true, branch=:+, band=2)
-		pos3 = index(lattice, 1, conj=false, branch=:-, band=2)
-		pos4 = index(lattice, 1, conj=false, branch=:-, band=1)
+		pos1 = lattice[GrassmannContourIndex(1, :+, 1, true)]
+		pos2 = lattice[GrassmannContourIndex(1, :+, 2, true)]
+		pos3 = lattice[GrassmannContourIndex(1, :-, 2, false)]
+		pos4 = lattice[GrassmannContourIndex(1, :-, 1, false)]
 		apply!(exp(GTerm(pos1, pos2, pos3, pos4, coeff=b)), gmps)			
 	end
 	# normalize: divide by tr(exp(-βĤ)) so that the result equals the

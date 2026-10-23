@@ -2,8 +2,8 @@
 function _gf_ij(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
                 b1::Symbol, b2::Symbol, c1::Bool, c2::Bool, band::Union{Int, Tuple{Int, Int}}=1, kwargs...)
     band isa Int && (band = (band, band))
-    a = ContourIndex(i, conj=c1, branch=b1, band=band[1])
-    b = ContourIndex(j, conj=c2, branch=b2, band=band[2])
+    a = GrassmannContourIndex(i, conj=c1, branch=b1, band=band[1])
+    b = GrassmannContourIndex(j, conj=c2, branch=b2, band=band[2])
     return gf(lattice, (a, b), A, B...; kwargs...)
 end
 
@@ -124,14 +124,14 @@ build_current_mpo(lattice::RealGrassmannLattice1Order, corr::RealCorrelationFunc
 
 function build_current_mpo_1order(lattice::RealGrassmannLattice, corr::RealCorrelationFunction, k::Int, band::Int)
     η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
-    row = index(lattice, k, conj=true, branch=:+, band=band)
+    row = lattice[GrassmannContourIndex(k, :+, band, true)]
     cols = Int[]
     coefs = ComplexF64[]
     for j in k-1:-1:1
-        col1 = index(lattice, j, conj=false, branch=:+, band=band)
+        col1 = lattice[GrassmannContourIndex(j, :+, band, false)]
         push!(cols, col1)
         push!(coefs, η⁺⁺[k, j])
-        col2 = index(lattice, j, conj=false, branch=:-, band=band)
+        col2 = lattice[GrassmannContourIndex(j, :-, band, false)]
         push!(cols, col2)
         push!(coefs, η⁺⁻[k, j])
     end
@@ -140,23 +140,23 @@ end
 
 function build_current_mpo(lattice::RealGrassmannLattice2Order, corr::RealCorrelationFunction, k::Int, band::Int)
     η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
-    row = index(lattice, k, conj=true, branch=:-, band=band)
+    row = lattice[GrassmannContourIndex(k, :-, band, true)]
     cols = Int[]
     coefs = ComplexF64[]
     # the last two terms are not includes
     for j in k-1:-1:2
-        col1 = index(lattice, j, conj=false, branch=:+, band=band)
+        col1 = lattice[GrassmannContourIndex(j, :+, band, false)]
         push!(cols, col1)
         push!(coefs, -(η⁺⁺[2*k-1, 2*j-2] + η⁺⁺[2*k-1, 2*j-1]) )
-        col2 = index(lattice, j, conj=false, branch=:-, band=band)
+        col2 = lattice[GrassmannContourIndex(j, :-, band, false)]
         push!(cols, col2)
         push!(coefs, -((η⁺⁻[2*k-1, 2*j-2] + η⁺⁻[2*k-1, 2*j-1])))
     end
     j = 1
-    col1 = index(lattice, j, conj=false, branch=:+, band=band)
+    col1 = lattice[GrassmannContourIndex(j, :+, band, false)]
     push!(cols, col1)
     push!(coefs, -η⁺⁺[2*k-1, 2*j-1]) 
-    col2 = index(lattice, j, conj=false, branch=:-, band=band)
+    col2 = lattice[GrassmannContourIndex(j, :-, band, false)]
     push!(cols, col2)
     push!(coefs, -η⁺⁻[2*k-1, 2*j-1])
    

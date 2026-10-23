@@ -53,6 +53,18 @@
 # end
 
 
+"""
+	_latticeindex(x::GrassmannContourIndex; conj=x.conj)
+
+Map a correlation-function node index to the corresponding lattice node
+index. The imaginary-time branch of a Grassmann lattice carries one more
+node than the correlation function (`kτ = Nτ + 1`), so its time index is
+shifted by one; the real-time branches are unchanged.
+"""
+_latticeindex(x::GrassmannContourIndex; conj::Bool=x.conj) =
+	GrassmannContourIndex(x.branch === :τ ? x.j + 1 : x.j, x.branch, x.band, conj)
+
+
 function partialmpo(row::Int, cols::Vector{Int}, coefs::Vector{<:Number})
 	# println("row=", row, " cols ", cols)
 	@assert length(cols) == length(coefs) >= 1

@@ -68,8 +68,8 @@ end
 	cache = environments(lat, mpsK, Is...)
 
 	function mixed_gtempo(i, br, j)
-		cached_gf(lat, (ContourIndex(i, conj=false, branch=:τ, band=1),
-		                ContourIndex(j, conj=true, branch=br, band=1)), mpsK, Is...; cache=cache)
+		cached_gf(lat, (GrassmannContourIndex(i, conj=false, branch=:τ, band=1),
+		                GrassmannContourIndex(j, conj=true, branch=br, band=1)), mpsK, Is...; cache=cache)
 	end
 	function mixed_ed(tau_v, t_v)
 		op1 = exp(tau_v * H) * a * exp(-tau_v * H)

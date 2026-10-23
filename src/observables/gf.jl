@@ -1,7 +1,7 @@
 ###--------------imaginary time----------------
 
 """
-    gf(lattice::AbstractGrassmannLattice, a::ContourIndex, b::ContourIndex, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
+    gf(lattice::AbstractGrassmannLattice, a::GrassmannContourIndex, b::GrassmannContourIndex, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
                 alg=ExactIntegrate(), Z = integrate(lattice, A, B..., alg=alg))
 
 Calculate the Green's function ⟨x y⟩, where x, y are GVs 
@@ -12,7 +12,7 @@ The multiplication of A and B... is assumed
 alg: the algorithm to perform the integration
 Z: the partition function values
 """
-function gf(lattice::AbstractGrassmannLattice, a::NTuple{N, ContourIndex}, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
+function gf(lattice::AbstractGrassmannLattice, a::NTuple{N, GrassmannContourIndex}, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
             alg::IntegrationAlgorithm=ExactIntegrate(), Z::Number = integrate(lattice, A, B..., alg=alg)) where {N}
     pos = map(x->lattice[x], a)
     t = GTerm(pos, coeff=1)
@@ -21,12 +21,12 @@ function gf(lattice::AbstractGrassmannLattice, a::NTuple{N, ContourIndex}, A::Un
 end
 
 """
-    contour_ordered_gf(lattice::AbstractGrassmannLattice, a::ContourIndex, b::ContourIndex, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
+    contour_ordered_gf(lattice::AbstractGrassmannLattice, a::GrassmannContourIndex, b::GrassmannContourIndex, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
                 alg=ExactIntegrate(), Z = integrate(lattice, A, B..., alg=alg))
 
 similar to gf, but return the contour ordered Green's function
 """
-function contour_ordered_gf(lattice::AbstractGrassmannLattice, a::ContourIndex, b::ContourIndex, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
+function contour_ordered_gf(lattice::AbstractGrassmannLattice, a::GrassmannContourIndex, b::GrassmannContourIndex, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
                             alg::IntegrationAlgorithm=ExactIntegrate(), Z::Number = integrate(lattice, A, B..., alg=alg)) 
     ((!a.conj) && (b.conj)) || throw(ArgumentError("conj(a)=false and conj(b)=true should be satisfied"))
     return (a < b) ? -gf(lattice, (b, a), A, B...; alg=alg, Z=Z) : gf(lattice, (a, b), A, B...; alg=alg, Z=Z) 
@@ -42,8 +42,8 @@ function greater(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i:
                  band::Union{Int, Tuple{Int, Int}}=1, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Number = integrate(lattice, A, B..., alg=alg))
     @assert i >= j
     band isa Int && (band = (band, band))
-    a = ContourIndex(i, conj=false, branch=:+, band=band[1])
-    b = ContourIndex(j, conj=true, branch=:+, band=band[2])
+    a = GrassmannContourIndex(i, conj=false, branch=:+, band=band[1])
+    b = GrassmannContourIndex(j, conj=true, branch=:+, band=band[2])
     return gf(lattice, (a, b), A, B...; alg=alg, Z=Z)
 end
 greater(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...) = greater(lattice, i, 1, A, B...; kwargs...)
@@ -58,8 +58,8 @@ function lesser(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::
                  band::Union{Int, Tuple{Int, Int}}=1, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Number = integrate(lattice, A, B..., alg=alg))
     @assert i <= j
     band isa Int && (band = (band, band))
-    a = ContourIndex(i, conj=true, branch=:-, band=band[1])
-    b = ContourIndex(j, conj=false, branch=:+, band=band[2])
+    a = GrassmannContourIndex(i, conj=true, branch=:-, band=band[1])
+    b = GrassmannContourIndex(j, conj=false, branch=:+, band=band[2])
     return gf(lattice, (a, b), A, B...; alg=alg, Z=Z)
 end
 lesser(lattice::Union{RealGrassmannLattice, MixedGrassmannLattice}, i::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; kwargs...) = lesser(lattice, 1, i, A, B...; kwargs...)

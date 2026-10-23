@@ -44,8 +44,8 @@ mpsK = sysdynamics(lat, model, trunc=trunc)
 mpsK = boundarycondition!(mpsK, lat)
 hybriddynamics!(mpsK, lat, corr, ExactTTIIF(alg_mult=SVDCompression(trunc=trunc), verbosity=0))
 Z  = integrate(lat, mpsK)
-gtau = [gf(lat, (ContourIndex(i, conj=false, branch=:τ, band=1),
-                 ContourIndex(1, conj=true,  branch=:τ, band=1)), mpsK, Z=Z)
+gtau = [gf(lat, (GrassmannContourIndex(i, conj=false, branch=:τ, band=1),
+                 GrassmannContourIndex(1, conj=true,  branch=:τ, band=1)), mpsK, Z=Z)
         for i in 1:lat.k]
 ```
 

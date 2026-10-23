@@ -19,8 +19,8 @@ function _propagator_sparsegmps(lattice::AbstractGrassmannLattice, fm::FockMatri
 								cache::Union{Nothing, Dict}, t::Union{Nothing, Real}=nothing)
 	M = lattice.bands
 	ib, ik = branch == :- ? (idx, idx+1) : (idx+1, idx)
-	bpos = [index(lattice, ib, conj=true, branch=branch, band=i) for i in 1:M]
-	kpos = [index(lattice, ik, conj=false, branch=branch, band=i) for i in 1:M]
+	bpos = [lattice[GrassmannContourIndex(ib, branch, i, true)] for i in 1:M]
+	kpos = [lattice[GrassmannContourIndex(ik, branch, i, false)] for i in 1:M]
 	pmin = min(minimum(bpos), minimum(kpos))
 	brel, krel = bpos .- pmin, kpos .- pmin
 
@@ -162,8 +162,8 @@ function _bare_propagator_sparsegmps(lattice::AbstractGrassmannLattice, fm::Fock
 									branch::Symbol, cache::Union{Nothing, Dict}, t::Union{Nothing, Real}=nothing)
 	M = lattice.bands
 	ib, ik = branch == :- ? (idx, idx+1) : (idx+1, idx)
-	bpos = [index(lattice, ib, conj=true, branch=branch, band=i) for i in 1:M]
-	kpos = [index(lattice, ik, conj=false, branch=branch, band=i) for i in 1:M]
+	bpos = [lattice[GrassmannContourIndex(ib, branch, i, true)] for i in 1:M]
+	kpos = [lattice[GrassmannContourIndex(ik, branch, i, false)] for i in 1:M]
 	pmin = min(minimum(bpos), minimum(kpos))
 	pmax = max(maximum(bpos), maximum(kpos))
 	bwin, kwin = bpos .- pmin .+ 1, kpos .- pmin .+ 1

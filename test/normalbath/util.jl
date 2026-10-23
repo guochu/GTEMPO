@@ -64,8 +64,8 @@ function gτ_series(lattice, mpsK, Is...; cache=nothing)
 	if isnothing(cache)
 		# plain evaluation accepts a complex Z (e.g. complex BCS gaps)
 		Z = integrate(lattice, mpsK, Is...)
-		b = ContourIndex(1, conj=true, branch=:τ, band=1)
-		return [gf(lattice, (ContourIndex(i, conj=false, branch=:τ, band=1), b), mpsK, Is..., Z=Z) for i in 1:lattice.k]
+		b = GrassmannContourIndex(1, conj=true, branch=:τ, band=1)
+		return [gf(lattice, (GrassmannContourIndex(i, conj=false, branch=:τ, band=1), b), mpsK, Is..., Z=Z) for i in 1:lattice.k]
 	end
 	return cached_gf_fast(lattice, mpsK, Is...; c1=false, c2=true, b1=:τ, b2=:τ, cache=cache)
 end
@@ -74,8 +74,8 @@ end
 function gtlt_series(lattice, mpsK, Is...; cache=nothing, band=1)
 	if isnothing(cache)
 		Z = integrate(lattice, mpsK, Is...)
-		gt = [-im * gf(lattice, (ContourIndex(k, conj=false, branch=:+, band=band), ContourIndex(1, conj=true, branch=:+, band=band)), mpsK, Is..., Z=Z) for k in 1:lattice.k]
-		lt = [-im * gf(lattice, (ContourIndex(1, conj=true, branch=:-, band=band), ContourIndex(k, conj=false, branch=:+, band=band)), mpsK, Is..., Z=Z) for k in 1:lattice.k]
+		gt = [-im * gf(lattice, (GrassmannContourIndex(k, conj=false, branch=:+, band=band), GrassmannContourIndex(1, conj=true, branch=:+, band=band)), mpsK, Is..., Z=Z) for k in 1:lattice.k]
+		lt = [-im * gf(lattice, (GrassmannContourIndex(1, conj=true, branch=:-, band=band), GrassmannContourIndex(k, conj=false, branch=:+, band=band)), mpsK, Is..., Z=Z) for k in 1:lattice.k]
 	else
 		gt = [-im * cached_greater(lattice, k, mpsK, Is..., band=band, cache=cache) for k in 1:lattice.k]
 		lt = [-im * cached_lesser(lattice, k, mpsK, Is..., band=band, cache=cache) for k in 1:lattice.k]
@@ -87,9 +87,9 @@ end
 function gtltgτ_series(lattice, mpsK, Is...; cache=nothing, band=1)
 	if isnothing(cache)
 		Z = integrate(lattice, mpsK, Is...)
-		gt = [-im * gf(lattice, (ContourIndex(k, conj=false, branch=:+, band=band), ContourIndex(1, conj=true, branch=:+, band=band)), mpsK, Is..., Z=Z) for k in 1:lattice.kt]
-		lt = [im * gf(lattice, (ContourIndex(1, conj=true, branch=:-, band=band), ContourIndex(k, conj=false, branch=:+, band=band)), mpsK, Is..., Z=Z) for k in 1:lattice.kt]
-		gτ = [gf(lattice, (ContourIndex(k, conj=false, branch=:τ, band=band), ContourIndex(1, conj=true, branch=:τ, band=band)), mpsK, Is..., Z=Z) for k in 1:lattice.kτ]
+		gt = [-im * gf(lattice, (GrassmannContourIndex(k, conj=false, branch=:+, band=band), GrassmannContourIndex(1, conj=true, branch=:+, band=band)), mpsK, Is..., Z=Z) for k in 1:lattice.kt]
+		lt = [im * gf(lattice, (GrassmannContourIndex(1, conj=true, branch=:-, band=band), GrassmannContourIndex(k, conj=false, branch=:+, band=band)), mpsK, Is..., Z=Z) for k in 1:lattice.kt]
+		gτ = [gf(lattice, (GrassmannContourIndex(k, conj=false, branch=:τ, band=band), GrassmannContourIndex(1, conj=true, branch=:τ, band=band)), mpsK, Is..., Z=Z) for k in 1:lattice.kτ]
 	else
 		gt = [-im * cached_greater(lattice, k, mpsK, Is..., cache=cache) for k in 1:lattice.kt]
 		lt = [im * cached_lesser(lattice, k, mpsK, Is..., cache=cache) for k in 1:lattice.kt]

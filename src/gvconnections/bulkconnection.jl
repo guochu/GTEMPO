@@ -38,7 +38,7 @@ function bulkconnection_util!(gmps::GrassmannMPS, lattice::AbstractGrassmannLatt
 	alg = Orthogonalize(trunc = trunc)
 	for j in 1:N
 		a, b = (branch == :-) ? (j, j+1) : (j+1, j)
-		pos1, pos2 = index(lattice, a, conj=true, band=band, branch=branch), index(lattice, b, conj=false, band=band, branch=branch)
+		pos1, pos2 = lattice[GrassmannContourIndex(a, branch, band, true)], lattice[GrassmannContourIndex(b, branch, band, false)]
 		m = exp(GTerm(pos1, pos2, coeff=1))
 		apply!(m, gmps)
 		canonicalize!(gmps, alg=alg)

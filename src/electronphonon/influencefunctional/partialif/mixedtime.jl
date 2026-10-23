@@ -9,7 +9,7 @@ function hybriddynamics!(gmps::FockMPS, lattice::MixedFockLattice1Order, corr::A
 				k2 = ifelse(b2==:τ, lattice.Nτ, lattice.Nt)
 				for j in 1:k2, band2 in 1:lattice.bands
 					pos2 = index(lattice, j, band=band2, branch=b2)
-					coef = index(corr, i, j, b1=b1, b2=b2)
+					coef = corr[GrassmannContourIndex(i, b1, 1, false), GrassmannContourIndex(j, b2, 1, true)]
 					push!(pos2s, pos2)
 					push!(coefs, coef)
 				end
@@ -148,7 +148,7 @@ function _hybriddynamics_1band_naive!(gmps::FockMPS, lattice::MixedFockLattice1O
 		k2 = ifelse(b2==:τ, lattice.Nτ, lattice.Nt)
 		for i in 1:k1, j in 1:k2
 			pos1, pos2 = index(lattice, i, band=band, branch=b1), index(lattice, j, band=band, branch=b2)
-			c = exp(index(corr, i, j, b1=b1, b2=b2)) 
+			c = exp(corr[GrassmannContourIndex(i, b1, 1, false), GrassmannContourIndex(j, b2, 1, true)]) 
 			if pos1 == pos2
 				t = ExpNTerm(pos1, coeff=c)
 			else
@@ -174,7 +174,7 @@ function hybriddynamics_2band_naive!(gmps::FockMPS, lattice::MixedFockLattice1Or
 		k2 = ifelse(b2==:τ, lattice.Nτ, lattice.Nt)
 		for i in 1:k1, j in 1:k2
 			pos1, pos2 = index(lattice, i, band=1, branch=b1), index(lattice, j, band=2, branch=b2)
-			c = exp(index(corr, i, j, b1=b1, b2=b2) + index(corr, j, i, b1=b2, b2=b1)) 
+			c = exp(corr[GrassmannContourIndex(i, b1, 1, false), GrassmannContourIndex(j, b2, 1, true)] + corr[GrassmannContourIndex(j, b2, 1, false), GrassmannContourIndex(i, b1, 1, true)]) 
 			t = ExpNTerm(pos1, pos2, coeff=c)
 			apply!(t, gmps)
 			canonicalize!(gmps, alg=alg)						

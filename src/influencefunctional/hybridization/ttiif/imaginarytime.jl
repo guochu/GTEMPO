@@ -75,7 +75,7 @@ function _fit_to_lattice(lattice::ImagGrassmannLattice, mpo::MPO, _JW::MPSBondTe
 
 	j = lattice.k
 	posa, posb = band_boundary(lattice, j)
-	pos1, pos2 = index(lattice, j, conj=false, band=band), index(lattice, j, conj=true, band=band)
+	pos1, pos2 = lattice[GrassmannContourIndex(j, :τ, band, false)], lattice[GrassmannContourIndex(j, :τ, band, true)]
 	@assert (posa <= pos1 < pos2 <= posb) 
 	for i in posa:posb
 		if i < pos1
@@ -96,7 +96,7 @@ function _fit_to_lattice(lattice::ImagGrassmannLattice, mpo::MPO, _JW::MPSBondTe
 	end
 	for j in lattice.k-1:-1:3
 		posa, posb = band_boundary(lattice, j)
-		pos1, pos2 = index(lattice, j, conj=false, band=band), index(lattice, j, conj=true, band=band)
+		pos1, pos2 = lattice[GrassmannContourIndex(j, :τ, band, false)], lattice[GrassmannContourIndex(j, :τ, band, true)]
 		@assert (posa <= pos1 < pos2 <= posb) 
 		for i in posa:posb
 			if i < pos1
@@ -118,7 +118,7 @@ function _fit_to_lattice(lattice::ImagGrassmannLattice, mpo::MPO, _JW::MPSBondTe
 	end
 	j = 2
 	posa, posb = band_boundary(lattice, j)
-	pos1, pos2 = index(lattice, j, conj=false, band=band), index(lattice, j, conj=true, band=band)
+	pos1, pos2 = lattice[GrassmannContourIndex(j, :τ, band, false)], lattice[GrassmannContourIndex(j, :τ, band, true)]
 	@assert (posa <= pos1 < pos2 <= posb) 
 	for i in posa:posb
 		if i < pos1

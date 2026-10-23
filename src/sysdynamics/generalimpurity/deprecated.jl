@@ -102,7 +102,7 @@ function get_Gterm(lattice::AbstractGrassmannLattice, h::AdagATerm, j::Int, dt::
 	b1, b2 = h.positions
 	c = h.coeff * dt
 	a, b = (branch == :-) ? (j, j+1) : (j+1, j)
-	pos1, pos2 = index(lattice, a, conj=true, band=b1, branch=branch), index(lattice, b, conj=false, band=b2, branch=branch)
+	pos1, pos2 = lattice[GrassmannContourIndex(a, branch, b1, true)], lattice[GrassmannContourIndex(b, branch, b2, false)]
 	return exp(GTerm(pos1, pos2, coeff=c))
 end
 
@@ -126,7 +126,7 @@ function get_Gterm(lattice::AbstractGrassmannLattice, h::QuarticTerm, j::Int, dt
 	b1, b2, b3, b4 = h.positions
 	c = h.coeff * dt
 	a, b = (branch == :-) ? (j, j+1) : (j+1, j)
-	pos1, pos2 = index(lattice, a, conj=true, band=b1, branch=branch), index(lattice, a, conj=true, band=b2, branch=branch)
-	pos3, pos4 = index(lattice, b, conj=false, band=b3, branch=branch), index(lattice, b, conj=false, band=b4, branch=branch)
+	pos1, pos2 = lattice[GrassmannContourIndex(a, branch, b1, true)], lattice[GrassmannContourIndex(a, branch, b2, true)]
+	pos3, pos4 = lattice[GrassmannContourIndex(b, branch, b3, false)], lattice[GrassmannContourIndex(b, branch, b4, false)]
 	return exp(GTerm(pos1, pos2, pos3, pos4, coeff=c))
 end

@@ -13,19 +13,18 @@ function retardedinteractdynamics_naive_1band!(gmps::GrassmannMPS, lattice::Imag
 end 
 
 function _retardedinteractdynamics_naive_1band!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order, corr1::ImagCorrelationFunction, band::Int; trunc::TruncationScheme=Defaults.alg_trunc_if())
-	corr = corr1.data
 	k = lattice.k-1
 	alg = Orthogonalize(orth=TK.SVD(), trunc=trunc)
 	for i in 1:k
-		tmp = vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
-		pos1a, pos1b = index(lattice, i+1, conj=true, band=band), index(lattice, i, conj=false, band=band)
+		tmp = vacuumstate(promote_type(scalartype(lattice), scalartype(corr1)), lattice)
+		pos1a, pos1b = lattice[GrassmannContourIndex(i+1, :τ, band, true)], lattice[GrassmannContourIndex(i, :τ, band, false)]
 		for j in 1:k
-			pos2a, pos2b = index(lattice, j+1, conj=true, band=band), index(lattice, j, conj=false, band=band)
+			pos2a, pos2b = lattice[GrassmannContourIndex(j+1, :τ, band, true)], lattice[GrassmannContourIndex(j, :τ, band, false)]
 			if i == j
-				coef = corr[i, j]
+				coef = corr1[GrassmannContourIndex(i, :τ, band, false), GrassmannContourIndex(j, :τ, band, true)]
 				t = exp(GTerm(pos1a, pos1b, coeff=coef))
 			else
-				coef = corr[i, j]
+				coef = corr1[GrassmannContourIndex(i, :τ, band, false), GrassmannContourIndex(j, :τ, band, true)]
 				t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=coef))
 			end
 			apply!(t, tmp)
@@ -40,26 +39,25 @@ function retardedinteractdynamics_naive_2band!(gmps::GrassmannMPS, lattice::Imag
 	@assert lattice.bands == 2
 	_retardedinteractdynamics_naive_1band!(gmps, lattice, corr1, 2, trunc=trunc)
 
-	corr = corr1.data
 	k = lattice.k-1
 	alg = Orthogonalize(orth=TK.SVD(), trunc=trunc)
 	for i in 1:k
-		tmp = vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
-		pos1a, pos1b = index(lattice, i+1, conj=true, band=1), index(lattice, i, conj=false, band=1)
+		tmp = vacuumstate(promote_type(scalartype(lattice), scalartype(corr1)), lattice)
+		pos1a, pos1b = lattice[GrassmannContourIndex(i+1, :τ, 1, true)], lattice[GrassmannContourIndex(i, :τ, 1, false)]
 		for j in 1:k
-			pos2a, pos2b = index(lattice, j+1, conj=true, band=2), index(lattice, j, conj=false, band=2)
-			coef = corr[i, j] + corr[j, i]
+			pos2a, pos2b = lattice[GrassmannContourIndex(j+1, :τ, 2, true)], lattice[GrassmannContourIndex(j, :τ, 2, false)]
+			coef = corr1[GrassmannContourIndex(i, :τ, 1, false), GrassmannContourIndex(j, :τ, 1, true)] + corr1[GrassmannContourIndex(j, :τ, 1, false), GrassmannContourIndex(i, :τ, 1, true)]
 			t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=coef))
 			apply!(t, tmp)
 			canonicalize!(tmp, alg=alg)
 		end
 		for j in 1:k
-			pos2a, pos2b = index(lattice, j+1, conj=true, band=1), index(lattice, j, conj=false, band=1)
+			pos2a, pos2b = lattice[GrassmannContourIndex(j+1, :τ, 1, true)], lattice[GrassmannContourIndex(j, :τ, 1, false)]
 			if i == j
-				coef = corr[i, j]
+				coef = corr1[GrassmannContourIndex(i, :τ, 1, false), GrassmannContourIndex(j, :τ, 1, true)]
 				t = exp(GTerm(pos1a, pos1b, coeff=coef))
 			else
-				coef = corr[i, j]
+				coef = corr1[GrassmannContourIndex(i, :τ, 1, false), GrassmannContourIndex(j, :τ, 1, true)]
 				t = exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=coef))
 			end
 			apply!(t, tmp)

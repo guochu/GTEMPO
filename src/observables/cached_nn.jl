@@ -21,11 +21,11 @@ function cached_nn(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::Union{G
 		band = (band, band)
 	end
 	band1, band2 = band
-	a, b = ContourIndex(i, conj=false, band=band1, branch=b1), ContourIndex(j, conj=false, band=band2, branch=b2)
+	a, b = GrassmannContourIndex(i, conj=false, band=band1, branch=b1), GrassmannContourIndex(j, conj=false, band=band2, branch=b2)
 	return _nn(a, b, cache)
 end
 
-function _nn(a::ContourIndex, b::ContourIndex, cache::TwosideExpectationCache)
+function _nn(a::GrassmannContourIndex, b::GrassmannContourIndex, cache::TwosideExpectationCache)
 	j, k = cache.lattice[a], cache.lattice[b]
 	j, k = pos2pairindex(j), pos2pairindex(k)
 	if j > k

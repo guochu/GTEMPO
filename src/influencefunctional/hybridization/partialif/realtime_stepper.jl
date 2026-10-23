@@ -12,13 +12,13 @@ function hybriddynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattic
 	@assert length(lattice) == length(gmps) 
 	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	if lattice.k == 2
-		pos1, pos2 = index(lattice, 1, conj=true, branch=:+, band=band), index(lattice, 1, conj=false, branch=:+, band=band)
+		pos1, pos2 = lattice[GrassmannContourIndex(1, :+, band, true)], lattice[GrassmannContourIndex(1, :+, band, false)]
 		apply!(exp(GTerm(pos1, pos2, coeff=η⁺⁺[1,1])), gmps)
-		pos1, pos2 = index(lattice, 1, conj=true, branch=:+, band=band), index(lattice, 1, conj=false, branch=:-, band=band)
+		pos1, pos2 = lattice[GrassmannContourIndex(1, :+, band, true)], lattice[GrassmannContourIndex(1, :-, band, false)]
 		apply!(exp(GTerm(pos1, pos2, coeff=η⁺⁻[1,1])), gmps)
-		pos1, pos2 = index(lattice, 1, conj=true, branch=:-, band=band), index(lattice, 1, conj=false, branch=:+, band=band)
+		pos1, pos2 = lattice[GrassmannContourIndex(1, :-, band, true)], lattice[GrassmannContourIndex(1, :+, band, false)]
 		apply!(exp(GTerm(pos1, pos2, coeff=η⁻⁺[1,1])), gmps)
-		pos1, pos2 = index(lattice, 1, conj=true, branch=:-, band=band), index(lattice, 1, conj=false, branch=:-, band=band)
+		pos1, pos2 = lattice[GrassmannContourIndex(1, :-, band, true)], lattice[GrassmannContourIndex(1, :-, band, false)]
 		apply!(exp(GTerm(pos1, pos2, coeff=η⁻⁻[1,1])), gmps)
 		canonicalize!(gmps, alg=Orthogonalize(orth=SVD(), trunc=trunc))
 	end
@@ -41,13 +41,13 @@ function hybriddynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattic
 	@assert length(lattice) == length(gmps)
 	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	if lattice.k == 2
-		pos1, pos2 = index(lattice, 1, conj=true, branch=:+, band=band), index(lattice, 1, conj=false, branch=:+, band=band)
+		pos1, pos2 = lattice[GrassmannContourIndex(1, :+, band, true)], lattice[GrassmannContourIndex(1, :+, band, false)]
 		apply!(exp(GTerm(pos1, pos2, coeff=η⁺⁺[1,1])), gmps)
-		pos1, pos2 = index(lattice, 1, conj=true, branch=:+, band=band), index(lattice, 1, conj=false, branch=:-, band=band)
+		pos1, pos2 = lattice[GrassmannContourIndex(1, :+, band, true)], lattice[GrassmannContourIndex(1, :-, band, false)]
 		apply!(exp(GTerm(pos1, pos2, coeff=η⁺⁻[1,1])), gmps)
-		pos1, pos2 = index(lattice, 1, conj=true, branch=:-, band=band), index(lattice, 1, conj=false, branch=:+, band=band)
+		pos1, pos2 = lattice[GrassmannContourIndex(1, :-, band, true)], lattice[GrassmannContourIndex(1, :+, band, false)]
 		apply!(exp(GTerm(pos1, pos2, coeff=η⁻⁺[1,1])), gmps)
-		pos1, pos2 = index(lattice, 1, conj=true, branch=:-, band=band), index(lattice, 1, conj=false, branch=:-, band=band)
+		pos1, pos2 = lattice[GrassmannContourIndex(1, :-, band, true)], lattice[GrassmannContourIndex(1, :-, band, false)]
 		apply!(exp(GTerm(pos1, pos2, coeff=η⁻⁻[1,1])), gmps)
 		canonicalize!(gmps, alg=Orthogonalize(orth=SVD(), trunc=trunc))
 	end

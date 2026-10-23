@@ -86,9 +86,9 @@ rightscaling(cache::TwosideExpectationCache2, i) = cache.hright_scaling[i+1]
 function cached_gf_fast(idx0::Int, lattice::AbstractGrassmannLattice, N::Int, A::GrassmannMPS, Bs::Vararg{GrassmannMPS}; 
 			cache::TwosideExpectationCache2=environments2(lattice, A, Bs...),
 			b1::Symbol, b2::Symbol, c1::Bool, c2::Bool, band::Int=1)
-	pos1 = index(lattice, 2, conj=c1, band=band, branch=b1) 
-	pos1′ = index(lattice, N, conj=c1, band=band, branch=b1) 
-	pos2 = index(lattice, 1, conj=c2, band=band, branch=b2)
+	pos1 = lattice[GrassmannContourIndex(2, b1, band, c1)]
+	pos1′ = lattice[GrassmannContourIndex(N, b1, band, c1)]
+	pos2 = lattice[GrassmannContourIndex(1, b2, band, c2)]
 	if pos2 < min(pos1, pos1′)
 		GFt = cached_gf_fast_normal_order(idx0, lattice, N, A, Bs...; b1=b1, b2=b2, c1=c1, c2=c2, band=band, cache=cache)
 	elseif pos2 > max(pos1, pos1′)
@@ -108,15 +108,15 @@ function cached_gf_fast_normal_order(idx0::Int, lattice::AbstractGrassmannLattic
 
 	N = idx1 - idx0 + 1
 	# calculated G11
-	a, b = ContourIndex(idx0, conj=c1, branch=b1, band=band), ContourIndex(idx0, conj=c2, branch=b2, band=band)
+	a, b = GrassmannContourIndex(idx0, b1, band, c1), GrassmannContourIndex(idx0, b2, band, c2)
 	g0 = cached_gf(lattice, (a, b), A, Bs...; cache=cache, kwargs...)
 	GFt = Vector{scalartype(A)}(undef, N)
 	GFt[1] = g0
 	(N == 1) && return GFt
 	
 	# calculated G12
-	pos2 = index(lattice, idx0, conj=c2, band=band, branch=b2) # left boundary position
-	pos1 = index(lattice, idx0+1, conj=c1, band=band, branch=b1) # right boundary position
+	pos2 = lattice[GrassmannContourIndex(idx0, b2, band, c2)] # left boundary position
+	pos1 = lattice[GrassmannContourIndex(idx0+1, b1, band, c1)] # right boundary position
 	@assert pos2 < pos1
 	m = convert(PartialMPO, GTerm(pos1, pos2, coeff=1))
 	A2 = _mult_A(m, cache.A) 
@@ -138,8 +138,8 @@ function cached_gf_fast_normal_order(idx0::Int, lattice::AbstractGrassmannLattic
 
 	# calculated G1k
 	for i in 3:N
-		pos1 = index(lattice, idx0+i-1, conj=c1, band=band, branch=b1) # right boundary position
-		pos2 = index(lattice, idx0+i-3, conj=c1, band=band, branch=b1)
+		pos1 = lattice[GrassmannContourIndex(idx0+i-1, b1, band, c1)] # right boundary position
+		pos2 = lattice[GrassmannContourIndex(idx0+i-3, b1, band, c1)]
 		@assert pos2 < pos1
 		m = convert(PartialMPO, GTerm(pos1, pos2, coeff=1))
 		A2 = _mult_A(m, cache.A) 
@@ -166,14 +166,14 @@ function cached_gf_fast_reverse_order(idx0::Int, lattice::AbstractGrassmannLatti
 	@assert idx1 > idx0
 
 	N = idx1 - idx0 + 1
-	a, b = ContourIndex(idx0, conj=c1, branch=b1, band=band), ContourIndex(idx0, conj=c2, branch=b2, band=band)
+	a, b = GrassmannContourIndex(idx0, b1, band, c1), GrassmannContourIndex(idx0, b2, band, c2)
 	g0 = cached_gf(lattice, (a, b), A, Bs...; cache=cache, kwargs...)
 	GFt = Vector{scalartype(A)}(undef, N)
 	GFt[1] = g0
 	(N == 1) && return GFt
 
-	pos1 = index(lattice, idx0+1, conj=c1, band=band, branch=b1) # left boundary position
-	pos2 = index(lattice, idx0, conj=c2, band=band, branch=b2) # right boundary position
+	pos1 = lattice[GrassmannContourIndex(idx0+1, b1, band, c1)] # left boundary position
+	pos2 = lattice[GrassmannContourIndex(idx0, b2, band, c2)] # right boundary position
 	@assert pos1 < pos2
 	m = convert(PartialMPO, GTerm(pos1, pos2, coeff=1))
 	j, k = pos2pairindex(positions(m)[1]), pos2pairindex(positions(m)[end])
@@ -192,8 +192,8 @@ function cached_gf_fast_reverse_order(idx0::Int, lattice::AbstractGrassmannLatti
 
 
 	for i in 3:N
-		pos1 = index(lattice, idx0+i-1, conj=c1, band=band, branch=b1) # left boundary position
-		pos2 = index(lattice, idx0+i-3, conj=c1, band=band, branch=b1)
+		pos1 = lattice[GrassmannContourIndex(idx0+i-1, b1, band, c1)] # left boundary position
+		pos2 = lattice[GrassmannContourIndex(idx0+i-3, b1, band, c1)]
 		@assert pos1 < pos2
 		m = convert(PartialMPO, GTerm(pos1, pos2, coeff=1))
 		j = pos2pairindex(positions(m)[1])

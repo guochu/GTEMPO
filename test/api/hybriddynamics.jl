@@ -142,11 +142,13 @@ end
 	k = lat.k - 1
 	mps1 = vacuumstate(lat)
 	for i in 1:k
-		mps1 = mult!(mps1, partialif_hybrid(lat, i + 1, [0; view(corr.data, i, 1:k)]), trunc=trunc)[1]
+		row = [corr[GrassmannContourIndex(i, :τ, 1, false), GrassmannContourIndex(j, :τ, 1, true)] for j in 1:k]
+		mps1 = mult!(mps1, partialif_hybrid(lat, i + 1, [0; row]), trunc=trunc)[1]
 	end
 	@test relerr(mps1, hybriddynamics(lat, corr, trunc=trunc)) < 1.0e-8
-	a = partialif_hybrid(lat, 2, [0; view(corr.data, 1, 1:k)])
-	b = partialif_hybrid_naive(lat, 2, [0; view(corr.data, 1, 1:k)], trunc=trunc)
+	row1 = [corr[GrassmannContourIndex(1, :τ, 1, false), GrassmannContourIndex(j, :τ, 1, true)] for j in 1:k]
+	a = partialif_hybrid(lat, 2, [0; row1])
+	b = partialif_hybrid_naive(lat, 2, [0; row1], trunc=trunc)
 	@test relerr(a, b) < 1.0e-8
 	# hybriddynamics_naive! (in place) agrees with hybriddynamics_naive
 	@test relerr(hybriddynamics_naive!(vacuumstate(lat), lat, corr, trunc=trunc),

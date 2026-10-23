@@ -353,7 +353,7 @@ fails for bosons), so the IF is built by multiplying `2n` (imaginary) or
 
 ```
 src/
-├── lattices/            # Grassmann lattices, ContourIndex, orderings
+├── lattices/            # Grassmann lattices, contour indices, orderings
 ├── grassmannmps/        # GMPS/GTerm, canonicalization, multiplication
 ├── mpo/                 # MPO Hamiltonians (Schur form), long-range terms
 ├── integration/         # lattice–GMPS contraction, cached environments

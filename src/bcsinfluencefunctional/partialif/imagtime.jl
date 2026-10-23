@@ -32,13 +32,13 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::ImagGrassmannLattice1Order
 	T = scalartype(corr)
 	for i in 1:k, c1 in (true, false)
 		band1′ = ifelse(c1, band1, band2)
-		pos1 = index(lattice, i+1, conj=c1, band=band1′)
+		pos1 = lattice[GrassmannContourIndex(i+1, :τ, band1′, c1)]
 		pos2s = Int[]
 		coefs = T[]
 		for j in 1:k, c2 in (true, false)
-			coef = index(corr[c1, c2], i, j)
 			band2′ = ifelse(c2, band2, band1)
-			pos2 = index(lattice, j+1, conj=c2, band=band2′)
+			coef = corr[c1, c2][GrassmannContourIndex(i, :τ, band1′, false), GrassmannContourIndex(j, :τ, band2′, true)]
+			pos2 = lattice[GrassmannContourIndex(j+1, :τ, band2′, c2)]
 			push!(pos2s, pos2)
 			push!(coefs, coef)
 		end

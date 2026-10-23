@@ -61,7 +61,7 @@ end
 Base.length(x::MixedGrassmannLattice1Order) = 4*x.bands * x.kt + 2*x.bands * x.kτ
 
 # acending order for real branch, descending order for imag time
-function index(x::MixedGrassmannLattice1Order{<:A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function _index(x::MixedGrassmannLattice1Order{<:A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
@@ -84,7 +84,7 @@ function index(x::MixedGrassmannLattice1Order{<:A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b
 	end
 end
 
-function index(x::MixedGrassmannLattice1Order{<:A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function _index(x::MixedGrassmannLattice1Order{<:A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
@@ -108,10 +108,9 @@ function index(x::MixedGrassmannLattice1Order{<:A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B
 end
 
 
-"""
-	index(x::MixedGrassmannLattice1Order, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
-"""
-function index(x::MixedGrassmannLattice1Order{<:Ā3A2B̄3B2Ā2A1B̄2B1_ā1a2Ā2A1b̄1b2B̄2B1ā2a3Ā3A2b̄2b3B̄3B2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+# internal site-position map; the public accessor is
+# `lattice[GrassmannContourIndex(i, branch, band, conj)]`
+function _index(x::MixedGrassmannLattice1Order{<:Ā3A2B̄3B2Ā2A1B̄2B1_ā1a2Ā2A1b̄1b2B̄2B1ā2a3Ā3A2b̄2b3B̄3B2}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
@@ -156,7 +155,7 @@ end
 
 # A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄1A1B1: imaginary part A1B1B̄1Ā1, real part
 # interleaves the two branches (canonical ordering for the fast propagator)
-function index(x::MixedGrassmannLattice1Order{<:A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄1A1B1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function _index(x::MixedGrassmannLattice1Order{<:A1B1B̄1Ā1_a1b1Ā1B̄1ā1b̄1A1B1}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
@@ -186,7 +185,7 @@ function indexmappings(lattice::MixedGrassmannLattice1Order)
 		for c in (true, false)
 			for band in 1:lattice.bands
 				f = :τ
-				r[(i, c, f, band)] = index(lattice, i, conj=c, branch=f, band=band)
+				r[(i, c, f, band)] = lattice[GrassmannContourIndex(i, f, band, c)]
 			end
 		end
 	end
@@ -194,7 +193,7 @@ function indexmappings(lattice::MixedGrassmannLattice1Order)
 		for c in (true, false)
 			for band in 1:lattice.bands
 				for f in (:+, :-)
-					r[(i, c, f, band)] = index(lattice, i, conj=c, branch=f, band=band)
+					r[(i, c, f, band)] = lattice[GrassmannContourIndex(i, f, band, c)]
 				end
 			end
 		end

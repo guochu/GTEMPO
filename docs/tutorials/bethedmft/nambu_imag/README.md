@@ -36,7 +36,7 @@ H_imp = ϵ_d (n↑ + n↓) + U n↑n↓ ,   ϵ_d = −U/2（粒子-空穴对称�
 | BCS 影响泛函（单个 IF，不用 branching） | `hybriddynamics_naive(lattice, BCSCorrelationFunction(...), orbital=1)` |
 | 环境缓存 | `environments(lattice, mpsK, mpsI)` |
 | 正常分量 G(τ) | `cached_gf_fast(..., band=1/2)`（返回 Nτ+1 点，G = −C） |
-| 反常分量 G(τ) | 逐点 `cached_gf` + 跨 band `ContourIndex`（端点 F(β) = −F(0)） |
+| 反常分量 G(τ) | 逐点 `cached_gf` + 跨 band `GrassmannContourIndex`（端点 F(β) = −F(0)） |
 | G(τ) → G(iωₙ) | 细网格插值 + `Gτ_to_Giw` |
 | 频率网格 | `ifrequencies` |
 

@@ -2,8 +2,8 @@
 function _cached_gf_ij(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
                        b1::Symbol, b2::Symbol, c1::Bool, c2::Bool, band::Union{Int, Tuple{Int, Int}}=1, kwargs...)
     band isa Int && (band = (band, band))
-    a = ContourIndex(i, conj=c1, branch=b1, band=band[1])
-    b = ContourIndex(j, conj=c2, branch=b2, band=band[2])
+    a = GrassmannContourIndex(i, conj=c1, branch=b1, band=band[1])
+    b = GrassmannContourIndex(j, conj=c2, branch=b2, band=band[2])
     return cached_gf(lattice, (a, b), A, B...; kwargs...)
 end
 

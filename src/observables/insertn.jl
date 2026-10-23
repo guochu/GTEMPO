@@ -8,7 +8,7 @@
 
 function insert_n!(lattice::AbstractGrassmannLattice, gmps::GrassmannMPS, j::Int; band::Int=1, branch=:τ)
 	@assert j > 0
-	pos = index(lattice, j, branch=branch, conj=false, band=band)
+	pos = lattice[GrassmannContourIndex(j, branch, band, false)]
  	t = copy(gmps[pos])
  	for (fl, fr) in fusiontrees(t)
  		if iseven(fl.uncoupled[2].n)
