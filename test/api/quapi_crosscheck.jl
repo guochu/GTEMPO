@@ -51,7 +51,7 @@ end
 # map GTEMPO's dense coefficient tensor onto QuAPI's leg basis and return the
 # relative maximum deviation from GrassmannIF(corr)
 function _gt_vs_quapi(dense, lat, corr)
-    qif = GrassmannIF(corr)
+    qif = GrassmannIF(GrassmannHybridizationMatrix(corr))
     Lq = length(qif.basis)
     out = zeros(eltype(dense), 1 << Lq)
     for m in 0:(1 << Lq)-1
