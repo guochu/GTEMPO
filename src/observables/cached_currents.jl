@@ -18,7 +18,8 @@ with cached environments. Without the `k` argument the whole sequence
 function cached_electriccurrent(lattice::RealGrassmannLattice, corr::RealCorrelationFunction, k::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
                 	               cache::AbstractExpectationCache=environments(lattice, A, B...), band::Int=1)
     curr = complex(0.)
-    η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
+    η⁺⁺ = branch(corr; b1=:+, b2=:+)
+    η⁺⁻ = branch(corr; b1=:+, b2=:-)
     for j in 1:k-1
         curr += η⁺⁺[k, j] * _cached_gf_ij(lattice, k, j, A, B...; cache=cache, b1=:+, b2=:+, band=band, c1=true, c2=false)
         curr += η⁺⁻[k, j] * _cached_gf_ij(lattice, k, j, A, B...; cache=cache, b1=:+, b2=:-, band=band, c1=true, c2=false)

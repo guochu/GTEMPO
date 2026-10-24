@@ -108,7 +108,10 @@ function _get_mpo3(mpoj)
 	return MPO(h)
 end
 function _get_signed_corr(lattice::AbstractRealGrassmannLattice, corr::RealCorrelationFunction, band::Int)
-	η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
+	η⁺⁺ = branch(corr; b1=:+, b2=:+)
+	η⁺⁻ = branch(corr; b1=:+, b2=:-)
+	η⁻⁺ = branch(corr; b1=:-, b2=:+)
+	η⁻⁻ = branch(corr; b1=:-, b2=:-)
 	if lattice[GrassmannContourIndex(1, :+, band, false)] > lattice[GrassmannContourIndex(1, :+, band, true)]
 		η⁺⁺ = -transpose(η⁺⁺)
 	end

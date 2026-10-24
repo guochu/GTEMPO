@@ -19,7 +19,8 @@ function electriccurrent(lattice::RealGrassmannLattice, corr::RealCorrelationFun
                          alg::IntegrationAlgorithm=ExactIntegrate(),
                          Z::Number = integrate(lattice, A, B..., alg=alg), band::Int=1)
     curr = complex(0.)
-    η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
+    η⁺⁺ = branch(corr; b1=:+, b2=:+)
+    η⁺⁻ = branch(corr; b1=:+, b2=:-)
     for j in 1:k-1
         curr += η⁺⁺[k, j] * _gf_ij(lattice, k, j, A, B...; b1=:+, b2=:+, Z=Z, band=band, alg=alg, c1=true, c2=false)
         curr += η⁺⁻[k, j] * _gf_ij(lattice, k, j, A, B...; b1=:+, b2=:-, Z=Z, band=band, alg=alg, c1=true, c2=false)
@@ -91,7 +92,8 @@ heatcurrent_fast(lattice::RealGrassmannLattice, bath::AbstractFermionicNormalBat
 build_current_mpo(lattice::RealGrassmannLattice, corr::RealCorrelationFunction, k::Int, band::Int) = build_current_mpo_1order(lattice, corr, k, band)
 
 function build_current_mpo_1order(lattice::AbstractRealGrassmannLattice, corr::RealCorrelationFunction, k::Int, band::Int)
-    η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻ = corr.G₊₊, corr.G₊₋, corr.G₋₊, corr.G₋₋
+    η⁺⁺ = branch(corr; b1=:+, b2=:+)
+    η⁺⁻ = branch(corr; b1=:+, b2=:-)
     row = lattice[GrassmannContourIndex(k, :+, band, true)]
     cols = Int[]
     coefs = ComplexF64[]

@@ -93,6 +93,24 @@ function partialif_hybrid(lattice::AbstractGrassmannLattice, i::GrassmannContour
 end
 
 """
+	partialif_hybrid(lattice::AbstractGrassmannLattice,
+					 rows::AbstractVector{<:GrassmannContourIndex},
+					 col::GrassmannContourIndex, corr)
+
+Transposed counterpart of the row-based method: build
+`exp(Σᵢ Δᵢ,col āᵢ a_col)`, i.e. one column leg coupling to many row legs.
+Used by the stepper to add the terms of the newest time step.
+"""
+function partialif_hybrid(lattice::AbstractGrassmannLattice, rows::AbstractVector{<:GrassmannContourIndex},
+						  col::GrassmannContourIndex, corr::Union{AbstractCorrelationFunction, BCSCorrelationFunction})
+	col_pos = lattice[_latticeindex(col)]
+	row_pos = [lattice[_latticeindex(r)] for r in rows]
+	coefs = [corr[conj(r), conj(col)] for r in rows]
+	mpo = partialmpo(col_pos, row_pos, -coefs)
+	return mpo * vacuumstate(promote_type(scalartype(lattice), eltype(coefs)), lattice)
+end
+
+"""
 	partialif_hybrid_naive(lattice::AbstractGrassmannLattice, i::GrassmannContourIndex,
 						   cols::AbstractVector{<:GrassmannContourIndex}, corr;
 						   trunc::TruncationScheme=Defaults.alg_trunc_if())
