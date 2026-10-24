@@ -179,3 +179,44 @@ end
 	@test length(V1) == length(bblat) && norm(V1) > 0
 	@test distance(V1, V2) < 1.0e-10
 end
+
+@testset "API: TTI-IF MPO blocks" begin
+	trunc = truncdimcutoff(D=60, ϵ=1.0e-12)
+	bath = fermionicbath(DiracDelta(ω=1, α=0.5), β=0.4)
+	evo = WII(tol=1.0e-14, maxiter=100000)
+	for ordering in (A1Ā1a1ā1B1B̄1b1b̄1(), A1Ā1B1B̄1a1ā1b1b̄1(), a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2())
+		lat = GrassmannLattice(δt=0.05, N=3, contour=:real, ordering=ordering)
+		corr = correlationfunction(bath, lat)
+		# dt=1 exponentiated the TTI generator of each branch block
+		ops = influenceoperatorsteppers(lat, corr, 1.0, evo,
+										alg_expan=GTEMPO.Defaults.alg_expan(tol=1.0e-14))
+		T = promote_type(scalartype(lat), scalartype(corr))
+		@test length(ops) == 4
+		# each block must equal the naive product of its row exponentials. On
+		# a time-ascending lattice the 3-site TTI cell is placed in reverse,
+		# which leaves a small boundary mismatch at this short chain length.
+		tol = ordering isa a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2 ? 1.0e-2 : 1.0e-5
+		for (n, (b1, b2)) in enumerate(((:+, :+), (:+, :-), (:-, :+), (:-, :-)))
+			mps = ops[n] * vacuumstate(T, lat)
+			ref = vacuumstate(T, lat)
+			cols = [GrassmannContourIndex(j, b2, 1, false) for j in 1:lat.k]
+			for i in 1:lat.k
+				ref = mult(ref, partialif_hybrid(lat, GrassmannContourIndex(i, b1, 1, true), cols, corr), trunc=trunc)[1]
+			end
+			@test relerr(mps, ref) < tol
+		end
+	end
+end
+
+@testset "API: real-time ComplexStepper" begin
+	trunc = truncdimcutoff(D=50, ϵ=1.0e-10)
+	bath = fermionicbath(DiracDelta(ω=1, α=0.5), β=0.4)
+	lat = GrassmannLattice(N=3, δt=0.05, contour=:real)
+	corr = correlationfunction(bath, lat)
+	evo = WII(tol=1.0e-14, maxiter=100000)
+	alg1 = XTRGIF(k=2, alg_evo=evo, alg_mult=SVDCompression(trunc=trunc), verbosity=0)
+	alg2 = XTRGIF(k=2, alg_evo=ComplexStepper(evo), alg_mult=SVDCompression(trunc=trunc), verbosity=0)
+	mps1 = hybriddynamics(lat, corr, alg1)
+	mps2 = hybriddynamics(lat, corr, alg2)
+	@test relerr(mps2, mps1) < 1.0e-5
+end

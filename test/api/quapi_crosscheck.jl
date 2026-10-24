@@ -49,20 +49,31 @@ function _gmps_to_dense(psi)
 end
 
 # map GTEMPO's dense coefficient tensor onto QuAPI's leg basis and return the
-# relative maximum deviation from GrassmannIF(corr)
+# relative maximum deviation from GrassmannIF(corr).
+#
+# QuAPI 的腿序与 GTEMPO 的 site 序可以不同；把同一占据构型搬到 QuAPI 的
+# monomial 基时，需要乘上「按 site 升序重排占据腿」的费米置换宇称。
 function _gt_vs_quapi(dense, lat, corr)
     qif = GrassmannIF(GrassmannHybridizationMatrix(corr))
     Lq = length(qif.basis)
+    sites = [lat[GrassmannContourIndex((leg.branch === :τ) ? leg.j + 1 : leg.j,
+                                       leg.branch, leg.band, leg.conj)]
+             for leg in qif.basis]
     out = zeros(eltype(dense), 1 << Lq)
     for m in 0:(1 << Lq)-1
         σ = falses(length(dense))
+        occ = Int[]
         for q in 1:Lq
             iszero((m >> (q - 1)) & 1) && continue
-            leg = qif.basis[q]
-            i = (leg.branch === :τ) ? leg.j + 1 : leg.j
-            σ[lat[GrassmannContourIndex(i, leg.branch, leg.band, leg.conj)]] = true
+            σ[sites[q]] = true
+            push!(occ, sites[q])
         end
-        out[m+1] = dense[ntuple(p -> σ[p] ? 2 : 1, ndims(dense))...]
+        # occ 按 QuAPI 腿序排列；数一下把它按 site 升序排序的逆序数
+        sgn = 1
+        for a in 1:length(occ)-1, b in a+1:length(occ)
+            occ[a] > occ[b] && (sgn = -sgn)
+        end
+        out[m+1] = sgn * dense[ntuple(p -> σ[p] ? 2 : 1, ndims(dense))...]
     end
     return maximum(abs.(out - qif.data)) / norm(qif.data)
 end

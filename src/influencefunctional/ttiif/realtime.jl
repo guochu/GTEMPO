@@ -49,7 +49,7 @@ function influenceoperatorsteppers(lattice::AbstractRealGrassmannLattice{<:_Allo
 	mpo1a, mpo1b = _fit_to_lattice(lattice, h1a, _JW, band, :+, :+), _fit_to_lattice(lattice, h1b, _JW, band, :+, :+)
 	# noticing the following two!!!
 	mpo2a, mpo2b = _fit_to_lattice(lattice, h2a, _JW, band, :-, :+), _fit_to_lattice(lattice, h2b, _JW, band, :-, :+) 
-	mpo3a, mpo3b = _fit_to_lattice(lattice, h3a, _JW, band, :+, :-), _fit_to_lattice(lattice, h3a, _JW, band, :+, :-) 
+	mpo3a, mpo3b = _fit_to_lattice(lattice, h3a, _JW, band, :+, :-), _fit_to_lattice(lattice, h3b, _JW, band, :+, :-) 
 	mpo4a, mpo4b = _fit_to_lattice(lattice, h4a, _JW, band, :-, :-), _fit_to_lattice(lattice, h4b, _JW, band, :-, :-) 
 	return (mpo1a, mpo1b), (mpo2a, mpo2b), (mpo3a, mpo3b), (mpo4a, mpo4b)
 end
@@ -108,23 +108,19 @@ function _get_mpo3(mpoj)
 	return MPO(h)
 end
 function _get_signed_corr(lattice::AbstractRealGrassmannLattice, corr::RealCorrelationFunction, band::Int)
-	η⁺⁺ = branch(corr; b1=:+, b2=:+)
-	η⁺⁻ = branch(corr; b1=:+, b2=:-)
-	η⁻⁺ = branch(corr; b1=:-, b2=:+)
-	η⁻⁻ = branch(corr; b1=:-, b2=:-)
-	if lattice[GrassmannContourIndex(1, :+, band, false)] > lattice[GrassmannContourIndex(1, :+, band, true)]
-		η⁺⁺ = -transpose(η⁺⁺)
+	# The MPO built by `ti_mpotensor` writes the operators from left (future)
+	# to right (past). If the column leg `a` of a block lies to the right of
+	# its row leg `ā` at equal time, the block is stored in the opposite
+	# (i,j) orientation: transpose it, and pick up a minus from
+	# `āᵢ aⱼ = -āⱼ aᵢ`. The transposed block is then fitted under the swapped
+	# branch labels in `influenceoperators`.
+	function signed(b1::Symbol, b2::Symbol)
+		η = branch(corr; b1=b1, b2=b2)
+		swap = lattice[GrassmannContourIndex(1, b2, band, false)] >
+			   lattice[GrassmannContourIndex(1, b1, band, true)]
+		return swap ? -transpose(η) : η
 	end
-	if lattice[GrassmannContourIndex(1, :-, band, false)] > lattice[GrassmannContourIndex(1, :+, band, true)]
-		η⁺⁻ = -transpose(η⁺⁻)
-	end
-	if lattice[GrassmannContourIndex(1, :+, band, false)] > lattice[GrassmannContourIndex(1, :-, band, true)]
-		η⁻⁺ = -transpose(η⁻⁺)
-	end
-	if lattice[GrassmannContourIndex(1, :-, band, false)] > lattice[GrassmannContourIndex(1, :-, band, true)]
-		η⁻⁻ = -transpose(η⁻⁻)
-	end
-	return η⁺⁺, η⁺⁻, η⁻⁺, η⁻⁻
+	return signed(:+, :+), signed(:+, :-), signed(:-, :+), signed(:-, :-)
 end
 
 function _fit_to_lattice(lattice::AbstractRealGrassmannLattice, mpo::MPO, _JW::MPSBondTensor, band::Int, f1::Symbol, f2::Symbol, trunc::TruncationScheme=Defaults.alg_trunc_if())
