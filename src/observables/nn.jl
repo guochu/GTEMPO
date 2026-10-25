@@ -1,12 +1,12 @@
 
 """
-	nn(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
+	nn(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::GrassmannMPS, B::Vararg{GrassmannMPS};
 		b1::Symbol=:τ, b2::Symbol=:τ, band::Int=1, alg::IntegrationAlgorithm=ExactIntegrate(), 
 		Z::Real = integrate(lattice, A, B..., alg=alg))
 
 Calculate the density-density correlation
 """
-function nn2(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
+function nn2(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::GrassmannMPS, B::Vararg{GrassmannMPS};
 			b1::Symbol=:τ, b2::Symbol=b1, band::Union{Int, Tuple{Int, Int}}=1, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Number = integrate(lattice, A, B..., alg=alg))
 	if isa(band, Int)
 		band = (band, band)
@@ -32,14 +32,14 @@ end
 
 
 """
-	nn(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
+	nn(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::GrassmannMPS, B::Vararg{GrassmannMPS};
 		b1=:τ, b2=b1, band=1, alg=ExactIntegrate(), Z=integrate(lattice, A, B..., alg=alg))
 
 Density-density correlation `⟨n̂(i) n̂(j)⟩` obtained by inserting number
 operators at time steps `i` and `j` before integrating. `b1`/`b2` select the
 contour branches and `band` (an `Int` or a 2-tuple) the bands.
 """
-function nn(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
+function nn(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::GrassmannMPS, B::Vararg{GrassmannMPS};
 			b1::Symbol=:τ, b2::Symbol=b1, band::Union{Int, Tuple{Int, Int}}=1, alg::IntegrationAlgorithm=ExactIntegrate(), Z::Number = integrate(lattice, A, B..., alg=alg))
 	if isa(band, Int)
 		band = (band, band)
@@ -59,5 +59,3 @@ function _insert_nn(lattice, A::GrassmannMPS, i, j, b1, b2, band1, band2)
 	A2 = insert_n(lattice, A1, j, branch=b2, band=band2)
 	return A2
 end
-
-_insert_nn(lattice, A::Vector, i, j, b1, b2, band1, band2) = [_insert_nn(lattice, Aj, i, j, b1, b2, band1, band2) for Aj in A]

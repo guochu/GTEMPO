@@ -1,5 +1,5 @@
 # local helper: the ⟨aᵢ bⱼ⟩ Green's function built on gf with contour indices
-function _gf_ij(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
+function _gf_ij(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::GrassmannMPS, B::Vararg{GrassmannMPS};
                 b1::Symbol, b2::Symbol, c1::Bool, c2::Bool, band::Union{Int, Tuple{Int, Int}}=1, kwargs...)
     band isa Int && (band = (band, band))
     a = GrassmannContourIndex(i, conj=c1, branch=b1, band=band[1])
@@ -8,14 +8,14 @@ function _gf_ij(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::Union{Gras
 end
 
 """
-    electriccurrent(lattice::RealGrassmannLattice, corr, k::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
+    electriccurrent(lattice::RealGrassmannLattice, corr, k::Int, A::GrassmannMPS, B::GrassmannMPS...; 
                          alg::IntegrationAlgorithm=ExactIntegrate(),
                          Z::Number = integrate(lattice, A, B..., alg=alg), band::Int=1, max_range::Int=10000)
 
 Return the electric current at time step k, which is calculated as the sum
 of a series of Green's functions
 """
-function electriccurrent(lattice::RealGrassmannLattice, corr::RealCorrelationFunction, k::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
+function electriccurrent(lattice::RealGrassmannLattice, corr::RealCorrelationFunction, k::Int, A::GrassmannMPS, B::Vararg{GrassmannMPS}; 
                          alg::IntegrationAlgorithm=ExactIntegrate(),
                          Z::Number = integrate(lattice, A, B..., alg=alg), band::Int=1)
     curr = complex(0.)
@@ -27,12 +27,12 @@ function electriccurrent(lattice::RealGrassmannLattice, corr::RealCorrelationFun
     end
     return 2 * curr / lattice.δt
 end
-electriccurrent(lattice::RealGrassmannLattice, corr::RealCorrelationFunction, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; band::Int=1,
+electriccurrent(lattice::RealGrassmannLattice, corr::RealCorrelationFunction, A::GrassmannMPS, B::Vararg{GrassmannMPS}; band::Int=1,
                 alg::IntegrationAlgorithm=ExactIntegrate(), 
                 Z::Number = integrate(lattice, A, B..., alg=alg)) = [electriccurrent(lattice, corr, k, A, B...; alg=alg, Z=Z, band=band) for k in 2:lattice.k]
 
 """
-    electriccurrent_fast(lattice::RealGrassmannLattice, corr, k::Int, A::Union{GrassmannMPS, Vector}, B::GrassmannMPS...; 
+    electriccurrent_fast(lattice::RealGrassmannLattice, corr, k::Int, A::GrassmannMPS, B::GrassmannMPS...; 
                          alg::IntegrationAlgorithm=ExactIntegrate(),
                          Z::Number = integrate(lattice, A, B..., alg=alg), band::Int=1, max_range::Int=10000)
 

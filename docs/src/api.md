@@ -171,7 +171,6 @@ converted into lists of `ExponentialDecayTerm` by `expand_decayterm`.
 ```@docs
 FockLattice
 FockMPS
-FockMPO
 FockMatrix
 fock_propagator
 ```

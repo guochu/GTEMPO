@@ -1,13 +1,13 @@
 # cached version of calculating Green's functions
 
 """
-   cached_gf(lattice::AbstractGrassmannLattice, a::GrassmannContourIndex, b::GrassmannContourIndex, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
+   cached_gf(lattice::AbstractGrassmannLattice, a::GrassmannContourIndex, b::GrassmannContourIndex, A::GrassmannMPS, B::Vararg{GrassmannMPS}; 
                     cache::AbstractExpectationCache=environments(lattice, A, B...), kwargs...)
 
 The same as gf, but use a cache for efficiency, the cache can be precomputed
 and used for calculating any other observables
 """
-function cached_gf(lattice::AbstractGrassmannLattice, a::NTuple{N, GrassmannContourIndex}, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
+function cached_gf(lattice::AbstractGrassmannLattice, a::NTuple{N, GrassmannContourIndex}, A::GrassmannMPS, B::Vararg{GrassmannMPS}; 
                     cache::AbstractExpectationCache=environments(lattice, A, B...)) where {N}
     pos = map(x->lattice[x], a)
     t = GTerm(pos, coeff=1)
@@ -21,7 +21,7 @@ Contour-ordered Green's function `G(a, b)` with cached environments. Requires
 `conj(a)=false` and `conj(b)=true`; the lesser/greater case is selected by the
 ordering of `a` and `b` on the contour.
 """
-function cached_contour_ordered_gf(lattice::AbstractGrassmannLattice, a::GrassmannContourIndex, b::GrassmannContourIndex, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
+function cached_contour_ordered_gf(lattice::AbstractGrassmannLattice, a::GrassmannContourIndex, b::GrassmannContourIndex, A::GrassmannMPS, B::Vararg{GrassmannMPS}; 
                                     cache::AbstractExpectationCache=environments(lattice, A, B...)) 
     ((!a.conj) && (b.conj)) || throw(ArgumentError("conj(a)=false and conj(b)=true should be satisfied"))
     return (a < b) ? -cached_gf(lattice, (b, a), A, B...; cache=cache) : cached_gf(lattice, (a, b), A, B...; cache=cache) 
@@ -34,7 +34,7 @@ Correlation `⟨d(i) d†(j)⟩` on the real branches, evaluated with cached
 environments. The greater Green's function is `G^>(i, j) = -im * cached_greater(i, j)`.
 `band` may be an `Int` or a 2-tuple.
 """
-function cached_greater(lattice::Union{AbstractRealGrassmannLattice, AbstractMixedGrassmannLattice}, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
+function cached_greater(lattice::Union{AbstractRealGrassmannLattice, AbstractMixedGrassmannLattice}, i::Int, j::Int, A::GrassmannMPS, B::Vararg{GrassmannMPS};
                         band::Union{Int, Tuple{Int, Int}}=1, kwargs...)
     @assert i >= j
     band isa Int && (band = (band, band))
@@ -42,7 +42,7 @@ function cached_greater(lattice::Union{AbstractRealGrassmannLattice, AbstractMix
     b = GrassmannContourIndex(j, conj=true, branch=:+, band=band[2])
     return cached_gf(lattice, (a, b), A, B...; kwargs...)
 end
-cached_greater(lattice::Union{AbstractRealGrassmannLattice, AbstractMixedGrassmannLattice}, i::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; kwargs...) = cached_greater(lattice, i, 1, A, B...; kwargs...)
+cached_greater(lattice::Union{AbstractRealGrassmannLattice, AbstractMixedGrassmannLattice}, i::Int, A::GrassmannMPS, B::Vararg{GrassmannMPS}; kwargs...) = cached_greater(lattice, i, 1, A, B...; kwargs...)
 """
 	cached_lesser(lattice, i::Int, j::Int, A, B...; band=1, kwargs...)
 
@@ -50,7 +50,7 @@ Correlation `-⟨d†(i) d(j)⟩` on the real branches, evaluated with cached
 environments. The lesser Green's function is `G^<(i, j) = -im * cached_lesser(i, j)`.
 `band` may be an `Int` or a 2-tuple.
 """
-function cached_lesser(lattice::Union{AbstractRealGrassmannLattice, AbstractMixedGrassmannLattice}, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
+function cached_lesser(lattice::Union{AbstractRealGrassmannLattice, AbstractMixedGrassmannLattice}, i::Int, j::Int, A::GrassmannMPS, B::Vararg{GrassmannMPS};
                        band::Union{Int, Tuple{Int, Int}}=1, kwargs...)
     @assert i <= j
     band isa Int && (band = (band, band))
@@ -58,4 +58,4 @@ function cached_lesser(lattice::Union{AbstractRealGrassmannLattice, AbstractMixe
     b = GrassmannContourIndex(j, conj=false, branch=:+, band=band[2])
     return cached_gf(lattice, (a, b), A, B...; kwargs...)
 end
-cached_lesser(lattice::Union{AbstractRealGrassmannLattice, AbstractMixedGrassmannLattice}, i::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; kwargs...) = cached_lesser(lattice, 1, i, A, B...; kwargs...)
+cached_lesser(lattice::Union{AbstractRealGrassmannLattice, AbstractMixedGrassmannLattice}, i::Int, A::GrassmannMPS, B::Vararg{GrassmannMPS}; kwargs...) = cached_lesser(lattice, 1, i, A, B...; kwargs...)

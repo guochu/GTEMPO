@@ -65,15 +65,15 @@ end
 
 
 # initializers
-function randomfockmps(::Type{T}, L::Int; D::Int) where {T <: Number}
-	mpstensors = Vector{Array{T, 3}}(undef, L)
-	mpstensors[1] = randn(T, 1,2,D)
-	mpstensors[end] = randn(T, D, 2, 1)
-	for i in 2:L-1
-		mpstensors[i] = randn(T, D, 2, D)
-	end
-	return FockMPS(mpstensors)
-end
+"""
+	randomfockmps(L::Int; D) -> FockMPS
+	randomfockmps(::Type{T}, L::Int; D) -> FockMPS
+
+Random FockMPS of length `L` (physical dimension 2) and bond dimension `D`,
+delegating to FiniteMPSAlgorithms' `randommps`（canonical form，Schmidt 值已
+初始化；返回态已归一化）。
+"""
+randomfockmps(::Type{T}, L::Int; D::Int) where {T <: Number} = FockMPS(FMA.randommps(T, L; d=2, D=D))
 randomfockmps(L::Int; kwargs...) = randomfockmps(Float64, L; kwargs...)
 
 
@@ -94,19 +94,10 @@ isleftcanonical(a::FockMPS; kwargs...) = all(x->isleftcanonical(x; kwargs...), a
 isrightcanonical(a::FockMPS; kwargs...) = all(x->isrightcanonical(x; kwargs...), a.data)
 
 """
-	iscanonical(psi::FockMPS; kwargs...) = is_right_canonical(psi; kwargs...)
-check if the state is right-canonical, the singular vectors are also checked that whether there are the correct Schmidt numbers or not
-This form is useful for time evolution for stability issue and also efficient for computing observers of unitary systems
+	iscanonical(psi::FockMPS; atol=1e-8)
+
+Whether `psi` is in canonical form（全部位点张量右正交、Schmidt 值已初始化、
+且逐键 `Diagonal(s.^2) ≈` 左环境），委托给 FiniteMPSAlgorithms 的
+`iscanonical`。
 """
-function iscanonical(psi::FockMPS; kwargs...)
-	isrightcanonical(psi) || return false
-	# we also check whether the singular vectors are the correct Schmidt numbers
-	svectors_uninitialized(psi) && return false
-	hold = l_LL(psi)
-	for i in 1:length(psi)-1
-		hold = updateleft(hold, psi[i], psi[i])
-		tmp = psi.s[i+1]
-		isapprox(hold, Diagonal(tmp.^2); kwargs...) || return false
-	end
-	return true
-end
+iscanonical(psi::FockMPS; kwargs...) = FMA.iscanonical(psi.parent; kwargs...)

@@ -2,6 +2,29 @@
 
 本轮重构涉及的接口更改汇总。所有更改均已通过全量测试验证（行为不变或数值等价）。
 
+## electron-phonon 路径重构与 lazy-sum 接口移除（2026-10-24）
+
+### electron-phonon：`FockContourIndex` 与统一的 partial IF
+
+- **新增 `FockContourIndex(j, branch, band)`**（`src/electronphonon/fockcontourindex.jl`，已导出）：electron-phonon partial IF 的腿指标，比 `BosonicContourIndex` 多一个 `band` 字段；`<: QuAPI.AbstractContourIndex`，`corr[i, j]` 读取玻色 Δ 矩阵元（band 不参与取值）。
+- **`partialif_hybrid`（Fock 版）** 改为按腿构造：`partialif_hybrid(lattice, rowind::FockContourIndex, colinds::AbstractVector{<:FockContourIndex}, corr)` 返回 `exp(Σ Δ n̂_row n̂_c)`，每个 `(时间, 分支, band)` 只做一次键维 2 的 density-MPS 构造（内部 `_partialif_densemps`，原 `partialif_densemps` 更名）。旧的按节点构造（合并全部 band 后相乘）已移除。
+- **`hybriddynamics` / `hybriddynamics_naive`（Fock 版）统一**：不再按 `Imag/Real/MixedFockLattice` 分别实现（原 `influencefunctional/partialif/` 下 3 个 per-lattice 文件删除），单一签名 `(::FockMPS, ::AbstractFockLattice, ::AbstractCorrelationFunction; trunc)`，contour 分支与 band 全部从 lattice 读出。
+- **`retardedinteractdynamics_naive` 统一**：`retardedinteract/` 目录（3 个 per-lattice 文件 + 已删除的 `partialmpo_retardedinteract` 死函数）合并为单文件 `src/electronphonon/retardedinteract.jl`；一个方法覆盖三种 Grassmann lattice，循环展开 `(branch, time, band)`，**不再限制 `bands ∈ (1, 2)`**、不再分 1band/2band 两套实现。
+- **FockMPO 删除**：仓库内无任何使用点，`fockmpo.jl`、`export FockMPO` 与 docs 条目一并移除（需要 MPO 时直接用 `FiniteMPSAlgorithms.MPO`）。
+- **`randomfockmps` / `iscanonical(::FockMPS)` 委托 FMA 后端**：分别转发到 `FMA.randommps(T, L; d=2, D=D)`（返回 canonical 且已归一化的态，旧行为是未 canonical 化的裸 `randn` 张量）与 `FMA.iscanonical(psi.parent; kwargs...)`。
+
+### lazy-sum（`Vector{<:GrassmannMPS}`）接口移除
+
+- **`integrate`** 不再接受第一个参数为 `Vector{<:GrassmannMPS}`（多个 GMPS 的 lazy 加法）；请先显式相加或分别积分。
+- **`gf` / `cached_gf` 及整个 observables 家族**（`contour_ordered_gf`、`greater`/`lesser`、`occupation`、`nn`/`nn2`、`electriccurrent`(_fast)、`cached_*`、`environments`）的 `A` 参数一律收紧为 `A::GrassmannMPS`（原 `Union{GrassmannMPS, Vector}`）。
+- **`VectorExpectationCache` 删除**（连同 `_environments` 的 Vector 方法、`_mult_A`/`_insert_n`/`_insert_nn` 的 Vector 方法）。
+- 多带求和场景不受影响：继续用 splat（`environments(lattice, adt, Is...)`、`cached_gf(lattice, ..., adt, Is...)`）。
+
+### 验证
+
+- electron-phonon / retarded 定向回归（api hybriddynamics + api electronphonon + electronphonon few-mode/continuous，覆盖三种 contour × bands 1/2/3）全部通过。
+- 全量测试（82 个 testset）通过。
+
 ## 移除 Grassmann lattice 的辅助 index-0 位点（2026-10-22）
 
 ### 动机

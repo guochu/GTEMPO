@@ -78,7 +78,6 @@ end
 # end
 
 _mult_A(t, A::GrassmannMPS) = t * A
-_mult_A(t, A::Vector{<:GrassmannMPS}) = [t * Aj for Aj in A]
 
 
 # # the 2 and 3-th indices are physical ones to be traced out
@@ -187,10 +186,10 @@ the partition function (`Zvalue`) and allows cheap evaluation of local
 observables and Green's functions through `expectationvalue` / `cached_gf`
 without repeating the contraction.
 """
-environments(lattice::AbstractGrassmannLattice, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS};
+environments(lattice::AbstractGrassmannLattice, A::GrassmannMPS, B::Vararg{GrassmannMPS};
 						alg::IntegrationAlgorithm=ExactIntegrate()) = _environments(alg, lattice, A, B...)
 
-# cached_integrate_util(lattice::AbstractGrassmannLattice, j::Int, k::Int, cache::AbstractExpectationCache, A::Union{GrassmannMPS, Vector}, Bs::GrassmannMPS...; kwargs...) = _cached_integrate_util(
+# cached_integrate_util(lattice::AbstractGrassmannLattice, j::Int, k::Int, cache::AbstractExpectationCache, A::GrassmannMPS, Bs::GrassmannMPS...; kwargs...) = _cached_integrate_util(
 # 	lattice, j, k, cache, A, Bs...; kwargs...) / Zvalue(cache)
 
 expectationvalue(m::Union{GTerm, ExpGTerm}, cache::AbstractExpectationCache) = expectationvalue(convert(PartialMPO, m), cache)
@@ -310,30 +309,12 @@ expectationvalue(m::PartialMPO, cache::LeftExpectationCache) = expectation(m, ca
 function expectation(m::PartialMPO, cache::LeftExpectationCache)
 	j, k = positions(m)[1], positions(m)[end]
 	j = pos2pairindex(j)
-	left = leftenv(cache, j)  
+	left = leftenv(cache, j)
 	A2 = _mult_A(m, cache.A)
 	for tj in j:pos2pairindex(length(cache))
 		left = left * GrassmannTransferMatrix(tj, A2, cache.Bs...)
 		# left = update_pair_left(left, tj, A2, cache.Bs..., trunc=trunc)
-	end	
-	return TK.scalar(left) 
+	end
+	return TK.scalar(left)
 end
-
-struct VectorExpectationCache{C<:AbstractExpectationCache} <: AbstractExpectationCache
-	caches::Vector{C}
-end
-Base.length(x::VectorExpectationCache) = length(x.caches[1])
-Zvalue(x::VectorExpectationCache) = sum(Zvalue.(x.caches))
-
-function _environments(alg::ExactIntegrate, lattice::AbstractGrassmannLattice, A::Vector{<:GrassmannMPS}, B::Vararg{GrassmannMPS})
-	caches = [_environments(alg, lattice, Aj, B...) for Aj in A]
-	return VectorExpectationCache(caches)
-end
-
-# function _cached_integrate_util(lattice::AbstractGrassmannLattice, j::Int, k::Int, cache::VectorExpectationCache, A2::Vector{<:GrassmannMPS}, Bs::GrassmannMPS...; kwargs...)
-# 	@assert length(cache.caches) == length(A2)
-# 	return sum([_cached_integrate_util(lattice, j, k, cj, Aj, Bs...; kwargs...) for (cj, Aj) in zip(cache.caches, A2)])
-# end
-expectation(m::PartialMPO, cache::VectorExpectationCache) = sum(expectation(m, cj) for cj in cache.caches)
-expectationvalue(m::PartialMPO, cache::VectorExpectationCache) = expectation(m, cache) / Zvalue(cache)
 

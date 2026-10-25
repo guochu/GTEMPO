@@ -1,125 +1,20 @@
+# 单条腿（FockContourIndex = 时间 + 分支 + band）的密度型 partial IF 构造
+# + Fock lattice 上的统一入口。
+#
+# `partialif_hybrid` 是 electron-phonon 路径的公共入口（与费米子的同名函数
+# 对应）：它按 `FockContourIndex` 接收一行/一列，内部再调用下面的
+# `_partialif_densemps` 做**单个格点**的 density-MPS 构造（每条腿只构造一次）。
 
+"""
+	_partialif_densemps(lat_size::Int, row::Int, cols::Vector{Int}, coefs::Vector{<:Number})
 
-# function partialdensempo(row::Int, cols::Vector{Int}, coefs::Vector{<:Number})
-# 	# println("row=", row, " cols ", cols)
-# 	@assert length(cols) == length(coefs) > 1
-# 	# @assert issorted(cols)
-# 	p = sortperm(cols)
-# 	cols = cols[p]
-# 	coefs = coefs[p]
-# 	T = scalartype(coefs)
-# 	I2 = TK.isometry(T, 2)
-# 	_zero = zeros(T, 2, 2)
-# 	nop = Matrix{T}([0 0; 1 1])
+单个 Fock 格点 `row` 的 partial IF：`exp(Σ_{c∈cols} coefs[c] n̂_row n̂_c)`
+（Strathearn-Lovett 2018 的 density-MPS 构造，键维 2）。
 
-# 	function leftboundaryblock(m) 
-# 		tmp = Matrix{Matrix{T}}(undef, 1, 2)
-# 		tmp[1,1] = I2
-# 		tmp[1,2] = m
-# 		return tmp
-# 	end
-# 	function rightboundaryblock(m)
-# 		tmp = Matrix{Matrix{T}}(undef, 2, 1)
-# 		tmp[1,1] = I2
-# 		tmp[2,1] = m
-# 		return tmp
-# 	end
-# 	function leftblock(m)
-# 		tmp = Matrix{Matrix{T}}(undef, 2, 2)
-#         tmp[1,1] = I2
-#         tmp[2,2] = I2
-#         tmp[1,2] = _zero
-#         tmp[2,1] = m
-#         return tmp
-# 	end
-# 	function rightblock(m)
-#         tmp = Matrix{Matrix{T}}(undef, 2, 2)
-#         tmp[1,1] = I2
-#         tmp[2,2] = I2
-#         tmp[2,1] = _zero
-#         tmp[1,2] = m
-#         return tmp	
-# 	end
-
-# 	if row < cols[1]
-# 	    data = [leftboundaryblock(nop)]
-# 	    for i in 1:length(cols)-1
-# 	        push!(data, leftblock(nop * coefs[i]))
-# 	    end
-# 	    push!(data, rightboundaryblock(nop * coefs[end]))
-# 	    positions = [row; cols]
-# 	elseif row == cols[1]
-# 	    tmp = Matrix{Matrix{T}}(undef, 1, 2)
-# 	    tmp[1, 1] = I2 + coefs[1] * nop
-# 	    tmp[1, 2] = nop	
-# 	    data = [tmp]
-# 	    for i in 2:length(cols)-1
-# 	        push!(data, leftblock(nop * coefs[i]))
-# 	    end
-# 	    push!(data, rightboundaryblock(nop * coefs[end]))
-# 	    positions = cols
-# 	elseif row > cols[end]
-# 	    data = [leftboundaryblock(coefs[1] * nop)]
-# 	    for i in 2:length(cols)
-# 	        push!(data, rightblock(coefs[i] * nop))
-# 	    end	
-# 	    push!(data, rightboundaryblock(nop))
-# 	    positions = [cols; row]
-# 	elseif row == cols[end]
-# 	    data = [leftboundaryblock(coefs[1] * nop)]
-# 	    for i in 2:length(cols)-1
-# 	        push!(data, rightblock(coefs[i] * nop))
-# 	    end	
-# 	    tmp = Matrix{Matrix{T}}(undef, 2, 1)
-# 	    tmp[1, 1] = I2 + coefs[end] * nop
-# 	    tmp[2, 1] = nop	
-# 	    push!(data, tmp)
-# 	    positions = cols
-# 	else
-# 		row_pos = findfirst(x -> row == x, cols)
-# 		if isnothing(row_pos)
-# 			data = [leftboundaryblock(coefs[1] * nop)]
-# 			for i in 2:row_pos-1
-# 		        push!(data, leftblock(coefs[i] * nop))			
-# 			end			
-# 			tmp = Matrix{Matrix{T}}(undef, 2, 2)
-# 			tmp[1,1] = I2
-# 			tmp[2,2] = _zero
-# 			tmp[1,2] = nop
-# 			tmp[2,1] = nop
-# 			push!(data, tmp)
-
-# 		    for i in row_pos:length(cols)-1
-# 		        push!(data, rightblock(coefs[i]*nop))
-# 		    end
-# 		    push!(data, rightboundaryblock(coefs[end]*nop))
-# 		    positions = insert!(copy(cols), row_pos, row)
-# 		else
-# 			data = [leftboundaryblock(coefs[1] * nop)]
-# 			for i in 2:row_pos-1
-# 		        push!(data, leftblock(coefs[i] * nop))			
-# 			end			
-# 			tmp = Matrix{Matrix{T}}(undef, 2, 2)
-# 			tmp[1,1] = I2 + coefs[row_pos] * nop
-# 			tmp[2,2] = _zero
-# 			tmp[1,2] = nop
-# 			tmp[2,1] = nop
-# 			push!(data, tmp)
-
-# 		    for i in row_pos+1:length(cols)-1
-# 		        push!(data, rightblock(coefs[i]*nop))
-# 		    end
-# 		    push!(data, rightboundaryblock(coefs[end]*nop))
-# 		    positions = cols
-# 		end
-# 	end
-# 	mpodata = _convert_to_mpotensor.(data)
-# 	return PartialDenseMPO(mpodata, positions)
-# end
-
-
-# the algorithm in StrathearnLovett2018
-function partialif_densemps(lat_size::Int, row::Int, cols::Vector{Int}, coefs::Vector{<:Number})
+`coefs` 是**未指数化**的 Δ；内部取 `exp.(coefs)` 作为
+`Λ = e^{Δ}` 的 two-body 转移矩阵元。`cols` 必须包含 `row`。
+"""
+function _partialif_densemps(lat_size::Int, row::Int, cols::Vector{Int}, coefs::Vector{<:Number})
 	# println("row=", row, " cols ", cols)
 	@assert length(cols) == length(coefs) > 1
 	# @assert (row in cols)
@@ -129,7 +24,7 @@ function partialif_densemps(lat_size::Int, row::Int, cols::Vector{Int}, coefs::V
 	coefs = exp.(coefs[p])
 	T = scalartype(coefs)
 
-	function onebody(m) 
+	function onebody(m)
 		tmp = ones(T,2)
 		tmp[1] = m
 		return tmp
@@ -205,7 +100,6 @@ function partialif_densemps(lat_size::Int, row::Int, cols::Vector{Int}, coefs::V
 		m = twobody(coefs[L])
 		mpsdata[L] = reshape(m,2,2,1)
 	end
-	# return mpsdata
 	return _fit_to_full(lat_size, cols, mpsdata)
 end
 
@@ -228,12 +122,48 @@ function _fit_to_full(L::Int, pos, mpsdata)
 	return FockMPS(r)
 end
 
-# function _convert_to_mpotensor(data::Matrix{Matrix{T}}) where {T<:Number}
-# 	s1, s2 = size(data)
-# 	d1, d2 = size(data[1])
-# 	r = zeros(T, s1, d1, s2, d2)
-# 	for i in 1:s1, j in 1:s2
-# 		r[i, :, j, :] = data[i, j]
-# 	end
-# 	return r
-# end
+# ---------------------------------------------------------------- 统一入口 --
+
+"""
+	_focknumnodes(lattice::AbstractFockLattice, branch::Symbol) -> Int
+
+某一 contour 分支的节点数：`:τ` 用 `Nτ`，`:+`/`:-` 用 `Nt`
+（三种 Fock lattice 的 `Nτ`/`Nt` 都指向各自的步数）。
+"""
+_focknumnodes(lattice::AbstractFockLattice, branch::Symbol) = branch === :τ ? lattice.Nτ : lattice.Nt
+
+"""
+	_fockcolumns(lattice::AbstractFockLattice) -> Vector{FockContourIndex}
+
+Fock lattice 的全部 contour 腿（分支 → 时间 → band），即 partial IF 的
+列腿集合。
+"""
+function _fockcolumns(lattice::AbstractFockLattice)
+	cols = FockContourIndex[]
+	for branch in branches(lattice), j in 1:_focknumnodes(lattice, branch), band in 1:lattice.bands
+		push!(cols, FockContourIndex(j, branch, band))
+	end
+	return cols
+end
+
+"""
+	partialif_hybrid(lattice::AbstractFockLattice, rowind::FockContourIndex,
+	                 colinds::AbstractVector{<:FockContourIndex},
+	                 corr::AbstractCorrelationFunction) -> FockMPS
+
+Fock lattice 上**一条腿**（一个 `(时间, 分支, band)`）的 partial IF：
+`exp(Σ_{c∈colinds} Δ_{row,c} n̂_row n̂_c)`。由
+[`_partialif_densemps`](@ref) 构造，每个 `(节点, band)` 只做一次
+density-MPS 构造（键维 2），与旧的逐行实现开销相同。
+
+`Δ_{row,c}` 由 `corr[rowind, colind]` 读取（`FockContourIndex` 的 `band`
+不参与取值，普通声子 bath 与 band 无关）。
+"""
+function partialif_hybrid(lattice::AbstractFockLattice, rowind::FockContourIndex,
+						  colinds::AbstractVector{<:FockContourIndex},
+						  corr::AbstractCorrelationFunction)
+	row = index(lattice, rowind.j, branch=rowind.branch, band=rowind.band)
+	colpos = [index(lattice, c.j, branch=c.branch, band=c.band) for c in colinds]
+	coefs = [corr[rowind, c] for c in colinds]
+	return _partialif_densemps(length(lattice), row, colpos, coefs)
+end

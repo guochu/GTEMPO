@@ -21,9 +21,17 @@
 		end
 
 		cache = environments(lattice, adt)
-		gt = [-im * cached_gf(lattice, (GrassmannContourIndex(k, conj=false, branch=:+, band=1), GrassmannContourIndex(1, conj=true, branch=:+, band=1)), adt; cache=cache) for k in 1:Nt+1]
-		lt = [im * cached_gf(lattice, (GrassmannContourIndex(1, conj=true, branch=:-, band=1), GrassmannContourIndex(k, conj=false, branch=:+, band=1)), adt; cache=cache) for k in 1:Nt+1]
-		gτ = [cached_gf(lattice, (GrassmannContourIndex(k, conj=false, branch=:τ, band=1), GrassmannContourIndex(1, conj=true, branch=:τ, band=1)), adt; cache=cache) for k in 1:Nτ+1]
+		# 显式循环而非 comprehension（Julia 1.10 codegen bug，见 continuousbath/realtime.jl 注释）
+		gt = Vector{ComplexF64}(undef, Nt+1)
+		lt = Vector{ComplexF64}(undef, Nt+1)
+		gτ = Vector{ComplexF64}(undef, Nτ+1)
+		for k in 1:Nt+1
+			gt[k] = -im * cached_gf(lattice, (GrassmannContourIndex(k, conj=false, branch=:+, band=1), GrassmannContourIndex(1, conj=true, branch=:+, band=1)), adt; cache=cache)
+			lt[k] = im * cached_gf(lattice, (GrassmannContourIndex(1, conj=true, branch=:-, band=1), GrassmannContourIndex(k, conj=false, branch=:+, band=1)), adt; cache=cache)
+		end
+		for k in 1:Nτ+1
+			gτ[k] = cached_gf(lattice, (GrassmannContourIndex(k, conj=false, branch=:τ, band=1), GrassmannContourIndex(1, conj=true, branch=:τ, band=1)), adt; cache=cache)
+		end
 
 		gt_ed = [independentbosons_greater_μ(spec, tj, β=β, μ=μ, U=U, bands=bands) for tj in ts]
 		lt_ed = [independentbosons_lesser_μ(spec, tj, β=β, μ=μ, U=U, bands=bands) for tj in ts]
@@ -71,8 +79,13 @@ end
 		end
 
 		cache = environments(lattice, adt, Is...)
-		gt = [-im * cached_gf(lattice, (GrassmannContourIndex(k, conj=false, branch=:+, band=1), GrassmannContourIndex(1, conj=true, branch=:+, band=1)), adt, Is...; cache=cache) for k in 1:Nt+1]
-		lt = [im * cached_gf(lattice, (GrassmannContourIndex(1, conj=true, branch=:-, band=1), GrassmannContourIndex(k, conj=false, branch=:+, band=1)), adt, Is...; cache=cache) for k in 1:Nt+1]
+		# 显式循环而非 comprehension（Julia 1.10 codegen bug）
+		gt = Vector{ComplexF64}(undef, Nt+1)
+		lt = Vector{ComplexF64}(undef, Nt+1)
+		for k in 1:Nt+1
+			gt[k] = -im * cached_gf(lattice, (GrassmannContourIndex(k, conj=false, branch=:+, band=1), GrassmannContourIndex(1, conj=true, branch=:+, band=1)), adt, Is...; cache=cache)
+			lt[k] = im * cached_gf(lattice, (GrassmannContourIndex(1, conj=true, branch=:-, band=1), GrassmannContourIndex(k, conj=false, branch=:+, band=1)), adt, Is...; cache=cache)
+		end
 		gτ = cached_gf_fast(lattice, adt, Is...; c1=false, c2=true, b1=:τ, b2=:τ, cache=cache)
 		gτ[end] = 1 - gτ[1]
 

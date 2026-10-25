@@ -1,5 +1,5 @@
 
-function cached_nn2(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
+function cached_nn2(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::GrassmannMPS, B::Vararg{GrassmannMPS}; 
                     cache::AbstractExpectationCache=environments(lattice, A, B...), b1::Symbol=:τ, b2::Symbol=b1, 
                     band::Union{Int, Tuple{Int, Int}}=1)
 	if isa(band, Int)
@@ -14,7 +14,7 @@ function cached_nn2(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::Union{
 	return cached_gf(lattice, (a1, a2, a3, a4), A, B...; cache=cache)
 end
 
-function cached_nn(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::Union{GrassmannMPS, Vector}, B::Vararg{GrassmannMPS}; 
+function cached_nn(lattice::AbstractGrassmannLattice, i::Int, j::Int, A::GrassmannMPS, B::Vararg{GrassmannMPS}; 
                     cache::AbstractExpectationCache=environments(lattice, A, B...), b1::Symbol=:τ, b2::Symbol=b1, 
                     band::Union{Int, Tuple{Int, Int}}=1)
 	if isa(band, Int)
