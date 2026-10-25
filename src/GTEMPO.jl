@@ -84,8 +84,9 @@ export FockContourIndex
 export FockMPS
 export FockOrdering, ImagFockOrdering, RealFockOrdering, MixedFockOrdering, similargrassmannordering
 export M1N1, MN, M1m1N1n1, MmNn, M1N1_m1M1n1N1m2M2n2N2, MN_MmNn
-export AbstractFockLattice, FockLattice, ImagFockLattice, similargrassmannlattice
-export RealFockLattice, MixedFockLattice
+export AbstractFockLattice, FockLattice, similargrassmannlattice
+export AbstractImagFockLattice, AbstractRealFockLattice, AbstractMixedFockLattice
+export ImagFockLattice, RealFockLattice, MixedFockLattice
 export reweighting!, reweighting
 
 

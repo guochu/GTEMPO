@@ -8,7 +8,7 @@
 
 	for (U, bands) in ((0.0, 1), (1.0, 2))
 		lattice = GrassmannLattice(Nt=Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed, bands=bands)
-		flat = FockLattice(Nt=Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed, order=1, bands=bands)
+		flat = FockLattice(Nt=Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed, bands=bands)
 		bath = bosonicbath(spec, β=β)
 		corr = correlationfunction(bath, flat)
 		mpsI = hybriddynamics(flat, corr, trunc=trunc)
@@ -59,7 +59,7 @@ end
 		gτ_ref = gτ_ed(H, a, adag, 0:δτ:β, β)
 
 		lattice = GrassmannLattice(Nt=Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed, bands=bands)
-		flat = FockLattice(Nt=Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed, order=1, bands=bands)
+		flat = FockLattice(Nt=Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed, bands=bands)
 
 		fbath = fermionicbath(DiracDelta(ω=ωf, α=αf), β=β)
 		lattice1 = similar(lattice, bands=1)

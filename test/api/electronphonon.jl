@@ -18,11 +18,11 @@
 
 	# Fock lattices and their Grassmann counterparts
 	flat = FockLattice(N=3, δτ=0.1, contour=:imag)
-	@test flat isa ImagFockLattice && flat isa AbstractFockLattice
+	@test flat isa AbstractImagFockLattice && flat isa AbstractFockLattice
 	rlat_f = FockLattice(N=3, δt=0.05, contour=:real)
-	@test rlat_f isa RealFockLattice
+	@test rlat_f isa AbstractRealFockLattice
 	mxfl = FockLattice(Nt=2, δt=0.05, Nτ=3, δτ=0.1, contour=:mixed)
-	@test mxfl isa MixedFockLattice
+	@test mxfl isa AbstractMixedFockLattice
 	gl = similargrassmannlattice(flat)
 	@test gl isa AbstractImagGrassmannLattice
 	@test gl.ordering == similargrassmannordering(flat.ordering)

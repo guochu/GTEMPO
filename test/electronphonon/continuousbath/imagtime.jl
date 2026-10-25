@@ -6,7 +6,7 @@
 
 	for (U, bands) in ((0.0, 1), (1.0, 2))
 		lattice = GrassmannLattice(N=N, δτ=δτ, contour=:imag, bands=bands)
-		flat = FockLattice(N=N, δτ=δτ, contour=:imag, order=1, bands=bands)
+		flat = FockLattice(N=N, δτ=δτ, contour=:imag, bands=bands)
 		bath = bosonicbath(spec, β=β)
 		corr = correlationfunction(bath, flat)
 

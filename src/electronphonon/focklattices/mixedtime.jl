@@ -1,13 +1,13 @@
-abstract type MixedFockLattice{O<:MixedFockOrdering} <: AbstractFockLattice{O} end
-TK.scalartype(::Type{<:MixedFockLattice}) = ComplexF64
-branches(::Type{<:MixedFockLattice}) = (:+, :-, :τ)
+abstract type AbstractMixedFockLattice{O<:MixedFockOrdering} <: AbstractFockLattice{O} end
+TK.scalartype(::Type{<:AbstractMixedFockLattice}) = ComplexF64
+branches(::Type{<:AbstractMixedFockLattice}) = (:+, :-, :τ)
 
 """
-	struct MixedFockLattice1Order <: MixedFockLattice
+	struct MixedFockLattice <: AbstractMixedFockLattice
 
 Mixed (Kadanoff–Baym) Fock lattice for the electron-phonon path.
 """
-struct MixedFockLattice1Order{O<:MixedFockOrdering} <: MixedFockLattice{O}
+struct MixedFockLattice{O<:MixedFockOrdering} <: AbstractMixedFockLattice{O}
 	δt::Float64
 	Nt::Int
 	δτ::Float64
@@ -15,29 +15,20 @@ struct MixedFockLattice1Order{O<:MixedFockOrdering} <: MixedFockLattice{O}
 	bands::Int
 	ordering::O
 
-	MixedFockLattice1Order(δt::Real, N::Int, δτ::Real, Ni::Int, bands::Int, ordering::MixedFockOrdering) = new{typeof(ordering)}(
+	MixedFockLattice(δt::Real, N::Int, δτ::Real, Ni::Int, bands::Int, ordering::MixedFockOrdering) = new{typeof(ordering)}(
 								convert(Float64, δt), N, convert(Float64, δτ), Ni, bands, ordering)
 end
 
 # the default is that the system starts from 0 temperature (state 0)
-MixedFockLattice1Order(; δt::Real, Nt::Int, δτ::Real, Nτ::Int, bands::Int=1, ordering::MixedFockOrdering=M1N1_m1M1n1N1m2M2n2N2()) = MixedFockLattice1Order(
+MixedFockLattice(; δt::Real, Nt::Int, δτ::Real, Nτ::Int, bands::Int=1, ordering::MixedFockOrdering=M1N1_m1M1n1N1m2M2n2N2()) = MixedFockLattice(
 							δt, Nt, δτ, Nτ, bands, ordering)
-Base.similar(x::MixedFockLattice1Order; δt::Real=x.δt, Nt::Int=x.Nt, δτ::Real=x.δτ, Nτ::Int=x.Nτ, bands::Int=x.bands, ordering::MixedFockOrdering=x.ordering) = MixedFockLattice1Order(
+Base.similar(x::MixedFockLattice; δt::Real=x.δt, Nt::Int=x.Nt, δτ::Real=x.δτ, Nτ::Int=x.Nτ, bands::Int=x.bands, ordering::MixedFockOrdering=x.ordering) = MixedFockLattice(
 			δt, Nt, δτ, Nτ, bands, ordering)
-similargrassmannlattice(x::MixedFockLattice1Order, δt::Real=x.δt, Nt::Int=x.Nt, δτ::Real=x.δτ, Nτ::Int=x.Nτ, bands::Int=x.bands, 
+similargrassmannlattice(x::MixedFockLattice, δt::Real=x.δt, Nt::Int=x.Nt, δτ::Real=x.δτ, Nτ::Int=x.Nτ, bands::Int=x.bands,
 						ordering::MixedGrassmannOrdering=similargrassmannordering(x.ordering)) = GrassmannLattice(contour=:mixed, δt=δt, Nt=Nt, δτ=δτ, Nτ=Nτ, bands=bands, ordering=ordering)
 
 
-function MixedFockLattice(; order::Int=1, kwargs...)
-	(order in (1, 2)) || throw(ArgumentError("order must be 1 or 2"))
-	if order == 1
-		return MixedFockLattice1Order(; kwargs...)
-	else
-		error("Second order MixedFockLattice not implemented")
-	end
-end
-
-function Base.getproperty(x::MixedFockLattice1Order, s::Symbol)
+function Base.getproperty(x::MixedFockLattice, s::Symbol)
 	if s == :t
 		return x.Nt * x.δt
 	elseif s == :β
@@ -53,10 +44,10 @@ function Base.getproperty(x::MixedFockLattice1Order, s::Symbol)
 	end
 end
 
-Base.length(x::MixedFockLattice1Order) = 2*x.bands * x.Nt + x.bands * x.Nτ
+Base.length(x::MixedFockLattice) = 2*x.bands * x.Nt + x.bands * x.Nτ
 
 # acending order for real branch, descending order for imag time
-function index(x::MixedFockLattice1Order{<:M1N1_m1M1n1N1m2M2n2N2}, i::Int; branch::Symbol=:+, band::Int=1)
+function index(x::MixedFockLattice{<:M1N1_m1M1n1N1m2M2n2N2}, i::Int; branch::Symbol=:+, band::Int=1)
 	@boundscheck begin
 		(1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
 		(branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
@@ -81,7 +72,7 @@ end
 
 
 # key is timestep, conj, branch, band
-function indexmappings(lattice::MixedFockLattice1Order)
+function indexmappings(lattice::MixedFockLattice)
 	r = Dict{Tuple{Int, Symbol, Int}, Int}()
 	for i in 1:lattice.Nτ
 		for band in 1:lattice.bands
@@ -98,4 +89,3 @@ function indexmappings(lattice::MixedFockLattice1Order)
 	end
 	return r
 end
-

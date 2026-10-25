@@ -397,7 +397,7 @@ end
 @testset "API: FockLattice (electron-phonon path)" begin
 	# imaginary time M1N1
 	lat = FockLattice(N=1, δτ=0.1, contour=:imag, ordering=M1N1())
-	@test lat isa ImagFockLattice
+	@test lat isa AbstractImagFockLattice
 	@test LayoutStyle(lat) isa TimeLocalLayout
 	@test scalartype(lat) == Float64
 	@test length(lat) == 1 && lat.N == 1 && lat.β == 0.1 && lat.T == 10 && lat.bands == 1
@@ -405,7 +405,7 @@ end
 	@test index(lat, 1) == 1
 
 	lat = FockLattice(N=2, δτ=0.05, bands=2, contour=:imag, ordering=M1N1())
-	@test lat isa ImagFockLattice
+	@test lat isa AbstractImagFockLattice
 	@test length(lat) == 4 && lat.N == 2 && lat.β == 0.1 && lat.bands == 2 && lat.T == 10
 	@test index(lat, 2, band=1) == 1 && index(lat, 2, band=2) == 2
 	@test index(lat, 1, band=1) == 3 && index(lat, 1, band=2) == 4
@@ -416,7 +416,7 @@ end
 
 	# real time M1m1N1n1
 	lat = FockLattice(N=1, δt=0.1, contour=:real, ordering=M1m1N1n1())
-	@test lat isa RealFockLattice
+	@test lat isa AbstractRealFockLattice
 	@test LayoutStyle(lat) isa TimeLocalLayout
 	@test scalartype(lat) == ComplexF64
 	@test length(lat) == 2 && lat.N == 1 && lat.t == 0.1 && lat.δt == 0.1
@@ -436,7 +436,7 @@ end
 
 	# mixed time M1N1_m1M1n1N1m2M2n2N2
 	lat = FockLattice(Nt=2, δt=0.05, Nτ=2, δτ=0.1, contour=:mixed, ordering=M1N1_m1M1n1N1m2M2n2N2())
-	@test lat isa MixedFockLattice
+	@test lat isa AbstractMixedFockLattice
 	@test LayoutStyle(lat) isa TimeLocalLayout
 	@test scalartype(lat) == ComplexF64
 	@test length(lat) == 6 && lat.Nt == 2 && lat.Nτ == 2

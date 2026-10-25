@@ -75,7 +75,7 @@ function run_gtempo(δt; tmax=1.0, with_phonon=true)
 	trunc = truncdimcutoff(D=100, ϵ=1.0e-10)
 	bands = 1
 	lattice = GrassmannLattice(N=Nt, δt=δt, contour=:real, bands=bands)
-	flat = FockLattice(N=Nt, δt=δt, contour=:real, order=1, bands=bands)
+	flat = FockLattice(N=Nt, δt=δt, contour=:real, bands=bands)
 
 	# influence functional of the semicircular fermionic bath,
 	# built with the TTIIF algorithm on the single-band lattice

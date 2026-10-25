@@ -16,7 +16,7 @@
 		gt_ed, lt_ed = greater_lesser_ed(H, a, adag, H0, ts, β)
 
 		lattice = GrassmannLattice(N=Nt, δt=δt, contour=:real, bands=bands)
-		flat = FockLattice(N=Nt, δt=δt, contour=:real, order=1, bands=bands)
+		flat = FockLattice(N=Nt, δt=δt, contour=:real, bands=bands)
 		bath = bosonicbath(spec, β=β)
 		corr = correlationfunction(bath, flat)
 		mpsI = hybriddynamics(flat, corr, trunc=trunc)

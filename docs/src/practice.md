@@ -213,7 +213,7 @@ problem is carried by an ordinary Grassmann lattice, and the two are glued by
 
 ```julia
 lattice = GrassmannLattice(N=10, δτ=0.1, contour=:imag, bands=bands)
-flat    = FockLattice(N=10, δτ=0.1, contour=:imag, order=1, bands=bands)
+flat    = FockLattice(N=10, δτ=0.1, contour=:imag, bands=bands)
 
 pbath = bosonicbath(DiracDelta(ω=1.0, α=0.5), β=β)
 corr  = correlationfunction(pbath, flat)

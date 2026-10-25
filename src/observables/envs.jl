@@ -260,61 +260,6 @@ function expectation(m::PartialMPO, cache::TwosideExpectationCache)
 		right = GrassmannTransferMatrix(tj, A2, cache.Bs...) * right 
 		# right = update_pair_right(right, tj, A2, cache.Bs..., trunc=trunc)
 	end	
-	return contract_center(left, right) 	
-end
-
-# 4 mps
-struct LeftExpectationCache{M<:GrassmannMPS, G<:Tuple, L<:AbstractGrassmannLattice, H} <: AbstractExpectationCache
-	A::M
-	Bs::G
-	lattice::L
-	hleft::H
-end
-Base.length(x::LeftExpectationCache) = length(x.lattice)
-function LeftExpectationCache(lattice::AbstractGrassmannLattice, As::Tuple)
-	(ConjugationStyle(lattice.ordering) isa AdjacentConjugation) || throw(ArgumentError("only AdjacentConjugation supported for cached evaluation"))
-	(all(v->length(v)==length(lattice), As)) || throw(DimensionMismatch())
-	Lhalf = div(length(lattice), 2)
-	xs = As
-	left = l_LL(xs...)
-	hleft = Vector{typeof(left)}(undef, Lhalf+1)
-	hleft[1] = left
-	for i in 1:Lhalf
-		hleft[i+1] = hleft[i] * GrassmannTransferMatrix(i, xs...)
-		# hleft[i+1] = update_pair_left(hleft[i], i, xs..., trunc=trunc)
-	end
-	return LeftExpectationCache(first(As), Base.tail(As), lattice, hleft)
-end
-# _environments(alg::ExactIntegrate, lattice::AbstractGrassmannLattice, A::GrassmannMPS, B::GrassmannMPS, C::GrassmannMPS, D::GrassmannMPS, E::GrassmannMPS...; 
-# 						kwargs...) = LeftExpectationCache(lattice, (A, B, C, D, E...); kwargs...)
-
-# A2 is temporary and overwritten
-# function _cached_integrate_util(lattice::AbstractGrassmannLattice, j::Int, k::Int, cache::LeftExpectationCache, A2::GrassmannMPS, Bs::GrassmannMPS...; 
-# 								trunc::TruncationScheme=DefaultIntegrationTruncation)
-# 	# @assert (cache.B === B) && (cache.C === C) && (cache.D === D) && (cache.lattice === lattice) 
-# 	@assert cache.lattice === lattice
-# 	@assert all(v -> v[1] === v[2], zip(cache.Bs, Bs)) || throw(DimensionMismatch())
-# 	@assert j <= k
-# 	j = pos2pairindex(j)
-# 	B2 = Bs
-# 	left = leftenv(cache, j)  
-# 	for tj in j:pos2pairindex(length(lattice))
-# 		left = update_pair_left(left, tj, A2, B2..., trunc=trunc)
-# 	end
-# 	return TK.scalar(left) 
-# end
-# cached_integrate_util(lattice::AbstractGrassmannLattice, j::Int, k::Int, cache::LeftExpectationCache, A2::GrassmannMPS, Bs::GrassmannMPS...; kwargs...) = _cached_integrate_util(
-# 	lattice, j, k, cache, A2, Bs...; kwargs...) / Zvalue(cache)
-expectationvalue(m::PartialMPO, cache::LeftExpectationCache) = expectation(m, cache) / Zvalue(cache)
-function expectation(m::PartialMPO, cache::LeftExpectationCache)
-	j, k = positions(m)[1], positions(m)[end]
-	j = pos2pairindex(j)
-	left = leftenv(cache, j)
-	A2 = _mult_A(m, cache.A)
-	for tj in j:pos2pairindex(length(cache))
-		left = left * GrassmannTransferMatrix(tj, A2, cache.Bs...)
-		# left = update_pair_left(left, tj, A2, cache.Bs..., trunc=trunc)
-	end
-	return TK.scalar(left)
+	return contract_center(left, right)
 end
 

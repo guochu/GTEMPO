@@ -2,6 +2,15 @@
 
 本轮重构涉及的接口更改汇总。所有更改均已通过全量测试验证（行为不变或数值等价）。
 
+## Fock lattice 类型重命名与 LeftExpectationCache 删除（2026-10-25）
+
+- **类型重命名**（与 Grassmann 侧的 `AbstractImagGrassmannLattice`/`ImagGrassmannLattice` 命名对齐）：
+  - `ImagFockLattice`（抽象）→ **`AbstractImagFockLattice`**；`ImagFockLattice1Order`（具体）→ **`ImagFockLattice`**；
+  - `RealFockLattice` → **`AbstractRealFockLattice`**；`RealFockLattice1Order` → **`RealFockLattice`**；
+  - `MixedFockLattice` → **`AbstractMixedFockLattice`**；`MixedFockLattice1Order` → **`MixedFockLattice`**。
+- 具体类型名即构造函数（`ImagFockLattice(; δτ, N, bands, ordering)` 等）；`FockLattice(; contour=..., kwargs...)` 快捷构造不变；原 `Imag/Real/MixedFockLattice(; order=1, kwargs...)` 的 order 关键字删除（二阶从未实现），调用处请直接用具体类型构造函数或 `FockLattice`。
+- **`LeftExpectationCache` 删除**（`observables/envs.jl`）：4+ GMPS 环境缓存的占位实现及其 `expectation`/`expectationvalue`/注释代码一并移除；`environments` 只返回 `TwosideExpectationCache`。
+
 ## electron-phonon 路径重构与 lazy-sum 接口移除（2026-10-24）
 
 ### electron-phonon：`FockContourIndex` 与统一的 partial IF
