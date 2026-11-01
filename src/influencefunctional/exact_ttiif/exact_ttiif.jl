@@ -30,9 +30,16 @@ single-band lattice and expanded to the given `band` via `fillband`.
 function hybriddynamics!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::ExactTTIIF; band::Int=1)
 	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	mpss = _influencefunctional(lattice, corr, alg; band=band)
+	# the vertex-shifted Prony channels can be complex even for real
+	# correlation data: promote the target MPS instead of failing in mult!
+	scalartype(gmps) == scalartype(mpss[1]) || (gmps = complex(gmps))
 	for i in 1:length(mpss)
 		t = @elapsed gmps = mult!(gmps, mpss[i], alg.alg_mult)[1]
 		(alg.verbosity >= 2) && println("$i of $(length(mpss)) takes $t seconds, result mps of bond dimension: ", bonddim(gmps))
+	end
+	# vertex-shifted convention: multiply the turning-point window factors
+	for c in (corr isa RealCorrelationFunction ? _window_corrections(lattice, corr, band=band) : ())
+		gmps = mult!(gmps, c, alg.alg_mult)[1]
 	end
 	return gmps
 end

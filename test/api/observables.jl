@@ -130,7 +130,7 @@ end
 
 	# heat current: the bath spectrum weighted by ω, otherwise identical to the current
 	hcorr = heatcorrelationfunction(bath, lat)
-	@test hcorr isa RealCorrelationFunction && size(hcorr.G₊₊) == size(corr.G₊₊)
+	@test hcorr isa RealCorrelationFunction && size(hcorr) == size(corr)
 	Jh = heatcurrent_fast(lat, bath, K, I)
 	@test relerr(Jh, electriccurrent_fast(lat, hcorr, K, I)) == 0
 	Jhc = cached_heatcurrent_fast(lat, bath, K, I; cache=cache)

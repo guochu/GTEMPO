@@ -22,6 +22,7 @@ end
 
 function _hybriddynamics_fast(lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::XTRGIF; band::Int=1)
 	alg_mult = alg.alg_mult
+	corrs = corr isa RealCorrelationFunction ? _window_corrections(lattice, corr, band=band) : ()
 	if alg.verbosity > 1
 		t = @elapsed mps = influenceoperatorstepper(lattice, corr, 1/2^(alg.k), alg.alg_evo, alg_mult, band=band, alg_expan=alg.alg_expan)
 		println("building the initial MPS-IF takes $t seconds, bond dimension is ", bonddim(mps))
@@ -36,6 +37,9 @@ function _hybriddynamics_fast(lattice::AbstractGrassmannLattice, corr::AbstractC
 		else
 			mps = mult(mps, mps, alg_mult)[1]
 		end
+	end
+	for c in corrs
+		mps = mult!(mps, c, trunc=alg_mult.trunc)[1]
 	end
 	return mps
 end
@@ -57,6 +61,9 @@ function _hybriddynamics_slow(lattice::AbstractGrassmannLattice, corr::AbstractC
 		else
 			mps = mult(mps, mps0, alg_mult)[1]
 		end
+	end
+	for c in (corr isa RealCorrelationFunction ? _window_corrections(lattice, corr, band=band) : ())
+		mps = mult!(mps, c, trunc=alg_mult.trunc)[1]
 	end
 	return mps
 end

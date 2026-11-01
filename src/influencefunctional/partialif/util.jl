@@ -87,7 +87,7 @@ function partialif_hybrid(lattice::AbstractGrassmannLattice, i::GrassmannContour
 						  cols::AbstractVector{<:GrassmannContourIndex}, corr::Union{AbstractCorrelationFunction, BCSCorrelationFunction})
 	row = lattice[_latticeindex(i)]
 	col_pos = [lattice[_latticeindex(c)] for c in cols]
-	coefs = [corr[conj(i), conj(c)] for c in cols]
+	coefs = [_physical_coef(corr, i, c) for c in cols]
 	mpo = partialmpo(row, col_pos, coefs)
 	return mpo * vacuumstate(promote_type(scalartype(lattice), eltype(coefs)), lattice)
 end
@@ -105,7 +105,7 @@ function partialif_hybrid(lattice::AbstractGrassmannLattice, rows::AbstractVecto
 						  col::GrassmannContourIndex, corr::Union{AbstractCorrelationFunction, BCSCorrelationFunction})
 	col_pos = lattice[_latticeindex(col)]
 	row_pos = [lattice[_latticeindex(r)] for r in rows]
-	coefs = [corr[conj(r), conj(col)] for r in rows]
+	coefs = [_physical_coef(corr, r, col) for r in rows]
 	mpo = partialmpo(col_pos, row_pos, -coefs)
 	return mpo * vacuumstate(promote_type(scalartype(lattice), eltype(coefs)), lattice)
 end
@@ -126,7 +126,7 @@ function partialif_hybrid_naive(lattice::AbstractGrassmannLattice, i::GrassmannC
 	pos1 = lattice[_latticeindex(i)]
 	for c in cols
 		pos2 = lattice[_latticeindex(c)]
-		t = exp(GTerm(pos1, pos2, coeff=corr[conj(i), conj(c)]))
+		t = exp(GTerm(pos1, pos2, coeff=_physical_coef(corr, i, c)))
 		apply!(t, gmps)
 		canonicalize!(gmps, alg=alg)
 	end

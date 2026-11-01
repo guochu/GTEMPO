@@ -46,7 +46,10 @@
 
 		H, a, adag, H0 = bcs_ed(U, ϵ_d, ω₀=ω, α=α, Δ=Δ)
 		gt_ed, lt_ed = greater_lesser_ed(H, a, adag, H0, ts, β)
-		@test relerr(g1, gt_ed) < 3.0e-2
-		@test relerr(g2, lt_ed) < 3.0e-2
+		# BCS RT 顶点位移迁移后（2026-10-30）：gt/lt 实测 4.2e-4/2.1e-4
+		#（此前 raw 约 4.2e-3/2.4e-3），基准见
+		# performance/firstorder/bcs_vertex_shift_accuracy.jl
+		@test relerr(g1, gt_ed) < 1.0e-2
+		@test relerr(g2, lt_ed) < 1.0e-2
 	end
 end

@@ -3,7 +3,8 @@
 function _bcscolumns(lattice::AbstractGrassmannLattice, band1::Int, band2::Int)
 	cols = GrassmannContourIndex[]
 	for b2 in branches(lattice), c2 in (true, false)
-		k2 = (b2 === :τ) ? lattice.Nτ : lattice.Nt
+		# 与 normal 的 `_columns` 一致：τ 列到 Nτ，实时列到 kt（全部节点）
+		k2 = (b2 === :τ) ? lattice.Nτ : lattice.kt
 		band2′ = ifelse(c2, band2, band1)
 		for j in 1:k2
 			push!(cols, GrassmannContourIndex(j, b2, band2′, c2))
@@ -19,7 +20,8 @@ end
 
 Build the BCS partial IF on any (imaginary-, real- or mixed-time) Grassmann
 lattice in place on `gmps`. For every branch the rows run over the
-correlation-function nodes (`kτ - 1` for `:τ`, `kt - 1` for the real branches).
+correlation-function nodes (`kτ - 1` for `:τ`, `kt` for the real branches),
+matching the normal-bath construction.
 """
 function hybriddynamics!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::BCSCorrelationFunction; 
 									orbital::Int=1, trunc::TruncationScheme=Defaults.alg_trunc_if())
@@ -27,7 +29,7 @@ function hybriddynamics!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, 
 	band1, band2 = 2*orbital-1, 2*orbital
 	cols = _bcscolumns(lattice, band1, band2)
 	for b1 in branches(lattice), c1 in (true, false)
-		k1 = (b1 === :τ) ? lattice.kτ - 1 : lattice.kt - 1
+		k1 = (b1 === :τ) ? lattice.kτ - 1 : lattice.kt
 		band1′ = ifelse(c1, band1, band2)
 		for i in 1:k1
 			tmp = partialif_hybrid(lattice, GrassmannContourIndex(i, b1, band1′, c1), cols, corr)
@@ -56,7 +58,7 @@ function hybriddynamics_naive!(gmps::GrassmannMPS, lattice::AbstractGrassmannLat
 	band1, band2 = 2*orbital-1, 2*orbital
 	cols = _bcscolumns(lattice, band1, band2)
 	for b1 in branches(lattice), c1 in (true, false)
-		k1 = (b1 === :τ) ? lattice.Nτ : lattice.Nt
+		k1 = (b1 === :τ) ? lattice.Nτ : lattice.kt
 		band1′ = ifelse(c1, band1, band2)
 		for i in 1:k1
 			tmp = partialif_hybrid_naive(lattice, GrassmannContourIndex(i, b1, band1′, c1), cols, corr, trunc=trunc)

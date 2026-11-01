@@ -276,5 +276,13 @@ See also [`TDVPIF`](@ref).
 function hybriddynamics!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, corr::AbstractCorrelationFunction, alg::TDVPIF; band::Int=1)
 	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	H = _tdvpif_hamiltonian(lattice, corr, alg, band=band)
-	return _tdvpif_hybriddynamics!(gmps, H, alg)
+	# the vertex-shifted Prony channels can be complex even for real
+	# correlation data: promote the target MPS instead of failing in the sweep
+	scalartype(gmps) == scalartype(H) || (gmps = complex(gmps))
+	gmps = _tdvpif_hybriddynamics!(gmps, H, alg)
+	# vertex-shifted convention: multiply the turning-point window factors
+	for c in (corr isa RealCorrelationFunction ? _window_corrections(lattice, corr, band=band) : ())
+		gmps = mult!(gmps, c, trunc=Defaults.alg_trunc_if())[1]
+	end
+	return gmps
 end

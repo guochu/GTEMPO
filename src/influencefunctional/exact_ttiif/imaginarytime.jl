@@ -23,12 +23,18 @@ end
 function _influencefunctional_util(lattice::ImagGrassmannLattice, corr::ImagCorrelationFunction, alg::ExactTTIIF)
 	@assert lattice.bands == 1
 
-	# get WII for each exponential decay term
+	# get WII for each exponential decay term (vertex-shifted τ-ring bulk)
+	# 2026-10-30 τ 环回退 raw：改回未移位 bulk（顶点位移仅保留在实时 Keldysh）
 	mpoj = ti_mpotensor(corr.data, alg.alg_expan).Os
 	num = size(mpoj, 1)
 	mpss = map(2:num-1) do i
 		t = SchurMPOTensor(mpoj[[1,i,num], [1,i,num]])
 		(i != 2) && (t[1,3] = 0.0)
+		# degenerate Schur channel guard, same as the real-time path: the
+		# coupling block may come back exactly zero (short-time Prony
+		# redesign pending) — skip instead of failing exact_WII
+		t12 = t[1,2].data
+		(t12[2] == 0 && t12[4] == 0) && return nothing
 		expt, λ, b, c = exact_WII(t)
 		res1 = MPO(MPOHamiltonian([expt, expt, expt]))
 
@@ -41,6 +47,7 @@ function _influencefunctional_util(lattice::ImagGrassmannLattice, corr::ImagCorr
 		(_fit_to_lattice(lattice, res1, I2, 1) * vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice), λ, b, c)
 	end
 
+	mpss = filter(!isnothing, mpss)
 	(alg.verbosity >= 1) && println(length(mpss), " terms to be multiply...")
 
 	# order of the exponential decay terms

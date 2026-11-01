@@ -45,8 +45,11 @@ function retardedinteractdynamics_naive!(gmps::GrassmannMPS, lattice::AbstractGr
 		tmp = vacuumstate(T, lattice)
 		for (br2, j) in nodes, band2 in 1:lattice.bands
 			pos2a, pos2b, c2 = get_pair_pos(lattice, j, band2, br2)
-			c = corr[GrassmannContourIndex(i, br1, band1, false),
-					 GrassmannContourIndex(j, br2, band1, true)] * c1 * c2
+			# the bosonic kernel must be read with BosonicContourIndex legs:
+			# GrassmannContourIndex legs hit the fermionic accessor, which
+			# applies the tau-ring / Keldysh vertex shifts and the a-bar/a
+			# sign -- wrong for the density-density kernel
+			c = corr[BosonicContourIndex(i, br1), BosonicContourIndex(j, br2)] * c1 * c2
 			t = pos1a == pos2a ? exp(GTerm(pos1a, pos1b, coeff=c)) :
 								 exp(GTerm(pos1a, pos1b, pos2a, pos2b, coeff=c))
 			apply!(t, tmp)

@@ -44,6 +44,11 @@ BMPSIntegrate: do the integration approximately using the BoundaryMPS algorithm,
 trunc can be specified to control the truncation
 """
 function integrate(alg::IntegrationAlgorithm, lattice::AbstractGrassmannLattice, x0::GrassmannMPS, x1::Vararg{GrassmannMPS}; kwargs...)
+	# the transfer matrix requires all arguments to share one scalar type;
+	# promote mixed inputs (e.g. a real system MPS against a complex IF) to complex
+	if !allequal(map(scalartype, (x0, x1...)))
+		x0, x1 = complex(x0), map(complex, x1)
+	end
 	if ConjugationStyle(lattice) isa AdjacentConjugation
 		return _ac_integrate(alg, lattice, x0, x1...; kwargs...)
 	else

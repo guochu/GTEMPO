@@ -15,8 +15,7 @@
 	lat = GrassmannLattice(N=4, δt=0.1, contour=:real)
 	corr = correlationfunction(fermionicbath(spectrum_func(), β=β, μ=0), lat)
 	@test corr isa RealCorrelationFunction
-	@test size(corr.G₊₊) == (lat.k, lat.k)   # branch block (+,+)
-	@test size(corr.G₋₊) == (lat.k, lat.k)   # branch block (-,+)
+	@test size(corr) == (lat.k, lat.k)   # compact four-vector storage, N+1 nodes
 
 	# mixed (Kadanoff) lattice: corr[GrassmannContourIndex, GrassmannContourIndex] over three branches
 	lat = GrassmannLattice(Nt=3, δt=0.1, Nτ=4, δτ=0.25, contour=:mixed)

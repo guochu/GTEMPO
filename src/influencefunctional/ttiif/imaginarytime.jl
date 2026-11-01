@@ -4,8 +4,7 @@
 The influenceoperators ΣᵢⱼΔᵢⱼāᵢaⱼ as an MPO (returned in a 1-tuple), the bond dimension of MPO is 2n, where n is number of the prony expansion
 """
 function influenceoperators(lattice::ImagGrassmannLattice, corr2::ImagCorrelationFunction; band::Int=1, alg_expan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
-	corr = corr2.data
-	mpoj = ti_mpotensor(corr, alg_expan)
+	mpoj = ti_mpotensor(corr2.data, alg_expan)   # 2026-10-30 τ 环回退 raw：用未移位 bulk
 	h = MPOHamiltonian([mpoj, mpoj, mpoj])
 	mpo = MPO(h)
 	_JW = JW
@@ -17,8 +16,7 @@ end
 """
 function influenceoperatorsteppers(lattice::ImagGrassmannLattice, corr2::ImagCorrelationFunction, dt::Real, alg::FirstOrderStepper;
 										band::Int=1, alg_expan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
-	corr = corr2.data
-	mpoj = ti_mpotensor(corr, alg_expan)
+	mpoj = ti_mpotensor(corr2.data, alg_expan)   # 2026-10-30 τ 环回退 raw：用未移位 bulk
 	h = MPOHamiltonian([mpoj, mpoj, mpoj])
 	h2 = timeevompo(h, dt, alg)
 	mpo = MPO(h2)
@@ -27,8 +25,7 @@ function influenceoperatorsteppers(lattice::ImagGrassmannLattice, corr2::ImagCor
 end
 function influenceoperatorsteppers(lattice::ImagGrassmannLattice, corr2::ImagCorrelationFunction, dt::Real, alg::ComplexStepper; 
 										band::Int=1, alg_expan::ExponentialExpansionAlgorithm=Defaults.alg_expan())
-	corr = corr2.data
-	mpoj = ti_mpotensor(corr, alg_expan)
+	mpoj = ti_mpotensor(corr2.data, alg_expan)   # 2026-10-30 τ 环回退 raw：用未移位 bulk
 	h = MPOHamiltonian([mpoj, mpoj, mpoj])
 	h1, h2 = timeevompo(h, dt, alg)
 	mpo1, mpo2 = MPO(h1), MPO(h2)

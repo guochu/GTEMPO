@@ -14,12 +14,15 @@ function hybriddynamicsstepper!(gmps::GrassmannMPS, lattice::RealGrassmannLattic
 	@assert length(lattice) == length(gmps) 
 	(1 <= band <= lattice.bands) || throw(BoundsError(1:lattice.bands, band))
 	if lattice.k == 2
-		for b1 in (:+, :-), b2 in (:+, :-)
-			pos1 = lattice[GrassmannContourIndex(1, b1, band, true)]
-			pos2 = lattice[GrassmannContourIndex(1, b2, band, false)]
-			apply!(exp(GTerm(pos1, pos2, coeff=branch(corr; b1=b1, b2=b2)[1,1])), gmps)
+		# equal-node terms of the first step: assembled with the same
+		# row-based partialmpo as the static builder, so the leg orientation
+		# and the accessor's vertex-shifted/windowed zeros agree with it
+		# (applying GTerms by hand transposes the surviving pairing)
+		cols1 = [GrassmannContourIndex(1, b2, band, false) for b2 in (:+, :-)]
+		for b1 in (:+, :-)
+			tmp = partialif_hybrid(lattice, GrassmannContourIndex(1, b1, band, true), cols1, corr)
+			gmps = mult!(gmps, tmp, trunc=trunc)[1]
 		end
-		canonicalize!(gmps, alg=Orthogonalize(orth=SVD(), trunc=trunc))
 	end
 	k = lattice.k
 	cols = [GrassmannContourIndex(j, b2, band, false) for j in 1:k for b2 in (:+, :-)]
