@@ -19,7 +19,7 @@ function cached_electriccurrent(lattice::RealGrassmannLattice, corr::RealCorrela
                 	               cache::AbstractExpectationCache=environments(lattice, A, B...), band::Int=1)
     curr = complex(0.)
     η⁺⁺ = branch(corr; b1=:+, b2=:+)
-    η⁺⁻ = _physical_branch(corr, :+, :-)   # unified real-time convention: cross block carries an embedded minus
+    η⁺⁻ = -branch(corr; b1=:+, b2=:-)   # 统一实时约定：跨支块内嵌 Keldysh 负号，取物理块
     for j in 1:k-1
         curr += η⁺⁺[k, j] * _cached_gf_ij(lattice, k, j, A, B...; cache=cache, b1=:+, b2=:+, band=band, c1=true, c2=false)
         curr += η⁺⁻[k, j] * _cached_gf_ij(lattice, k, j, A, B...; cache=cache, b1=:+, b2=:-, band=band, c1=true, c2=false)

@@ -156,7 +156,8 @@ function _get_signed_corr(lattice::AbstractRealGrassmannLattice, corr::RealCorre
 	# from the shifted bulk generators at the parts level (see
 	# `_ti_mpotensor_shifted`); the cross blocks keep their values.
 	function signed(b1::Symbol, b2::Symbol)
-		η = _physical_branch(corr, b1, b2)
+		η = branch(corr; b1=b1, b2=b2)
+		b1 === b2 || (η = -η)   # 统一实时约定：跨支块内嵌 Keldysh 负号，取物理块
 		swap = lattice[GrassmannContourIndex(1, b2, band, false)] >
 			   lattice[GrassmannContourIndex(1, b1, band, true)]
 		return swap ? -transpose(η) : η
@@ -196,7 +197,8 @@ end
 function _window_correction(lattice::AbstractRealGrassmannLattice, corr::RealCorrelationFunction,
 							band::Int, b1::Symbol, b2::Symbol)
 	k = lattice.k
-	η = _physical_branch(corr, b1, b2)
+	η = branch(corr; b1=b1, b2=b2)
+	b1 === b2 || (η = -η)   # 统一实时约定：跨支块内嵌 Keldysh 负号，取物理块
 	M = length(η.ηⱼₖ)
 	E = η[1, 1]
 	ridxs(b) = [GrassmannContourIndex(i, b, band, true) for i in 1:k]

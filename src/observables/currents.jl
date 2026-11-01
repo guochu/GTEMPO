@@ -26,7 +26,7 @@ function electriccurrent(lattice::RealGrassmannLattice, corr::RealCorrelationFun
     # 8/8, 2026-10-30) — do not migrate these reads to the accessor without
     # re-deriving the vertex-picture current operator.
     η⁺⁺ = branch(corr; b1=:+, b2=:+)
-    η⁺⁻ = _physical_branch(corr, :+, :-)   # unified real-time convention: cross block carries an embedded minus
+    η⁺⁻ = -branch(corr; b1=:+, b2=:-)   # 统一实时约定：跨支块内嵌 Keldysh 负号，取物理块
     for j in 1:k-1
         curr += η⁺⁺[k, j] * _gf_ij(lattice, k, j, A, B...; b1=:+, b2=:+, Z=Z, band=band, alg=alg, c1=true, c2=false)
         curr += η⁺⁻[k, j] * _gf_ij(lattice, k, j, A, B...; b1=:+, b2=:-, Z=Z, band=band, alg=alg, c1=true, c2=false)
@@ -99,7 +99,7 @@ build_current_mpo(lattice::RealGrassmannLattice, corr::RealCorrelationFunction, 
 
 function build_current_mpo_1order(lattice::AbstractRealGrassmannLattice, corr::RealCorrelationFunction, k::Int, band::Int)
     η⁺⁺ = branch(corr; b1=:+, b2=:+)
-    η⁺⁻ = _physical_branch(corr, :+, :-)   # unified real-time convention: cross block carries an embedded minus
+    η⁺⁻ = -branch(corr; b1=:+, b2=:-)   # 统一实时约定：跨支块内嵌 Keldysh 负号，取物理块
     row = lattice[GrassmannContourIndex(k, :+, band, true)]
     cols = Int[]
     coefs = ComplexF64[]

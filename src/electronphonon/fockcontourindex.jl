@@ -33,9 +33,8 @@ Base.:(==)(a::FockContourIndex, b::FockContourIndex) =
 无关，故 `band` 字段不参与取值。
 """
 function Base.getindex(x::AbstractCorrelationFunction, i::FockContourIndex, j::FockContourIndex)
-	# NOTE: no Keldysh-sign compensation here — the unified real-time
-	# derivation reproduces the historical BOSONIC four-block storage
-	# bit-identically (cross blocks included), unlike the fermionic storage
-	# whose cross blocks flipped sign (see _physical_branch)
+	# NOTE: 玻色路径不做跨支负号补偿——统一实时派生对玻色逐位复现历史
+	# 四块存储（含跨支），与费米存储不同（费米的补偿约定见
+	# correlationfunction.jl 顶部的注记）
 	return branch(x; b1=branch(i), b2=branch(j))[i.j, j.j]
 end

@@ -87,7 +87,10 @@ function partialif_hybrid(lattice::AbstractGrassmannLattice, i::GrassmannContour
 						  cols::AbstractVector{<:GrassmannContourIndex}, corr::Union{AbstractCorrelationFunction, BCSCorrelationFunction})
 	row = lattice[_latticeindex(i)]
 	col_pos = [lattice[_latticeindex(c)] for c in cols]
-	coefs = [_physical_coef(corr, i, c) for c in cols]
+	# QuAPI 统一实时约定：跨支块值内嵌 Keldysh 负号，IF 指数用物理块，读数补回
+	#（两支 Keldysh 轮廓才嵌入；由 lattice 的分支判断，虚时 (:τ,) / 混合 (+,−,τ) 不补）
+	keldysh = branches(lattice) == (:+, :-)
+	coefs = [corr[conj(i), conj(c)] * (keldysh && branch(i) !== branch(c) ? -1 : 1) for c in cols]
 	mpo = partialmpo(row, col_pos, coefs)
 	return mpo * vacuumstate(promote_type(scalartype(lattice), eltype(coefs)), lattice)
 end
@@ -105,7 +108,8 @@ function partialif_hybrid(lattice::AbstractGrassmannLattice, rows::AbstractVecto
 						  col::GrassmannContourIndex, corr::Union{AbstractCorrelationFunction, BCSCorrelationFunction})
 	col_pos = lattice[_latticeindex(col)]
 	row_pos = [lattice[_latticeindex(r)] for r in rows]
-	coefs = [_physical_coef(corr, r, col) for r in rows]
+	keldysh = branches(lattice) == (:+, :-)   # 跨支负号补偿，同 partialif_hybrid
+	coefs = [corr[conj(r), conj(col)] * (keldysh && branch(r) !== branch(col) ? -1 : 1) for r in rows]
 	mpo = partialmpo(col_pos, row_pos, -coefs)
 	return mpo * vacuumstate(promote_type(scalartype(lattice), eltype(coefs)), lattice)
 end
@@ -126,7 +130,8 @@ function partialif_hybrid_naive(lattice::AbstractGrassmannLattice, i::GrassmannC
 	pos1 = lattice[_latticeindex(i)]
 	for c in cols
 		pos2 = lattice[_latticeindex(c)]
-		t = exp(GTerm(pos1, pos2, coeff=_physical_coef(corr, i, c)))
+		v = corr[conj(i), conj(c)] * (branches(lattice) == (:+, :-) && branch(i) !== branch(c) ? -1 : 1)
+		t = exp(GTerm(pos1, pos2, coeff=v))
 		apply!(t, gmps)
 		canonicalize!(gmps, alg=alg)
 	end

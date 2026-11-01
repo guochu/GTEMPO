@@ -22,45 +22,13 @@ TK.scalartype(::Type{<:RealCorrelationFunction}) = ComplexF64
 TK.scalartype(::Type{<:MixedCorrelationFunction}) = ComplexF64
 TK.scalartype(::Type{<:BCSCorrelationFunction{M}}) where M = scalartype(M)
 # ---------------------------------------------------------------------------
-# 2026-10-30 QuAPI unified real-time convention adaptation: the compact
-# RealCorrelationFunction / GenericRealCorrelationFunction now embed the
-# Keldysh relative minus into the CROSS-branch blocks
-# ((+,−) = −(c, b), (−,+) = −(a, d) — same storage as MixedCorrelationFunction),
-# while the same-branch blocks are unchanged. GTEMPO's IF exponents and
-# observable formulas consume the PHYSICAL hybridization blocks, so every
-# cross-branch read must compensate with one minus.
+# QuAPI 统一实时约定注记（2026-10-30）：两支 Keldysh 关联函数
+#（RealCorrelationFunction，含 BCS 包装在实时轮廓上的 uu/ud/du）把跨支块的
+# Keldysh 相对负号嵌在块值里（(+,−) = −(c, b)、(−,+) = −(a, d)；同支块不变）。
+# GTEMPO 的 IF 指数与可观测量公式消费的是无符号的物理块，因此**跨支读数处
+# 要补一个负号**——这个约定由各调用点就地处理（partialif 的系数读取、
+# ttiif/realtime 的分支装配、currents 的 η⁺⁻），判定条件统一用
+# `branches(corr) == (:+, :-) && b1 !== b2`（branches 对 BCS 委托到 uu，
+# 一个判断同时覆盖普通与 BCS）。虚时 τ 环与混合轮廓的块值即物理值，不动；
+# 玻色（Fock 路径）的历史存储本就带符号，同样不动（见 fockcontourindex.jl）。
 # ---------------------------------------------------------------------------
-"""
-	_physical_branch(corr::AbstractCorrelationFunction, b1::Symbol, b2::Symbol)
-
-The physical (Keldysh-sign-free) branch block of a real-time correlation
-function: undoes the embedded relative minus of the unified QuAPI storage
-for cross-branch blocks. Same-branch blocks and non-real-time contours pass
-through unchanged.
-"""
-function _physical_branch(corr, b1::Symbol, b2::Symbol)
-	η = branch(corr; b1=b1, b2=b2)
-	return _embedded_real_cross(corr, b1, b2) ? -η : η
-end
-
-# true when (b1, b2) addresses a cross block of a sign-embedded real-time
-# representation — either directly, or through the BCS wrapper on the real
-# contour (its uu/ud/du wrap the embedded representation there)
-function _embedded_real_cross(corr, b1::Symbol, b2::Symbol)
-	(b1 in (:+, :-) && b2 in (:+, :-) && b1 !== b2) || return false
-	corr isa AbstractRealCorrelationFunction && return true
-	return corr isa BCSCorrelationFunction && corr.uu isa AbstractRealCorrelationFunction
-end
-
-"""
-	_physical_coef(corr::AbstractCorrelationFunction, row, col)
-
-Contraction coefficient between the `row` (ā-type) and `col` (a-type) legs
-with the unified real-time convention compensated: the QuAPI accessor
-serves the sign-embedded cross blocks, the IF exponent needs the physical
-ones.
-"""
-function _physical_coef(corr, row, col)
-	v = corr[conj(row), conj(col)]
-	return _embedded_real_cross(corr, branch(row), branch(col)) ? -v : v
-end
