@@ -46,10 +46,12 @@
 
 		H, a, adag, H0 = bcs_ed(U, ϵ_d, ω₀=ω, α=α, Δ=Δ)
 		gt_ed, lt_ed = greater_lesser_ed(H, a, adag, H0, ts, β)
-		# BCS RT 顶点位移迁移后（2026-10-30）：gt/lt 实测 4.2e-4/2.1e-4
-		#（此前 raw 约 4.2e-3/2.4e-3），基准见
-		# performance/firstorder/bcs_vertex_shift_accuracy.jl
-		@test relerr(g1, gt_ed) < 1.0e-2
-		@test relerr(g2, lt_ed) < 1.0e-2
+		# BCS RT 顶点位移迁移后（2026-10-30）实测 4.2e-4/2.1e-4——其中大部分是
+		# ↓↓ 正常项装配（(a↓,ā↓)·(−Δ)，核转置）造成的 δt 无关系统底。2026-11-03
+		# 修复（BCS getindex 改指数系数语义，canonical (ā↓,a↓)·(+Δ)）后
+		# 降至 7.2e-5/1.1e-4（纯离散化），容差收紧到 1e-3 锁定修复。基准见
+		# benchmark/firstorderif/singlemodebath/bcs_realtime.jl
+		@test relerr(g1, gt_ed) < 1.0e-3
+		@test relerr(g2, lt_ed) < 1.0e-3
 	end
 end

@@ -84,13 +84,32 @@ by this one function. `Δᵢⱼ` is read from `corr` as the contraction between 
 row leg and each column leg.
 """
 function partialif_hybrid(lattice::AbstractGrassmannLattice, i::GrassmannContourIndex,
-						  cols::AbstractVector{<:GrassmannContourIndex}, corr::Union{AbstractCorrelationFunction, BCSCorrelationFunction})
+						  cols::AbstractVector{<:GrassmannContourIndex}, corr::AbstractCorrelationFunction)
 	row = lattice[_latticeindex(i)]
 	col_pos = [lattice[_latticeindex(c)] for c in cols]
 	# QuAPI 统一实时约定：跨支块值内嵌 Keldysh 负号，IF 指数用物理块，读数补回
 	#（两支 Keldysh 轮廓才嵌入；由 lattice 的分支判断，虚时 (:τ,) / 混合 (+,−,τ) 不补）
 	keldysh = branches(lattice) == (:+, :-)
 	coefs = [corr[conj(i), conj(c)] * (keldysh && branch(i) !== branch(c) ? -1 : 1) for c in cols]
+	mpo = partialmpo(row, col_pos, coefs)
+	return mpo * vacuumstate(promote_type(scalartype(lattice), eltype(coefs)), lattice)
+end
+
+# BCS 的指数系数读取在 QuAPI 的 `getindex(::BCSCorrelationFunction, i, j)` 里
+# 完成（与 Dense 的 `_delta_terms` 同一分解：四类单项式 (ā↑,a↑)/(ā↓,a↓)/(ā↑,ā↓)/
+# (a↓,a↑) 全 + 系数，其余腿对为 0；有向的指数系数语义，无需普通 bath 的 conj
+# 翻转技巧）。旧装配在读取处补 a-ā 符号、且不区分指数项与误配对，迫使 ↓↓ 正常
+# 项写成 (a↓,ā↓)·(−Δ)——Grassmann 单项式意义上 = ↓↓ 核转置：U=0 时 band-2 只
+# 贡献标量、在 Z 归约里相消，U≠0 起产生 δt 无关、随时间累积的系统偏差
+#（2026-11-03 firstorderif bcs_realtime 基准定位，bcs_ed ED 判决）。
+function partialif_hybrid(lattice::AbstractGrassmannLattice, i::GrassmannContourIndex,
+						  cols::AbstractVector{<:GrassmannContourIndex}, corr::BCSCorrelationFunction)
+	keldysh = branches(lattice) == (:+, :-)
+	row = lattice[_latticeindex(i)]
+	# 行腿自身不进列集合：(band2,·) 既是行又是列，同节点项 ξ² = 0 且位置不可重复
+	col_pos = [lattice[_latticeindex(c)] for c in cols if c != i]
+	coefs = [corr[i, c] * (keldysh && branch(i) !== branch(c) ? -1 : 1)
+			 for c in cols if c != i]
 	mpo = partialmpo(row, col_pos, coefs)
 	return mpo * vacuumstate(promote_type(scalartype(lattice), eltype(coefs)), lattice)
 end
@@ -105,7 +124,14 @@ Transposed counterpart of the row-based method: build
 Used by the stepper to add the terms of the newest time step.
 """
 function partialif_hybrid(lattice::AbstractGrassmannLattice, rows::AbstractVector{<:GrassmannContourIndex},
-						  col::GrassmannContourIndex, corr::Union{AbstractCorrelationFunction, BCSCorrelationFunction})
+						  col::GrassmannContourIndex, corr::BCSCorrelationFunction)
+	# 转置（列驱动）装配的单项式次序与行驱动不同，旧的 (a↓,ā↓) 结构在 U≠0 有
+	# 系统偏差；BCS 尚无步进式调用方，先显式拒绝而非静默产出错误 IF。
+	error("partialif_hybrid(rows, col, corr::BCSCorrelationFunction): 列驱动的 BCS 装配未实现，请用行驱动 hybriddynamics")
+end
+
+function partialif_hybrid(lattice::AbstractGrassmannLattice, rows::AbstractVector{<:GrassmannContourIndex},
+						  col::GrassmannContourIndex, corr::AbstractCorrelationFunction)
 	col_pos = lattice[_latticeindex(col)]
 	row_pos = [lattice[_latticeindex(r)] for r in rows]
 	keldysh = branches(lattice) == (:+, :-)   # 跨支负号补偿，同 partialif_hybrid
@@ -123,7 +149,7 @@ Same partial IF as [`partialif_hybrid`](@ref), but built by applying the
 exponentials `exp(Δᵢⱼ āᵢ aⱼ)` one by one and canonicalizing after each step.
 """
 function partialif_hybrid_naive(lattice::AbstractGrassmannLattice, i::GrassmannContourIndex,
-						  cols::AbstractVector{<:GrassmannContourIndex}, corr::Union{AbstractCorrelationFunction, BCSCorrelationFunction};
+						  cols::AbstractVector{<:GrassmannContourIndex}, corr::AbstractCorrelationFunction;
 						  trunc::TruncationScheme=Defaults.alg_trunc_if())
 	alg = Orthogonalize(orth=TK.SVD(), trunc=trunc)
 	gmps = vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
@@ -131,6 +157,23 @@ function partialif_hybrid_naive(lattice::AbstractGrassmannLattice, i::GrassmannC
 	for c in cols
 		pos2 = lattice[_latticeindex(c)]
 		v = corr[conj(i), conj(c)] * (branches(lattice) == (:+, :-) && branch(i) !== branch(c) ? -1 : 1)
+		t = exp(GTerm(pos1, pos2, coeff=v))
+		apply!(t, gmps)
+		canonicalize!(gmps, alg=alg)
+	end
+	return gmps
+end
+
+function partialif_hybrid_naive(lattice::AbstractGrassmannLattice, i::GrassmannContourIndex,
+						  cols::AbstractVector{<:GrassmannContourIndex}, corr::BCSCorrelationFunction;
+						  trunc::TruncationScheme=Defaults.alg_trunc_if())
+	alg = Orthogonalize(orth=TK.SVD(), trunc=trunc)
+	gmps = vacuumstate(promote_type(scalartype(lattice), scalartype(corr)), lattice)
+	pos1 = lattice[_latticeindex(i)]
+	for c in cols
+		(c == i || iszero(corr[i, c])) && continue
+		pos2 = lattice[_latticeindex(c)]
+		v = corr[i, c] * (branches(lattice) == (:+, :-) && branch(i) !== branch(c) ? -1 : 1)
 		t = exp(GTerm(pos1, pos2, coeff=v))
 		apply!(t, gmps)
 		canonicalize!(gmps, alg=alg)

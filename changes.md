@@ -2,6 +2,41 @@
 
 本轮重构涉及的接口更改汇总。所有更改均已通过全量测试验证（行为不变或数值等价）。
 
+## BCS 影响泛函 ↓↓ 正常项装配修正（2026-11-03）
+
+- **问题**：`bcsinfluencefunctional/partialif.jl` 的 BCS 单 IF 装配把 ↓↓ 正常通道实现为
+  `(a↓, ā↓)·(−Δ)`。对 Grassmann 单项式 −(a↓ᵢ)(ā↓ⱼ) = +(ā↓ⱼ)(a↓ᵢ)，这等价于 ↓↓ 核取
+  **转置**（canonical 形式应为 `(ā↓, a↓)·(+Δ)`，与 QuAPI Dense 的 `_delta_terms` 分解
+  一致）。U=0 时 band-2 只贡献一个标量因子、在 Z 归约中相消（因此 U=0 的测试与基准
+  不暴露）；U≠0 时产生 δt 无关、随演化时间累积的系统偏差——firstorderif bcs_realtime
+  基准实测 gt 误差卡 ~1.5e-3（p≈0.06）；截断（D=200/400/800 逐位相同）与 Δ=0/0.6
+  对照均排除后定位到装配。
+- **修复**：重定义 QuAPI `contourindex.jl` 的 `getindex(::BCSCorrelationFunction,
+  i::GrassmannContourIndex, j::GrassmannContourIndex)` 为**指数系数语义**——与 Dense 侧
+  `_delta_terms` 同一分解：四类单项式 (ā↑,a↑)/(ā↓,a↓)/(ā↑,ā↓)/(a↓,a↑) 全部 + 系数，
+  其余腿对（同 conj 的 uu 误配、跨 flavor 反向对）置 0，块值的分支/顶点位移约定不变。
+  与普通 bath 访问器的收缩语义（x[a,ā]=+Δ、x[ā,a]=−Δ）不同，BCS 是有向的指数系数，
+  装配处直接 `corr[i, j]` 读取、无需 conj 翻转。GTEMPO 的行/列腿结构相应改为
+  rows {ā↑, ā↓, a↓} × cols {a↑, a↓, ā↓}（行腿自身节点从列集合剔除——(band2,·) 既是行
+  又是列，ξ² = 0 且位置不可重复）。转置（列驱动）的
+  `partialif_hybrid(rows, col, ::BCSCorrelationFunction)` 尚无调用方，先显式 `error`。
+- **验证**：Anderson（U=1, Δ=0.6）bcs_realtime 基准从误差底 p≈0.06 恢复一阶收敛
+  （gt p=1.14 / lt p=1.04）；U=0 基准不变（p=1.02）；test/bcs 全部 33 项通过，
+  normalbath / electronphonon / multiorbital 全量通过。测试配置（T=0.25, Nt=5）的
+  ED 偏差从 4.2e-4/2.1e-4（大部分为旧系统底）降至 7.2e-5/1.1e-4（纯离散化），
+  test/bcs 实时 ED 容差相应收紧 1e-2 → 1e-3。顺带发现：api/lattice 的 4 个
+  UndefVarError 是 ImpurityModelBase 与 GTEMPO 都导出 `branch/branches` 的命名冲突
+  （预先存在，与本次修复无关；已通过测试端 `using GTEMPO: branches` 消歧解决）。
+- **对照论文（PRB 2604.23301, Eq.31/34/36/37）**：论文正文把 ↓↓ 正常项写成
+  `a↓ Δ↓↓ ā↓`（a-first，Eq.36 第 4 项）且块取折叠版（Eq.34：Δ↑↑ = Δuu − Δᵀvv、
+  Δ↓↓ = Δvv − Δᵀuu、Δ↑↓ = Δuv + Δᵀuv、Δ↓↑ = Δvu + Δᵀvu）。数值判决（τ 环，
+  U=1, Δ=0.6, Nτ=10）：实现版 relerr 2.18e-04，论文 Eq.(34)+(36) 字面版 3.48e-02
+  ——论文正文的折叠/次序表述与精确 Wick 展开不符（Grassmann 反换位使 a-first
+  写法等价于转置核，即本次修复的 bug）。正确表达式为 canonical 四类
+  (ā↑,a↑)/(ā↓,a↓)/(ā↑,ā↓)/(a↓,a↑) → raw uu/ud/du 块、全 + 系数（`getindex` 与
+  Dense `_delta_terms` 同款）。论文数值结果来自 ED 验证的代码路径、不受影响；
+  正文公式建议勘误（`bcscorr.jl` 的 struct docstring 已改为 canonical 表达式）。
+
 ## Fock lattice 类型重命名与 LeftExpectationCache 删除（2026-10-25）
 
 - **类型重命名**（与 Grassmann 侧的 `AbstractImagGrassmannLattice`/`ImagGrassmannLattice` 命名对齐）：
