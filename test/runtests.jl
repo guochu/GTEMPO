@@ -2,6 +2,9 @@ using Test, Random
 using GTEMPO
 using Z2Tensors
 using ImpurityModelBase
+# ImpurityModelBase（contour Green 函数容器）也导出 branches，与 GTEMPO 的
+# lattice branches 消歧：测试里的 branches 一律指 GTEMPO 的
+using GTEMPO: branches
 
 Random.seed!(12354)
 
