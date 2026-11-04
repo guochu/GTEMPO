@@ -18,23 +18,29 @@ the left of `ā` therefore comes with a minus,
 # ---------------------------------------------------------------------------
 # vertex-shifted bulk cell (2026-10, same convention as the QuAPI fix in
 # models.jl / contourindex.jl): the strict node-vertex IF recombines the
-# frozen cell-integral Toeplitz generators. Slot mapping of `ti_mpotensor`
-# (established numerically): the m1 family (a ⊗ JW-middles ⊗ ā) populates the
-# node-lower lags (ā later) and the m2 family (ā ⊗ middles ⊗ a) the
-# node-upper lags (a later). The shifted bulk matrices are
-# - `:τ` ring (n nodes): diag ηₖⱼ[2], lower lags [E, ηⱼₖ[2:n-1]] with the
-#   equal-time sum E = corr[1,1], upper lag d = -lower[n-d] (antiperiodic
-#   wrap);
-# - `:+` real-time same-branch (column shift +1): diag ηₖⱼ[2], lower
-#   [E, ηⱼₖ[2:M-1]], upper [ηₖⱼ[3:M], cont]; the `:-` block is the mirror
-#   (diag ηⱼₖ[2], lower [ηⱼₖ[3:M], cont], upper [E, ηₖⱼ[2:M-1]]). The
-#   cross blocks keep their values (their turning-point rows/cols are
-#   windowed to zero by `_window_drops` instead).
-# The nearest-neighbour E pair cannot ride the smooth Prony tails (it would
-# break the exponential fit), so it is emitted as an explicit α = 0 channel;
-# the farthest lag has no stored value and is continued with the last one
-# (the spurious farthest pair sits on a windowed turning-point leg and is
-# dropped by `_window_drops`).
+# frozen cell-integral Toeplitz generators. Family/tail assignment (settled
+# against the accessor kernel audit, GTEMPO/performance/firstorder/
+# lag1_contact_audit.jl): the m1 family (a ⊗ JW-middles ⊗ ā) populates the
+# upper lags and the m2 family (ā ⊗ middles ⊗ a) the lower lags of the
+# same-branch blocks; the τ ring was reverted to the raw cell in 2026-10
+# (the shift worsened its g(τ) discrete error constant ~30×) and the :τ
+# branch is gone. Per block (kind = :+ / :-, the ηⱼₖ/ηₖⱼ roles are swapped
+# between the two):
+# - diag slot: ηₖⱼ[2] (the old upper family head);
+# - upper lags: head-dropped [ηₖⱼ[3:M]] with NO far-continuation — the
+#   continued last value is a spurious pair on a windowed turning-point leg
+#   (removed by `_window_correction`, which only ever reads in-range slots)
+#   and its repetition kink poisons the Prony fit of the whole family;
+# - lower lags: the tail [ηⱼₖ[2:M-1]] delayed by one slot (fitted and
+#   divided by the poles, so slot d ≥ 2 carries the tail value and slot 1
+#   only the smooth backward extrapolation d1 = Σ cₖ of the raw fit), plus a
+#   native `NearestNeighbourTerm` contact row with coeff E - d1: the delayed
+#   channels and the contact row together equal the equal-time sum E exactly
+#   at distance 1 and the tail unchanged beyond, with no dynamic-range
+#   degeneracy (an earlier tiny-α channel carrying this correction
+#   underflowed its coupling block and put ~1e14 on the diagonal).
+# The cross blocks keep their values (their turning-point rows/cols are
+# windowed to zero by the `_window_correction` factors).
 # ---------------------------------------------------------------------------
 function _vertex_shifted_parts(corr::CorrelationMatrix, alg::ExponentialExpansionAlgorithm, kind::Symbol)
 	E = corr[1, 1]
@@ -48,37 +54,29 @@ function _vertex_shifted_parts(corr::CorrelationMatrix, alg::ExponentialExpansio
 	@tensor JW4[5;6] := _JW[1,2] * _JW[3,4] * f[5,1,3] * conj(f[6,2,4])
 	@tensor a2[1,7;3,8] := σ₋'[1,2,3,4] * I2[5,6] * f[7,2,5] * conj(f[8,4,6])
 	@tensor abar2[1,7;3,8] := I2[2,4] * σ₊[1,5,3,6] * f[7,2,5] * conj(f[8,4,6])
-	if kind === :τ || kind === :+
-		# lower lags: the tail ηⱼₖ[2:M-1] is Prony-expanded as it is, and the
-		# equal-time sum E at distance 1 is delivered by an extra tiny-α
-		# channel that corrects the smooth backward extrapolation
-		# Σcₖαₖ of the tail to E (value c·α^d: the end operator of the Schur
-		# assembly carries the factor α, so α = 0 would kill the channel)
-		# NOTE(2026-10-30): the tiny-α equal-time channel below is DISABLED —
-		# it degenerates in the Schur/MPO assembly (the end operator carries α,
-		# so at α = 1e-3 the coupling block underflows while the coeff
-		# (E+d1)/αε ~ 1e14 lands on the diagonal), which made XTRGIF return
-		# NaN and TDVPIF hit Infs. Without the channel the d=1 value is the
-		# smooth Prony extrapolation d1 instead of the equal-time sum E —
-		# the known ~1-5% short-chain inaccuracy, to be fixed with the
-		# short-time Prony redesign.
+	_delay(t) = ExponentialDecayTerm(t.a, t.b; middle=t.m, α=t.α,
+									 coeff=iszero(t.coeff) ? t.coeff : t.coeff / t.α)
+	if kind === :+
+		# upper: head-dropped continuation, no far-continuation
+		m1s = expand_decayterm(GenericDecayTerm(a1, abar1, -corr.ηₖⱼ[3:M], middle=JW4), alg=alg)
+		# lower: tail delayed by one slot + native contact row
 		Ltail = corr.ηⱼₖ[2:M-1]
 		(length(Ltail) == 1) && (Ltail = vcat(Ltail, Ltail))   # Prony 下限
-		m1s = expand_decayterm(GenericDecayTerm(a1, abar1, -Ltail, middle = JW4), alg=alg)
-		Uvec = vcat(corr.ηₖⱼ[3:M], corr.ηₖⱼ[M])
-		(length(Uvec) == 1) && (Uvec = vcat(Uvec, Uvec))
-		m2s = expand_decayterm(GenericDecayTerm(abar2, a2, Uvec, middle = JW4), alg=alg)
+		m2s = expand_decayterm(GenericDecayTerm(abar2, a2, Ltail, middle=JW4), alg=alg)
+		m2s = [_delay(t) for t in m2s]
+		d1 = sum(t.coeff * t.α for t in m2s)   # 延迟族 slot-1 振幅 = Σ cₖ（除法前的拟合系数）
+		m2s = vcat(m2s, [NearestNeighbourTerm(abar2, a2; coeff=E - d1)])
 		return corr.ηₖⱼ[2], m1s, m2s
 	else                                    # :- (mirror: the time-reversed --
-		# block swaps the two decay families — m1 populates the upper lags and
-		# m2 the lower lags — established numerically)
-		# (tiny-α equal-time channel disabled — see the note in the :τ/:+ branch)
+		# block swaps the two decay families and the ηⱼₖ/ηₖⱼ roles)
+		m2s = expand_decayterm(GenericDecayTerm(abar2, a2, corr.ηⱼₖ[3:M], middle=JW4), alg=alg)
 		Utail = corr.ηₖⱼ[2:M-1]
 		(length(Utail) == 1) && (Utail = vcat(Utail, Utail))
-		m1s = expand_decayterm(GenericDecayTerm(a1, abar1, -Utail, middle = JW4), alg=alg)
-		Ltail = vcat(corr.ηⱼₖ[3:M], corr.ηⱼₖ[M])
-		(length(Ltail) == 1) && (Ltail = vcat(Ltail, Ltail))
-		m2s = expand_decayterm(GenericDecayTerm(abar2, a2, Ltail, middle = JW4), alg=alg)
+		m1s = expand_decayterm(GenericDecayTerm(a1, abar1, -Utail, middle=JW4), alg=alg)
+		m1s = [_delay(t) for t in m1s]
+		d1 = sum(t.coeff * t.α for t in m1s)   # 延迟族 slot-1 振幅 = Σ cₖ（除法前的拟合系数）
+		# m1 家族的核贡献带算符序翻转（a 在未来腿：ā…a 核取 −），接触行同理
+		m1s = vcat(m1s, [NearestNeighbourTerm(a1, abar1; coeff=-E - d1)])
 		return corr.ηⱼₖ[2], m1s, m2s
 	end
 end
@@ -133,7 +131,9 @@ end
 # variant has the same virtual spaces as the full cell and can be glued into
 # the same 3-cell `MPOHamiltonian`; a cell with everything dropped is replaced
 # by fillers in `_fit_to_lattice` instead.
-_zerocoeff(ts) = [ExponentialDecayTerm(t.a, t.b; middle=t.m, α=t.α, coeff=zero(t.coeff)) for t in ts]
+_zerocoeff(ts) = [t isa ExponentialDecayTerm ?
+                   ExponentialDecayTerm(t.a, t.b; middle=t.m, α=t.α, coeff=zero(t.coeff)) :
+                   NearestNeighbourTerm(t.a, t.b; coeff=zero(t.coeff)) for t in ts]
 function _ti_mpotensor_variant(corr::CorrelationMatrix, alg::ExponentialExpansionAlgorithm;
 							   onsite::Bool=true, m1::Bool=true, m2::Bool=true)
 	coef, m1s, m2s = _ti_mpo_parts(corr, alg)
