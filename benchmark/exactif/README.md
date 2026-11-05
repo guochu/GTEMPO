@@ -317,6 +317,56 @@ order 4 × N=1（单自旋）；order 4 的完整标度验证以 `twosector/`（
   Δ_eff 核（`AbstractRealCorrelationFunction` 适配器 + 开放对反测度，
   与现有单扇区管线结构最接近）。
 
+
+## GTEMPO 原生管线（NativeExact，2026-11-05，进行中）
+
+把形态 B 的消元式构造搬到 GTEMPO 原生接口（`src/NativeExact.jl`，IFGTEMPO-free）：
+
+1. **lattice**：`GrassmannLattice(N = nl+1, δt, contour=:real, bands)`——只含杂质
+   Grassmann 变量；node 1 = t=0（ρ₀ 层）、node 2..nl+1 = 接口（D 源所在）、
+   node k = 开放端（物理 T：折返 + ρ(T) 读出）。
+2. **CorrelationFunction**：`ExactDelta <: QuAPI.AbstractRealCorrelationFunction`
+   封装消元核 D = −½(G⁻¹[i,k]−G⁻¹[k,i])（两扇区 bath Gaussian 的 Ginv 反对称化，
+   per-(branch,node) pair 布局 + Schur；`contour_G`），ExactIFKernel 读序约定 +
+   Keldysh 跨支符号，**直接由 GTEMPO `hybriddynamics`/`partialif_hybrid` 行扫
+   消费**。判决实验（`form_b/restrictd_probe.jl`）：**消元核 D 本身就只含
+   bar→eta 有向对（0 个同 kind 单项式）——行扫完整承载，机制成立**。
+3. **`sysdynamics_exact!`**：调度门（`sysdynamics_factors!` 同款全窗口，
+   τ=0 恒等门保留）+ 接口分辨率反测度（(1+cc·x̄x)，FormB 同款幂零抵消）+
+   `boundarycondition!` + `systhermalstate!`。
+4. **观测量**：`integrate`/Z 证书原生可用；ρ(T) 读出见下。
+
+### 已验证
+
+- **V=0（自由杂质）Z 证书：机器精度通过**（真实 GMPS 机器，
+  `integrate(lat, mpsK, mpsIs…)·norm == 1`，3.3e-15）——骨架、调度、
+  折叠、ρ₀ 全部正确。
+- **稠密判决**（`form_b/native_probe.jl`）：复合多项式（ExactDelta IF ×
+  native 骨架：门核 + bulk 链接 + ρ₀ + node-1 分辨率 + 折返）在
+  **开放腿提取约定**下与 Fock 离散链逐位一致（V=0 与 ε_d≠0 双重通过；
+  `res=boundary + fold=neg + nodek 分辨率 + norm=Pf` 组合，Z 与 ρ 双证书）。
+
+### 接口矛盾（进行中）
+
+- GTEMPO 原生观测量（`occupation`/`gf` 的 GTerm 插入 + 全收缩）读的是
+  **另一种 T 端约定**：同一复合多项式，插入式读出在 V=0 自由情形给出
+  0.287（应为 0）；开放腿对 `(bar⁺(k), eta⁻(k))` 插入给出 0.713 = 1−0.287。
+  两种约定不能腿对腿互迁（原生 node k 4 腿 = 折返+开放对+额外分辨率结构，
+  compact 开放端 2 腿——FormB 清单因此规划"ρ(T) 从开放腿系数提取"）。
+- `src/NativeExact.jl` 已含单带开放腿 ρ(T) 读出（右扫 `update_pair_right`
+  + 边界块吸收 + 折返 `g_trace_phy` 收缩 + sector 直读），全链可运行、
+  ρ 呈正确对角结构，但约定常数未标定（V=0 给 diag(0.452, 0.302)，
+  比例不随 sc/符号改变 → 腿/扇区映射层面需系统性标定，同 FormB 当年
+  Step A/C 的流程）。下一阶段工作：完成该标定 → 两带推广 → Trotter 标度。
+
+### 判决实验脚本（form_b/）
+
+- `restrictd_probe.jl`：Q1 判决（D 的 bar→eta 块充分性）——PASS。
+- `native_probe.jl`：native 腿集两扇区消元 × 原生骨架的稠密标定（旋钮
+  trace/fold/res/nodek/norm；判定开放腿约定下的精确组合；注意其对
+  GTEMPO g_trace 语义的稠密仿真与真实机器有 δt³ 级偏差，GMPS 判决以
+  真实机器为准）。
+
 ## 相关修改（本轮）
 
 
