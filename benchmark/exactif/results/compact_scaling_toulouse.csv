@@ -1,0 +1,13 @@
+series,dt,relerr
+exact IF (order 1),0.4,5.938807747202235e-5
+exact IF (order 2),0.4,5.9388077472855016e-5
+exact IF (order 4),0.4,3.642417881366544e-6
+exact IF (order 1),0.2,1.4678402244727717e-5
+exact IF (order 2),0.2,1.4678402247947364e-5
+exact IF (order 4),0.2,2.509227700620009e-7
+exact IF (order 1),0.1,3.6590235061861875e-6
+exact IF (order 2),0.1,3.659023508961745e-6
+exact IF (order 4),0.1,1.6059678809021705e-8
+exact IF (order 1),0.05,9.140942482943615e-7
+exact IF (order 2),0.05,9.140942444085809e-7
+exact IF (order 4),0.05,1.0098148983672672e-9

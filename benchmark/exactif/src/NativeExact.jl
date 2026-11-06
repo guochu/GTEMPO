@@ -57,7 +57,11 @@ end
   （末位 0：开放端处于末时刻）；
 - order 2: Strang 合并链 `A(δt/2)[B(δt)A(δt)]^{N−1}B(δt)A(δt/2)`，
   links = [δt/2, δt…, δt/2]；
-- order 4: Suzuki `S4 = S2(aδt)²S2(bδt)`（2a+b=1，b<0），cells = repeat([a,a,b]δt,N)。
+- order 4: 标准 Suzuki 四阶 = **回文组合** `S2(aδt)·S2(bδt)·S2(aδt)`
+  （2a+b=1，b<0；合并链 links = [a/2, c, c, (a, c, c)×(N−1), a/2]，
+  cells = [a,b,a]×N）——回文（时间反演对称）是奇幂误差项恒零的充要条件；
+  非回文序 S2(a)²S2(b) 携带 O(δt³) 项，渐近比值 →8（实测 9-12，
+  2026-11-06 强耦合 Anderson 判决），勿回退。
 """
 function native_schedule(order::Integer, N::Integer, dt::Real)
     N >= 1 || throw(ArgumentError("number of macro steps must be at least one"))
@@ -72,12 +76,12 @@ function native_schedule(order::Integer, N::Integer, dt::Real)
         a = 1 / (2 - cbrt(2))
         b = 1 - 2a
         c = (a + b) / 2
-        cells = repeat([a * dtf, a * dtf, b * dtf], N)
-        links = vcat(a * dtf / 2, a * dtf, c * dtf)
+        cells = repeat([a * dtf, b * dtf, a * dtf], N)
+        links = vcat(a * dtf / 2, c * dtf, c * dtf)
         for _ in 2:N
-            links = vcat(links, c * dtf, a * dtf, c * dtf)
+            links = vcat(links, a * dtf, c * dtf, c * dtf)
         end
-        links = vcat(links, b * dtf / 2)
+        links = vcat(links, a * dtf / 2)
     else
         throw(ArgumentError("unsupported Trotter order $order (use 1, 2 or 4)"))
     end
@@ -111,15 +115,16 @@ function trotter_factors(order::Integer, N::Integer, δt::Real)
         gates[1:2:end] .= links
         cells[2:2:end] .= dtf
     elseif order == 4
+        # 回文 Suzuki S4 = S2(a)·S2(b)·S2(a)（见 native_schedule 的注）
         a = 1 / (2 - cbrt(2))
         b = 1 - 2a
         c = (a + b) / 2
-        links = vcat(a * dtf / 2, a * dtf, c * dtf)
+        links = vcat(a * dtf / 2, c * dtf, c * dtf)
         for _ in 2:N
-            links = vcat(links, c * dtf, a * dtf, c * dtf)
+            links = vcat(links, a * dtf, c * dtf, c * dtf)
         end
-        links = vcat(links, b * dtf / 2)
-        cellseq = repeat([a * dtf, a * dtf, b * dtf], N)
+        links = vcat(links, a * dtf / 2)
+        cellseq = repeat([a * dtf, b * dtf, a * dtf], N)
         npairs = 2 * length(cellseq) + 1
         gates = zeros(npairs); cells = zeros(npairs)
         gates[1:2:end] .= links

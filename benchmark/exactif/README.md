@@ -49,6 +49,7 @@ A 吸收为全步长），零长度 cell 补齐使核节点与格点切片一一
 | `src/NativeExact.jl` | **GTEMPO 原生严格核管线**（IFGTEMPO-free）：`exactif_native_compact`（紧凑消元，全 order 验证绿）、`exactif_native_quapi`（orders 1/2）、`compact_delta`/`contour_G`/`sysdynamics_exact!` |
 | `src/verify_compact.jl` | 紧凑路线对齐矩阵（离散链 + Z/V=0 双证书；`ARGS=trunc` 截断档） |
 | `src/scaling_compact.jl` | 紧凑路线 Trotter 标度 vs 精确连续演化（p = 2.01/2.01/3.99） |
+| `src/scaling_compact_models.jl` | **两模型（Toulouse + 单模 bath Anderson U≠0）error scaling + 真阶判定**（p=2.01/1.98·2.01/1.98·3.94，图在 results/） |
 | `src/verify_align.jl` | 与 IFGTEMPO GMPS 的直接对齐（两自旋 U=0 解耦恒等式）+ quapi 回归（`ARGS=quapi`） |
 | `src/verify_formb.jl` | FormB 移植的对齐验证：单自旋 vs Fock、两自旋 vs Fock vs IFGTEMPO GMPS 三方 |
 | `src/scaling_formb.jl` | FormB 的 Trotter 阶数标度（vs 精确连续演化，叠加 IFGTEMPO 参照点；`ARGS = single | twospin | plot`） |
@@ -89,7 +90,9 @@ julia --project=. benchmark/exactif/singlemodebath/realtime.jl  # 单扇区诊�
    - order 1（全步长放置）：**全局二阶**（ratio 4.00）——精确顶点幅已重求和
      `[A,B]δt²` 首项（QuAPI exactfermionic.jl 的 O(V²δt³)/cell 结论）；
    - order 2（Strang）：**全局二阶**（ratio 4.00）；
-   - order 4（Suzuki）：**四阶**（ratio 16.5/17.3）。
+   - order 4（Suzuki）：**四阶**（ratio 16.5/17.3）。**勘误（2026-11-06）**：该比值
+     出自非回文序 S2(a)²S2(b) 的交叉区——修正为回文序 S2(a)S2(b)S2(a) 后，同一测试
+     给出干净比值 15.96/15.93（9/9 仍过；见"order-4 调度修正"一节）。
 
 3. **GTEMPO 冻结核基线**：`frozen Δt` 的 gt/lt 系列误差标度 p ≈ 1.03
    （Toulouse）/ 0.95（Anderson）——与 `secondorder/convergence.jl` 的一阶
@@ -470,6 +473,42 @@ julia --project=. benchmark/exactif/src/verify_align.jl quapi      # quapi 路�
 
 读出约定：`occupation`（insert_n）带 O(δt) 有效时刻偏移，不可用于此管线；标准读出 =
 `ntT` 同款**折返点自由腿对 (a⁺_k, ā⁻_k) 的 2 腿 GTerm 投影**（见 verify_compact.jl）。
+
+### ★★ order-4 调度修正（2026-11-06 深夜）：真四阶 = 回文组合 S2(a)·S2(b)·S2(a)
+
+两模型 error scaling（`src/scaling_compact_models.jl`，Toulouse + 单模 bath Anderson
+U=1.5 bands=2，诊断基准同款参数 T=0.4/β=1.0/ω=1.0/α=0.5）暴露：**实现中的 order-4
+调度是非回文组合 `S2(a)²·S2(b)`**（cells=[a,a,b]、links=[a/2,a,c,b/2]）——算符序
+不对称 ⇒ 奇幂误差项不恒零 ⇒ 携带 O(δt³)。判决链：
+1. Anderson 强耦合（α=0.5）下 order-4 比值 12.7→12.0→10.8→9.8→9.0 **递减趋向 8**
+   （p≈3.17），N=16/32 纯 16 维链直算同型——排除管线/截断（D=512/1024/2048 逐位同）；
+2. Suzuki 权重 a=1/(2−∛2)、b=1−2a 的解条件 2a³+b³=0 是**回文序** S2(a)S2(b)S2(a)
+   的三阶消失条件——非回文序不满足；
+3. 回文调度（合并链 links=[a/2,c,c,(a,c,c)×(N−1),a/2]、cells=[a,b,a]×N）纯链验证：
+   比值 14.4→15.6→15.9→16.0→16.00，强耦合 Anderson 与 U=0 对照**双恢复 16×**。
+
+修正（共享 bug，两处同步）：`NativeExact.native_schedule`/`trotter_factors` 与
+**IFGTEMPO `trotter_schedule`**（ImpurityPath.jl）的 order-4 全部改为回文组合。
+修正后（紧凑消元路线，`scaling_compact_models.jl`）：
+
+| 模型 | order 1 | order 2 | order 4 | order-4 每减半比值 |
+|---|---|---|---|---|
+| Toulouse（bands=1, U=0） | p=2.01 | p=2.01 | **p=3.94** | 14.5→15.6→15.9→16 |
+| Anderson（bands=2, U=1.5, μ=0.7） | p=1.98 | p=1.98 | **p=3.94** | 14.4→15.6→15.9→16 |
+
+（order 1 与 order 2 逐位同链 = 对角 H_imp + 对角热态初态的已知恒等式；order-4 的
+p 拟合 3.94 是 N=1..8 四点拟合仍含预渐近段，比值收敛到 16 为真四阶判据，纯链
+N=32 达 16.00。机器级预检：两模型 × orders 2/4 × N=1,2 管线 vs 离散链 ≤1.2e-14。）
+
+**波及面（重要）**：twosector/`scaling_formb` 此前发表的 "order 4 → p=4.05-4.16、
+比值 16.5/17.3" 是非回文调度在弱耦合参数下的**交叉区假象**（δt³ 项系数小但非零，
+比值越过 16 后终将滑向 8；IFGTEMPO `test_trotter_orders.jl` 的 16.5/17.3 同源——
+修正后该测试比值 15.96/15.93，9/9 仍过）。相关标度图（twosector、FormB、
+singlemodebath/toulouse 诊断）建议用修正后调度重跑更新。验证全绿：verify_compact
+两档 + IFGTEMPO 直接对齐（orders 2/4 × N=1,2 ≤2.7e-14）。
+
+图：`results/compact_scaling_{toulouse,anderson}.{png,csv}`（含 O(δt)/O(δt²)/O(δt⁴)
+参考线与拟合斜率标注）。
 
 ### 判决实验脚本（form_b/）
 
