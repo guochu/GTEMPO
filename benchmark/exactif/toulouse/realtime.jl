@@ -18,7 +18,7 @@
 # 运行：julia --project=<GTEMPO 根> benchmark/exactif/toulouse/realtime.jl
 # 输出：realtime.png / realtime.csv / 终端误差表
 # =============================================================================
-include(joinpath(@__DIR__, "..", "common.jl"))
+include(joinpath(@__DIR__, "..", "src", "common.jl"))
 
 const MODEL_T = 0.4    # 实时演化总时长
 const β = 1.0          # 逆温

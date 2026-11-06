@@ -14,11 +14,11 @@ using GTEMPO
 using Z2Tensors: TruncationScheme, truncdimcutoff, NoTruncation
 
 const GT_ROOT = dirname(dirname(pathof(GTEMPO)))
-include(joinpath(@__DIR__, "NativeExact.jl"))
+include(joinpath(@__DIR__, "..", "src", "NativeExact.jl"))
 using .NativeExact
 
 # Fock 参照（formb_dense 的离散链机器；参照端允许 IFGTEMPO）
-include(joinpath(GT_ROOT, "benchmark", "exactif", "form_b", "formb_dense.jl"))
+include(joinpath(GT_ROOT, "benchmark", "exactif", "validation", "formb_dense.jl"))
 
 const T_TOT = 0.4
 const BETA = 1.3

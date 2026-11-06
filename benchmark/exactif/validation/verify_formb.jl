@@ -16,8 +16,8 @@ isdir(IFT_ROOT) || error("IFGTEMPO 仓库未找到：$IFT_ROOT")
 push!(LOAD_PATH, IFT_ROOT)
 using IFGTEMPO
 
-include(joinpath(@__DIR__, "..", "form_b", "formb_dense.jl"))   # Fock 参照链（含 T_TOT/BETA/EPS_D）
-include(joinpath(@__DIR__, "FormB.jl"))
+include(joinpath(@__DIR__, "formb_dense.jl"))   # Fock 参照链（含 T_TOT/BETA/EPS_D）
+include(joinpath(@__DIR__, "..", "src", "FormB.jl"))
 using .FormB
 
 passfail(ok) = ok ? "PASS" : "FAIL"

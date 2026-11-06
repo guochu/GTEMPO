@@ -15,7 +15,7 @@
 #
 # 运行：julia --project=<GTEMPO 根> benchmark/exactif/zidentity.jl
 # =============================================================================
-include(joinpath(@__DIR__, "common.jl"))
+include(joinpath(@__DIR__, "..", "src", "common.jl"))
 
 const MODEL_T = 0.4
 const β = 1.0

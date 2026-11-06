@@ -15,9 +15,9 @@ using GTEMPO
 using Z2Tensors: NoTruncation
 
 const GT_ROOT = dirname(dirname(pathof(GTEMPO)))
-include(joinpath(@__DIR__, "NativeExact.jl"))
+include(joinpath(@__DIR__, "..", "src", "NativeExact.jl"))
 using .NativeExact
-include(joinpath(GT_ROOT, "benchmark", "exactif", "form_b", "formb_dense.jl"))
+include(joinpath(GT_ROOT, "benchmark", "exactif", "validation", "formb_dense.jl"))
 
 push!(LOAD_PATH, joinpath(dirname(dirname(dirname(pathof(GTEMPO)))), "IFGTEMPO"))
 using IFGTEMPO

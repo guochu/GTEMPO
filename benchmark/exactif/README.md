@@ -15,7 +15,7 @@ functionals*, **PRB 107, 125103 (2023)**（`benchmark/NgReichman2023.pdf`）；
 - **严格核 `exact_Δt`**（QuAPI `exactfermionic.jl`）：bath + 耦合的二次型
   cell 演化 `B = e^{-δt·Σ(εc†c + V(d†c+c†d))}` 被**精确**处理（单粒子传播子
   显式矩阵指数），杂质相干腿在节点插入，bath 腿经 Grassmann 高斯 Schur
-  消元精确积掉。本目录经 `exact_Δt(bath, cells)`（`common.jl`）适配为
+  消元精确积掉。本目录经 `exact_Δt(bath, cells)`（`src/common.jl`）适配为
   GTEMPO `AbstractRealCorrelationFunction`，直接供 `hybriddynamics!` 的
   partialmpo 行扫消费（无 Prony、无 Toeplitz 近似）。
 
@@ -36,50 +36,61 @@ A 吸收为全步长），零长度 cell 补齐使核节点与格点切片一一
 
 ## 文件
 
+**目录结构**：`src/` = 核心代码；`validation/` = 验证/标定/标度脚本及其记录；`theory/` = 数学原理文档；`toulouse/`、`singlemodebath/` = 各自模型的测试脚本 + 测试结果。
+
 | 文件 | 内容 |
 |---|---|
-| `common.jl` | exact_Δt 适配器、Trotter 调度、调度版 sysdynamics、完整管线、ED 参考、标度驱动 |
-| `zidentity.jl` | **Z 恒等式证书**（ε_d=0 时 Z·prefactor == 1，全部 order 机器精度） |
-| `twosector/realtime.jl` | **两扇区对齐基准（权威标度）**：order 1/2 → 二阶、order 4 → 四阶 |
-| `twosector/realtime_*.png` | 对齐基准的标度图（两自旋 / Anderson 型各一张，p=2.00/2.00/4.05-4.11） |
-| `form_b/MATHEMATICS.tex/.pdf` | **形态 B 数学原理文档（LaTeX 正式版，8 页）**：两扇区路径积分 → IF 变量高斯消元（Δ_eff 推导）→ 收缩语义/迹闭合 → GTEMPO pair 机制对接（反测度/graded 读出符号），附标度图与验证入口；PDF 亦在 `results/MATHEMATICS.pdf`（xelatex 编译，`ctexart`） |
-| `form_b/MATHEMATICS.md` | 数学原理文档的 Markdown 版（与 .tex 同内容；供仓库内直接预览） |
-| `form_b/formb_dense.jl` | **形态 B（消元式单扇区）稠密系数级验证**：IF 变量从两扇区 lattice 精确积掉，与 Fock/GMPS 三方对齐（`FORMB_QUICK=1` 快测档） |
-| `src/FormB.jl` | **形态 B 的 GTEMPO GMPS 移植**：紧凑 IMP-only lattice 上的 Δ_eff/反测度/K 装配（GTEMPO GrassmannMPS 因子 + pair transfer 收缩） |
+| `src/common.jl` | exact_Δt 适配器、Trotter 调度、调度版 sysdynamics、完整管线、ED 参考、标度驱动 |
 | `src/NativeExact.jl` | **GTEMPO 原生严格核管线**（IFGTEMPO-free）：`exactif_native_compact`（紧凑消元，全 order 验证绿）、`exactif_native_quapi`（orders 1/2）、`compact_delta`/`contour_G`/`sysdynamics_exact!` |
-| `src/verify_compact.jl` | 紧凑路线对齐矩阵（离散链 + Z/V=0 双证书；`ARGS=trunc` 截断档） |
-| `src/scaling_compact.jl` | 紧凑路线 Trotter 标度 vs 精确连续演化（p = 2.01/2.01/3.99） |
-| `src/scaling_compact_models.jl` | **两模型（Toulouse + 单模 bath Anderson U≠0）error scaling + 真阶判定**（p=2.01/1.98·2.01/1.98·3.94，图在 results/） |
-| `src/verify_align.jl` | 与 IFGTEMPO GMPS 的直接对齐（两自旋 U=0 解耦恒等式）+ quapi 回归（`ARGS=quapi`） |
-| `src/verify_align_u15.jl` | **IFGTEMPO 直接同模型对齐（U=1.5 Anderson）**：双可观测量 n_up + ⟨n₁n₂⟩，8 组 ≤2.2e-14 |
-| `src/verify_formb.jl` | FormB 移植的对齐验证：单自旋 vs Fock、两自旋 vs Fock vs IFGTEMPO GMPS 三方 |
-| `src/scaling_formb.jl` | FormB 的 Trotter 阶数标度（vs 精确连续演化，叠加 IFGTEMPO 参照点；`ARGS = single | twospin | plot`） |
-| `results/formb_scaling_*.png/.csv` | FormB 标度图：orders 1/2 → p=2.00、order 4 → p=3.99（单自旋 T=0.4）/ 4.16（两自旋 T=0.34，同 twosector 基准设置） |
-| `form_b/validate.jl` | 形态 B 早期框架验证（G⁻¹ bath 响应核；已被 formb_dense.jl 取代，保留作记录） |
-| `toulouse/realtime.jl` | Toulouse 模型（U=0, ϵ_d=0.7）的 δt 误差标度（单扇区，见差异记录） |
-| `singlemodebath/realtime.jl` | 单模 bath Anderson 模型（μ=0.7, U=1.5）的 δt 误差标度（同上） |
+| `src/FormB.jl` | **形态 B 的 GTEMPO GMPS 移植**：紧凑 IMP-only lattice 上的 Δ_eff/反测度/K 装配（GTEMPO GrassmannMPS 因子 + pair transfer 收缩） |
+| `theory/MATHEMATICS.tex/.pdf` | **形态 B 数学原理文档（LaTeX 正式版，8 页）**：两扇区路径积分 → IF 变量高斯消元（Δ_eff 推导）→ 收缩语义/迹闭合 → GTEMPO pair 机制对接（反测度/graded 读出符号）（xelatex 编译，`ctexart`） |
+| `theory/MATHEMATICS.md` | 数学原理文档的 Markdown 版（与 .tex 同内容；供仓库内直接预览） |
+| `validation/zidentity.jl` | **Z 恒等式证书**（ε_d=0 时 Z·prefactor == 1，全部 order 机器精度） |
+| `validation/formb_dense.jl` | **形态 B（消元式单扇区）稠密系数级验证**：IF 变量从两扇区 lattice 精确积掉，与 Fock/GMPS 三方对齐（`FORMB_QUICK=1` 快测档） |
+| `validation/verify_compact.jl` | 紧凑路线对齐矩阵（离散链 + Z/V=0 双证书；`ARGS=trunc` 截断档） |
+| `validation/scaling_compact.jl` | 紧凑路线 Trotter 标度 vs 精确连续演化（p = 2.01/2.01/3.99） |
+| `validation/scaling_compact_models.jl` | **两模型（Toulouse + 单模 bath Anderson U≠0）error scaling + 真阶判定**；结果分别写入 `toulouse/`、`singlemodebath/` |
+| `validation/verify_align.jl` | 与 IFGTEMPO GMPS 的直接对齐（两自旋 U=0 解耦恒等式）+ quapi 回归（`ARGS=quapi`） |
+| `validation/verify_align_u15.jl` | **IFGTEMPO 直接同模型对齐（U=1.5 Anderson）**：双可观测量 n_up + ⟨n₁n₂⟩，8 组 ≤2.2e-14 |
+| `validation/verify_formb.jl` | FormB 移植的对齐验证：单自旋 vs Fock、两自旋 vs Fock vs IFGTEMPO GMPS 三方 |
+| `validation/scaling_formb.jl` | FormB 的 Trotter 阶数标度（vs 精确连续演化，叠加 IFGTEMPO 参照点；`ARGS = single | twospin | plot`） |
+| `validation/formb_scaling_*.png/.csv` | FormB 标度图记录：orders 1/2 → p=2.00、order 4 → p=3.99（单自旋 T=0.4）/ 4.16（两自旋 T=0.34）——**旧调度（非回文序）下的记录**，见"order-4 调度修正"一节勘误 |
+| `validation/native_probe.jl` / `restrictd_probe.jl` | 判决实验：native 腿集稠密标定（Q2）/ 消元核 bar→eta 块充分性（Q1） |
+| `validation/calibrate_native.jl` / `verify_native.jl` / `validate.jl` | 开放腿标定工作台 / contour_G 路线验证 / 形态 B 早期验证（保留作记录） |
+| `toulouse/realtime.jl` + `compact_scaling_toulouse.{png,csv}` | Toulouse（U=0, ϵ_d=0.7）：单扇区诊断标度 + **紧凑路线真 1/2/4 阶 error scaling** |
+| `singlemodebath/realtime.jl` + `compact_scaling_anderson.{png,csv}` | 单模 bath Anderson（μ=0.7, U=1.5）：同上 |
+
+注：`twosector/`（两扇区权威标度基准，旧调度下的 p=4.05-4.11）已随本轮目录清理
+移除——其 order-4 数值属旧调度的交叉区假象（见"order-4 调度修正"一节）；如需两扇区
+交叉验证，用 IFGTEMPO 的 `build_impurity_path`（已修回文调度）重建。
 
 运行（GTEMPO 根目录）：
 
 ```
-julia --project=. benchmark/exactif/zidentity.jl        # Z 恒等式证书
-julia --project=. benchmark/exactif/twosector/realtime.jl   # 两扇区对齐基准（权威，出图）
-julia --project=. benchmark/exactif/form_b/formb_dense.jl   # 形态 B 消元验证（稠密，全量）
-FORMB_QUICK=1 julia --project=. benchmark/exactif/form_b/formb_dense.jl   # 快测档
-julia --project=. benchmark/exactif/src/verify_formb.jl     # FormB GMPS 移植对齐（全量）
-FORMB_QUICK=1 julia --project=. benchmark/exactif/src/verify_formb.jl   # 快测档
-julia --project=. benchmark/exactif/toulouse/realtime.jl    # 单扇区诊断（见差异记录）
-julia --project=. benchmark/exactif/singlemodebath/realtime.jl  # 单扇区诊断（同上）
+julia --project=. benchmark/exactif/validation/zidentity.jl               # Z 恒等式证书
+julia --project=. benchmark/exactif/validation/verify_compact.jl          # 紧凑路线对齐矩阵 + 双证书
+julia --project=. benchmark/exactif/validation/verify_compact.jl trunc    # 截断档（order 4 N=2,3）
+julia --project=. benchmark/exactif/validation/scaling_compact_models.jl  # 两模型 1/2/4 阶标度（出图）
+julia --project=. benchmark/exactif/validation/verify_align.jl            # IFGTEMPO 直接对齐（U=0 解耦）
+julia --project=. benchmark/exactif/validation/verify_align.jl quapi      # quapi 路线回归
+julia --project=. benchmark/exactif/validation/verify_align_u15.jl        # IFGTEMPO 同模型 U=1.5 对齐
+julia --project=. benchmark/exactif/validation/formb_dense.jl             # 形态 B 消元验证（稠密，全量）
+FORMB_QUICK=1 julia --project=. benchmark/exactif/validation/formb_dense.jl   # 快测档
+julia --project=. benchmark/exactif/validation/verify_formb.jl            # FormB GMPS 移植对齐（全量）
+FORMB_QUICK=1 julia --project=. benchmark/exactif/validation/verify_formb.jl  # 快测档
+julia --project=. benchmark/exactif/toulouse/realtime.jl                  # Toulouse 单扇区诊断（出图）
+julia --project=. benchmark/exactif/singlemodebath/realtime.jl            # Anderson 单扇区诊断（出图）
 ```
 
-**注意**：`toulouse/` 与 `singlemodebath/` 是 GTEMPO 单扇区管线的**诊断基准**，
-受上述闭合约定差异限制，其 gt/lt 系列只表现 O(δt) 收敛（order 1/2）或
-不收敛（order 4），**不**是对严格核 2/4 阶的验证；真正的 2/2/4 阶验证
-看 `twosector/`（图）与 IFGTEMPO 的 `test_trotter_orders.jl`（测试）。
+**注意**：`toulouse/` 与 `singlemodebath/` 的 `realtime.jl` 是 GTEMPO 单扇区管线的
+**诊断基准**，受上述闭合约定差异限制，其 gt/lt 系列只表现 O(δt) 收敛（order 1/2）或
+不收敛（order 4），**不**是对严格核 2/4 阶的验证；同文件夹的
+`compact_scaling_*.{png,csv}` 才是紧凑消元路线的真 1/2/4 阶标度结果。两扇区
+交叉验证看 IFGTEMPO 的 `test_trotter_orders.jl`（已修回文调度）。
 
 ## 已验证的结论
 
-1. **Z 恒等式证书**（`zidentity.jl`）：ε_d = 0 时
+1. **Z 恒等式证书**（`validation/zidentity.jl`）：ε_d = 0 时
    `Z·prefactor == Tr[ρ₀] = 1` 对全部 order、全部 N 成立到机器精度
    （最差 4.5e-13）。冻结核同一恒等式偏差 5e-3 ~ 1e-2（O(δt)）。这是区分
    严格核与冻结核的最锐利证书，也逐位锁定了适配器的全部符号/测度约定
@@ -117,11 +128,11 @@ IF_DERIVATION_AND_PACKAGE_LOGIC.md 第 3、9 节）：
   `exp(−x̄·Δ·x)`），且**轨迹变量上没有额外自耦合测度**。
 - **GTEMPO 单扇区约定（现状）**：每切片仅一套生成器，闭合 = 显式折返
   双线性 `exp(−ā⁻a⁺)` + 每切片隐含自耦合测度。该结构在 ε_d = 0 时给出
-  与稠密表示逐位相同的 Z（`zidentity.jl` 证书），但在 ε_d ≠ 0 时相位
+  与稠密表示逐位相同的 Z（`validation/zidentity.jl` 证书），但在 ε_d ≠ 0 时相位
   落位不同：迹偏离 1 达 O(δt³)（N=1: 0.99952），跨节点共轭腿对的两点
   函数存在真实结构差异（穷举 N=1 全部 8 腿两点函数证实）。
 
-### 修复：`twosector/realtime.jl`（与 IFGTEMPO 对齐的权威基准）
+### 修复：`twosector/realtime.jl`（与 IFGTEMPO 对齐的权威基准；已随 2026-11-06 目录清理移除）
 
 `twosector/realtime.jl` 直接采用 IFGTEMPO 的两扇区构造（path 引入姊妹
 仓库；其全部底层为 GTEMPO 的 GrassmannMPS 机制），配合本轮加入的
@@ -148,7 +159,7 @@ Trotter 调度（`trotter_schedule(order, N, dt)`），对精确连续 Fock 演�
    恒等核闭合（IFGTEMPO 的零时长恒等核：N+1 个核、无额外折返双线性；
    迹在该约定下逐位精确）。
 4. **可观测提取**：`insert_n!`（清零位点张量偶宇称块）带 O(δt) 有效时刻
-   偏移；`ntT`（`common.jl`）的折返跨越 2 腿 `GTerm` 投影是与稠密参考
+   偏移；`ntT`（`src/common.jl`）的折返跨越 2 腿 `GTerm` 投影是与稠密参考
    一致的约定，应作为 ⟨n(T)⟩/dd-型可观测的标准实现。
 5. **多带**：`boundarycondition!` 对 bands > 1 必须逐 band 施加（本轮
    在 benchmark 侧修复，库侧 `sysdynamics` 路径已正确）。
@@ -184,7 +195,7 @@ path values（`if_path_values` 的 I[S]）与相干态多项式的 Pfaffian 系�
 
 ### 形态 B（消元式单扇区）实施规范（稠密端验证已完成，2026-11-04）
 
-> **数学原理的完整推导见 [`form_b/MATHEMATICS.md`](form_b/MATHEMATICS.md)**
+> **数学原理的完整推导见 [`theory/MATHEMATICS.md`](theory/MATHEMATICS.md)**
 >（两扇区多项式 → 源嵌入与高斯恒等式 → Δ_eff 的反对称形式 → 投影收缩
 > 与反周期迹闭合 → GTEMPO 隐式 resolution/反测度/graded 读出符号的
 > 对接，每条公式附验证入口）。本节保留规范、锁定约定与结果。
@@ -192,7 +203,7 @@ path values（`if_path_values` 的 I[S]）与相干态多项式的 Pfaffian 系�
 目标：在只有一套杂质轨迹变量的 lattice 上，用"消元后的有效核"替换
 "接口交叉测度 + IF 因子"，达到与 IFGTEMPO 两扇区 / Fock 离散链逐位一致，
 为将来集成到 GTEMPO 单扇区 lattice 做准备。实现与全部验证在
-`form_b/formb_dense.jl`（稠密系数级）与 `src/FormB.jl`（GMPS 移植）；
+`validation/formb_dense.jl`（稠密系数级）与 `src/FormB.jl`（GMPS 移植）；
 `FORMB_QUICK=1` 为快测档。
 
 **公式（单自旋记号；消元是精确恒等式）**：
@@ -258,7 +269,7 @@ order 4 × N=1（单自旋）；order 4 的完整标度验证以 `twosector/`（
 ### 形态 B 的 GTEMPO GMPS 移植（`src/FormB.jl`，已完成 2026-11-04）
 
 稠密验证锁定的装配原样移植到 GTEMPO 的 GrassmannMPS 机制
-（`src/FormB.jl` + 对齐验证 `src/verify_formb.jl`）：
+（`src/FormB.jl` + 对齐验证 `validation/verify_formb.jl`）：
 
 - **lattice**：IMP-only 紧致格（timelocallattice 变量序滤掉 :IF，相邻
   pair 结构保持；order 4 时层数 = 3N）。
@@ -286,7 +297,7 @@ order 4 × N=1（单自旋）；order 4 的完整标度验证以 `twosector/`（
   `truncdimcutoff(D=512, ϵ=1e-12)` 同 twosector 生产用法）≤2.8e-14，
   bond 压至 8；两自旋精确档（orders 1/2 × N=1,2）三方 ≤7.2e-14；
   两自旋截断档（orders 1/2 × N=3）三方 ≤1.7e-12。
-- **Trotter 阶数标度**（`scaling_formb.jl`，图在 `results/`）：对精确
+- **Trotter 阶数标度**（`validation/scaling_formb.jl`，图在 `validation/`）：对精确
   连续 Fock 演化的密度矩阵误差——单自旋（T=0.4）orders 1/2 → p=2.00、
   order 4 → p=3.99；两自旋（T=0.34 + twosector 同款占据初态
   diag(0,0.3,0.2,0.5)）orders 1/2 → p=2.00、order 4 → p=4.16
@@ -312,14 +323,14 @@ order 4 × N=1（单自旋）；order 4 的完整标度验证以 `twosector/`（
 
 ### 单扇区管线的现状（保留并标注）
 
-单扇区 exactif 管线（`common.jl` 的 `exactif_pipeline`）保留作为对照：
+单扇区 exactif 管线（`src/common.jl` 的 `exactif_pipeline`）保留作为对照：
 - Z 恒等式证书（ε_d = 0，全 order 机器精度）仍是最锐利的严格性证书；
 - ⟨n(T)⟩（`ntT`）与 Fock 一致到 ~1e-5 地板；
 - gt/lt 系列（`gtlt_exactif`）受上述闭合差异限制，只表现 O(δt)
   （order 1/2）与不收敛（order 4 的 gt）；
 - 与 IFGTEMPO 完全对齐的**两条已验证路径**：①两扇区构造
-  （`twosector/`，GMPS，已实测 2/2/4 阶标度）；②**消元式单扇区**
-  （`form_b/formb_dense.jl`，稠密系数级，三方逐位对齐——见
+  （两扇区构造，GMPS，已实测 2/2/4 阶标度；脚本已移除，交叉验证走 IFGTEMPO `build_impurity_path`）；②**消元式单扇区**
+  （`validation/formb_dense.jl`，稠密系数级，三方逐位对齐——见
   "形态 B 实施规范"一节）。将来的 GTEMPO 库内集成可在两者之间选择：
   两扇区=接口变量分离+交叉测度（lattice 层改动大），消元式=一套变量+
   Δ_eff 核（`AbstractRealCorrelationFunction` 适配器 + 开放对反测度，
@@ -337,7 +348,7 @@ order 4 × N=1（单自旋）；order 4 的完整标度验证以 `twosector/`（
    封装消元核 D = −½(G⁻¹[i,k]−G⁻¹[k,i])（两扇区 bath Gaussian 的 Ginv 反对称化，
    per-(branch,node) pair 布局 + Schur；`contour_G`），ExactIFKernel 读序约定 +
    Keldysh 跨支符号，**直接由 GTEMPO `hybriddynamics`/`partialif_hybrid` 行扫
-   消费**。判决实验（`form_b/restrictd_probe.jl`）：**消元核 D 本身就只含
+   消费**。判决实验（`validation/restrictd_probe.jl`）：**消元核 D 本身就只含
    bar→eta 有向对（0 个同 kind 单项式）——行扫完整承载，机制成立**。
 3. **`sysdynamics_exact!`**：调度门（`sysdynamics_factors!` 同款全窗口，
    τ=0 恒等门保留）+ 接口分辨率反测度（(1+cc·x̄x)，FormB 同款幂零抵消）+
@@ -349,7 +360,7 @@ order 4 × N=1（单自旋）；order 4 的完整标度验证以 `twosector/`（
 - **V=0（自由杂质）Z 证书：机器精度通过**（真实 GMPS 机器，
   `integrate(lat, mpsK, mpsIs…)·norm == 1`，3.3e-15）——骨架、调度、
   折叠、ρ₀ 全部正确。
-- **稠密判决**（`form_b/native_probe.jl`）：复合多项式（ExactDelta IF ×
+- **稠密判决**（`validation/native_probe.jl`）：复合多项式（ExactDelta IF ×
   native 骨架：门核 + bulk 链接 + ρ₀ + node-1 分辨率 + 折返）在
   **开放腿提取约定**下与 Fock 离散链逐位一致（V=0 与 ε_d≠0 双重通过；
   `res=boundary + fold=neg + nodek 分辨率 + norm=Pf` 组合，Z 与 ρ 双证书）。
@@ -465,11 +476,11 @@ Order 4 的剩余差异 = 同 kind 块在原生骨架上的正确配对方式（
 验证/标度/对齐入口（GTEMPO 根目录）：
 
 ```
-julia --project=. benchmark/exactif/src/verify_compact.jl          # 精确档矩阵 + 双证书
-julia --project=. benchmark/exactif/src/verify_compact.jl trunc    # 截断档（order 4 N=2,3）
-julia --project=. benchmark/exactif/src/scaling_compact.jl         # p = 2/2/4 标度
-julia --project=. benchmark/exactif/src/verify_align.jl            # IFGTEMPO 直接对齐
-julia --project=. benchmark/exactif/src/verify_align.jl quapi      # quapi 路线回归
+julia --project=. benchmark/exactif/validation/verify_compact.jl          # 精确档矩阵 + 双证书
+julia --project=. benchmark/exactif/validation/verify_compact.jl trunc    # 截断档（order 4 N=2,3）
+julia --project=. benchmark/exactif/validation/scaling_compact.jl         # p = 2/2/4 标度
+julia --project=. benchmark/exactif/validation/verify_align.jl            # IFGTEMPO 直接对齐
+julia --project=. benchmark/exactif/validation/verify_align.jl quapi      # quapi 路线回归
 ```
 
 读出约定：`occupation`（insert_n）带 O(δt) 有效时刻偏移，不可用于此管线；标准读出 =
@@ -477,7 +488,7 @@ julia --project=. benchmark/exactif/src/verify_align.jl quapi      # quapi 路�
 
 ### ★★ order-4 调度修正（2026-11-06 深夜）：真四阶 = 回文组合 S2(a)·S2(b)·S2(a)
 
-两模型 error scaling（`src/scaling_compact_models.jl`，Toulouse + 单模 bath Anderson
+两模型 error scaling（`validation/scaling_compact_models.jl`，Toulouse + 单模 bath Anderson
 U=1.5 bands=2，诊断基准同款参数 T=0.4/β=1.0/ω=1.0/α=0.5）暴露：**实现中的 order-4
 调度是非回文组合 `S2(a)²·S2(b)`**（cells=[a,a,b]、links=[a/2,a,c,b/2]）——算符序
 不对称 ⇒ 奇幂误差项不恒零 ⇒ 携带 O(δt³)。判决链：
@@ -506,7 +517,7 @@ N=32 达 16.00。机器级预检：两模型 × orders 2/4 × N=1,2 管线 vs �
 （δt=0.4）order 4 只比 order 1 好 1.5×（4.17e-5 vs 6.24e-5）——Suzuki 负 cell
 误差常数大，粗端预渐近属预期；优势随 δt 减半 1.5×→5.6×→22×→88×，由斜率兑现。
 
-**IFGTEMPO 直接同模型对齐升级（`src/verify_align_u15.jl`）**：不再依赖 U=0 解耦
+**IFGTEMPO 直接同模型对齐升级（`validation/verify_align_u15.jl`）**：不再依赖 U=0 解耦
 恒等式——IFGTEMPO 两自旋路线直接跑同一交互模型（TwoSpinImpurityModel(0.7,0.7,1.5)
 + 相同单模 bath ×2 + 相同热态 4×4 初态），双可观测量 n_up 与**双占据 ⟨n₁n₂⟩**
 （band-1+band-2 双折返腿 GTerm 乘积投影，先用 Fock 链机器级校验 ≤1.1e-14）：
@@ -519,10 +530,10 @@ orders 2/4 × N=1,2 共 8 组全部 ≤2.2e-14 PASS。
 singlemodebath/toulouse 诊断）建议用修正后调度重跑更新。验证全绿：verify_compact
 两档 + IFGTEMPO 直接对齐（orders 2/4 × N=1,2 ≤2.7e-14）。
 
-图：`results/compact_scaling_{toulouse,anderson}.{png,csv}`（含 O(δt)/O(δt²)/O(δt⁴)
+图：`toulouse/compact_scaling_toulouse.{png,csv}` 与 `singlemodebath/compact_scaling_anderson.{png,csv}`（含 O(δt)/O(δt²)/O(δt⁴)
 参考线与拟合斜率标注）。
 
-### 判决实验脚本（form_b/）
+### 判决实验脚本（validation/）
 
 - `restrictd_probe.jl`：Q1 判决（D 的 bar→eta 块充分性）——PASS。
 - `native_probe.jl`：native 腿集两扇区消元 × 原生骨架的稠密标定（旋钮
@@ -533,7 +544,7 @@ singlemodebath/toulouse 诊断）建议用修正后调度重跑更新。验证�
 ## 相关修改（本轮）
 
 
-- `GTEMPO/benchmark/exactif/form_b/formb_dense.jl`（本轮新增）：形态 B
+- `GTEMPO/benchmark/exactif/validation/formb_dense.jl`（本轮新增）：形态 B
   稠密系数级验证——IF 变量从两扇区 lattice 的精确高斯消元
   （D = −½(G⁻¹[i,k]−G⁻¹[k,i])，暴力 Berezin 逐系数对照），消元式单扇区
   收缩与 Fock 离散链 / IFGTEMPO GMPS（`gtempo_density_matrix_direct`）

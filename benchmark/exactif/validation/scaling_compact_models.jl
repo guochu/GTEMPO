@@ -25,10 +25,10 @@ using GTEMPO
 using Z2Tensors: NoTruncation
 
 const GT_ROOT = dirname(dirname(pathof(GTEMPO)))
-include(joinpath(@__DIR__, "NativeExact.jl"))
+include(joinpath(@__DIR__, "..", "src", "NativeExact.jl"))
 using .NativeExact
-include(joinpath(GT_ROOT, "benchmark", "exactif", "form_b", "formb_dense.jl"))
-include(joinpath(GT_ROOT, "benchmark", "exactif", "common.jl"))   # plot_png/PY_PLOTTER
+include(joinpath(GT_ROOT, "benchmark", "exactif", "validation", "formb_dense.jl"))
+include(joinpath(GT_ROOT, "benchmark", "exactif", "src", "common.jl"))   # plot_png/PY_PLOTTER
 
 # ---- 模型参数（诊断基准同款）----
 const MODEL_T = 0.4
@@ -191,9 +191,11 @@ function scaling_model(tag::String, model, bands::Int, ref_exact::Float64)
     println("═"^78)
     trunc = GTEMPO.truncdimcutoff(D=512, ϵ=1e-12)
     Ns = [1, 2, 4, 8]   # order 4 的 N=16 渐近验证见 README（比值 15.97/16.12，p≈3.99）
-    csv = joinpath(GT_ROOT, "benchmark", "exactif", "results",
+    # 各模型的结果放进各自的模型文件夹（Toulouse → toulouse/，Anderson → singlemodebath/）
+    outdir = (tag == "Anderson") ? "singlemodebath" : "toulouse"
+    csv = joinpath(GT_ROOT, "benchmark", "exactif", outdir,
                    "compact_scaling_$(lowercase(tag)).csv")
-    png = joinpath(GT_ROOT, "benchmark", "exactif", "results",
+    png = joinpath(GT_ROOT, "benchmark", "exactif", outdir,
                    "compact_scaling_$(lowercase(tag)).png")
     names = String[]
     errs = Vector{Vector{Float64}}()
@@ -221,11 +223,11 @@ function scaling_model(tag::String, model, bands::Int, ref_exact::Float64)
     end
     hs = log.(MODEL_T ./ Ns)
     ps = [_slope(hs, log.(errs[j])) for j in eachindex(names)]
-    println("拟合阶数（全部 N=1..16）：", join((@sprintf("%s p = %.3f", names[j], ps[j])
+    println("拟合阶数（全部点）：", join((@sprintf("%s p = %.3f", names[j], ps[j])
                               for j in eachindex(names)), "  "))
     # 渐近段拟合（N=4..16）：避开粗端的预渐近贡献
     psf = [_slope(log.(MODEL_T ./ Ns[3:end]), log.(errs[j][3:end])) for j in eachindex(names)]
-    println("渐近段拟合（N=4..16）：", join((@sprintf("%s p = %.3f", names[j], psf[j])
+    println("渐近段拟合（N=$(Ns[3])..$(Ns[end])）：", join((@sprintf("%s p = %.3f", names[j], psf[j])
                               for j in eachindex(names)), "  "))
     # 每减半 δt 的误差比（order 2 应 ≈4，order 4 应 ≈16 —— 真四阶的可区分判据）
     println("每减半 δt 误差比：")

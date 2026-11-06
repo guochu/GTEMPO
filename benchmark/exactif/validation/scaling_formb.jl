@@ -11,7 +11,7 @@
 # bond 按 4^N 增长，必须封顶）；单自旋/两自旋分两个 julia 进程跑
 # （ARGS = single | twospin | plot）。
 #
-# 输出：benchmark/exactif/results/formb_scaling_<model>.csv / .png
+# 输出：benchmark/exactif/validation/formb_scaling_<model>.csv / .png
 # 运行：julia --project=<GTEMPO 根> benchmark/exactif/src/scaling_formb.jl single
 #       julia --project=<GTEMPO 根> benchmark/exactif/src/scaling_formb.jl twospin
 #       julia --project=<GTEMPO 根> benchmark/exactif/src/scaling_formb.jl plot
@@ -24,14 +24,14 @@ isdir(IFT_ROOT) || error("IFGTEMPO 仓库未找到：$IFT_ROOT")
 push!(LOAD_PATH, IFT_ROOT)
 using IFGTEMPO
 
-include(joinpath(@__DIR__, "..", "form_b", "formb_dense.jl"))   # Fock 参照件
-include(joinpath(@__DIR__, "FormB.jl"))
+include(joinpath(@__DIR__, "formb_dense.jl"))   # Fock 参照件
+include(joinpath(@__DIR__, "..", "src", "FormB.jl"))
 using .FormB
 
 const T_TOT = 0.4
 const BETA = 1.3
 const EPS_D = 0.7
-const RESULTS = joinpath(@__DIR__, "..", "results")
+const RESULTS = @__DIR__
 isdir(RESULTS) || mkdir(RESULTS)
 
 const TRUNC = GTEMPO.truncdimcutoff(D = 512, ϵ = 1e-12, add_back = 0)

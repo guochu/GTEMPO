@@ -4,7 +4,7 @@ using GTEMPO
 using Printf
 using Z2Tensors: NoTruncation
 const GT_ROOT = dirname(dirname(pathof(GTEMPO)))
-include(joinpath(GT_ROOT, "benchmark", "exactif", "form_b", "native_probe.jl"))
+include(joinpath(GT_ROOT, "benchmark", "exactif", "validation", "native_probe.jl"))
 
 function gmps_marginal(K, I)
     env = NativeExact._right_sweep1((K, I))
