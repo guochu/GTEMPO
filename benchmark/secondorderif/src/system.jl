@@ -625,26 +625,12 @@ function _system_factor_tau(c::WeylImagTime, model; order::Int = 2,
                         v += A[s, s0] * R[s0, s]
                     end
                 elseif j == 1
-                    # R 侧奇插入（boundary 0）的跨带修正：作用于 fold 求和内部
-                    # （R 线 = s0→tL，逐 s0 符号；TRF 选 bond 基准：1=R 线、2=tL）
-                    rf = get(ENV, "TRF", "0")
-                    rf_on = rf != "0" && M >= 2
+                    # j==0 窄口（2026-11-06）：ddag 折入 fold 的 R（band-1 奇插入）
+                    # 时，fold 非零 R 项（s0=3，band-2 位 = 0）上的跨带修正缺失
+                    # （基于 p₂ 的逐 s0 修正恒 0 无效，~1e-2 残差）——
+                    # matsubara 已对 j==0 防守拦截（measurement.jl）。下轮入口。
                     for s0 in 1:dim
-                        term = A[sL, s0] * R[s0, tL]
-                        if rf_on
-                            s0v = s0 - 1; tLv = tL - 1
-                            e2 = 0
-                            for b1 in 1:M, b2 in 1:M
-                                b1 == b2 && continue
-                                fR = Fb_τ[b1]
-                                fR == 0 && continue
-                                p2 = rf == "1" ? (((s0v >> (M - b2)) & 1) ⊕ ((tLv >> (M - b2)) & 1)) :
-                                                 ((tLv >> (M - b2)) & 1)
-                                e2 += fR * p2
-                            end
-                                isodd(e2) && (term = -term)
-                        end
-                        v += term
+                        v += A[sL, s0] * R[s0, tL]
                     end
                 elseif j == N
                     v = A[tR, sR]
