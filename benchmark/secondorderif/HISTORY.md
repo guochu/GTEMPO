@@ -424,6 +424,12 @@ U=0 因子化恒等式、配对结合律、逐支撑 Python 参照链。
    常数 −1 ⟹ 在 num/Z 相消 = 无效变体；扫描设计前先做不变性分析。
 7. 工具：validation/diag_j0_{repro,factor,wedge,gauge,gauge3,phiscan}.jl
    （factor = U=0 M2≡M1 判据主工具；其余为判决链档案）。
+8. **连续谱浴收敛阶基准（遗留项②，validation/continuous_bath_scaling.jl）**：
+   模型同 continuous_bath_{mine,u1}.jl（cos² 谱 ∫A=0.5、Anderson U=0.8）；
+   τ（N≤64）+ rt（N≤32）× orders 1/2，Richardson 自洽参考。终态：
+   τ order-2 逐对斜率 **2.000 精确**、order-1 → 1.000；rt order-2 → 2.000、
+   order-1 → 1.000；两轮廓 Richardson 参考互洽（~4e-7）；全部数值与既有
+   continuous_bath_mine.csv 逐位一致。连续谱基准至此**闭合 ✅**。
 
 ## 文件
 
