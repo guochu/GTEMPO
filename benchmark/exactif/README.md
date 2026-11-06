@@ -51,6 +51,7 @@ A 吸收为全步长），零长度 cell 补齐使核节点与格点切片一一
 | `src/scaling_compact.jl` | 紧凑路线 Trotter 标度 vs 精确连续演化（p = 2.01/2.01/3.99） |
 | `src/scaling_compact_models.jl` | **两模型（Toulouse + 单模 bath Anderson U≠0）error scaling + 真阶判定**（p=2.01/1.98·2.01/1.98·3.94，图在 results/） |
 | `src/verify_align.jl` | 与 IFGTEMPO GMPS 的直接对齐（两自旋 U=0 解耦恒等式）+ quapi 回归（`ARGS=quapi`） |
+| `src/verify_align_u15.jl` | **IFGTEMPO 直接同模型对齐（U=1.5 Anderson）**：双可观测量 n_up + ⟨n₁n₂⟩，8 组 ≤2.2e-14 |
 | `src/verify_formb.jl` | FormB 移植的对齐验证：单自旋 vs Fock、两自旋 vs Fock vs IFGTEMPO GMPS 三方 |
 | `src/scaling_formb.jl` | FormB 的 Trotter 阶数标度（vs 精确连续演化，叠加 IFGTEMPO 参照点；`ARGS = single | twospin | plot`） |
 | `results/formb_scaling_*.png/.csv` | FormB 标度图：orders 1/2 → p=2.00、order 4 → p=3.99（单自旋 T=0.4）/ 4.16（两自旋 T=0.34，同 twosector 基准设置） |
@@ -499,6 +500,17 @@ U=1.5 bands=2，诊断基准同款参数 T=0.4/β=1.0/ω=1.0/α=0.5）暴露：*
 （order 1 与 order 2 逐位同链 = 对角 H_imp + 对角热态初态的已知恒等式；order-4 的
 p 拟合 3.94 是 N=1..8 四点拟合仍含预渐近段，比值收敛到 16 为真四阶判据，纯链
 N=32 达 16.00。机器级预检：两模型 × orders 2/4 × N=1,2 管线 vs 离散链 ≤1.2e-14。）
+
+**渐近定点验证（N=16）**：order 4 比值 vs N=8 = Anderson **15.97**、Toulouse **16.12**，
+渐近段（N=2..16）拟合 p = 3.984 / 3.989——真四阶。粗端说明：Anderson 图右端
+（δt=0.4）order 4 只比 order 1 好 1.5×（4.17e-5 vs 6.24e-5）——Suzuki 负 cell
+误差常数大，粗端预渐近属预期；优势随 δt 减半 1.5×→5.6×→22×→88×，由斜率兑现。
+
+**IFGTEMPO 直接同模型对齐升级（`src/verify_align_u15.jl`）**：不再依赖 U=0 解耦
+恒等式——IFGTEMPO 两自旋路线直接跑同一交互模型（TwoSpinImpurityModel(0.7,0.7,1.5)
++ 相同单模 bath ×2 + 相同热态 4×4 初态），双可观测量 n_up 与**双占据 ⟨n₁n₂⟩**
+（band-1+band-2 双折返腿 GTerm 乘积投影，先用 Fock 链机器级校验 ≤1.1e-14）：
+orders 2/4 × N=1,2 共 8 组全部 ≤2.2e-14 PASS。
 
 **波及面（重要）**：twosector/`scaling_formb` 此前发表的 "order 4 → p=4.05-4.16、
 比值 16.5/17.3" 是非回文调度在弱耦合参数下的**交叉区假象**（δt³ 项系数小但非零，

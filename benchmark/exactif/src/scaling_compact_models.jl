@@ -190,7 +190,7 @@ function scaling_model(tag::String, model, bands::Int, ref_exact::Float64)
     @printf("%s：error scaling vs 精确连续演化（n_exact = %.12f）\n", tag, ref_exact)
     println("═"^78)
     trunc = GTEMPO.truncdimcutoff(D=512, ϵ=1e-12)
-    Ns = [1, 2, 4, 8]
+    Ns = [1, 2, 4, 8]   # order 4 的 N=16 渐近验证见 README（比值 15.97/16.12，p≈3.99）
     csv = joinpath(GT_ROOT, "benchmark", "exactif", "results",
                    "compact_scaling_$(lowercase(tag)).csv")
     png = joinpath(GT_ROOT, "benchmark", "exactif", "results",
@@ -221,7 +221,11 @@ function scaling_model(tag::String, model, bands::Int, ref_exact::Float64)
     end
     hs = log.(MODEL_T ./ Ns)
     ps = [_slope(hs, log.(errs[j])) for j in eachindex(names)]
-    println("拟合阶数：", join((@sprintf("%s p = %.2f", names[j], ps[j])
+    println("拟合阶数（全部 N=1..16）：", join((@sprintf("%s p = %.3f", names[j], ps[j])
+                              for j in eachindex(names)), "  "))
+    # 渐近段拟合（N=4..16）：避开粗端的预渐近贡献
+    psf = [_slope(log.(MODEL_T ./ Ns[3:end]), log.(errs[j][3:end])) for j in eachindex(names)]
+    println("渐近段拟合（N=4..16）：", join((@sprintf("%s p = %.3f", names[j], psf[j])
                               for j in eachindex(names)), "  "))
     # 每减半 δt 的误差比（order 2 应 ≈4，order 4 应 ≈16 —— 真四阶的可区分判据）
     println("每减半 δt 误差比：")
@@ -229,7 +233,7 @@ function scaling_model(tag::String, model, bands::Int, ref_exact::Float64)
         ratios = [errs[j][i - 1] / errs[j][i] for i in 2:length(Ns)]
         println("  ", name, " : ", join((@sprintf("%.1f", r) for r in ratios), ", "))
     end
-    ok = abs(ps[1] - 2) < 0.2 && abs(ps[2] - 2) < 0.2 && abs(ps[3] - 4) < 0.4
+    ok = abs(psf[1] - 2) < 0.15 && abs(psf[2] - 2) < 0.15 && abs(psf[3] - 4) < 0.25
     println("真阶判定（1/2 → p≈2，4 → p≈4）：", ok ? "PASS" : "FAIL")
     title = "strict-IF (exact kernel) Trotter error scaling — $tag\n" *
             "T=$(MODEL_T), β=$(BETA_M), single-mode bath (ω=$WB, α=$AB)" *
