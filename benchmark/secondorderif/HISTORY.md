@@ -324,6 +324,38 @@ U=0 因子化恒等式、配对结合律、逐支撑 Python 参照链。
       kernel_paths_check 全绿。
     - 工具：validation/{k_factor_mixed,u0_factor_mixed,u0_factor_rt}.jl。
 
+## 2026-11-06 第十轮补遗（混合两点函数补口：M=1 闭合 + M≥2 跨格奇插入限制确认）
+
+39. **混合 − 支插入切位映射 off-by-one（修复）**：`(−, j)` 的 cut 由
+    `Nτ+2Nt−boundary+1` 修正为 `Nτ+2Nt−boundary`——与 rt 已验证公式
+    `2Nt−boundary` 逐位对应（boundary j 落在 (−,j+1) 格的链序末端 = 物理
+    j·dt；j=0 → 末格 (−,1) 轮廓闭合点）。旧公式把 (−,0) 落到 L+1 被**静默
+    丢弃**（lesser(t,0) 完全错）、j≥1 半步错位。同批修正注释确认转折点
+    约定：τ 边界 Nτ ≡ (+,0)（cut Nτ）；− 边界 Nt ≡ (+,Nt)（cut Nτ+Nt）。
+40. **M=1 混合两点函数闭合**：`validation/mixed_twopoint_check.jl` ①——
+    greater/lesser (i≥j) 全网格（含 (+,0) 转折点、− 支 j≥1、等时 0⁺）vs ED
+    （平衡态平移不变 C(t_i,t_j) = C(t_i−t_j,0)）最大偏差 6.1e-4 = 二阶离散
+    水平。⚠️ API 承诺区间 i ≥ j：i<j 时 ddag 切位晚于 d，管线返回轮廓时序
+    积类量（实部 = lesser 型），不在 raw_correlation 文档语义内。
+41. **M≥2 跨格奇插入两点函数：确认为已知限制（fail-loud 防守）**：
+    greater/lesser 的 i≠j（两奇插入不同切位 ⟹ 中间存在 F=1 宇称偏移区）
+    在 rt/mixed 双路径系统性错误（U≠0/U=0 皆错；mixed α→0 机器精度而
+    α≠0 错 ~1e-1；rt 连 α→0 常数路径都错 ~3e-1——第七轮只验证过等时
+    两点与 occupation，故未暴露）。消元：补偿形式（每带 XOR / 组合 F）
+    对 greater 不敏感、oddlater :incl/:strict 更糟（:none 正确）、键标签
+    F 偏移必要（去掉更糟）⟹ 病根 = **每带奇插入宇称偏移与联合 Z2 单比特
+    键表示原理性冲突**（Z2 只能携带总宇称，无法为每带线编码独立偏移），
+    修复需表示层改动（Z2×Z2 键空间或装配重设计）——**下轮入口**。
+    安全区（ED 验证 ✅）：等时两点（同切位两奇算符 f_k⊕2=0 无偏移区，
+    twopoint_band_check ④ 1.06e-5）、occupation（n̂ 类偶插入）、M=1 任意
+    两点。防守：`raw_correlation` 对 M≥2 ∧ i≠j 显式抛错（force=true 绕过）。
+    判决工具：`validation/twopoint_m2_frontier.jl`（α 扫描端到端判决链）。
+42. **工具教训**：coeffs() 全多项式提取器对 F 偏移 MPS **失效**（带插入
+    K 的单插入提取全空、多插入提取错位——提取器的稠密 T0/T1 重组假设
+    键宇称 = 变量宇称，被 F 偏移破坏）。带插入 K 的多项式级判决目前不可
+    用；α 扫描端到端判决是唯一可靠视野。跨 MPS 绝对值比较不可比（全局
+    scaling 归一）——比值判据是唯一合法判据（probe A 节教训的泛化）。
+
 ## 文件
 
 ```

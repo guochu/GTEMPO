@@ -378,11 +378,15 @@ function _system_factor_mixed(c::WeylMixedTime, model; order::Int = 2,
     slotops = _slot_operators(M, order; mode = mode)
     lattice = weyl_lattice(c)
 
-    # ---- 插入按切位分桶（切位 = 时序序号：τ j → j；+ j → Nτ+j；− j → Nτ+2Nt−j+1）----
+    # ---- 插入按切位分桶（切位 = 时序序号：τ j → j；+ j → Nτ+j；
+    #      − j → Nτ+2Nt−j。− 支语义与 rt 已验证公式 2Nt−boundary 逐位对应：
+    #      boundary j 落在 (−,j+1) 格的链序末端 = 物理 j·dt；j=0 → 末格
+    #      (−,1)（轮廓闭合点）。τ 边界 Nτ 与 (+,0) 同为 τ→+ 转折点（cut Nτ）；
+    #      − 边界 Nt 与 (+,Nt) 同为 +→− 折返点（cut Nτ+Nt）----
     cutbucket = Dict{Int,Vector{Matrix{ComplexF64}}}()
     for O in insertions
         cut = O.branch === :τ ? O.boundary :
-              O.branch === :+ ? Nτ + O.boundary : Nτ + 2Nt - O.boundary + 1
+              O.branch === :+ ? Nτ + O.boundary : Nτ + 2Nt - O.boundary
         push!(get!(cutbucket, cut, Matrix{ComplexF64}[]), Matrix{ComplexF64}(O.matrix))
     end
     isoddop(Mx) = any(!iszero(Mx[i, j]) &&

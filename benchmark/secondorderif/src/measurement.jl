@@ -54,12 +54,26 @@ end
     raw_correlation(sol, i, j; kind=:greater) -> ComplexF64
 
 无前因子的两点函数 ⟨d(t_i) ddag(t_j)⟩（greater）/ ⟨ddag(t_j) d(t_i)⟩（lesser）。
+
+**已知限制（2026-11-06 第十轮判决，fail-loud）**：M≥2 且 i ≠ j（跨格奇插入，
+两插入切位之间存在 F=1 宇称偏移区）时，联合 Z2 键表示无法编码每带奇插入
+宇称偏移，结果系统性错误（rt/mixed 双路径确认：α→0 混合精确而 α≠0 错
+~1e-1、rt 连常数项错 ~3e-1；等时 i==j 同切位 f_k⊕2=0 无偏移区不受影响，
+已 ED 验证）。本函数对此显式抛错；`force=true` 可绕过（仅供内部诊断）。
+M=1 与 occupation（n̂ 类偶插入）不受影响。
 """
-function raw_correlation(s::Solution, i::Integer, j::Integer; kind::Symbol = :greater)
+function raw_correlation(s::Solution, i::Integer, j::Integer; kind::Symbol = :greater,
+                         force::Bool = false)
     prob = s.prob
     c = prob.contour
     c isa WeylRealTime || c isa WeylMixedTime ||
         throw(ArgumentError("实时/混合轮廓专用；纯虚时用 matsubara"))
+    if !force && c.bands >= 2 && i != j
+        throw(ArgumentError(
+            "raw_correlation: M≥2 跨格奇插入两点函数（i≠j）当前不可靠——" *
+            "每带奇插入宇称偏移与联合 Z2 键表示冲突（HISTORY 第十轮 39-41）。" *
+            "可用：等时两点（i==j）、occupation（偶插入）、M=1 任意两点。传 force=true 绕过。"))
+    end
     M = c.bands
     d = _fock_ops(M)[1]
     ddag = d'

@@ -48,6 +48,8 @@ julia --project=. benchmark/secondorderif/validation/k_factor_mixed.jl .       #
 julia --project=. benchmark/secondorderif/validation/u0_factor_mixed.jl .      # 混合端到端（Z₂/Z₁² + vs 2×单带）
 julia --project=. benchmark/secondorderif/validation/u0_factor_rt.jl .         # 实时端到端（同款）
 julia --project=. benchmark/secondorderif/validation/if_band_invariance.jl .   # IF₁ 带嵌入探针（比值判据）
+julia --project=. benchmark/secondorderif/validation/mixed_twopoint_check.jl . # 混合两点：M=1 全网格 + M=2 等时 + 防守确认
+julia --project=. benchmark/secondorderif/validation/twopoint_m2_frontier.jl . # M≥2 跨格奇插入边界判决（已知限制记录）
 ```
 
 ## 已验证结果（ED 参考，2026-11-06 第十轮后）
@@ -134,3 +136,16 @@ Z₂/Z₁² ≈ 0.996（K 有罪）→ 逐支撑楔积 96/400 纯反号且全部
 mixed 斜率 **2.004**（与 U1 逐位一致）、rt 两带 **2.001**（err 8.3e-8）、
 连续谱 U1 实时对齐 ≤1.4e-11。工具：`validation/{k_factor_mixed,
 u0_factor_mixed,u0_factor_rt}.jl`。完整证据链见 `HISTORY.md` 第十轮。
+
+## 第十轮补遗：两点函数补口（2026-11-06）
+
+- **修复**：混合 − 支插入切位映射 off-by-one（(−,0) 曾被静默丢弃）；
+  M=1 混合 greater/lesser (i≥j) 全网格 vs ED 闭合（6.1e-4 离散水平，
+  `validation/mixed_twopoint_check.jl` ①）。⚠️ API 承诺区间 i ≥ j。
+- **闭合**：M=2 等时两点（同切位，无偏移区）N=4/8 干净收敛 ✅。
+- **已知限制（fail-loud）**：M≥2 跨格奇插入两点（i≠j）系统性错误——
+  每带奇插入宇称偏移与联合 Z2 单比特键表示原理性冲突（表示层问题；
+  `raw_correlation` 对 M≥2 ∧ i≠j 显式抛错防守）。消元与判决链见
+  `validation/twopoint_m2_frontier.jl` 与 HISTORY 第十轮补遗 39–42。
+  修复 = 下轮入口（Z2×Z2 键空间或装配重设计）。不受影响：occupation
+  （偶插入）、等时两点、M=1 任意两点。
