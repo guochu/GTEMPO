@@ -556,12 +556,24 @@ prefdelta(x::ExactDelta) = x.pf
 function sysdynamics_exact!(gmps::GrassmannMPS, lattice::AbstractRealGrassmannLattice,
                             model::GTEMPO.AbstractImpurityHamiltonian, sched::NativeSchedule;
                             bands::Int=lattice.bands, trunc::TruncationScheme=GTEMPO.Defaults.alg_trunc_sys(),
-                            counter_c::Int=1, β::Real=0.0)
+                            counter_c::Int=1, β::Real=0.0, node1_c::Int=0)
     nl = length(sched.cells)
     (lattice.Nt == length(sched.links)) ||
         throw(DimensionMismatch("lattice.Nt 须等于门表长度"))
     # 1. 调度门（全窗口，复用 common.jl 验证过的放置逻辑）
     gmps = _scheduled_gates!(gmps, lattice, model, sched; trunc)
+    # 1a. node-1 (t=0) 测度修正：node-1 pair 序 (eta,bar) 与 FormB 紧凑格
+    #     (bar,eta) 相反，隐式测度差一个线性项符号；node1_c = 2 ⇒
+    #     (1 + 2θηθ̄) 抵消（FormB M₀ = (1 − θ̄θ) 语义）
+    if node1_c != 0
+        for band in 1:bands, br in (:+, :-)
+            s_eta = lattice[GrassmannContourIndex(1, br, band, false)]
+            s_bar = lattice[GrassmannContourIndex(1, br, band, true)]
+            fac = GTEMPO.partialmpo(s_eta, [s_bar], [ComplexF64(node1_c)]) *
+                  GTEMPO.GrassmannMPS(ComplexF64, length(lattice))
+            gmps, _ = GTEMPO.mult(gmps, fac; trunc=trunc)
+        end
+    end
     # 2. 接口反测度（node 2..nl+1，两支，各带）
     for band in 1:bands, node in 2:min(nl + 1, lattice.k - 1), br in (:+, :-)
         s_eta = lattice[GrassmannContourIndex(node, br, band, false)]
@@ -668,6 +680,46 @@ function exactif_native_quapi(bath, model, N::Integer, δt::Real;
     end
     sched = NativeSchedule(fill(0.0, 0), links)
     mpsK = sysdynamics_exact!(GTEMPO.vacuumstate(ComplexF64, lat), lat, model, sched;
+                              bands=bands, trunc=trunc, β=β, counter_c=counter_c)
+    return (lat = lat, mpsK = mpsK, mpsIs = mpsIs, deltas = deltas, norm = norm,
+            links = links, cells = cells)
+end
+
+"""
+    exactif_native_compact(HB, V, model, N, δt; order=2, trunc, β, counter_c=-1)
+        -> (lat, mpsK, mpsIs, deltas, norm, links, cells)
+
+**紧凑消元配方**（2026-11-06 标定）：compact_delta（IFGTEMPO
+_analytic_contour_G 逐字移植，G 装配 vs influence_matrix_G 逐位一致）
++ 紧凑调度（native_schedule：cells = nl、links = nl+1，点数与 order 无关
+——杂质 propagator 维度固定）+ sysdynamics_exact!（counter_c = −1）。
+折返腿 GTerm 插入读出。
+
+标定状态：order 2 N=1 → n(T) vs Fock 3e-7（essentially exact）；
+order 4 N=1 → Δn = 1.6e-4（D 无关，V=0 机器精度；残余 = 远端闭合约定
+的深层差异，N≥2 有 Julia 原生崩溃待查）。Z 归一化 = integrate·ν·Pf(G)
+（ skeleton 常数差 ~1e-2 会在比值中抵消）。
+"""
+function exactif_native_compact(HB::Matrix{ComplexF64}, V::Vector{ComplexF64},
+                                model::GTEMPO.AbstractImpurityHamiltonian, N::Integer, δt::Real;
+                                order::Integer=2, trunc::TruncationScheme=GTEMPO.Defaults.alg_trunc_if(),
+                                β::Real=1.0, bands::Int=1, counter_c::Int=-1)
+    sched = native_schedule(order, N, δt)
+    links = collect(Float64.(sched.links))
+    cells = collect(Float64.(sched.cells))
+    lat = GTEMPO.GrassmannLattice(N=length(links), δt=δt, contour=:real, bands=bands)
+    deltas = ExactDelta[]
+    mpsIs = GTEMPO.GrassmannMPS[]
+    norm = 1.0 + 0.0im
+    for band in 1:bands
+        d = compact_delta(HB, V, β, sched, lat)
+        mpsI = GTEMPO.hybriddynamics(lat, d; band=band, trunc=trunc)
+        push!(deltas, d)
+        push!(mpsIs, mpsI)
+        norm *= prefdelta(d)
+    end
+    s2 = NativeSchedule(cells, links)
+    mpsK = sysdynamics_exact!(GTEMPO.vacuumstate(ComplexF64, lat), lat, model, s2;
                               bands=bands, trunc=trunc, β=β, counter_c=counter_c)
     return (lat = lat, mpsK = mpsK, mpsIs = mpsIs, deltas = deltas, norm = norm,
             links = links, cells = cells)
