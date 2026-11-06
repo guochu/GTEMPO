@@ -385,6 +385,15 @@ pair 网格**（native_schedule 的紧凑表与 QuAPI 点基不配对 → O(δt)
 ③对照的 Fock 参照与管线必须**同初态**（热态 vs 纯态错配曾造成一系列
 假阴性）、ρ₀ 只能插一次（sysdynamics_exact! 已含）。
 
+**Order 4 的 Δ 数据源限制（已定位）**：QuAPI 的点基 Δ 无法承载 order 4——
+Suzuki S4 的杂质门插在 bath cell **之间**（gap 3、5），而 QuAPI-Δ 的 cell 链
+点对点直连（内部杂质线假设 cell 间无门）。Order 2 能对齐是 Strang 结构特例
+（单 cell、门只在两端、外段补零 cell 对齐）。Order 4 的原生管线需改用
+**紧凑消元 Δ**（FormB 路线，contour_G 的紧凑布线版）——其正确性已由基线的
+twosector/FormB 标度独立验证（p = 4.05-4.16）；order 4 N=1 在 D=256 下
+Δn = 5.4e-4（D 无关 = 结构性，V=0 机器精度 5.6e-16 确认骨架无错）。
+另：N=4 以上出现 Julia 原生崩溃（深层栈，非内存）——待查。
+
 ### 判决实验脚本（form_b/）
 
 - `restrictd_probe.jl`：Q1 判决（D 的 bar→eta 块充分性）——PASS。
