@@ -177,6 +177,10 @@ function system_factor(c::AbstractWeylContour, model; order::Int = 2,
         return _system_factor_rt(c, model; order, coupling_norm,
                                  rho0, insertions, mode, variant,
                                  oddlater_mode, reorder_sign)
+    elseif c isa WeylMixedTime
+        return _system_factor_mixed(c, model; order, coupling_norm,
+                                    rho0, insertions, mode, variant,
+                                    oddlater_mode, reorder_sign)
     else
         return _system_factor_tau(c, model; order, coupling_norm,
                                   rho0, insertions, mode, variant)
@@ -322,6 +326,145 @@ function _system_factor_rt(c::WeylRealTime, model; order::Int = 2,
     Tc = typeof(first(tensors))
     return GrassmannMPS(convert(Vector{Tc}, tensors))
 end
+
+"""
+    _system_factor_mixed — 混合（Kadanoff–Baym）轮廓 K：τ 段 + 实时 +/− 段
+
+时序单元序：τ₁…τ_Nτ → (+,1)…(+,Nt) → (−,Nt)…(−,1)，单 (s,t) 线穿线、真空
+开边界（τ₁ 时序-in = 全 Fock 热迹折叠 ρ₀=I；(−,Nt)…… 时序末格（−,1）迹闭合）。
+τ 格用虚时权重（order 2：sc_τ·S·M·S，S = e^{−hτH/2}）；实时格用实时权重
+（order 2：sc_rt·S·M·S，S = e^{∓ihtH/2}；order 1：τ/+(S·M)、−(M·S)）。
+Weyl 标量按段：τ 格 exp(hτ²·Σα/4)、rt 格 exp(−ht²·Σα/4)（order 2）。
+ChronoMixed 时序直铺（零 permute!）。
+"""
+function _system_factor_mixed(c::WeylMixedTime, model; order::Int = 2,
+                              coupling_norm::Real = 0.0,
+                              rho0::Union{Nothing,AbstractMatrix} = nothing,
+                              insertions::AbstractVector{WeylInsertion} = WeylInsertion[],
+                              mode::Symbol = :gaussian, variant::Symbol = :dag,
+                              oddlater_mode::Symbol = :none,
+                              reorder_sign::Bool = true)
+    Nτ = c.Nτ
+    Nt = c.Nt
+    M = c.bands
+    dim = 2^M
+    dim2 = dim * dim
+    hτ = c.dτ
+    ht = c.dt
+    scτ = order == 2 ? exp(hτ^2 * coupling_norm * M / 4) : 1.0
+    scrt = order == 2 ? exp(-real(ht^2) * coupling_norm * M / 4) : 1.0
+    slotops = _slot_operators(M, order; mode = mode)
+    lattice = weyl_lattice(c)
+
+    # ---- 插入按切位分桶（切位 = 时序序号：τ j → j；+ j → Nτ+j；− j → Nτ+2Nt−j+1）----
+    cutbucket = Dict{Int,Vector{Matrix{ComplexF64}}}()
+    for O in insertions
+        cut = O.branch === :τ ? O.boundary :
+              O.branch === :+ ? Nτ + O.boundary : Nτ + 2Nt - O.boundary + 1
+        push!(get!(cutbucket, cut, Matrix{ComplexF64}[]), Matrix{ComplexF64}(O.matrix))
+    end
+    isoddop(Mx) = any(!iszero(Mx[i, j]) &&
+                      paritybits(i - 1) != paritybits(j - 1)
+                      for i in 1:size(Mx, 1), j in 1:size(Mx, 2))
+    oddcount(cc::Int) = count(isoddop, get(cutbucket, cc, Matrix{ComplexF64}[]))
+    function cutop(cc::Int)
+        O = Matrix{ComplexF64}(I, dim, dim)
+        for Mx in get(cutbucket, cc, Matrix{ComplexF64}[])
+            O = Mx * O
+        end
+        return O
+    end
+
+    # ρ₀ = I（τ 链起点 = 全 Fock 热迹；混合轮廓的热平衡由 τ 段本身建立）；
+    # 切位 0（τ 边界 0）插入折叠进 R；prefix₀ = 其奇宇称。
+    R = Matrix{ComplexF64}(I, dim, dim)
+    for O in get(cutbucket, 0, Matrix{ComplexF64}[])
+        R = O * R
+    end
+    F₀ = oddcount(0) % 2
+
+    hfrac = order == 2 ? 0.5 : 1.0
+    pairs = [(s, t) for t in 1:dim for s in 1:dim]   # t 大股，s 最快（U1 约定）
+    _pairpar(i) = paritybits((i - 1) % dim) ⊕ paritybits((i - 1) ÷ dim)
+
+    # ---- 时序单元定义（分支 / 边界 / 传播子 / 权重标量）----
+    L = Nτ + 2Nt
+    cell_branch(k::Int) = k <= Nτ ? :τ : (k <= Nτ + Nt ? :+ : :-)
+    cell_boundary(k::Int) = k <= Nτ ? k : (k <= Nτ + Nt ? k - Nτ : L - k + 1)
+
+    gmps = vacuumstate(ComplexF64, lattice)
+    F = F₀
+    for k in 1:L
+        b = cell_branch(k)
+        j = cell_boundary(k)
+        hfrac_local = order == 2 ? 0.5 : 1.0
+        if b === :τ
+            S = Matrix{ComplexF64}(GTEMPO.fock_propagator(model, :τ, hτ * hfrac_local).data)
+            sc = scτ
+        else
+            S = Matrix{ComplexF64}(GTEMPO.fock_propagator(model, b, ht * hfrac_local).data)
+            sc = scrt
+        end
+        mats = [order == 2 ? S * slotops[c2+1] * S :
+                (b === :− || b === :- ? slotops[c2+1] * S : S * slotops[c2+1]) for c2 in 0:(4^M)-1]
+        order == 2 && (mats .*= sc)
+        Mk0 = cutop(k)
+        mats = [Mk0 * m for m in mats]
+        if oddlater_mode !== :none
+            oddlater = 0
+            lo = oddlater_mode === :incl ? k : k + 1
+            for k2 in lo:L
+                oddlater += oddcount(k2)
+            end
+            isodd(oddlater) && (mats = [paritybits(c2) == 1 ? (-m) : m
+                                        for (c2, m) in enumerate(mats)])
+        end
+        f_k = oddcount(k) % 2
+        # τ 首格：ρ₀ 折叠（真空 in）；混合末格（−,1）：迹闭合（真空 out）；
+        # 其余：dim2 穿线。
+        is_fold = (k == 1)
+        is_close = (k == L)
+        inpar = is_fold ? [0] : [_pairpar(i) ⊕ F for i in 1:dim2]
+        outpar = is_close ? [0] : [_pairpar(i) ⊕ (F ⊕ f_k) for i in 1:dim2]
+        insize = is_fold ? 1 : dim2
+        outsize = is_close ? 1 : dim2
+        V = 2M
+        C = zeros(ComplexF64, insize, ntuple(Returns(2), V)..., outsize)
+        for m in 0:(4^M)-1
+            Mk = mats[m+1]
+            ysv = ntuple(v -> (m >> (v - 1)) & 1, V)
+            # 格间重排簿记补偿（2026-11-04 rt 定位 + 2026-11-05 mixed 扫描实证）：
+            # (−1)^{C(m,2)} 属于分级装配序本身（不分支）：混合链的全部单元
+            # （τ 格与 rt 格）均施加，reorder_sign=false 恢复旧行为（对照用）。
+            cellodd = reorder_sign ? Int(paritybits(m)) : 0
+            if is_fold
+                for (r, (s, t)) in enumerate(pairs)
+                    C[1, ntuple(x -> ysv[x] + 1, V)..., r] = (Mk * R)[s, t]
+                end
+            elseif is_close
+                for (l, (s, t)) in enumerate(pairs)
+                    C[l, ntuple(x -> ysv[x] + 1, V)..., 1] =
+                        (cellodd * inpar[l] == 1 ? -1 : 1) * Mk[t, s]
+                end
+            else
+                for (l, (s, t)) in enumerate(pairs), (r, (v, w)) in enumerate(pairs)
+                    t == w && (C[l, ntuple(x -> ysv[x] + 1, V)..., r] =
+                        (cellodd * inpar[l] == 1 ? -1 : 1) * Mk[v, s])
+                end
+            end
+        end
+        all(iszero, C) && error("混合 K：单元 $k ($b,$j) 核全零")
+        ts = split_core(CellCore(C, inpar, outpar))
+        block = b === :τ ? j + 3 : (b === :+ ? Nτ + 3 + j : Nτ + 3 + Nt + (Nt - j + 1))
+        for v in 1:2M
+            gmps.data[(block - 1) * 2M + v] = ts[v]
+        end
+        F = F ⊕ f_k
+    end
+    GTEMPO.unset_svectors!(gmps)
+    return gmps
+end
+
 
 """
     _system_factor_tau — 虚时 K（U1 语义 + F 宇称路由；已验证）。

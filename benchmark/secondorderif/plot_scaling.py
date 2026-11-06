@@ -19,10 +19,12 @@ REPO = os.path.dirname(os.path.abspath(__file__))
 CASES = [
     ("toulouse", "Toulouse (U=0, 1 band)",
      [("toulouse_tau.csv", "scaling_tau.png", "Imaginary time ⟨n⟩ (β=1)"),
-      ("toulouse_realtime.csv", "scaling_realtime.png", "Real time ⟨n(t=0.4)⟩")]),
+      ("toulouse_realtime.csv", "scaling_realtime.png", "Real time ⟨n(t=0.4)⟩"),
+      ("toulouse_mixed.csv", "scaling_mixed.png", "Mixed contour ⟨n(t=0.4)⟩ (β=1)")]),
     ("singlemodebath", "Anderson (U=0.8, 2 bands)",
      [("anderson_tau.csv", "scaling_tau.png", "Imaginary time ⟨n₁+n₂⟩ (β=1)"),
-      ("anderson_realtime.csv", "scaling_realtime.png", "Real time ⟨n₁+n₂(t=0.4)⟩")]),
+      ("anderson_realtime.csv", "scaling_realtime.png", "Real time ⟨n₁+n₂(t=0.4)⟩"),
+      ("anderson_mixed.csv", "scaling_mixed.png", "Mixed contour ⟨n₁+n₂(t=0.4)⟩ (β=1)")]),
 ]
 
 COLORS = {1: "tab:blue", 2: "tab:red"}

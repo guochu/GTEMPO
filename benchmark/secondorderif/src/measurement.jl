@@ -25,7 +25,10 @@ function occupation(s::Solution, j::Integer; branch::Symbol = first(branches(s.p
                     band::Union{Nothing,Int} = nothing)
     prob = s.prob
     c = prob.contour
-    (0 <= j <= ncells(c)) || throw(BoundsError(0:ncells(c), j))
+    # 逐支边界检查（混合轮廓各支边界数不同）
+    jmax = c isa WeylMixedTime ?
+           (branch === :τ ? c.Nτ : c.Nt) : ncells(c)
+    (0 <= j <= jmax) || throw(BoundsError(0:jmax, j))
     M = c.bands
     d = _fock_ops(M)
     n̂ = if isnothing(band)
@@ -55,8 +58,8 @@ end
 function raw_correlation(s::Solution, i::Integer, j::Integer; kind::Symbol = :greater)
     prob = s.prob
     c = prob.contour
-    c isa WeylRealTime || throw(ArgumentError("实时轮廓专用；虚时用 matsubara"))
-    (0 <= i <= ncells(c) && 0 <= j <= ncells(c)) || throw(BoundsError())
+    c isa WeylRealTime || c isa WeylMixedTime ||
+        throw(ArgumentError("实时/混合轮廓专用；纯虚时用 matsubara"))
     M = c.bands
     d = _fock_ops(M)[1]
     ddag = d'

@@ -101,6 +101,90 @@ function weyl_lattice(c::WeylImagTime; ordering = nothing)
     return ImagGrassmannLattice(δτ = c.dτ, bands = c.bands, N = c.Nτ, ordering = ord)
 end
 
+
+
+# ============================================================================
+# 混合时间轴（Kadanoff–Baym L 形轮廓）：τ 段（0→β，建立热平衡）+ 实时 +/− 支
+# ============================================================================
+
+struct WeylMixedTime <: AbstractWeylContour
+    Nτ::Int
+    dτ::Float64
+    Nt::Int
+    dt::Float64
+    bands::Int
+    function WeylMixedTime(; Nτ::Integer, dτ::Real, Nt::Integer, dt::Real, bands::Int = 1)
+        (Nτ >= 1 && dτ > 0 && Nt >= 1 && dt > 0 && bands >= 1) ||
+            throw(ArgumentError("Nτ,Nt ≥ 1, dτ,dt > 0, bands ≥ 1 required"))
+        new(Nτ, Float64(dτ), Nt, Float64(dt), bands)
+    end
+end
+
+nreal(c::WeylMixedTime) = c.Nt
+nimag(c::WeylMixedTime) = c.Nτ
+branches(::WeylMixedTime) = (:+, :-, :τ)
+stepλ(c::WeylMixedTime, b::Symbol) =
+    b === :τ ? c.dτ : b === :+ ? im * c.dt : -im * c.dt
+cell_interval(c::WeylMixedTime, j::Integer) =
+    ((j - 1) * c.dt, j * c.dt)          # 实时段的单元区间
+boundary_times(c::WeylMixedTime) = collect(0:c.Nt) .* c.dt
+ncells(c::WeylMixedTime) = c.Nτ + 2 * c.Nt
+
+"""
+    ChronoMixedOrdering — 混合轮廓的时序顺序存储（完整版模块专用）
+
+站点布局（每块 2M 站点，块内 (band 1: a,ā), …, (band M: a,ā)）：
+    [τ 边界顶点（未用）] [τ 格 1..Nτ] [rt 边界顶点（未用，2 块）]
+    [+ 格 1..Nt] [− 格 Nt…1]
+与实时 ChronoKeldysh 同理：K 时序链（τ₁…τ_Nτ → (+,1)…(+,Nt) → (−,Nt)…(−,1)，
+真空开边界）原样直铺，零 permute!；(a,ā) 奇偶对齐 ⟹ AC 积分器直接消费。
+"""
+struct ChronoMixedOrdering <: GTEMPO.MixedGrassmannOrdering end
+GTEMPO.ConjugationStyle(::Type{ChronoMixedOrdering}) = GTEMPO.AdjacentConjugation()
+GTEMPO.LayoutStyle(::Type{ChronoMixedOrdering}) = GTEMPO.TimeLocalLayout()
+
+# 块号（1-based）：τ 边界 = 1；τ 格 j = j+1；rt 边界 = Nτ+2, Nτ+3；
+# + 格 j = Nτ+j+3；− 格 j = 2Nτ+2Nt+4−j … 统一：− 格（边界 j）= Nτ+3+2Nt−j+1？
+# 用显式公式：+ 格块 = Nτ+3+(j−1)；− 格块 = Nτ+3+Nt+(Nt−j)
+function _chronomixed_block(x::MixedGrassmannLattice, i::Int, branch::Symbol)
+    # 布局（闲置边界块全在链两端，真空恒等才能衔接）：
+    #   [rt 边界 2 块][τ 边界 1 块][τ 格 1..Nτ][+ 格 1..Nt][− 格 Nt…1]
+    if branch === :τ
+        return i + 2                # 顶点 1 → 块 3（τ 边界，未用）；格 j → 块 j+3
+    elseif branch === :+
+        return x.Nτ + 3 + i
+    else
+        return x.Nτ + 3 + x.Nt + (x.Nt - i + 1)
+    end
+end
+
+function GTEMPO._index(x::MixedGrassmannLattice{<:ChronoMixedOrdering}, i::Int;
+                       conj::Bool, branch::Symbol = :+, band::Int = 1)
+    @boundscheck begin
+        (1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
+        (branch in (:+, :-, :τ)) || throw(ArgumentError("branch must be :+, :- or :τ"))
+        if branch === :τ
+            (1 <= i <= x.kτ) || throw(BoundsError(1:x.kτ, i))
+        else
+            (1 <= i <= x.kt) || throw(BoundsError(1:x.kt, i))
+        end
+    end
+    block = _chronomixed_block(x, i, branch)
+    return (block - 1) * 2x.bands + 2 * band - 1 + Int(conj)
+end
+
+function weyl_lattice(c::WeylMixedTime; ordering = nothing)
+    ord = isnothing(ordering) ? ChronoMixedOrdering() : ordering
+    # 完整 Nt/Nτ 构建（布局块数恰 = 格点长度）：rt 顶点 1..Nt+1（Nt+1 = 端点，
+    # Weyl 格不用，站点保持真空恒等）；τ 顶点 1..Nτ+1（顶点 1 = 边界，未用）。
+    # 混合 IF 的行循环由本模块 influence.jl 控制（只遍历格顶点）。
+    return MixedGrassmannLattice(δt = c.dt, Nt = c.Nt, δτ = c.dτ, Nτ = c.Nτ,
+                                 bands = c.bands, ordering = ord)
+end
+
+"混合轮廓：τ 格 j 在顶点 j+1，rt 格 j 在顶点 j（与实时一致）"
+cell_vertex(c::WeylMixedTime, j::Integer, b::Symbol) = b === :τ ? Int(j) + 1 : Int(j)
+
 "单元 j 的 (a, ā) 变量所在的格点顶点编号"
 cell_vertex(c::WeylRealTime, j::Integer) = Int(j)
 cell_vertex(c::WeylImagTime, j::Integer) = Int(j) + 1

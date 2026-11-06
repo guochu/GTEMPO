@@ -18,7 +18,7 @@
 # 交给 GTEMPO 的 partialif_hybrid/hybriddynamics 消费（它在跨支读数处补
 # 负号）；同时除以浴迹常数（QuAPI 核的归一化约定，归一化观测量下抵消）。
 # ============================================================================
-using GTEMPO: Δt, Δτ, fermionicbath
+using GTEMPO: Δt, Δτ, Δm, fermionicbath
 using ImpurityModelBase: DiscreteSpectrum, spectrumvalues
 
 """
@@ -63,6 +63,8 @@ function hybridization(bath, c::AbstractWeylContour; band::Int = 1)
         corr = Δτ(bath; N = c.Nτ, δτ = c.dτ)
         D = corr.data                             # ImagCorrelationFunction 内的 CorrelationMatrix，N 个单元
         blocks[(:τ, :τ)] = Matrix{ComplexF64}(D[1:c.Nτ, 1:c.Nτ])
+    elseif c isa WeylMixedTime
+        blocks = mixed_kernel_quapi(bath, c)
     elseif bath.spectrum isa DiracDelta
         blocks = realtime_kernel_trace(bath, c)
     else
@@ -70,6 +72,25 @@ function hybridization(bath, c::AbstractWeylContour; band::Int = 1)
     end
     return HybridizationKernel(c, blocks, Float64(α_weight(bath)))
 end
+
+"""
+    mixed_kernel_quapi(bath, c::WeylMixedTime) -> Dict{Tuple{Symbol,Symbol},Matrix{ComplexF64}}
+
+混合（Kadanoff–Baym L 形）轮廓的单元级核：QuAPI `Δm` 谱积分（任意有界谱），
+九个分支块（(+,+)、(+,−)、(+,τ)、(−,+)、(−,−)、(−,τ)、(τ,+)、(τ,−)、(τ,τ)），
+实时索引截取 [1:Nt]、虚时索引 [1:Nτ]——与实时核的单元截取同一语义。
+"""
+function mixed_kernel_quapi(bath, c::WeylMixedTime)
+    qm = Δm(bath; Nτ = c.Nτ, t = c.Nt * c.dt, Nt = c.Nt, δτ = c.dτ)
+    blocks = Dict{Tuple{Symbol,Symbol},Matrix{ComplexF64}}()
+    for b1 in (:+, :-, :τ), b2 in (:+, :-, :τ)
+        Mq = GTEMPO.QuAPI.branch(qm; b1 = b1, b2 = b2)
+        ri(c2) = c2 === :τ ? (1:c.Nτ) : (1:c.Nt)
+        blocks[(b1, b2)] = Matrix{ComplexF64}(Mq[ri(b1), ri(b2)])
+    end
+    return blocks
+end
+
 
 """
     realtime_kernel_quapi(bath, c::WeylRealTime) -> Dict{Tuple{Symbol,Symbol},Matrix{ComplexF64}}
@@ -304,12 +325,24 @@ function Base.getindex(v::KernelCorrView, i::GrassmannContourIndex, j::Grassmann
     (i.band == v.band && j.band == v.band) || return zero(ComplexF64)
     (i.conj != j.conj) || return zero(ComplexF64)
     Δ = v.kernel.blocks[(branch(i), branch(j))]
+    # 混合轮廓的端点顶点（rt Nt+1）不进 Weyl 单元：越界读数 = 零耦合
+    (1 <= i.j <= size(Δ, 1) && 1 <= j.j <= size(Δ, 2)) || return zero(ComplexF64)
     val = Δ[i.j, j.j]
-    # QuAPI 式跨支 Keldysh 补偿（实时 (:+,:-) 轮廓专用；2026-11-05 裁决：
-    # τ 跨格预翻已移除——site 基探针实证 partialif 构造 = e^{+Δ} 精确指数，
-    # 旧预翻是为迎合未带置换宇称的 CSV 对比引入的假象补偿，
-    # 见 validation/wedge_probe.jl 与 tau_flip_verdict.jl）。
-    branch(i) !== branch(j) && (val = -val)
+    # 跨支读数符号约定（与 U1GTEMPO2 核值逐位核对，2026-11-05）：
+    # ① 实时 (:+,:)：partialif_hybrid 消费端内嵌跨支负号（keldysh gate），
+    #   视图预翻与之相消 ⟹ 净读数 = 核原始值；
+    # ② 混合轮廓：消费端 gate 关闭；QuAPI Δm 的 τ↔rt 交叉块相对物理核差
+    #   一个整体负号（ττ/±± 块无差——U1 对照实证）⟹ 视图仅翻 τ↔rt 读数；
+    #   +↔− 读数沿用 ① 的双翻相消。
+    if v.kernel.contour isa WeylRealTime
+        # 实时：消费端 keldysh gate 内嵌跨支负号，视图预翻相消 ⟹ 净 = 原始值
+        branch(i) !== branch(j) && (val = -val)
+    elseif v.kernel.contour isa WeylMixedTime
+        # 混合：消费端 gate 关闭。Δm 的 τ↔rt 交叉块相对物理核差一个整体负号
+        # （ττ / ±± 块无差——U1 对照实证）⟹ 仅翻 τ↔rt；±↔∓ 块直读原始值
+        # （单翻会给出负的物理值——Anderson mixed 斜率 0.64→2.0 实证）。
+        (branch(i) === :τ) !== (branch(j) === :τ) && (val = -val)
+    end
     return i.conj ? -val : val
 end
 

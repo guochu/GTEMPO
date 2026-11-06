@@ -53,7 +53,7 @@ include("measurement.jl")
 include("diagnostics.jl")
 
 # —— 轮廓（对齐 U1GTEMPO2 contours.jl）
-export AbstractWeylContour, WeylRealTime, WeylImagTime
+export AbstractWeylContour, WeylRealTime, WeylImagTime, WeylMixedTime
 export weyl_lattice, ncells, stepλ, cell_interval, boundary_times, cell_indices
 # —— 浴核（对齐 kernels.jl / exponentials.jl）
 export HybridizationKernel, hybridization, coupling_norm

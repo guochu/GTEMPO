@@ -25,3 +25,34 @@ function influence_functional(c::AbstractWeylContour, kernel::HybridizationKerne
           for b in 1:c.bands]
     return Is
 end
+
+"""
+    influence_functional(c::WeylMixedTime, kernel; trunc=...) -> Vector{GrassmannMPS}
+
+混合轮廓专用 IF 装配：行循环只遍历 Weyl 格顶点（τ 格 1..Nτ、rt 格 1..Nt），跳过端点顶点。
+列序 = `GTEMPO._columns`（τ 列后接 ± 列）。
+"""
+function influence_functional(c::WeylMixedTime, kernel::HybridizationKernel;
+                              trunc::TruncationScheme = truncdimcutoff(D = 128, ϵ = 1.0e-12))
+    lattice = weyl_lattice(c)
+    Is = Any[]
+    for b in 1:c.bands
+        # 混合专用列序（τ 列升序后接 ± 列升序；排除端点顶点 Nt+1/1）；
+        # 列的 band 必须 = 当前带（KernelCorrView 的带 gate）。
+        cols = vcat([GrassmannContourIndex(j, :τ, b, false) for j in 1:lattice.Nτ],
+                    [GrassmannContourIndex(j, br, b, false)
+                     for j in 1:lattice.Nt for br in (:+, :-)])
+        view = KernelCorrView(kernel, b)
+        gmps = vacuumstate(ComplexF64, lattice)
+        for branch in (:τ, :+, :-)
+            rows = branch === :τ ? (1:lattice.Nτ) : (1:lattice.Nt)
+            for j in rows
+                tmp = partialif_hybrid(lattice, GrassmannContourIndex(j, branch, b, true), cols, view)
+                gmps = mult!(gmps, tmp, trunc = trunc)[1]
+            end
+        end
+        push!(Is, gmps)
+    end
+    return Is
+end
+
