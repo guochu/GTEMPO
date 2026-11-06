@@ -625,12 +625,26 @@ function _system_factor_tau(c::WeylImagTime, model; order::Int = 2,
                         v += A[s, s0] * R[s0, s]
                     end
                 elseif j == 1
-                    # j==0 窄口（2026-11-06）：ddag 折入 fold 的 R（band-1 奇插入）
-                    # 时，fold 非零 R 项（s0=3，band-2 位 = 0）上的跨带修正缺失
-                    # （基于 p₂ 的逐 s0 修正恒 0 无效，~1e-2 残差）——
-                    # matsubara 已对 j==0 防守拦截（measurement.jl）。下轮入口。
+                    # fold 跨带补偿（2026-11-06 第十一轮，j==0 窄口）：fold 输出键
+                    # 真空（p≡0）⟹ 键公式交叉项退化恒 0；「键」在 fold 的对应物 =
+                    # R 线 (s0→tL)——交叉项按 s0 拆开 fold 求和逐项施加（与内部格
+                    # 公式同构）。F 项 slot-only，由下方公共块施加于整个元素。
+                    # N=1 退化格（Tr[A·R]）天然因子化，无需补偿（U=0 M2≡M1 实证）。
+                    fold_cross = get(ENV, "TXCOMP", "on") == "on" && (F_before != 0)
+                    m_slot_f = _code_from_ys(ys, 0, M)
                     for s0 in 1:dim
-                        v += A[sL, s0] * R[s0, tL]
+                        v0 = A[sL, s0] * R[s0, tL]
+                        if fold_cross
+                            s00 = s0 - 1; t00 = tL - 1
+                            xacc = 0
+                            for b1 in 1:M, b2 in 1:M
+                                b1 == b2 && continue
+                                xacc += paritybits((m_slot_f >> (2 * (M - b1))) & 3) *
+                                        (((s00 >> (M - b2)) & 1) ⊕ ((t00 >> (M - b2)) & 1))
+                            end
+                            isodd(xacc) && (v0 = -v0)
+                        end
+                        v += v0
                     end
                 elseif j == N
                     v = A[tR, sR]

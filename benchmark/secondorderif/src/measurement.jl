@@ -107,23 +107,31 @@ lesser(s::Solution, i::Integer, j::Integer = 0) =
 
 虚时格林函数（Matsubara）：τ 环上 d 在边界 i、ddag 在边界 j 处插入（均 :left，
 沿 A 链的算符乘积位置即轮廓时间序）。
+
+**j==0 的热环平移路由（2026-11-06 第十一轮，M≥2）**：热环的循环迹平移等价
+G(τᵢ,0) ≡ G(τᵢ₊₁,1)（链上机器精度实证，含 i=N ↔ 等时点）——M≥2 时 j==0
+路由到 (i+1,1)（i<N）或等时点 (1,1)（i=N，G(β,0)=⟨d†d⟩ 热环等时），
+全程落在已 ED 验证的 F₀=0 扇区（mid-chain 跳变/等时），绕开 fold-R 起源
+F₀≠0 区的内部格补偿窄口（HISTORY 第十轮补遗）。M=1 保持直接折入路径
+（全网格已验证）。
 """
 function matsubara(s::Solution, i::Integer, j::Integer = 0; force::Bool = false)
     prob = s.prob
     c = prob.contour
     c isa WeylImagTime || throw(ArgumentError("虚时轮廓专用"))
-    # 修复边界（2026-11-06 第十轮补遗）：τ 装配的 F 区门控跨带补偿闭合了
-    # 等时 + 全部 j≥1 的两点（含 close 格 d）；唯一残留 = j==0（ddag 折入
-    # fold 的 R——R 线 s0→tL 的逐项修正未生效，~2e-2），显式抛错
-    # （force=true 绕过）。M=1 任意、occupation（偶插入）不受影响。
-    if !force && c.bands >= 2 && j == 0
-        throw(ArgumentError(
-            "matsubara: M≥2 的 j==0（ddag 折入 fold-R 侧）两点当前不可靠" *
-            "（fold 元素的跨带修正未生效，HISTORY 第十轮补遗）。" *
-            "可用：j≥1 的两点、等时、occupation、M=1 任意。传 force=true 绕过。"))
-    end
+    Nτ = c.Nτ
+    (1 <= i <= Nτ && 0 <= j <= i) || throw(BoundsError(1:Nτ, i))
     M = c.bands
     d = _fock_ops(M)[1]
+    if M >= 2 && j == 0
+        i2 = i < Nτ ? i + 1 : 1
+        j2 = i < Nτ ? 1 : 1
+        K = system_factor(c, prob.model; order = prob.order,
+                          coupling_norm = coupling_norm(prob.kernel),
+                          insertions = [WeylInsertion(:τ, i2, d),
+                                        WeylInsertion(:τ, j2, d')])
+        return expectation(prob.lattice, K, s.mpsIs...; Z = s.Z)
+    end
     K = system_factor(c, prob.model; order = prob.order,
                       coupling_norm = coupling_norm(prob.kernel),
                       insertions = [WeylInsertion(:τ, i, d),

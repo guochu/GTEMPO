@@ -49,10 +49,8 @@ function matsverdict(nb::Int, mdl, U::Float64)
     c = WeylImagTime(Nτ = N, dτ = β / N, bands = nb)
     sol = solve(Problem(c, mdl; bath = bath3, order = 2))
     worst = 0.0; at = ""
-    internal_only = nb >= 2   # M≥2：等时 + 双内部（1≤j≤i≤Nτ−1）已闭合；边界型防守拦截
+    # M≥2 全网格含 j==0（2026-11-06 第十一轮：热环平移路由闭合，见 measurement.jl）
     for i in 1:N, j in 0:i
-        internal_only && j != i && j < 1 && continue   # M≥2：边界型（j==0）防守拦截，跳过
-        internal_only && i == N && j != i && continue  # M≥2：close 格（i==Nτ）防守拦截，跳过
         Δτ = (i - j) * (β / N)
         # τ 环 0⁺ 约定（cutop 作用序 ddag·d ⟹ 等时 = ⟨d†d⟩ = n）；τ>0 = ⟨d(τ)d†(0)⟩
         if Δτ == 0
@@ -66,7 +64,7 @@ function matsverdict(nb::Int, mdl, U::Float64)
         e = abs(mine - ref)
         e > worst && (worst = e; at = "($i,$j)")
     end
-    scope = internal_only ? "M=2 等时+双内部" : "M=1 (i≥j) 全网格"
+    scope = "M=$nb (i≥j) 全网格（含 j==0 路由）"
     @printf("  %s最大偏差 = %.2e（%s）%s\n", scope, worst, at,
             worst < 2e-3 ? "—— 闭合 ✅" : "—— 超限 ❌")
 end
