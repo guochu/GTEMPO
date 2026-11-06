@@ -13,7 +13,7 @@ const REPO = length(ARGS) >= 1 ? ARGS[1] : joinpath(@__DIR__, "..", "..", "..")
 include(joinpath(REPO, "benchmark", "secondorderif", "src", "SecondOrderWeyl.jl"))
 using .SecondOrderWeyl
 using .SecondOrderWeyl: occupation
-include(joinpath(REPO, "benchmark", "secondorderif", "singlemodebath", "validation", "ed.jl"))
+include(joinpath(REPO, "benchmark", "secondorderif", "validation", "ed.jl"))
 using .SingleModeED
 
 using GTEMPO

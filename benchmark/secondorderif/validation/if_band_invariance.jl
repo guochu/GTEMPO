@@ -6,9 +6,14 @@
 #       U=0 双带物理上 = 两个独立单带 ⟹ 两者应一致。
 # ⚠️ 内存纪律：全系数提取器构建 2^L 向量——只在 L ≤ 24 的格点上使用
 #    （当前 Nτ=Nt=1 → L=24 ≈ 270MB 安全；曾因 L=36 → 2^36≈1.1TB 两次爆内存）。
-# 现状（2026-11-05）：双带 IF₁ 相对单带 IF 有 ~2e-4 结构性小偏移（部分单项式、
-#    非全局符号），与观测量级 6e-4 有限 N 残差同源——M≥2 混合装配补偿形式
-#    （M=1 标定的 paritybits(m)·inpar[l]）疑不完备，下轮入口。
+# 现状（2026-11-06 第十轮判决）：**IF₁ ≡ IF_single × 全局标量（比值 spread
+#    3.3e-15，机器精度）——IF 无罪**。2026-11-05 记录的"~2e-4 结构性偏移"
+#    是探针误读：绝对容差 1e-9 撞上 coeffs() 的 scaling(mps) 几何均值归一
+#    （两个 MPS 的标量本不可比），全部"失配"是同一全局因子。标量在
+#    num/Z 的 vacuum 归一收缩里相消。M≥2 混合真凶 = K 装配的总宇称补偿
+#    （见 k_factor_mixed.jl / u0_factor_mixed.jl 与 HISTORY 第十轮）。
+# 判据（本轮起）：逐单项比值 v₂/v₁ 的 spread —— spread ≈ 0 ⟺ 纯标量差
+#    ⟺ IF 内容逐位相同。
 # ============================================================================
 include(joinpath(ARGS[1], "benchmark", "secondorderif", "src", "SecondOrderWeyl.jl"))
 using .SecondOrderWeyl
@@ -101,7 +106,7 @@ for (s1, key) in inv1
 end
 
 global function compare_bands()
-    bad = 0
+    ratios = Float64[]; missing = 0
     for (m, v) in P1
         m2 = 0; ok = true
         mm = m
@@ -113,17 +118,41 @@ global function compare_bands()
             end
             m2 |= 1 << embed[s0]
         end
-        ok || continue
+        ok || (missing += 1; continue)
         v2 = get(P2, m2, 0.0)
-        if abs(v2 - v) > 1e-9 * max(1, abs(v))
-            bad += 1
-            if bad <= 4
-                println("  mask ", m, " → ", m2, ": 单带 ", round(real(v), digits=8),
-                        " 双带 ", round(real(v2), digits=8))
-            end
-        end
+        (abs(v) > 1e-8 && abs(v2) > 1e-8) || continue
+        push!(ratios, real(v2 / v))
     end
-    println("单带 IF vs 双带 IF₁（band-1 位嵌入）：失配 = ", bad, " / ", length(P1))
+    # 判据（scaling(mps) 归一不可比 ⟹ 只看比值）：spread ≈ 0 ⟺ 纯全局标量
+    # ⟺ IF 内容逐位相同（标量在 num/Z 的 vacuum 归一里相消）。
+    sort!(ratios)
+    isempty(ratios) && (println("无可比单项"); return)
+    spread = last(ratios) - first(ratios)
+    mean = sum(ratios) / length(ratios)
+    @printf("可比单项 %d（嵌入缺失 %d）；比值 [%.12f, %.12f] spread = %.2e\n",
+            length(ratios), missing, first(ratios), last(ratios), spread)
+    if spread < 1e-9
+        @printf("判决：IF₁ ≡ IF_single × 全局标量 %.12f —— IF 内容逐位相同（无罪）\n", mean)
+    else
+        @printf("判决：比值散布 %.2e > 1e-9 —— 存在结构差异（逐单项排查）\n", spread)
+        bad = 0
+        for (m, v) in P1
+            m2 = 0; ok = true
+            mm = m
+            while mm != 0
+                b = mm & (-mm); mm -= b
+                s0 = trailing_zeros(b)
+                haskey(embed, s0) || (ok = false; break)
+                m2 |= 1 << embed[s0]
+            end
+            ok || continue
+            v2 = get(P2, m2, 0.0)
+            (abs(v) > 1e-8 && abs(v2) > 1e-8) || continue
+            r = real(v2 / v)
+            abs(r - mean) > 1e-9 && (bad += 1; bad <= 4 && println("  偏群单项 mask ", m))
+        end
+        println("  偏离均值的单项数 = ", bad)
+    end
 end
 
 compare_bands()

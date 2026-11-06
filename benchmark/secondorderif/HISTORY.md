@@ -283,6 +283,47 @@ U=0 因子化恒等式、配对结合律、逐支撑 Python 参照链。
     vs 因子化初态精确值 0.2886863（Nt=2 离散 1.8e-4）。
     验证工具：`validation/twopoint_band_check.jl`（①②③④ 四节全绿）。
 
+## 2026-11-06 第十轮（M≥2 混合/实时工件闭合：每带 XOR 补偿）修复记录
+
+**判决链（全程本征锚，无跨框架比较）**：
+
+34. **IF 判决（无罪）**：if_band_invariance.jl 复跑 + 升级为比值判据——
+    双带 IF₁（band-1 嵌入）vs 单带 IF 的 20 个可比单项比值 spread = 3.3e-15
+    （机器精度）⟹ IF₁ ≡ IF_single × 全局标量，标量在 num/Z 的 vacuum 归一
+    收缩里相消。第九轮"~2e-4 结构性偏移"是探针误读：绝对容差 1e-9 撞上
+    coeffs() 的 scaling(mps) 几何均值归一（两个 MPS 的标量本不可比）。
+    （教训：canonical MPS 的全局标量不进物理；跨 MPS 比较必须用比值判据。）
+35. **U=0 因子化判决（K 有罪）**：diag（现 u0_factor_mixed.jl）——U=0 双带
+    mixed 的 Z₂/Z₁² ≈ 0.9960（K 级差 ~3.5e-3 且不随 N 衰减）、⟨n₁+n₂⟩ vs
+    2×单带 ~1.8e-3 不收敛；逐带对称 |n₁−n₂| ~ 1e-16（排除带不对称）。
+36. **逐支撑楔积判决（定位到补偿形式）**：k_factor_mixed.jl——K₂ vs K₁∧K₁
+    （graded 楔积，inv = 跨格 band1→band2 反转数）：96/400 单项**纯反号**，
+    且全部（仅）deg₁≥2∧deg₂≥2。代数解释：总宇称补偿指数 (c₁⊕c₂)(p₁⊕p₂)
+    相对每带 XOR c₁p₁⊕c₂p₂ 恰差交叉项 **c₁p₂⊕c₂p₁**（只在两带都选中时
+    非零）——M=1 标定的 paritybits(m)·inpar[l] 在 M≥2 的系统性缺口。
+37. **修复（system.jl，mixed + rt 两路径）**：格间重排补偿改每带 XOR
+    exponent = ⊕_b c_b·(p_b(l_b) ⊕ F_b)；c_b = 带 b 槽位奇偶、p_b = 带 b 线
+    对宇称、F_b = 每带 prefix 奇插入宇称（新 _isoddband；⊕_b F_b = 总 F₀，
+    M=1 精确退化为旧形式 ⟹ 单带基线逐位不变）。occupation 的 n̂ 类偶插入
+    F_b ≡ 0；奇插入（greater/lesser）的每带路由随修复自动成立。
+38. **验证终态（全部绿）**：
+    - k_factor_mixed.jl：**0/400**；
+    - u0_factor_mixed.jl：Z₂/Z₁² = 1.0、vs 2×单带机器精度、order 2 斜率
+      **2.020**、|n₁−n₂| ≤ 5e-15；
+    - u0_factor_rt.jl：rt 同款全绿 + ED 绝对值（杂质真空⊗热浴初态）二阶
+      斜率 1.993（ED 初态的 kron 因子序 = [bath2,bath1,band2,band1]，ed.jl
+      杂质在低位）；
+    - Anderson mixed U≠0：order 2 斜率 0.641 → **2.004**（err 6.4e-5@N=16），
+      与 U1GTEMPO2 的 4 点（order 1/2 × N=4/8）全部逐位一致；
+    - rt 两带 U≠0：斜率 1.927 → **2.001**（err 8.3e-8@Nt=32；rt_fastpath
+      N=2 3.8e-4 → 2.1e-5）；
+    - 连续谱浴 U1 对齐复测：实时 4.8e-5 → **≤1.4e-11**（12 点全机器精度；
+      第九轮"指数拟合容差"实为 rt 工件）；
+    - 单带回归逐位无损：Toulouse τ 2.002 / rt 1.996 / mixed 2.005；
+      twopoint_band_check ①②③④ 全绿（④ 2.65e-4 → 1.06e-5）；
+      kernel_paths_check 全绿。
+    - 工具：validation/{k_factor_mixed,u0_factor_mixed,u0_factor_rt}.jl。
+
 ## 文件
 
 ```

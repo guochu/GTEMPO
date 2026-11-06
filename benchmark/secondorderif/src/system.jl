@@ -37,6 +37,12 @@ function _fock_annihilators(M::Int)
     return d
 end
 
+"算符 Mx 是否在带 b 上奇（带 b 位翻转的非零元）——奇插入的每带路由"
+_isoddband(Mx::AbstractMatrix, b::Int, M::Int) =
+    any(!iszero(Mx[i, j]) &&
+        (((i - 1) >> (M - b)) & 1) != (((j - 1) >> (M - b)) & 1)
+        for i in 1:size(Mx, 1), j in 1:size(Mx, 2))
+
 """
     local_weight(bands, order; mode=:bare) -> Vector{Matrix{ComplexF64}}
 
@@ -245,6 +251,8 @@ function _system_factor_rt(c::WeylRealTime, model; order::Int = 2,
     size(rho) == (dim, dim) || throw(DimensionMismatch("rho0 必须为 $dim×$dim"))
     rho = cutop(0) * rho
     F₀ = oddcount(0) % 2                    # prefix₀ 的宇称
+    Fb = [count(x -> _isoddband(x, b, M), get(cutbucket, 0, Matrix{ComplexF64}[])) % 2
+          for b in 1:M]                     # 每带 prefix 奇插入宇称（⊕_b Fb = F₀）
 
     # ---- 逐时序格准备（mats / 宇称标签，时序角色不变）----
     cell_branch(k::Int) = k <= N ? :+ : :-
@@ -255,6 +263,7 @@ function _system_factor_rt(c::WeylRealTime, model; order::Int = 2,
     mats_k = Vector{Vector{Matrix{ComplexF64}}}(undef, L)
     inpar_k = Vector{Vector{Int}}(undef, L)
     outpar_k = Vector{Vector{Int}}(undef, L)
+    Fb_k = Vector{Vector{Int}}(undef, L)
     F = F₀                                   # prefix 宇称（累积到当前切位之前）
     for k in 1:L
         b = cell_branch(k)
@@ -281,7 +290,11 @@ function _system_factor_rt(c::WeylRealTime, model; order::Int = 2,
         mats_k[k] = mats
         inpar_k[k] = (k == 1) ? [0] : [_pairpar(i) ⊕ F for i in 1:dim2]
         outpar_k[k] = (k == L) ? [0] : [_pairpar(i) ⊕ (F ⊕ f_k) for i in 1:dim2]
+        Fb_k[k] = copy(Fb)
         F = F ⊕ f_k
+        for b in 1:M
+            Fb[b] = Fb[b] ⊕ count(x -> _isoddband(x, b, M), get(cutbucket, k, Matrix{ComplexF64}[])) % 2
+        end
     end
 
     # ---- 时序单元核装配（VERBATIM U1 语义；ChronoKeldysh 下时序序 = 存储序）----
@@ -290,6 +303,7 @@ function _system_factor_rt(c::WeylRealTime, model; order::Int = 2,
         mats = mats_k[k]
         inpar = inpar_k[k]
         outpar = outpar_k[k]
+        Fb = Fb_k[k]
         insize = (k == 1) ? 1 : dim2
         outsize = (k == L) ? 1 : dim2
         V = 2M
@@ -297,23 +311,31 @@ function _system_factor_rt(c::WeylRealTime, model; order::Int = 2,
         for m in 0:(4^M)-1
             Mk = mats[m+1]
             ysv = ntuple(v -> (m >> (v - 1)) & 1, V)
-            # 格间重排簿记补偿（2026-11-04 K 系数交叉核对定位）：本构造相对
-            # U1 多出 (−1)^{C(m,2)}，m = 奇选取格数；按 Σ_q [n_q odd]·[前置
-            # 变量宇称奇] 逐格施加。reorder_sign=false 恢复旧行为（对照用）。
-            cellodd = reorder_sign ? Int(paritybits(m)) : 0
+            # 格间重排补偿（2026-11-06 第十轮：每带 XOR 形式，与混合路径同一修复）。
+            # 旧形式 (−1)^{c_total·(p_total⊕F)}（M=1 标定）在 M≥2 破坏 U=0 因子化
+            # （rt Z₂/Z₁² ≈ 1.0004）。正确形式 exponent = ⊕_b c_b·(p_b(l_b)⊕F_b)：
+            # M=1 精确退化为旧形式（Fb[1] = F）。
+            compexp(l) = begin
+                s0 = (l - 1) % dim; t0 = (l - 1) ÷ dim
+                e = 0
+                for b in 1:M
+                    e += paritybits((m >> (2 * (M - b))) & 3) *
+                         (((s0 >> (M - b)) & 1) ⊕ ((t0 >> (M - b)) & 1) ⊕ Fb[b])
+                end
+                e % 2
+            end
+            comp(l) = (reorder_sign && compexp(l) == 1 ? -1 : 1)
             if k == 1
                 for (r, (s, t)) in enumerate(pairs)
                     C[1, ntuple(x -> ysv[x] + 1, V)..., r] = (Mk * rho)[s, t]
                 end
             elseif k == L
                 for (l, (s, t)) in enumerate(pairs)
-                    C[l, ntuple(x -> ysv[x] + 1, V)..., 1] =
-                        (cellodd * inpar[l] == 1 ? -1 : 1) * Mk[t, s]
+                    C[l, ntuple(x -> ysv[x] + 1, V)..., 1] = comp(l) * Mk[t, s]
                 end
             else
                 for (l, (s, t)) in enumerate(pairs), (r, (v, w)) in enumerate(pairs)
-                    t == w && (C[l, ntuple(x -> ysv[x] + 1, V)..., r] =
-                        (cellodd * inpar[l] == 1 ? -1 : 1) * Mk[v, s])
+                    t == w && (C[l, ntuple(x -> ysv[x] + 1, V)..., r] = comp(l) * Mk[v, s])
                 end
             end
         end
@@ -382,6 +404,8 @@ function _system_factor_mixed(c::WeylMixedTime, model; order::Int = 2,
         R = O * R
     end
     F₀ = oddcount(0) % 2
+    Fb = [count(x -> _isoddband(x, b, M), get(cutbucket, 0, Matrix{ComplexF64}[])) % 2
+          for b in 1:M]                     # 每带 prefix 奇插入宇称（⊕_b Fb = F₀）
 
     hfrac = order == 2 ? 0.5 : 1.0
     pairs = [(s, t) for t in 1:dim for s in 1:dim]   # t 大股，s 最快（U1 约定）
@@ -420,6 +444,7 @@ function _system_factor_mixed(c::WeylMixedTime, model; order::Int = 2,
                                         for (c2, m) in enumerate(mats)])
         end
         f_k = oddcount(k) % 2
+        Fb_k = copy(Fb)                      # 补偿用「本格之前」的每带前缀宇称
         # τ 首格：ρ₀ 折叠（真空 in）；混合末格（−,1）：迹闭合（真空 out）；
         # 其余：dim2 穿线。
         is_fold = (k == 1)
@@ -433,9 +458,21 @@ function _system_factor_mixed(c::WeylMixedTime, model; order::Int = 2,
         for m in 0:(4^M)-1
             Mk = mats[m+1]
             ysv = ntuple(v -> (m >> (v - 1)) & 1, V)
-            # 格间重排簿记补偿（single-band mixed 扫描实证：全部单元施加）。
-            cellodd = reorder_sign ? Int(paritybits(m)) : 0
-            comp(l) = (cellodd * inpar[l] == 1 ? -1 : 1)
+            # 格间重排补偿（2026-11-06 第十轮：每带 XOR 形式）。
+            # 旧形式 (−1)^{c_total·p_total}（M=1 标定）在 M≥2 破坏 U=0 因子化
+            # （K₂ vs K₁∧K₁ 逐支撑：96/400 单项反号，且全部为 deg₁≥2∧deg₂≥2
+            # ——总宇称与每带宇称之差恰为交叉项 c₁p₂⊕c₂p₁）。正确形式
+            # exponent = ⊕_b c_b·(p_b(l_b)⊕F_b)：M=1 精确退化为旧形式。
+            compexp(l) = begin
+                s0 = (l - 1) % dim; t0 = (l - 1) ÷ dim
+                e = 0
+                for b in 1:M
+                    e += paritybits((m >> (2 * (M - b))) & 3) *
+                         (((s0 >> (M - b)) & 1) ⊕ ((t0 >> (M - b)) & 1) ⊕ Fb_k[b])
+                end
+                e % 2
+            end
+            comp(l) = (reorder_sign && compexp(l) == 1 ? -1 : 1)
             if is_fold
                 for (r, (s, t)) in enumerate(pairs)
                     C[1, ntuple(x -> ysv[x] + 1, V)..., r] = (Mk * R)[s, t]
@@ -458,6 +495,9 @@ function _system_factor_mixed(c::WeylMixedTime, model; order::Int = 2,
             gmps.data[(block - 1) * 2M + v] = ts[v]
         end
         F = F ⊕ f_k
+        for b in 1:M
+            Fb[b] = Fb[b] ⊕ count(x -> _isoddband(x, b, M), get(cutbucket, k, Matrix{ComplexF64}[])) % 2
+        end
     end
     GTEMPO.unset_svectors!(gmps)
     return gmps
