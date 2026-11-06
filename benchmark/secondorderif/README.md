@@ -137,15 +137,23 @@ mixed 斜率 **2.004**（与 U1 逐位一致）、rt 两带 **2.001**（err 8.3e
 连续谱 U1 实时对齐 ≤1.4e-11。工具：`validation/{k_factor_mixed,
 u0_factor_mixed,u0_factor_rt}.jl`。完整证据链见 `HISTORY.md` 第十轮。
 
-## 第十轮补遗：两点函数补口（2026-11-06）
+## 第十轮补遗：两点函数全面闭合（2026-11-06）
 
-- **修复**：混合 − 支插入切位映射 off-by-one（(−,0) 曾被静默丢弃）；
-  M=1 混合 greater/lesser (i≥j) 全网格 vs ED 闭合（6.1e-4 离散水平，
-  `validation/mixed_twopoint_check.jl` ①）。⚠️ API 承诺区间 i ≥ j。
-- **闭合**：M=2 等时两点（同切位，无偏移区）N=4/8 干净收敛 ✅。
-- **已知限制（fail-loud）**：M≥2 跨格奇插入两点（i≠j）系统性错误——
-  每带奇插入宇称偏移与联合 Z2 单比特键表示原理性冲突（表示层问题；
-  `raw_correlation` 对 M≥2 ∧ i≠j 显式抛错防守）。消元与判决链见
-  `validation/twopoint_m2_frontier.jl` 与 HISTORY 第十轮补遗 39–42。
-  修复 = 下轮入口（Z2×Z2 键空间或装配重设计）。不受影响：occupation
-  （偶插入）、等时两点、M=1 任意两点。
+**两个重大根因（均已修复，rt/mixed 同修）**：
+1. **ysv↔site 带映射互换**：装配循环把 slot code 低位当 site 低带 ⟹ M≥2
+   两条带在装配中被互换。带对称性掩蔽（对称观测量全部照常通过）——直到
+   带插入 d₁⊗I 打破带对称才暴露。τ 路径（_code_from_ys）无此病。
+2. **补偿缺双向跨带交叉项 ⊕_{b≠b'} c_b·p_{b'}**（楔积 inv 的逐元素实现）。
+   之前「每带 XOR 修复 0/400」实为 bug 与补偿的巧合抵消。
+
+**闭合（ED 端到端）**：混合 M=2 (i≥j) 全网格 greater/lesser 6.8e-4（离散
+水平）、rt 全网格 Nt=8 1.54e-3（二阶收敛）、α→0 双轮廓机器精度、
+matsubara M=1 全网格 + M=2 等时 ✅、occupation 四象限。另修复混合 − 支
+插入切位 off-by-one（(−,0) 曾被静默丢弃）。单带基线与全部对称观测量
+逐位不变。判决链与四次数训见 HISTORY 第十轮补遗 39–43。
+
+**已知限制（fail-loud）**：matsubara M≥2 且 i≠j（τ 路径组合宇称路由无法
+编码每带奇插入偏移，~4e-2 不随 N 收敛）——显式抛错（force 绕过）；修复 =
+下轮入口（τ 每带路由重构）。API 承诺区间 i ≥ j（raw_correlation/matsubara）。
+工具：validation/{twopoint_m2_check, mixed_twopoint_check,
+twopoint_m2_frontier}.jl。

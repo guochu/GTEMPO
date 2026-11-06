@@ -310,7 +310,12 @@ function _system_factor_rt(c::WeylRealTime, model; order::Int = 2,
         C = zeros(ComplexF64, insize, ntuple(Returns(2), V)..., outsize)
         for m in 0:(4^M)-1
             Mk = mats[m+1]
-            ysv = ntuple(v -> (m >> (v - 1)) & 1, V)
+            # ysv[v] = site v 的变量开关。site 序 = 块内带序（v=2(b−1)+1 → 带 b 的
+            # a、v=2b → 带 b 的 ā）；slot code 的带序 = band 1 高位（bits 2(M−b),
+            # 2(M−b)+1 ↔ band b）——必须经此换算，直接 (m>>(v−1))&1 在 M≥2 会把
+            # 两条带互换（带对称观测量下不可见，带插入 d₁⊗I 打破对称即暴露；
+            # 2026-11-06 第十轮补遗定位）。M=1 退化不变。
+            ysv = ntuple(v -> (m >> (2 * (M - ((v - 1) ÷ 2 + 1)) + ((v - 1) % 2))) & 1, V)
             # 格间重排补偿（2026-11-06 第十轮：每带 XOR 形式，与混合路径同一修复）。
             # 旧形式 (−1)^{c_total·(p_total⊕F)}（M=1 标定）在 M≥2 破坏 U=0 因子化
             # （rt Z₂/Z₁² ≈ 1.0004）。正确形式 exponent = ⊕_b c_b·(p_b(l_b)⊕F_b)：
@@ -321,6 +326,11 @@ function _system_factor_rt(c::WeylRealTime, model; order::Int = 2,
                 for b in 1:M
                     e += paritybits((m >> (2 * (M - b))) & 3) *
                          (((s0 >> (M - b)) & 1) ⊕ ((t0 >> (M - b)) & 1) ⊕ Fb[b])
+                end
+                for b1 in 1:M, b2 in 1:M
+                    b1 == b2 && continue
+                    e += paritybits((m >> (2 * (M - b1))) & 3) *
+                         (((s0 >> (M - b2)) & 1) ⊕ ((t0 >> (M - b2)) & 1))
                 end
                 e % 2
             end
@@ -461,7 +471,12 @@ function _system_factor_mixed(c::WeylMixedTime, model; order::Int = 2,
         C = zeros(ComplexF64, insize, ntuple(Returns(2), V)..., outsize)
         for m in 0:(4^M)-1
             Mk = mats[m+1]
-            ysv = ntuple(v -> (m >> (v - 1)) & 1, V)
+            # ysv[v] = site v 的变量开关。site 序 = 块内带序（v=2(b−1)+1 → 带 b 的
+            # a、v=2b → 带 b 的 ā）；slot code 的带序 = band 1 高位（bits 2(M−b),
+            # 2(M−b)+1 ↔ band b）——必须经此换算，直接 (m>>(v−1))&1 在 M≥2 会把
+            # 两条带互换（带对称观测量下不可见，带插入 d₁⊗I 打破对称即暴露；
+            # 2026-11-06 第十轮补遗定位）。M=1 退化不变。
+            ysv = ntuple(v -> (m >> (2 * (M - ((v - 1) ÷ 2 + 1)) + ((v - 1) % 2))) & 1, V)
             # 格间重排补偿（2026-11-06 第十轮：每带 XOR 形式）。
             # 旧形式 (−1)^{c_total·p_total}（M=1 标定）在 M≥2 破坏 U=0 因子化
             # （K₂ vs K₁∧K₁ 逐支撑：96/400 单项反号，且全部为 deg₁≥2∧deg₂≥2
@@ -473,6 +488,16 @@ function _system_factor_mixed(c::WeylMixedTime, model; order::Int = 2,
                 for b in 1:M
                     e += paritybits((m >> (2 * (M - b))) & 3) *
                          (((s0 >> (M - b)) & 1) ⊕ ((t0 >> (M - b)) & 1) ⊕ Fb_k[b])
+                end
+                # 楔积 inv 的逐元素实现（2026-11-06 第十轮补遗）：band b<b' 变量
+                # 穿越 band b' 线宇称 = 跨格 band 间反转数；M=1 退化不变。
+                # 双向交叉项 ⊕_{b≠b'} c_b·p_{b'}（b1 变量 × b2 线宇称）——
+                # 联合 automaton 相对「两条独立 M=1 链楔积」所需的跨带重排符号
+                # （楔积对账 0/400 + 带插入 200/200 全 +1 + ED 端到端判决）。
+                for b1 in 1:M, b2 in 1:M
+                    b1 == b2 && continue
+                    e += paritybits((m >> (2 * (M - b1))) & 3) *
+                         (((s0 >> (M - b2)) & 1) ⊕ ((t0 >> (M - b2)) & 1))
                 end
                 e % 2
             end

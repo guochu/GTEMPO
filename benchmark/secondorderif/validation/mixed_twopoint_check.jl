@@ -77,17 +77,29 @@ end
 check_m2_eq()
 
 println()
-println("== ③ M=2 跨格奇插入（i≠j）：已知限制防守确认 ==")
-function check_guard()
-    c = WeylMixedTime(Nτ = 4, dτ = β / 4, Nt = 4, dt = T / 4, bands = 2)
+println("== ③ M=2 跨格奇插入（i≠j，i≥j 全网格）—— ysv+双向交叉修复后的端到端判决 ==")
+function check_m2_full()
+    N = 4; dt = T / N
+    c = WeylMixedTime(Nτ = N, dτ = β / N, Nt = N, dt = dt, bands = 2)
     sol = solve(Problem(c, AndersonIM(ϵ_d = μ, U = 0.8); bath = bath, order = 2))
-    threw = false
-    try
-        raw_correlation(sol, 2, 0; kind = :greater)
-    catch e
-        threw = e isa ArgumentError
+    worst = 0.0; at = ""
+    n_th, _, _ = ed_ref(2, 0.8, 0.0)
+    for i in 1:N, j in 0:i
+        Δ = (i - j) * dt
+        if j == i
+            gΔ = 1.0 - n_th   # 等时 0⁺ 约定：greater核 = 1−n、lesser核 = n
+            lΔ = n_th
+        else
+            _, gΔ, lΔ = ed_ref(2, 0.8, Δ)
+        end
+        gmine = raw_correlation(sol, i, j; kind = :greater)
+        lmine = raw_correlation(sol, i, j; kind = :lesser)
+        eg = abs(gmine - gΔ); el = abs(lmine - lΔ)
+        eg > worst && (worst = eg; at = "g($i,$j)")
+        el > worst && (worst = el; at = "l($i,$j)")
     end
-    println(threw ? "  greater(2,0) 显式抛错 ✅（防守在位）" : "  ⚠ 未抛错——防守失效！")
+    @printf("  N=4 (i≥j) 全网格 × {g,l} 最大偏差 = %.2e（%s）%s\n\n", worst, at,
+            worst < 2e-3 ? "—— 闭合 ✅" : "—— 超限 ❌")
 end
-check_guard()
+check_m2_full()
 println("\n完成")

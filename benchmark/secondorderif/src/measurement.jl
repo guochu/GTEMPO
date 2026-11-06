@@ -55,25 +55,18 @@ end
 
 无前因子的两点函数 ⟨d(t_i) ddag(t_j)⟩（greater）/ ⟨ddag(t_j) d(t_i)⟩（lesser）。
 
-**已知限制（2026-11-06 第十轮判决，fail-loud）**：M≥2 且 i ≠ j（跨格奇插入，
-两插入切位之间存在 F=1 宇称偏移区）时，联合 Z2 键表示无法编码每带奇插入
-宇称偏移，结果系统性错误（rt/mixed 双路径确认：α→0 混合精确而 α≠0 错
-~1e-1、rt 连常数项错 ~3e-1；等时 i==j 同切位 f_k⊕2=0 无偏移区不受影响，
-已 ED 验证）。本函数对此显式抛错；`force=true` 可绕过（仅供内部诊断）。
-M=1 与 occupation（n̂ 类偶插入）不受影响。
+**历史备注（2026-11-06）**：M≥2 且 i ≠ j 的跨格奇插入两点曾系统性错误，
+根因 = K 装配的 ysv↔site 带映射互换 + 补偿缺双向跨带交叉项
+⊕_{b≠b'} c_b·p_{b'}（详见 HISTORY 第十轮），均已修复并经 ED 全网格验证
+（`validation/mixed_twopoint_check.jl`）；API 承诺区间 i ≥ j
+（i<j 返回轮廓时序积类量，不在本文档语义内）。
 """
-function raw_correlation(s::Solution, i::Integer, j::Integer; kind::Symbol = :greater,
-                         force::Bool = false)
+function raw_correlation(s::Solution, i::Integer, j::Integer; kind::Symbol = :greater)
     prob = s.prob
     c = prob.contour
     c isa WeylRealTime || c isa WeylMixedTime ||
         throw(ArgumentError("实时/混合轮廓专用；纯虚时用 matsubara"))
-    if !force && c.bands >= 2 && i != j
-        throw(ArgumentError(
-            "raw_correlation: M≥2 跨格奇插入两点函数（i≠j）当前不可靠——" *
-            "每带奇插入宇称偏移与联合 Z2 键表示冲突（HISTORY 第十轮 39-41）。" *
-            "可用：等时两点（i==j）、occupation（偶插入）、M=1 任意两点。传 force=true 绕过。"))
-    end
+
     M = c.bands
     d = _fock_ops(M)[1]
     ddag = d'
@@ -115,10 +108,18 @@ lesser(s::Solution, i::Integer, j::Integer = 0) =
 虚时格林函数（Matsubara）：τ 环上 d 在边界 i、ddag 在边界 j 处插入（均 :left，
 沿 A 链的算符乘积位置即轮廓时间序）。
 """
-function matsubara(s::Solution, i::Integer, j::Integer = 0)
+function matsubara(s::Solution, i::Integer, j::Integer = 0; force::Bool = false)
     prob = s.prob
     c = prob.contour
     c isa WeylImagTime || throw(ArgumentError("虚时轮廓专用"))
+    # 已知限制（2026-11-06）：M≥2 且 i≠j 的跨格奇插入两点系统性错误（τ 路径
+    # 的组合宇称路由无法编码每带偏移；等时 i==j 同切位 f_j⊕2=0 不受影响，
+    # M=1 全网格已 ED 验证）。防守：显式抛错，force=true 绕过（下轮修复入口）。
+    if !force && c.bands >= 2 && i != j
+        throw(ArgumentError(
+            "matsubara: M≥2 且 i≠j 的两点函数当前不可靠（τ 路径每带奇插入路由 " *
+            "限制，HISTORY 第十轮补遗）。可用：等时（i==j）、occupation、M=1 任意。传 force=true 绕过。"))
+    end
     M = c.bands
     d = _fock_ops(M)[1]
     K = system_factor(c, prob.model; order = prob.order,
