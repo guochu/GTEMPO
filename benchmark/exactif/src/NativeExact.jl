@@ -38,7 +38,7 @@ using QuAPI: AbstractRealCorrelationFunction
 using Z2Tensors: TruncationScheme
 
 export NativeSchedule, native_schedule, trotter_factors, ExactDelta, exact_delta,
-       quapi_delta, prefdelta, sysdynamics_exact!, exactif_native_pipeline,
+       compact_delta, quapi_delta, prefdelta, sysdynamics_exact!, exactif_native_pipeline,
        exactif_native_quapi, open_rho_native
 
 # ---------------------------------------------------------------------------
@@ -136,9 +136,12 @@ end
 """耦合单粒子 h（mode 1 = 杂质，能级 0；mode k+1 = bath mode k）。"""
 function _coupled_h(V::Vector{ComplexF64}, Hbath::Matrix{ComplexF64})
     m = length(V)
+    # h[imp, bath] = conj(V)（d†c 幅）、h[bath, imp] = V（c†d 幅）——与
+    # 参照链 fock_chain_single / IFGTEMPO bath_one_particle_hamiltonian 一致
     h = zeros(ComplexF64, m + 1, m + 1)
     for k in 1:m
-        h[1, k+1] = h[k+1, 1] = V[k]
+        h[1, k+1] = conj(V[k])
+        h[k+1, 1] = V[k]
         h[k+1, k+1] = Hbath[k, k]
     end
     return h
@@ -394,6 +397,99 @@ function exact_delta(Hbath::Matrix{ComplexF64}, V::Vector{ComplexF64}, β::Real,
         iszero(v) && continue
         row = pos[GrassmannContourIndex(c + 1, br, band, true)]
         col = pos[GrassmannContourIndex(c2 + 1, br2, band, false)]
+        M[row, col] = v
+    end
+    return ExactDelta(pos, M, G, ν, pfaffian(G))
+end
+
+"""
+    compact_delta(Hbath, V, β, sched, lattice) -> ExactDelta
+
+紧凑消元 Δ（IFGTEMPO `_analytic_contour_G` 的逐字移植，compact 布线）：
+bath pair = trace_final(1) + forward(N) + backward(N) 共 2N+1 对（trace pair
+由末个 forward 核与首 backward 核共享）；forward 末步 trace_bra 翻转（⟨−ψ̄|
+约定）；热边 first_forward.bars × first_backward.etas；每 pair 测度 −γ̄γ；
+Schur 消 bath 块取反对称。G 在接口 IF 槽位上（4·nl 维）。
+
+配对骨架：native_schedule（紧凑 cells/links）+ `sysdynamics_exact!`
+（counter_c = +1，FormB 标定：接口分辨率已被消元吸收）。
+归一化 Z = integrate·ν·Pf(G)。
+支持任意 order 的紧凑表（order 4 的 S4 门序列 a/2, a, c, c, a, c, b/2
+跨 cell 边界合并进段内核——杂质 propagator 维度固定，与 order 无关）。
+"""
+function compact_delta(Hbath::Matrix{ComplexF64}, V::Vector{ComplexF64}, β::Real,
+                       sched::NativeSchedule, lattice::AbstractRealGrassmannLattice;
+                       sgn::Int=-1, siteflip::Bool=false)
+    cells = sched.cells
+    nl = length(cells)
+    m = length(V)
+    nif = 4 * nl
+    total = nif + 2m * (2nl + 1)
+    A = zeros(ComplexF64, total, total)
+    h = _coupled_h(V, Hbath)
+    Us = [exp(-1im * cell .* h) for cell in cells]
+    # pair 槽位（0-based 游标，_put_G! 用 1-based）：trace_final + fwd N + bwd N
+    cursor = nif
+    pair_data = NamedTuple[]
+    for label in (:trace_final, :forward, :backward)
+        count = label === :trace_final ? 1 : nl
+        for step in 0:(count - 1)
+            bars = collect((cursor + 1):(cursor + m))          # 1-based
+            etas = collect((cursor + m + 1):(cursor + 2m))
+            push!(pair_data, (label = label, step = step, bars = bars, etas = etas))
+            cursor += 2m
+        end
+    end
+    trace_pair = pair_data[1]
+    forward_pairs = pair_data[2:(nl + 1)]
+    backward_pairs = pair_data[(nl + 2):end]
+    # Q kernel 缝合（IFGTEMPO _add_mapped_q_matrix! 同款；put_G! 1-based）
+    for step in 0:(nl - 1)
+        input_pair = forward_pairs[step + 1]
+        output_pair = step == nl - 1 ? trace_pair : forward_pairs[step + 2]
+        _q_add!(A, _ifslot(step + 1, :+, :bar), _ifslot(step + 1, :+, :eta),
+                output_pair.bars, input_pair.etas, Us[step + 1];
+                trace_bra = (step == nl - 1))
+    end
+    for step in 0:(nl - 1)
+        output_pair = backward_pairs[step + 1]
+        input_pair = step == nl - 1 ? trace_pair : backward_pairs[step + 2]
+        _q_add!(A, _ifslot(step + 1, :-, :bar), _ifslot(step + 1, :-, :eta),
+                output_pair.bars, input_pair.etas, adjoint(Us[step + 1]))
+    end
+    thermal = exp(-Float64(β) .* Hbath)
+    for i in 1:m, j in 1:m
+        _put_G!(A, forward_pairs[1].bars[i], backward_pairs[1].etas[j], thermal[i, j])
+    end
+    for pair in pair_data, mode in 1:m
+        _put_G!(A, pair.bars[mode], pair.etas[mode], -1.0)
+    end
+    E = A[1:nif, 1:nif]
+    C = A[1:nif, nif+1:end]
+    B = A[nif+1:end, nif+1:end]
+    effective = E + C * (B \ transpose(C))
+    G = 0.5 .* (effective .- transpose(effective))
+    ν = bath_norm(V, Hbath, β, cells)
+    # D = 消元核（接口腿 × 接口腿；partner 槽位 bar↔eta 交叉）
+    Ginv = inv(G)
+    GA = (Ginv .- transpose(Ginv)) ./ 2
+    k = lattice.k
+    pos = Dict{GrassmannContourIndex,Int}()
+    for band in 1:lattice.bands, br in (:+, :-), p in 1:k
+        row = 4 * k * (band - 1) + 2 * k * (br === :+ ? 0 : 1) + 2 * (p - 1) + 1
+        pos[GrassmannContourIndex(p, br, band, true)] = row
+        pos[GrassmannContourIndex(p, br, band, false)] = row + 1
+    end
+    M = zeros(ComplexF64, 4 * lattice.bands * k, 4 * lattice.bands * k)
+    for band in 1:lattice.bands, c in 1:nl, br in (:+, :-),
+        c2 in 1:nl, br2 in (:+, :-)
+        # 消元恒等式 exp(−½jᵀG⁻¹j) 的整体负号（FormB elim_sign = −1）
+        v = sgn * GA[_partner_slot(c, br, :bar), _partner_slot(c2, br2, :eta)]
+        row = pos[GrassmannContourIndex(c + 1, br, band, true)]
+        col = pos[GrassmannContourIndex(c2 + 1, br2, band, false)]
+        # partialmpo 的 coefs = site-sorted 系数：位点逆序时翻号
+        siteflip && (row > col) && (v = -v)
+        iszero(v) && continue
         M[row, col] = v
     end
     return ExactDelta(pos, M, G, ν, pfaffian(G))

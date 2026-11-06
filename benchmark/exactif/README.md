@@ -394,6 +394,19 @@ twosector/FormB 标度独立验证（p = 4.05-4.16）；order 4 N=1 在 D=256 �
 Δn = 5.4e-4（D 无关 = 结构性，V=0 机器精度 5.6e-16 确认骨架无错）。
 另：N=4 以上出现 Julia 原生崩溃（深层栈，非内存）——待查。
 
+**紧凑消元 Δ 的进展（2026-11-06）**：`compact_delta`（src/NativeExact.jl）
+= IFGTEMPO `_analytic_contour_G` 的逐字移植（compact 布线：共享 trace pair +
+trace_bra 翻转 + 热边 + pair 测度；Schur 消 bath）。**G 装配已逐位验证**：
+vs IFGTEMPO influence_matrix_G，order 2（4×4）与 order 4 含负 cell（12×12）
+max|ΔG| = 0.000e+00。期间修复 `_coupled_h` 的**共轭约定 bug**：
+h[imp,bath] = conj(V)、h[bath,imp] = V（V 复数时旧代码非厄米——这也解释了
+contour_G 路线 V≠0 的全部失败：V=0/实 V 不受影响）。
+剩余工作 = 紧凑 Δ 在原生 lattice 骨架上的标定：FormB 紧凑格的 pair 序为
+(bar, eta) 而原生 lattice 为 (eta, bar)，隐式测度费米符号不同（接口需
+cc = −1 类反测度 + node-1 修正 (1 − 2x̄x) 量级），且 far-end 结构不同
+（FormB 交叉对 vs 原生全节点+折返）——需按 FormB Step A/C 流程重标定。
+Order 4 物理结果已由基线 FormB 路线独立验证（p = 4.05-4.16，eae55d4）。
+
 ### 判决实验脚本（form_b/）
 
 - `restrictd_probe.jl`：Q1 判决（D 的 bar→eta 块充分性）——PASS。
