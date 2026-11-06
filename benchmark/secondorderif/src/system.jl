@@ -433,28 +433,26 @@ function _system_factor_mixed(c::WeylMixedTime, model; order::Int = 2,
         for m in 0:(4^M)-1
             Mk = mats[m+1]
             ysv = ntuple(v -> (m >> (v - 1)) & 1, V)
-            # 格间重排簿记补偿（2026-11-04 rt 定位 + 2026-11-05 mixed 扫描实证）：
-            # (−1)^{C(m,2)} 属于分级装配序本身（不分支）：混合链的全部单元
-            # （τ 格与 rt 格）均施加，reorder_sign=false 恢复旧行为（对照用）。
+            # 格间重排簿记补偿（single-band mixed 扫描实证：全部单元施加）。
             cellodd = reorder_sign ? Int(paritybits(m)) : 0
+            comp(l) = (cellodd * inpar[l] == 1 ? -1 : 1)
             if is_fold
                 for (r, (s, t)) in enumerate(pairs)
                     C[1, ntuple(x -> ysv[x] + 1, V)..., r] = (Mk * R)[s, t]
                 end
             elseif is_close
                 for (l, (s, t)) in enumerate(pairs)
-                    C[l, ntuple(x -> ysv[x] + 1, V)..., 1] =
-                        (cellodd * inpar[l] == 1 ? -1 : 1) * Mk[t, s]
+                    C[l, ntuple(x -> ysv[x] + 1, V)..., 1] = comp(l) * Mk[t, s]
                 end
             else
                 for (l, (s, t)) in enumerate(pairs), (r, (v, w)) in enumerate(pairs)
-                    t == w && (C[l, ntuple(x -> ysv[x] + 1, V)..., r] =
-                        (cellodd * inpar[l] == 1 ? -1 : 1) * Mk[v, s])
+                    t == w && (C[l, ntuple(x -> ysv[x] + 1, V)..., r] = comp(l) * Mk[v, s])
                 end
             end
         end
         all(iszero, C) && error("混合 K：单元 $k ($b,$j) 核全零")
         ts = split_core(CellCore(C, inpar, outpar))
+        # ChronoMixed 布局（τ 格 j → 块 j+3；rt 边界+空洞在链首）
         block = b === :τ ? j + 3 : (b === :+ ? Nτ + 3 + j : Nτ + 3 + Nt + (Nt - j + 1))
         for v in 1:2M
             gmps.data[(block - 1) * 2M + v] = ts[v]

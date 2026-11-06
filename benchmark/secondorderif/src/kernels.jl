@@ -338,9 +338,8 @@ function Base.getindex(v::KernelCorrView, i::GrassmannContourIndex, j::Grassmann
         # 实时：消费端 keldysh gate 内嵌跨支负号，视图预翻相消 ⟹ 净 = 原始值
         branch(i) !== branch(j) && (val = -val)
     elseif v.kernel.contour isa WeylMixedTime
-        # 混合：消费端 gate 关闭。Δm 的 τ↔rt 交叉块相对物理核差一个整体负号
-        # （ττ / ±± 块无差——U1 对照实证）⟹ 仅翻 τ↔rt；±↔∓ 块直读原始值
-        # （单翻会给出负的物理值——Anderson mixed 斜率 0.64→2.0 实证）。
+        # 混合：仅翻 τ↔rt（Δm 交叉块相对物理核差整体负号——U1 核值对照实证）；
+        # ±↔∓ 块与 ττ/±± 块直读原始值（符号组合扫描定案）。
         (branch(i) === :τ) !== (branch(j) === :τ) && (val = -val)
     end
     return i.conj ? -val : val

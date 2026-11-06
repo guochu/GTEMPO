@@ -147,10 +147,10 @@ GTEMPO.LayoutStyle(::Type{ChronoMixedOrdering}) = GTEMPO.TimeLocalLayout()
 # + 格 j = Nτ+j+3；− 格 j = 2Nτ+2Nt+4−j … 统一：− 格（边界 j）= Nτ+3+2Nt−j+1？
 # 用显式公式：+ 格块 = Nτ+3+(j−1)；− 格块 = Nτ+3+Nt+(Nt−j)
 function _chronomixed_block(x::MixedGrassmannLattice, i::Int, branch::Symbol)
-    # 布局（闲置边界块全在链两端，真空恒等才能衔接）：
-    #   [rt 边界 2 块][τ 边界 1 块][τ 格 1..Nτ][+ 格 1..Nt][− 格 Nt…1]
+    # 布局（链首闲置 3 块 = [rt 边界 2 块][τ 边界空洞]；τ 格 4..Nτ+3；± 格其后；
+    # 链 = [τ₁…τ_Nτ][+₁…(+,Nt)][(−,Nt)…(−,1)] 时序本征顺序，闲置全在链首）：
     if branch === :τ
-        return i + 2                # 顶点 1 → 块 3（τ 边界，未用）；格 j → 块 j+3
+        return i + 2                # 顶点 i → 块 i+2（顶点 1 = τ 边界空洞；格 j = 顶点 j+1 → 块 j+3）
     elseif branch === :+
         return x.Nτ + 3 + i
     else
