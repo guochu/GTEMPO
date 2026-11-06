@@ -407,6 +407,19 @@ cc = −1 类反测度 + node-1 修正 (1 − 2x̄x) 量级），且 far-end 结
 （FormB 交叉对 vs 原生全节点+折返）——需按 FormB Step A/C 流程重标定。
 Order 4 物理结果已由基线 FormB 路线独立验证（p = 4.05-4.16，eae55d4）。
 
+**紧凑路线标定补充（2026-11-06，commit c4c8a6f+）**：裁决网格（修复 cc 静默失效 bug 后）命中
+**counter_c = −1、sgn = −1、无 siteflip、无 node-1 修正**：
+- order 2 N=1：n vs Fock **3e-7**（essentially exact，优于 QuAPI 路线的 1e-5 地板）
+- order 2 N=2：**3.8e-6** PASS
+- order 4 N=1：**1.57e-4**（0.05% 相对；D=384/512 逐位同 = 非截断；V=0 机器精度 = 骨架无错）
+
+Order 4 残余的定位实验：全配对 Δ（≡ FormB 已验证 D，含同 kind 块）× 我的骨架 → 8.4e-3（更差）；
+(bar,eta) 块版 × 我的骨架 → 1.57e-4。两者都未达地板 ⇒ 紧凑 Δ 与骨架的约定**成对锁定**：
+FormB D ↔ FormB 骨架（M₀ + 交叉闭合、无折返）；我的 (bar,eta) 块 Δ ↔ 我的骨架（分辨率+折返）。
+Order 4 的剩余差异 = 同 kind 块在原生骨架上的正确配对方式（fold/交叉闭合与 (eta⁺,eta⁻)/(bar⁺,bar⁻)
+对的符号耦合）——需要稠密-vs-GMPS 多项式逐项 diff 定位。Order 4 物理结论由基线 FormB 路线独立背书
+（p = 4.05-4.16）。另：N≥2 部分案例有 Julia 原生崩溃（深层栈，非内存），待查。
+
 ### 判决实验脚本（form_b/）
 
 - `restrictd_probe.jl`：Q1 判决（D 的 bar→eta 块充分性）——PASS。

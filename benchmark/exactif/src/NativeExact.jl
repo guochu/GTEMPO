@@ -38,7 +38,7 @@ using QuAPI: AbstractRealCorrelationFunction
 using Z2Tensors: TruncationScheme
 
 export NativeSchedule, native_schedule, trotter_factors, ExactDelta, exact_delta,
-       compact_delta, quapi_delta, prefdelta, sysdynamics_exact!, exactif_native_pipeline,
+       compact_delta, delta_eff_factor, contour_G, bath_norm, pfaffian, quapi_delta, prefdelta, sysdynamics_exact!, exactif_native_pipeline,
        exactif_native_quapi, open_rho_native
 
 # ---------------------------------------------------------------------------
@@ -419,7 +419,7 @@ Schur 消 bath 块取反对称。G 在接口 IF 槽位上（4·nl 维）。
 """
 function compact_delta(Hbath::Matrix{ComplexF64}, V::Vector{ComplexF64}, β::Real,
                        sched::NativeSchedule, lattice::AbstractRealGrassmannLattice;
-                       sgn::Int=-1, siteflip::Bool=false)
+                       sgn::Int=-1, siteflip::Bool=false, counter_c::Int=-1)
     cells = sched.cells
     nl = length(cells)
     m = length(V)
@@ -493,6 +493,47 @@ function compact_delta(Hbath::Matrix{ComplexF64}, V::Vector{ComplexF64}, β::Rea
         M[row, col] = v
     end
     return ExactDelta(pos, M, G, ν, pfaffian(G))
+end
+
+"""
+    delta_eff_factor(lat, Ginv, cells; sgn=-1) -> GrassmannMPS
+
+消元核的**完整**I 因子（FormB.jl delta_eff_gmps 的原生格移植）：接口腿
+（node 2..nl+1 的全部 4·nl 条腿，不分 ā/a）按位点序配对，每对独立
+partialmpo 因子 v = sgn·GA[slot_i, slot_k]（site-sorted），连乘为 I 因子。
+配套骨架：sysdynamics_exact!(counter_c)（cc 需标定：我的 lattice 实证 −1）。
+"""
+function delta_eff_factor(lat::AbstractRealGrassmannLattice, Ginv::AbstractMatrix,
+                           nl::Int; sgn::Int=-1, trunc::TruncationScheme=NoTruncation())
+    GA = (Ginv .- transpose(Ginv)) ./ 2
+    k = lat.k
+    # 接口腿表：(位置, 槽位)；接口 c ↔ lattice node c+1；槽位 = _ifslot 约定
+    legs = Tuple{Int,Int}[]
+    for c in 1:nl, br in (:+, :-), stat in (:bar, :eta)
+        band = 1
+        push!(legs, (lat[GrassmannContourIndex(c + 1, br, band, stat === :bar)],
+                     _ifslot(c, br, stat)))
+    end
+    sort!(legs, by = x -> x[1])
+    n = length(lat)
+    acc = GTEMPO.GrassmannMPS(ComplexF64, n)
+    for i in eachindex(legs), kk in (i + 1):length(legs)
+        v = sgn * GA[legs[i][2], legs[kk][2]]
+        iszero(v) && continue
+        group = GTEMPO.partialmpo(legs[i][1], [legs[kk][1]], [v]) *
+                GTEMPO.GrassmannMPS(ComplexF64, n)
+        acc, _ = GTEMPO.mult(acc, group; trunc=trunc)
+    end
+    return acc
+end
+
+"""compact_delta 的便捷封装：从 links/cells 表构造。"""
+function compact_delta(HB::Matrix{ComplexF64}, V::Vector{ComplexF64},
+                       links::Vector{Float64}, cells::Vector{Float64},
+                       lat::AbstractRealGrassmannLattice; β::Real, counter_c::Int=-1,
+                       sgn::Int=-1, siteflip::Bool=false)
+    return compact_delta(HB, V, β, NativeSchedule(cells, links), lat;
+                         sgn=sgn, siteflip=siteflip, counter_c=counter_c)
 end
 
 """
