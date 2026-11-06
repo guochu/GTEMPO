@@ -46,6 +46,10 @@ A 吸收为全步长），零长度 cell 补齐使核节点与格点切片一一
 | `form_b/MATHEMATICS.md` | 数学原理文档的 Markdown 版（与 .tex 同内容；供仓库内直接预览） |
 | `form_b/formb_dense.jl` | **形态 B（消元式单扇区）稠密系数级验证**：IF 变量从两扇区 lattice 精确积掉，与 Fock/GMPS 三方对齐（`FORMB_QUICK=1` 快测档） |
 | `src/FormB.jl` | **形态 B 的 GTEMPO GMPS 移植**：紧凑 IMP-only lattice 上的 Δ_eff/反测度/K 装配（GTEMPO GrassmannMPS 因子 + pair transfer 收缩） |
+| `src/NativeExact.jl` | **GTEMPO 原生严格核管线**（IFGTEMPO-free）：`exactif_native_compact`（紧凑消元，全 order 验证绿）、`exactif_native_quapi`（orders 1/2）、`compact_delta`/`contour_G`/`sysdynamics_exact!` |
+| `src/verify_compact.jl` | 紧凑路线对齐矩阵（离散链 + Z/V=0 双证书；`ARGS=trunc` 截断档） |
+| `src/scaling_compact.jl` | 紧凑路线 Trotter 标度 vs 精确连续演化（p = 2.01/2.01/3.99） |
+| `src/verify_align.jl` | 与 IFGTEMPO GMPS 的直接对齐（两自旋 U=0 解耦恒等式）+ quapi 回归（`ARGS=quapi`） |
 | `src/verify_formb.jl` | FormB 移植的对齐验证：单自旋 vs Fock、两自旋 vs Fock vs IFGTEMPO GMPS 三方 |
 | `src/scaling_formb.jl` | FormB 的 Trotter 阶数标度（vs 精确连续演化，叠加 IFGTEMPO 参照点；`ARGS = single | twospin | plot`） |
 | `results/formb_scaling_*.png/.csv` | FormB 标度图：orders 1/2 → p=2.00、order 4 → p=3.99（单自旋 T=0.4）/ 4.16（两自旋 T=0.34，同 twosector 基准设置） |
@@ -419,6 +423,53 @@ FormB D ↔ FormB 骨架（M₀ + 交叉闭合、无折返）；我的 (bar,eta)
 Order 4 的剩余差异 = 同 kind 块在原生骨架上的正确配对方式（fold/交叉闭合与 (eta⁺,eta⁻)/(bar⁺,bar⁻)
 对的符号耦合）——需要稠密-vs-GMPS 多项式逐项 diff 定位。Order 4 物理结论由基线 FormB 路线独立背书
 （p = 4.05-4.16）。另：N≥2 部分案例有 Julia 原生崩溃（深层栈，非内存），待查。
+
+### ★ 打通（2026-11-06 晚）：order 4 残余根因 = 门传播子缓存键不含时长——全部对齐
+
+刀口实验链（`verify_compact.jl` / 判决记录）：
+1. 残余 ∝ **V²**（V→V/10 时 ×100）——bath 响应侧；
+2. **εd = 0（门恒等）时残余完全消失**（order 2 N=2 与 order 4 N=1 都是机器精度）；
+   结合 V=0 机器精度 ⇒ 错误只在 **D×门干涉**——而 V=0 时 n(T)=n₀ 对任意门时长不变、
+   εd=0 时门为恒等，两条既有证书对"门时长正确性"**双双失明**；
+3. 同 kind GA 项在全部 order **恒为零**（compact G 的 U(1) 结构：G⁻¹ 反对称化后只有
+   (bar,eta) 块；数值验证 0.000e+00）——"同 kind 配对"假说排除（此前 8.4e-3 的
+   "全配对"实验系 delta_eff_factor 的 bar→bar 直连接线错误所致混淆，该探针已移除）；
+4. order 2 N=1（links = [δt/2, δt/2] 全同）机器精确而 N=2（[δt/2, δt, δt/2]）出错
+   ⇒ 嫌疑锁定在**门→gap 的映射**：`_propagator_sparsegmps` 的缓存键
+   `(branch, t, brel, krel)` 不含门时长（其契约是均匀 δt 管线"每步门矩阵相同"），
+   `_scheduled_gates!` 对调度门（各 gap 时长不同）共享缓存 → 同支后续 gap 静默复用
+   第一个 gap 的传播子张量（时长错、位置对）。
+
+判决（无缓存重跑）：order 2 N=2 7.8e-7 → **3.4e-15**；order 4 N=1 1.57e-4 → **2.4e-15**。
+修复 = `_scheduled_gates!` 传 `cache=nothing`（含防复发注释）。连带效应：
+- **order 4 N=2,3 全绿**（truncdimcutoff D=512, ϵ=1e-12：1.9e-15 / 3.8e-14）——
+  原"N≥2 Julia 原生崩溃"随缓存修复一并消失（NoTruncation 下 order 4 N≥2 的键
+  4^nl 增长本就会爆，截断档是正确用法）；
+- **quapi 路线的 1e-5 地板也是同一 bug**（恒等门 gap 被上一 gap 的门张量替换）：
+  order 2 N=1 1.1e-5 → **0.0**（逐位）、N=2 3.8e-6 → **2.9e-15**。
+
+**最终验证状态（全部机器精度级）**：
+
+| 判据 | 结果 |
+|---|---|
+| 离散链对齐（n vs Fock 离散 Trotter 链） | orders 1/2 × N=1..3 + order 4 × N=1（notrunc）≤3.8e-15；order 4 × N=2,3（D=512）≤3.8e-14 |
+| Z 证书（εd=0，Z = integrate·ν·Pf） | ≤1.6e-14（norm 已含 ν = bath_norm，`normdelta`） |
+| V=0 证书（n = n₀ 热态期望） | ≤5.6e-17 |
+| **IFGTEMPO 直接对齐**（两自旋 U=0 解耦恒等式：相同 bath + ρth⊗ρth ⇒ 双自旋 = 单自旋⊗自身） | orders 2/4 × N=1,2 全部 **≤2.4e-14** |
+| **Trotter 标度 vs 精确连续演化**（单模 4×4 精确对角化） | order 1: p=2.01、order 2: p=2.01（对角初态下与 order 1 逐位同链）、**order 4: p=3.99**（比值 16.0，同 twosector/FormB/IFGTEMPO 发表值） |
+
+验证/标度/对齐入口（GTEMPO 根目录）：
+
+```
+julia --project=. benchmark/exactif/src/verify_compact.jl          # 精确档矩阵 + 双证书
+julia --project=. benchmark/exactif/src/verify_compact.jl trunc    # 截断档（order 4 N=2,3）
+julia --project=. benchmark/exactif/src/scaling_compact.jl         # p = 2/2/4 标度
+julia --project=. benchmark/exactif/src/verify_align.jl            # IFGTEMPO 直接对齐
+julia --project=. benchmark/exactif/src/verify_align.jl quapi      # quapi 路线回归
+```
+
+读出约定：`occupation`（insert_n）带 O(δt) 有效时刻偏移，不可用于此管线；标准读出 =
+`ntT` 同款**折返点自由腿对 (a⁺_k, ā⁻_k) 的 2 腿 GTerm 投影**（见 verify_compact.jl）。
 
 ### 判决实验脚本（form_b/）
 

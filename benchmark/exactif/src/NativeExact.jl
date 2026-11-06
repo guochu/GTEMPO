@@ -38,8 +38,9 @@ using QuAPI: AbstractRealCorrelationFunction
 using Z2Tensors: TruncationScheme
 
 export NativeSchedule, native_schedule, trotter_factors, ExactDelta, exact_delta,
-       compact_delta, delta_eff_factor, contour_G, bath_norm, pfaffian, quapi_delta, prefdelta, sysdynamics_exact!, exactif_native_pipeline,
-       exactif_native_quapi, open_rho_native
+       compact_delta, contour_G, bath_norm, pfaffian, quapi_delta, prefdelta, normdelta,
+       sysdynamics_exact!, exactif_native_pipeline,
+       exactif_native_quapi, exactif_native_compact, open_rho_native
 
 # ---------------------------------------------------------------------------
 # Trotter 调度（IFGTEMPO trotter_schedule 的移植，GTEMPO 侧）
@@ -495,38 +496,6 @@ function compact_delta(Hbath::Matrix{ComplexF64}, V::Vector{ComplexF64}, β::Rea
     return ExactDelta(pos, M, G, ν, pfaffian(G))
 end
 
-"""
-    delta_eff_factor(lat, Ginv, cells; sgn=-1) -> GrassmannMPS
-
-消元核的**完整**I 因子（FormB.jl delta_eff_gmps 的原生格移植）：接口腿
-（node 2..nl+1 的全部 4·nl 条腿，不分 ā/a）按位点序配对，每对独立
-partialmpo 因子 v = sgn·GA[slot_i, slot_k]（site-sorted），连乘为 I 因子。
-配套骨架：sysdynamics_exact!(counter_c)（cc 需标定：我的 lattice 实证 −1）。
-"""
-function delta_eff_factor(lat::AbstractRealGrassmannLattice, Ginv::AbstractMatrix,
-                           nl::Int; sgn::Int=-1, trunc::TruncationScheme=NoTruncation())
-    GA = (Ginv .- transpose(Ginv)) ./ 2
-    k = lat.k
-    # 接口腿表：(位置, 槽位)；接口 c ↔ lattice node c+1；槽位 = _ifslot 约定
-    legs = Tuple{Int,Int}[]
-    for c in 1:nl, br in (:+, :-), stat in (:bar, :eta)
-        band = 1
-        push!(legs, (lat[GrassmannContourIndex(c + 1, br, band, stat === :bar)],
-                     _ifslot(c, br, stat)))
-    end
-    sort!(legs, by = x -> x[1])
-    n = length(lat)
-    acc = GTEMPO.GrassmannMPS(ComplexF64, n)
-    for i in eachindex(legs), kk in (i + 1):length(legs)
-        v = sgn * GA[legs[i][2], legs[kk][2]]
-        iszero(v) && continue
-        group = GTEMPO.partialmpo(legs[i][1], [legs[kk][1]], [v]) *
-                GTEMPO.GrassmannMPS(ComplexF64, n)
-        acc, _ = GTEMPO.mult(acc, group; trunc=trunc)
-    end
-    return acc
-end
-
 """compact_delta 的便捷封装：从 links/cells 表构造。"""
 function compact_delta(HB::Matrix{ComplexF64}, V::Vector{ComplexF64},
                        links::Vector{Float64}, cells::Vector{Float64},
@@ -631,16 +600,22 @@ function sysdynamics_exact!(gmps::GrassmannMPS, lattice::AbstractRealGrassmannLa
     return gmps
 end
 
-"""调度门放置（common.jl sysdynamics_factors! 的移植；τ=0 恒等门不跳过）。"""
+"""调度门放置（common.jl sysdynamics_factors! 的移植；τ=0 恒等门不跳过）。
+
+**勿开缓存**：`_propagator_sparsegmps` 的缓存键 (branch, t, brel, krel) 不含
+门时长 τ（其契约是"每步门矩阵相同"的均匀 δt 管线）；调度门各 gap 时长不同，
+开缓存会让同支后续 gap 静默复用第一个 gap 的传播子张量——order 2 N=1
+（links 全同）不可见，order ≥2 N≥2 / order 4 出 O(V²) 级观测量错误
+（2026-11-06 order-4 残余 1.57e-4 的根因；V=0 与 εd=0 证书均对此盲——
+门时长只经 D×门干涉进入观测量）。"""
 function _scheduled_gates!(gmps::GrassmannMPS, lattice::AbstractRealGrassmannLattice,
                            model::GTEMPO.AbstractImpurityHamiltonian, sched::NativeSchedule;
                            trunc::TruncationScheme=GTEMPO.Defaults.alg_trunc_sys())
     (lattice.Nt == length(sched.links)) ||
         throw(DimensionMismatch("lattice.Nt 须等于门表长度"))
-    cache = Dict{Tuple,Any}()
     for branch in (:+, :-), g in 1:(length(sched.links))
         fm = GTEMPO.fock_propagator(model, branch, sched.links[g])
-        sparse = GTEMPO._propagator_sparsegmps(lattice, fm, g, branch, cache, nothing)
+        sparse = GTEMPO._propagator_sparsegmps(lattice, fm, g, branch, nothing, nothing)
         gmps = GTEMPO.mult!(gmps, sparse, trunc=trunc)[1]
     end
     return gmps
@@ -730,16 +705,20 @@ end
     exactif_native_compact(HB, V, model, N, δt; order=2, trunc, β, counter_c=-1)
         -> (lat, mpsK, mpsIs, deltas, norm, links, cells)
 
-**紧凑消元配方**（2026-11-06 标定）：compact_delta（IFGTEMPO
+**紧凑消元配方**（2026-11-06 标定+修复）：compact_delta（IFGTEMPO
 _analytic_contour_G 逐字移植，G 装配 vs influence_matrix_G 逐位一致）
 + 紧凑调度（native_schedule：cells = nl、links = nl+1，点数与 order 无关
 ——杂质 propagator 维度固定）+ sysdynamics_exact!（counter_c = −1）。
-折返腿 GTerm 插入读出。
+折返腿 GTerm 插入读出；Z 归一化 = integrate·ν·Pf(G)（normdelta）。
 
-标定状态：order 2 N=1 → n(T) vs Fock 3e-7（essentially exact）；
-order 4 N=1 → Δn = 1.6e-4（D 无关，V=0 机器精度；残余 = 远端闭合约定
-的深层差异，N≥2 有 Julia 原生崩溃待查）。Z 归一化 = integrate·ν·Pf(G)
-（ skeleton 常数差 ~1e-2 会在比值中抵消）。
+验证状态（2026-11-06，缓存 bug 修复后）：
+- orders 1/2 × N=1..3 + order 4 × N=1（NoTruncation）：n vs Fock 离散链
+  ≤3.8e-15，Z−1 ≤1.6e-14，V=0 机器精度；
+- order 4 × N=2,3（truncdimcutoff D=512, ϵ=1e-12）：≤3.8e-14（原
+  "N≥2 原生崩溃"随缓存修复一并消失）；
+- vs IFGTEMPO GMPS（两自旋 U=0 解耦恒等式）orders 2/4 × N=1,2：≤2.4e-14；
+- Trotter 标度 vs 精确连续演化：p = 2.00 / 2.00 / **4.00**（order 4 比值
+  16.0，与 twosector/FormB/IFGTEMPO 发表值一致）。
 """
 function exactif_native_compact(HB::Matrix{ComplexF64}, V::Vector{ComplexF64},
                                 model::GTEMPO.AbstractImpurityHamiltonian, N::Integer, δt::Real;
@@ -757,7 +736,7 @@ function exactif_native_compact(HB::Matrix{ComplexF64}, V::Vector{ComplexF64},
         mpsI = GTEMPO.hybriddynamics(lat, d; band=band, trunc=trunc)
         push!(deltas, d)
         push!(mpsIs, mpsI)
-        norm *= prefdelta(d)
+        norm *= normdelta(d)
     end
     s2 = NativeSchedule(cells, links)
     mpsK = sysdynamics_exact!(GTEMPO.vacuumstate(ComplexF64, lat), lat, model, s2;
