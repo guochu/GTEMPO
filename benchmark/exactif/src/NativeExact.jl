@@ -37,8 +37,9 @@ using LinearAlgebra
 using QuAPI: AbstractRealCorrelationFunction
 using Z2Tensors: TruncationScheme
 
-export NativeSchedule, native_schedule, ExactDelta, exact_delta,
-       sysdynamics_exact!, exactif_native_pipeline, open_rho_native
+export NativeSchedule, native_schedule, trotter_factors, ExactDelta, exact_delta,
+       quapi_delta, prefdelta, sysdynamics_exact!, exactif_native_pipeline,
+       exactif_native_quapi, open_rho_native
 
 # ---------------------------------------------------------------------------
 # Trotter 调度（IFGTEMPO trotter_schedule 的移植，GTEMPO 侧）
@@ -81,6 +82,51 @@ function native_schedule(order::Integer, N::Integer, dt::Real)
     end
     @assert length(links) == length(cells) + 1
     return NativeSchedule(cells, links)
+end
+
+# ---------------------------------------------------------------------------
+# 补零 pair 网格调度表（common.jl trotter_factors 的移植；QuAPI-Δ 配对用）
+# ---------------------------------------------------------------------------
+
+"""order ∈ (1,2,4) 的补零 pair 网格表：每 gap 一个 Trotter 因子。
+
+gate_durations[g] = gap g 的杂质门时长（0 = 恒等门，不跳过——恒等窗携带
+该 pair 的相干态分辨率重叠）；cell_durations[g] = gap g 的二次型 cell
+时长（0 = 无 cell；传入 QuAPI exact_fermionic_Δt_cells 的逐 cell 表，
+点数 = length+1 = lattice 接口节点数）。与 common.jl trotter_factors 逐位一致。
+"""
+function trotter_factors(order::Integer, N::Integer, δt::Real)
+    N >= 1 || throw(ArgumentError("number of macro steps must be at least one"))
+    dtf = Float64(δt)
+    if order == 1
+        npairs = N
+        gates = fill(dtf, N)
+        cells = fill(dtf, N)
+        cells[end] = 0.0   # 末 gap 仅恒等门（开放端在末时刻）
+    elseif order == 2
+        npairs = 2N + 1
+        gates = zeros(npairs); cells = zeros(npairs)
+        links = vcat(dtf / 2, fill(dtf, N - 1), dtf / 2)
+        gates[1:2:end] .= links
+        cells[2:2:end] .= dtf
+    elseif order == 4
+        a = 1 / (2 - cbrt(2))
+        b = 1 - 2a
+        c = (a + b) / 2
+        links = vcat(a * dtf / 2, a * dtf, c * dtf)
+        for _ in 2:N
+            links = vcat(links, c * dtf, a * dtf, c * dtf)
+        end
+        links = vcat(links, b * dtf / 2)
+        cellseq = repeat([a * dtf, a * dtf, b * dtf], N)
+        npairs = 2 * length(cellseq) + 1
+        gates = zeros(npairs); cells = zeros(npairs)
+        gates[1:2:end] .= links
+        cells[2:2:end] .= cellseq
+    else
+        throw(ArgumentError("unsupported Trotter order $order (use 1, 2 or 4)"))
+    end
+    return (npairs = npairs, gate_durations = gates, cell_durations = cells)
 end
 
 # ---------------------------------------------------------------------------
@@ -353,6 +399,44 @@ function exact_delta(Hbath::Matrix{ComplexF64}, V::Vector{ComplexF64}, β::Real,
     return ExactDelta(pos, M, G, ν, pfaffian(G))
 end
 
+"""
+    quapi_delta(bath, cells, lat; keldysh_sign=true) -> ExactDelta
+
+QuAPI 严格核数据源的 ExactDelta：`exact_fermionic_Δt_cells` 的 hmat.Δ
+（骨架相对的 (ā,a) 读矩阵，腿基 = 点 1..length(cells)+1）直接封装。
+**cell 补零约定**：点数 = length(cells)+1 = lattice 的接口节点数（node 1..
+nl+1）；node k（开放端）无 Δ 腿（M 置零）。Δ 的原始块 = partialif 行扫的物理指数系数
+（实证标定：无需附加跨支符号——keldysh_sign=true 会引入 O(δt) 系统偏差，
+见 form_b/native_probe 与 src/calibrate_native.jl 的判决记录）。
+收缩 Z = integrate·Δ.prefactor。
+"""
+function quapi_delta(bath, cells::Vector{Float64},
+                     lattice::AbstractRealGrassmannLattice;
+                     keldysh_sign::Bool=false)
+    ex = exact_fermionic_Δt_cells(bath.spectrum; β = bath.β, cells = cells)
+    k = lattice.k
+    qpos = Dict{GrassmannContourIndex,Int}(l => i for (i, l) in enumerate(ex.hmat.basis))
+    pos = Dict{GrassmannContourIndex,Int}()
+    for band in 1:lattice.bands, br in (:+, :-), p in 1:k
+        row = 4 * k * (band - 1) + 2 * k * (br === :+ ? 0 : 1) + 2 * (p - 1) + 1
+        pos[GrassmannContourIndex(p, br, band, true)] = row
+        pos[GrassmannContourIndex(p, br, band, false)] = row + 1
+    end
+    M = zeros(ComplexF64, 4 * lattice.bands * k, 4 * lattice.bands * k)
+    for (l1, i1) in qpos, (l2, i2) in qpos
+        (l1.conj && !l2.conj) || continue
+        v = ex.hmat.Δ[i1, i2]
+        keldysh_sign && (l1.branch != l2.branch) && (v = -v)
+        row = pos[GrassmannContourIndex(l1.j, l1.branch, l1.band, true)]
+        col = pos[GrassmannContourIndex(l2.j, l2.branch, l2.band, false)]
+        M[row, col] = v
+    end
+    return ExactDelta(pos, M, zeros(ComplexF64, 1, 1), 1.0, ex.prefactor)
+end
+
+"""QuAPI 严格核管线的 Z 归一化 = Δ.prefactor。"""
+prefdelta(x::ExactDelta) = x.pf
+
 # ---------------------------------------------------------------------------
 # sysdynamics_exact!：调度门 + 接口反测度 + 折返 + ρ₀
 # ---------------------------------------------------------------------------
@@ -378,11 +462,12 @@ function sysdynamics_exact!(gmps::GrassmannMPS, lattice::AbstractRealGrassmannLa
                             bands::Int=lattice.bands, trunc::TruncationScheme=GTEMPO.Defaults.alg_trunc_sys(),
                             counter_c::Int=1, β::Real=0.0)
     nl = length(sched.cells)
-    (lattice.k == nl + 2) || throw(DimensionMismatch("lattice 须含 nl+2 个节点"))
+    (lattice.Nt == length(sched.links)) ||
+        throw(DimensionMismatch("lattice.Nt 须等于门表长度"))
     # 1. 调度门（全窗口，复用 common.jl 验证过的放置逻辑）
     gmps = _scheduled_gates!(gmps, lattice, model, sched; trunc)
     # 2. 接口反测度（node 2..nl+1，两支，各带）
-    for band in 1:bands, node in 2:(nl + 1), br in (:+, :-)
+    for band in 1:bands, node in 2:min(nl + 1, lattice.k - 1), br in (:+, :-)
         s_eta = lattice[GrassmannContourIndex(node, br, band, false)]
         s_bar = lattice[GrassmannContourIndex(node, br, band, true)]
         fac = GTEMPO.partialmpo(s_eta, [s_bar], [ComplexF64(counter_c)]) *
@@ -401,8 +486,8 @@ end
 function _scheduled_gates!(gmps::GrassmannMPS, lattice::AbstractRealGrassmannLattice,
                            model::GTEMPO.AbstractImpurityHamiltonian, sched::NativeSchedule;
                            trunc::TruncationScheme=GTEMPO.Defaults.alg_trunc_sys())
-    (lattice.Nt == length(sched.cells) + 1) ||
-        throw(DimensionMismatch("lattice.Nt 须为 nl+1"))
+    (lattice.Nt == length(sched.links)) ||
+        throw(DimensionMismatch("lattice.Nt 须等于门表长度"))
     cache = Dict{Tuple,Any}()
     for branch in (:+, :-), g in 1:(length(sched.links))
         fm = GTEMPO.fock_propagator(model, branch, sched.links[g])
@@ -453,6 +538,43 @@ function exactif_native_pipeline(bathp::Union{Tuple,Vector}, model::GTEMPO.Abstr
                               sched; bands, trunc, counter_c, β)
     return (lat = lat, mpsK = mpsK, mpsIs = mpsIs, deltas = deltas, norm = norm,
             sched = sched)
+end
+
+"""
+    exactif_native_quapi(bath, model, N, δt; order=2, trunc, β, counter_c=0)
+        -> (lat, mpsK, mpsIs, deltas, norm, links, cells)
+
+**验证过的主力配方**（2026-11-05 标定）：QuAPI 严格核（`exact_fermionic_Δt_cells`
+的补零 cell 表，与 common.jl 的 trotter_factors 配对）作 Δ 数据源 + 原生骨架。
+与 exactif_native_pipeline 的差异：Δ 来自 QuAPI 数据源（IFGTEMPO-free），
+cell/gate 表 = 补零 pair 网格（每 gap 一个 Trotter 因子），**无反测度**
+（QuAPI-Δ 相对测度+单位链骨架定义，隐式 g_trace 正是其所要）。
+
+收敛性（εd=0.7 单模 bath，热态 ρ₀，折返腿插入读出）：Z ≈ 1（1e-5），
+n(T) vs Fock ~1e-5（ntT 约定地板）。
+"""
+function exactif_native_quapi(bath, model, N::Integer, δt::Real;
+                              order::Integer=2, trunc::TruncationScheme=GTEMPO.Defaults.alg_trunc_if(),
+                              β::Real=bath.β, bands::Int=1, counter_c::Int=0)
+    factors = trotter_factors(order, N, δt)
+    links = collect(Float64.(factors.gate_durations))
+    cells = collect(Float64.(factors.cell_durations))
+    lat = GTEMPO.GrassmannLattice(N=length(links), δt=δt, contour=:real, bands=bands)
+    deltas = ExactDelta[]
+    mpsIs = GTEMPO.GrassmannMPS[]
+    norm = 1.0 + 0.0im
+    for band in 1:bands
+        d = quapi_delta(bath, cells, lat)
+        mpsI = GTEMPO.hybriddynamics(lat, d; band=band, trunc=trunc)
+        push!(deltas, d)
+        push!(mpsIs, mpsI)
+        norm *= prefdelta(d)
+    end
+    sched = NativeSchedule(fill(0.0, 0), links)
+    mpsK = sysdynamics_exact!(GTEMPO.vacuumstate(ComplexF64, lat), lat, model, sched;
+                              bands=bands, trunc=trunc, β=β, counter_c=counter_c)
+    return (lat = lat, mpsK = mpsK, mpsIs = mpsIs, deltas = deltas, norm = norm,
+            links = links, cells = cells)
 end
 
 """每带 bath 规格：(hb = Hbath 矩阵, v = 耦合幅向量)。单带可省元组层。"""

@@ -359,6 +359,32 @@ order 4 × N=1（单自旋）；order 4 的完整标度验证以 `twosector/`（
   比例不随 sc/符号改变 → 腿/扇区映射层面需系统性标定，同 FormB 当年
   Step A/C 的流程）。下一阶段工作：完成该标定 → 两带推广 → Trotter 标度。
 
+### ★ 打通（2026-11-06）：QuAPI-Δ 数据源配方全绿
+
+`exactif_native_quapi`（src/NativeExact.jl）：**QuAPI 严格核**
+（`exact_fermionic_Δt_cells`，IFGTEMPO-free）作 Δ 数据源 + 补零 pair 网格表
+（`trotter_factors` 移植：每 gap 一个 Trotter 因子，点数 = gap 数+1）+
+`sysdynamics_exact!`（**无反测度**：QuAPI-Δ 相对测度+单位链骨架定义，
+隐式 g_trace 正是其所要）+ 折返腿 GTerm 插入读出。
+
+一致性（εd=0.7 单模 bath，热态 ρ₀）：
+
+| order | N | n(T)（管线） | n(T)（Fock） | Δn |
+|---|---|---|---|---|
+| 2 | 1 | 0.28787724 | 0.28788771 | 1.1e-5 |
+| 1 | 2 | 0.28789854 | 0.28788834 | 1.0e-5 |
+| 2 | 2 | 0.28789213 | 0.28788834 | 3.8e-6 |
+
+Δn ~ 1e-5 = ntT 插入约定的已知地板（与旧 exactif_pipeline 同款）。
+εd=0 时 Z 恒等式机器精度（1.0000000000）。
+
+**标定教训（防复发）**：①Δ 的原始块 = partialif 行扫的物理指数系数，
+**勿加跨支符号**（加了会引入 O(δt) 系统偏差——ExactIFKernel 的内嵌符号
+与其 Δ 布局配对，换布局后净符号约定不同）；②cell/gate 表必须用**补零
+pair 网格**（native_schedule 的紧凑表与 QuAPI 点基不配对 → O(δt) 假失败）；
+③对照的 Fock 参照与管线必须**同初态**（热态 vs 纯态错配曾造成一系列
+假阴性）、ρ₀ 只能插一次（sysdynamics_exact! 已含）。
+
 ### 判决实验脚本（form_b/）
 
 - `restrictd_probe.jl`：Q1 判决（D 的 bar→eta 块充分性）——PASS。
