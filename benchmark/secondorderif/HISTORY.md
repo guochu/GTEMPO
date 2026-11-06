@@ -355,22 +355,31 @@ U=0 因子化恒等式、配对结合律、逐支撑 Python 参照链。
       补偿不进入），不构成对补偿机制的检验。
     - 「Z2 表示原理性冲突、需 Z2×Z2」**撤回**：现有 Z2 框架内的符号簿记
       （双向交叉项）即为完整修复。
+    - τ 窄口判决：τ 无插入楔积 96/400 反号 = τ 两轴路由的楔积约定与
+      rt/mixed 不同（非 bug——等时端到端证明「缺 rt/mixed-inv 版」才是 τ
+      基线真值）⟹ τ 修复 = **F 区门控**跨带补偿（交叉项仅施加于奇插入
+      后 F≠0 的格，保持第六轮无插入/等时基线逐位不变）；fold-R（j==0）
+      的逐 s0 修正执行但端到端无效（fold R 线符号流未解）——唯一窄口。
 43. **验证终态（全部 ED 端到端）**：
     - mixed：M=2 (i≥j) 全网格 greater/lesser（含 (+,0) 转折点、− 支插入）
       6.8e-4（二阶离散水平，N=8 等时 1.5e-4 收敛）——**完全闭合**；
     - rt：α→0 机器精度 + 全网格（因子化热 ρ0_imp2 初态）Nt=4 2.98e-3 →
       Nt=8 1.54e-3（二阶收敛）——**完全闭合**；occupation 四象限
       （{因子化热,真空}×{U=0,U≠0}）全部离散水平；
-    - τ/matsubara：M=1 全网格 1.47e-4 ✅、M=2 等时 1.49e-4 ✅；
-      **M≥2 i≠j 为已知限制**（~4e-2 且 N 不收敛——τ 的组合宇称路由无法
-      编码每带奇插入偏移，matsubara 已加 fail-loud 防守（force 绕过）；
-      修复需 τ 路径的每带路由重构 = 下轮入口）；
-    - 全回归逐位/收敛无损：楔积 0/400 + 带插入 200/200 全 +1；
-      U=0 因子化（Z₂/Z₁²=1.0、mixed 2.020、rt 1.993）；Anderson mixed
-      2.004（逐位）、Toulouse mixed 2.005、τ 2.004/2.002、rt 两带 2.001；
-      twopoint_band_check ①–④ 全绿（④ 1.06e-5）；rt_fastpath 全绿。
+    - τ：F 区门控跨带补偿——等时 3.73e-5（恢复第六轮基线）、j≥1 两点
+      大部 ≤1e-3（(8,4)/(8,2)/(6,2) 全绿；N=16 (15,1) 1.58e-3——大 Δτ
+      尾部残留小残差，非干净二阶，如实记录）；
+    - τ 窄口：**j==0（ddag 折入 fold 的 R）**——fold 元素的逐 s0 修正
+      执行但端到端无效（fold R 线的符号流待推导），matsubara 对 j==0
+      显式抛错（force 绕过）；M=1 全网格 + M=2 等时/j≥1 可用；
+    - 全回归逐位/收敛无损：Anderson mixed 2.004（逐位）、Toulouse mixed
+      2.005、τ 2.004/2.002、rt 两带 2.001；twopoint_band_check ①–④ 全绿
+      （④ 1.06e-5）；rt_fastpath 全绿；楔积 plt 304/96（τ F 门控基线形态，
+      等时端到端验证正确）；
     - API 语义：raw_correlation/matsubara 承诺区间 i≥j（i<j 返回轮廓时序
-      积类量）。
+      积类量）；matsubara 拦截 j==0。
+    - 工具：validation/{twopoint_m2_check, mixed_twopoint_check,
+      twopoint_m2_frontier}.jl。
     - 工具：validation/{twopoint_m2_check, mixed_twopoint_check,
       twopoint_m2_frontier}.jl。
 

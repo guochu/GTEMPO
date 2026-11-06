@@ -579,6 +579,7 @@ function _system_factor_tau(c::WeylImagTime, model; order::Int = 2,
     tensors = TensorMap[]
     _pairpar(i) = paritybits((i - 1) % dim) ⊕ paritybits((i - 1) ÷ dim)
     F_before = F0                          # prefix₀ 计入首格的 f₁
+    Fb_τ = [count(O -> _isoddband(O, b, M), get(insmap, (:τ, 0), Matrix{ComplexF64}[])) % 2 for b in 1:M]
     for j in 1:N
         S = Matrix{ComplexF64}(GTEMPO.fock_propagator(model, :τ, h * hfrac).data)
         Amats = Vector{Matrix{ComplexF64}}(undef, 4^M)
@@ -624,15 +625,54 @@ function _system_factor_tau(c::WeylImagTime, model; order::Int = 2,
                         v += A[s, s0] * R[s0, s]
                     end
                 elseif j == 1
+                    # R 侧奇插入（boundary 0）的跨带修正：作用于 fold 求和内部
+                    # （R 线 = s0→tL，逐 s0 符号；TRF 选 bond 基准：1=R 线、2=tL）
+                    rf = get(ENV, "TRF", "0")
+                    rf_on = rf != "0" && M >= 2
                     for s0 in 1:dim
-                        v += A[sL, s0] * R[s0, tL]
+                        term = A[sL, s0] * R[s0, tL]
+                        if rf_on
+                            s0v = s0 - 1; tLv = tL - 1
+                            e2 = 0
+                            for b1 in 1:M, b2 in 1:M
+                                b1 == b2 && continue
+                                fR = Fb_τ[b1]
+                                fR == 0 && continue
+                                p2 = rf == "1" ? (((s0v >> (M - b2)) & 1) ⊕ ((tLv >> (M - b2)) & 1)) :
+                                                 ((tLv >> (M - b2)) & 1)
+                                e2 += fR * p2
+                            end
+                                isodd(e2) && (term = -term)
+                        end
+                        v += term
                     end
                 elseif j == N
                     v = A[tR, sR]
                 else
                     v = (tL == tR) ? A[sL, sR] : zero(ComplexF64)
                 end
-                iszero(v) || (C[si, ntuple(x -> ys[x] + 1, V)..., so] = v)
+                iszero(v) || begin
+                    # τ 跨带补偿（2026-11-06 第十轮补遗；与 rt/mixed 同构——
+                    # slot code 经 _code_from_ys，入键 = so（早端，链序 j−1→j））：
+                    # exponent = ⊕_b c_b·F_b(bond) ⊕ ⊕_{b≠b'} c_b·p_{b'}(bond)。
+                    m_slot = _code_from_ys(ys, 0, M)
+                    so0 = so - 1; to0 = so0 ÷ dim; sr0 = so0 % dim
+                    # τ 跨带补偿（F 区门控）：交叉项仅施加于奇插入后的 F≠0 格——
+                    # 无插入/等时区保持第六轮基线（plt 0 反号 + 等时端到端绿）。
+                    acc = 0
+                    if get(ENV, "TXCOMP", "on") == "on" && (F_before != 0)
+                        for b in 1:M
+                            acc += paritybits((m_slot >> (2 * (M - b))) & 3) * Fb_τ[b]
+                        end
+                        for b1 in 1:M, b2 in 1:M
+                            b1 == b2 && continue
+                            acc += paritybits((m_slot >> (2 * (M - b1))) & 3) *
+                                   (((sr0 >> (M - b2)) & 1) ⊕ ((to0 >> (M - b2)) & 1))
+                        end
+                        isodd(acc) && (v = -v)
+                    end
+                    C[si, ntuple(x -> ys[x] + 1, V)..., so] = v
+                end
             end
         end
         all(iszero, C) && error("虚时 K：单元 $j 核全零")
@@ -642,6 +682,9 @@ function _system_factor_tau(c::WeylImagTime, model; order::Int = 2,
             push!(positions, lattice[GrassmannContourIndex(v, :τ, b, cj)])
         end
         F_before = F_before ⊕ f_j
+        for b in 1:M
+            Fb_τ[b] = Fb_τ[b] ⊕ count(O -> _isoddband(O, b, M), get(insmap, (:τ, j), Matrix{ComplexF64}[])) % 2
+        end
     end
 
     gmps = vacuumstate(ComplexF64, lattice)

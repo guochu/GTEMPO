@@ -152,8 +152,9 @@ matsubara M=1 全网格 + M=2 等时 ✅、occupation 四象限。另修复混�
 插入切位 off-by-one（(−,0) 曾被静默丢弃）。单带基线与全部对称观测量
 逐位不变。判决链与四次数训见 HISTORY 第十轮补遗 39–43。
 
-**已知限制（fail-loud）**：matsubara M≥2 且 i≠j（τ 路径组合宇称路由无法
-编码每带奇插入偏移，~4e-2 不随 N 收敛）——显式抛错（force 绕过）；修复 =
-下轮入口（τ 每带路由重构）。API 承诺区间 i ≥ j（raw_correlation/matsubara）。
+**τ 状态（F 区门控跨带补偿后）**：matsubara M=1 全网格 3.67e-5 ✅、M=2
+等时 3.73e-5 ✅、j≥1 两点大部 ≤1e-3 ✅；**唯一残留 = j==0（ddag 折入
+fold 的 R，~1e-2 待推导）**——matsubara 对 j==0 显式抛错（force 绕过）。
+API 承诺区间 i ≥ j（raw_correlation/matsubara）。
 工具：validation/{twopoint_m2_check, mixed_twopoint_check,
 twopoint_m2_frontier}.jl。

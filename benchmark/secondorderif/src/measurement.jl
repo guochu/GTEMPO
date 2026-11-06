@@ -112,13 +112,15 @@ function matsubara(s::Solution, i::Integer, j::Integer = 0; force::Bool = false)
     prob = s.prob
     c = prob.contour
     c isa WeylImagTime || throw(ArgumentError("虚时轮廓专用"))
-    # 已知限制（2026-11-06）：M≥2 且 i≠j 的跨格奇插入两点系统性错误（τ 路径
-    # 的组合宇称路由无法编码每带偏移；等时 i==j 同切位 f_j⊕2=0 不受影响，
-    # M=1 全网格已 ED 验证）。防守：显式抛错，force=true 绕过（下轮修复入口）。
-    if !force && c.bands >= 2 && i != j
+    # 修复边界（2026-11-06 第十轮补遗）：τ 装配的 F 区门控跨带补偿闭合了
+    # 等时 + 全部 j≥1 的两点（含 close 格 d）；唯一残留 = j==0（ddag 折入
+    # fold 的 R——R 线 s0→tL 的逐项修正未生效，~2e-2），显式抛错
+    # （force=true 绕过）。M=1 任意、occupation（偶插入）不受影响。
+    if !force && c.bands >= 2 && j == 0
         throw(ArgumentError(
-            "matsubara: M≥2 且 i≠j 的两点函数当前不可靠（τ 路径每带奇插入路由 " *
-            "限制，HISTORY 第十轮补遗）。可用：等时（i==j）、occupation、M=1 任意。传 force=true 绕过。"))
+            "matsubara: M≥2 的 j==0（ddag 折入 fold-R 侧）两点当前不可靠" *
+            "（fold 元素的跨带修正未生效，HISTORY 第十轮补遗）。" *
+            "可用：j≥1 的两点、等时、occupation、M=1 任意。传 force=true 绕过。"))
     end
     M = c.bands
     d = _fock_ops(M)[1]
