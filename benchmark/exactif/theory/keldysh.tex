@@ -1,289 +1,474 @@
 % !TEX program = xelatex
-% 严格 IF 实时核：Keldysh 轮廓上的全流程闭环理论
-% 编译：xelatex keldysh.tex（需 ctexart + Noto CJK；跑两遍生成目录/引用）
+% 严格 IF 实时核理论：Keldysh 轮廓上的逐步推导（详导版）
+% 与 keldysh.md 内容逐节对应（两版分别维护，同 MATHEMATICS.md/.tex 约定）。
+% 编译：xelatex keldysh.tex（需 ctexart + Noto CJK + DejaVu 字体；跑两遍生成目录）
 \documentclass[11pt,a4paper]{ctexart}
 
-\usepackage[margin=2.4cm]{geometry}
+\usepackage[margin=2.2cm]{geometry}
 \usepackage{amsmath,amssymb,mathtools}
-\usepackage{booktabs}
+\usepackage{longtable,booktabs,array}
 \usepackage{graphicx}
 \usepackage{xcolor}
 \usepackage[colorlinks=true,linkcolor=blue!60!black,urlcolor=blue!60!black]{hyperref}
+\setmainfont{DejaVu Serif}
+\setmonofont{DejaVu Sans Mono}
 
-\newcommand{\ab}{\bar a}
-\newcommand{\xb}{\bar x}
 \newcommand{\Pf}{\operatorname{Pf}}
-\newcommand{\Tr}{\operatorname{Tr}}
 \newcommand{\tr}{\operatorname{tr}}
+\newcommand{\Tr}{\operatorname{Tr}}
 \newcommand{\antisym}{\operatorname{antisym}}
 
-\title{\textbf{严格 IF 实时核：Keldysh 轮廓上的全流程闭环理论}\\
+\title{\textbf{严格 IF 实时核理论：Keldysh 轮廓上的逐步推导}\\
 \large ——bath 积掉、IF Grassmann 变量积掉与 1/2/4 阶 Trotter 组装}
 \author{benchmark/exactif 工作笔记}
 \date{2026 年 11 月}
 
 \begin{document}
 \maketitle
-
 \tableofcontents
+\clearpage
 
-\section{模型、目标与总览}
+\section{模型与目标}
 
-杂质模型（单带或多带）：
+\subsection{模型}
+
+杂质模型（单带推导，多带在 §\ref{sec:multi} 推广）：
 \begin{equation}
-H = H_{\mathrm{imp}}[d] + H_q, \qquad
-H_q = H_{\mathrm{bath}}[c] + \sum_\alpha \big(V_\alpha d^\dagger c_\alpha + h.c.\big),
+H = H_{\mathrm{imp}} + H_q .
 \end{equation}
-bath 处于热平衡 $\rho_b \propto e^{-\beta H_{\mathrm{bath}}}$，杂质初态 $\rho_0$
-（热态，与 bath 可分离）。目标：Keldysh 轮廓 $0 \to T\,(+)$、$T \to 0\,(-)$ 上的
-实时观测量——$n(T)$、$\rho(T)$、双时 Green 函数
-$G^{>}(t,\tau) = \langle c(t) c^\dagger(\tau)\rangle$、
-$G^{<}(t,\tau) = \langle c^\dagger(\tau) c(t)\rangle$。
+逐项定义：
+\begin{itemize}
+\item $H_{\mathrm{imp}}$：杂质哈密顿量，只含杂质算符。单带时
+  $H_{\mathrm{imp}} = \epsilon_d\, n$（$n = d^\dagger d$，$d$ 为杂质湮灭算符）；
+  双带 Anderson 时 $H_{\mathrm{imp}} = \epsilon_d (n_1+n_2) + U\, n_1 n_2$。
+  \textbf{关键性质：$H_{\mathrm{imp}}$ 一般不是二次型}（$U$ 项是四费米算符）
+  ——这是杂质部分必须走精确门、不能并入高斯积分的根本原因（§\ref{sec:bath}）。
+\item $H_q \equiv H_{\mathrm{bath}} + H_{\mathrm{hyb}}$：二次型部分。逐项：
+  $H_{\mathrm{bath}} = \sum_\alpha \epsilon_\alpha c_\alpha^\dagger c_\alpha$
+  （bath 模式 $\alpha$ 的能级 $\epsilon_\alpha$、湮灭算符 $c_\alpha$）；
+  $H_{\mathrm{hyb}} = \sum_\alpha (d^\dagger V_\alpha c_\alpha + c_\alpha^\dagger V_\alpha d)$
+  （耦合幅 $V_\alpha$，复数）。
+\end{itemize}
+$H_q$ 是单粒子二次型：$H_q = \sum_{ij} h_{ij}\gamma_i^\dagger\gamma_j$，其中
+$\gamma_i$ 是全部湮灭算符（$\gamma_0 = d$、$\gamma_{\alpha} = c_\alpha$），单粒子矩阵
+\begin{equation}
+h = \begin{pmatrix} 0 & V^\dagger \\ V & H_{\mathrm{bath}} \end{pmatrix} .
+\end{equation}
+\textbf{杂质对角元为 0}——杂质的自身演化（含 $\epsilon_d$ 与 $U$）全部归入
+$H_{\mathrm{imp}}$。这个分配不是唯一可能，但它使 $h$ 的 bath 侧只含 bath
+自由度，是 §\ref{sec:bath} 高斯积分成立的条件；杂质自身演化由 §\ref{sec:assembly} 的精确门承担。
 
-\textbf{全流程 = 两次精确高斯积分 + 一次 Trotter 组装}，除 Trotter 分割本身
-（与可选的键维截断）外无任何近似：
+\subsection{初态与目标观测量}
+
+初态可分离：bath 热态
+$\rho_b = e^{-\beta H_{\mathrm{bath}}}/Z_b$（$Z_b = \tr e^{-\beta H_{\mathrm{bath}}}$）；
+杂质初态 $\rho_0 = e^{-\beta H_{\mathrm{imp}}}/\tr(e^{-\beta H_{\mathrm{imp}}})$
+（热态；任意初态同样支持）。
+
+目标：Keldysh 轮廓 $0 \to T$（前向 $+$ 支）$\to 0$（后向 $-$ 支）上的实时观测量：
+\begin{itemize}
+\item 末态占据数 $n(T)$：$\rho(T) = \Tr_{\mathrm{bath}}[U\rho_{\mathrm{tot}}(0)U^\dagger]$ 的对角元；
+\item 双时 Green 函数（裸关联形式；物理 gt/lt 差一个 $\mp i$ 因子）：
+  $\mathrm{greater}(k) = \langle c(T) c^\dagger(\tau_k)\rangle$、
+  $\mathrm{lesser}(k) = \langle c^\dagger(\tau_k) c(T)\rangle$，
+  采样时刻 $\tau_k$ 见 §\ref{sec:readout}；
+\item 全部观测量都是\textbf{比值}：分子 = 带插入的收缩，分母 $Z$ = 无插入收缩
+  ——归一化常数（§\ref{sec:nu} 的 $\nu\Pf$）在比值中消去。
+\end{itemize}
+
+\subsection{总路线}
 
 \begin{center}
-\begin{tabular}{@{}p{2.0cm}p{4.0cm}p{4.8cm}p{4.6cm}@{}}
+\begin{tabular}{@{}p{1.2cm}p{3.6cm}p{4.6cm}p{3.4cm}p{3.2cm}@{}}
 \toprule
-步骤 & 积掉的对象 & 输出 & 实现位置 \\
+步骤 & 积掉的对象 & 方法 & 输出 & 实现位置 \\
 \midrule
-① 积掉 bath & 物理 bath 模式的相干场 & 接口变量上的两扇区 Gaussian $G$ + $\nu\Pf(G)$ & contour\_G / compact\_delta \\
-② 积掉 IF 变量 & 接口（influence-functional）变量 & 杂质轨迹腿上的消元核 $D$ & delta\_eff 恒等式 \\
-③ 组装 & —— & 杂质核 $K$（order 1/2/4 调度）$\times D\times$ 测度/闭合 & sysdynamics\_exact! + gtlt\_compact \\
+（1） & 物理 bath 的相干场 & 逐 cell 精确高斯积分 + Schur & 接口变量上的 Gaussian $G$ & contour\_G / compact\_delta \\
+（2） & IF（接口）Grassmann 变量 & 带源高斯积分（Pfaffian 恒等式） & 杂质轨迹腿上的消元核 $D$ & delta\_eff 恒等式 \\
+（3） & ——（组装） & 调度门链 + 消元核 + 测度/闭合 & 收缩 $\to$ 读出 & sysdynamics\_exact! + hybriddynamics + gtlt\_compact \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-第①②步是\textbf{精确恒等式}（数值上分别验证到 Pfaffian/系数级 $\le 10^{-16}$）；
-第③步携带全部 Trotter 误差，其阶数由调度表决定（1/2 阶全局 $O(\delta t^2)$、
-4 阶全局 $O(\delta t^4)$）。
+（1）（2）是\textbf{精确恒等式}（数值验证：（2）逐系数 $\le 2.2\times10^{-16}$；
+（1）的 $G$ 与 IFGTEMPO 逐位一致）。（3）携带全部 Trotter 误差：order 1/2
+全局 $O(\delta t^2)$、order 4 全局 $O(\delta t^4)$（§\ref{sec:assembly} 给出推导与数值）。
 
-记号：每条 Grassmann 腿一个生成元 $\theta$；$\bar\theta$ 型腿记 creation 类、
-$\theta$ 记 annihilation 类；接口（IF）变量记 $a = (\bar a, a)$，杂质轨迹变量
-记 $x = (\bar x, x)$。
+记号约定：每条 Grassmann 腿一个生成元；$\bar x$ 型腿记 creation 类、$x$ 型腿记
+annihilation 类；接口（IF）变量对记 $a = (\bar a, a)$，杂质轨迹变量对记
+$x = (\bar x, x)$；多带时带 flavor 下标。
 
-\section{第一步：积掉 bath——两扇区 Gaussian 与 Schur 消元}
+\section{第一步：积掉 bath——两扇区 Gaussian 与 Schur 消元}\label{sec:bath}
 
-\subsection{耦合二次型 cell 与单粒子传播子}
+\subsection{链的搭建：pair 变量与逐对测度}
 
-把 $H_q$（bath + 耦合；杂质能级移入 $H_{\mathrm{imp}}$，故 $h$ 的杂质对角元为
-0）写成单粒子形式 $H_q = \sum_{ij} h_{ij}\gamma_i^\dagger\gamma_j$
-（mode 0 = 杂质，mode $\alpha$ = bath $\alpha$）：
+把实时演化按调度切成 cell：
+$\mathcal{U} = A(\ell_{N_c+1}) B(\tau_{N_c}) A(\ell_{N_c}) \cdots B(\tau_1) A(\ell_1)$。
+每个 $B(\tau_c)$ 是 bath 自由度的高斯映射；相邻 $B$ 的 bath 相干场通过
+\textbf{边界分辨率}（§1.2 的多模版）缝合。由 §1.3 的迹规则（多模版），整条链的 bath 迹：
 \begin{equation}
-h = \begin{pmatrix} 0 & V^\dagger \\ V & H_{\mathrm{bath}} \end{pmatrix},
-\qquad B(\tau) = e^{-i\tau h}.
+\Tr_{\mathrm b}\big[B(\tau_{N_c}) \cdots B(\tau_1)\big]
+= \int \mathcal{D}(\bar\gamma,\gamma)\;
+e^{\frac12 (\bar\gamma,\gamma)^{\mathsf T} \mathcal{B} (\bar\gamma,\gamma)}
+\times \prod_{\text{pair}} (-\bar\gamma\gamma)\ \quad(\text{thermal/trace edges closed}) ,
 \end{equation}
-每个 Trotter cell 的二次型演化 $B(\tau_c)$ 是相干场上的\textbf{精确高斯映射}；
-任意时长（含 Suzuki 负 cell）都能算——这是 order 4 原生支持的来源。
-
-\subsection{两扇区 Q-kernel 缝合与 G 装配}
-
-bath 相干场配对成 per-(branch, node) 的 $(\bar\gamma,\gamma)$ pair；forward 链
-沿 $(+,1)\to(+,2)\to\cdots\to(+,N_c{+}1)$、backward 链反向；热边连接
-$(+,1)$ bars $\times$ $(-,1)$ etas（$e^{-\beta H_{\mathrm{bath}}}$）；远端共享
-trace pair（末个 forward 核输出行带 $\langle-\bar\psi|$ 翻转）；每 pair 测度
-$-\bar\gamma\gamma$。每个 forward cell 把 $B(\tau_c)$ 的矩阵元缝合进大反对称
-矩阵 $A$（上三角 $+\!=v$、下三角 $-\!=v$）：
-\begin{equation}
-A[\bar x_c, x_c] \mathrel{+}= U_{11},\quad
-A[\bar x_c, a'_\alpha] \mathrel{+}= U_{1,1+\alpha},\quad
-A[\bar a'_\alpha, x_c] \mathrel{+}= U_{1+\alpha,1},\quad
-A[\bar a'_\alpha, a_\beta] \mathrel{+}= U_{1+\alpha,1+\beta}
-\end{equation}
-（$U_{11} = 1$：杂质能级在门里，$h$ 的杂质对角元为 0。）
-
-\subsection{Schur 消元与 G 的性质}
-
-$A$ 分块为（接口 $|$ bath）：$A = \begin{pmatrix} E & C \\ -C^{\mathsf T} & B\end{pmatrix}$。
-\textbf{积掉 bath} = 对 bath 块作 Schur 消元：
-\begin{equation}
-G = \antisym\big(E + C B^{-1} C^{\mathsf T}\big),
-\qquad \antisym(M) = \tfrac12(M - M^{\mathsf T}),
-\end{equation}
-得到接口变量上的两扇区 Gaussian $G$（compact 布线 = IFGTEMPO
-\_analytic\_contour\_G，order 2 与含负 cell 的 order 4 已逐位验证一致）。
-
-性质（全部数值验证）：
+逐符号定义：
 \begin{itemize}
-\item \textbf{U(1) 结构}：$H_q$ 数量守恒 $\Rightarrow$ $G$ 的非零元只在
-  (bar, eta) 跨类槽位对上，同 kind 块恒为零 $\Rightarrow$ $G^{-1}$ 同样
-  $\Rightarrow$ 消元核 $D$ 无同 kind 项（全 order 验证 $0$）；
-\item 归一化 $\nu = Z_N/Z$：bath 链传播的迹比；闭合配分函数
-  $Z = (\text{收缩})\cdot\nu\cdot\Pf(G)$；
-\item $\Pf(G)$ 用 Parlett--Reid $O(n^3)$ 数值 Pfaffian（勿用 $2^n$ 展开）。
+\item $(\bar\gamma_\alpha(j), \gamma_\alpha(j))$：第 $j$ 个 cell \textbf{边界}上的
+  bath pair 变量（前向支 $+$、后向支 $-$ 各一套；branch 下标略）；
+\item $\mathcal{B}$：由各 $B(\tau)$ 的 $U_{22}$ 块（bath 内部传播）组装的 bath
+  块矩阵（组装算法见下）；
+\item $\prod(-\bar\gamma\gamma)$：逐 pair 测度。
 \end{itemize}
 
-\section{第二步：积掉 IF Grassmann 变量——Pfaffian 恒等式与消元核}
+\textbf{为什么每 pair 必须带测度 $-\bar\gamma\gamma$}：相邻两次分辨率闭合
+（§1.2）恰好把链缝合——缺一个测度相当于缺一次分辨率，实现上表现为
+$Z \approx \frac12\times(\text{(exact)})$（每个缺失边界丢一半相干态重叠）——与
+``$\tau = 0$ 恒等门不可跳''（§\ref{sec:conv}）同源：恒等门与测度都是分辨率的载体。
 
-\subsection{接口交叉测度作为线性源}
+\subsection{热边与迹闭合}
 
-积掉 bath 后的两扇区多项式（$a$ = 接口 IF 变量，$x$ = 杂质轨迹变量）：
+热边：bath 热态的相干表示（§1.5 引理单模验证同型）：
 \begin{equation}
-P(a,x) = \nu\, e^{\frac12 a^{\mathsf T} G a}
-\prod_t e^{-\bar a_t x_t - \bar x_t a_t}\, K[x]\, M_0 ,
+\rho_b = Z_b^{-1} e^{-\beta H_{\mathrm{bath}}}
+\;\Rightarrow\;
+\langle \bar\gamma(1,-)|\,\rho_b\,|\gamma(1,+)\rangle
+\propto e^{-\beta\sum_\alpha \epsilon_\alpha \bar\gamma_\alpha(1)\gamma_\alpha(1)} ,
 \end{equation}
-接口交叉测度（每接口每 branch 独立因子）正是 Gaussian 的\textbf{线性源}：
-slot $(t,\mathrm{br},\mathrm{bar})$ 上的源为 $-x(t,\mathrm{br},\mathrm{eta})$，
-slot $(t,\mathrm{br},\mathrm{eta})$ 上的源为 $-\bar x(t,\mathrm{br},\mathrm{bar})$
-——即\textbf{源 = partner 杂质腿}（bar$\leftrightarrow$eta 交叉）。
+（$Z_b^{-1}$ 进 $\nu$，见 §\ref{sec:nu}。）迹闭合：整条 bath 链的两端由 §1.3 的
+反周期边界规则闭合——compact 布线中实现为\textbf{共享 trace pair}（远端一对
+bath pair 由 forward 末核与 backward 末核共用）+ 末个 forward 核输出行的
+$\langle-\bar\psi|$ 翻转；其绝对符号由 Z 证书锁定。
 
-\subsection{Pfaffian 恒等式与消元核}
+\subsection{杂质接口作为``源''：Q-kernel 的四个块}
 
-Grassmann Gaussian 恒等式（$n{=}2$ 手算核验）：
+每个 cell $B(\tau_c)$ 通过 $H_{\mathrm{hyb}}$ 把\textbf{杂质接口腿}耦合进高斯
+（§1.5 引理的四个块；接口 $c$ 的杂质腿对 = $(\bar x_c, x_c)$，$x_c$ 即该接口
+的轨迹腿）：
+\begin{itemize}
+\item $U_{11}$：接口 pair $(\bar x_c, x_c)$ 之间的系数。\textbf{$U_{11} = 1$}：
+  由 $h$ 的杂质对角元为 0（§0.1）——即接口分辨率恒等；
+\item $U_{1,1+\alpha} = \bar x_c \times$ bath 输入 eta：\textbf{入射幅}
+  （$d^\dagger V_\alpha$ 项：杂质产生、bath 湮灭）；
+\item $U_{1+\alpha,1} =$ bath 输出 bar $\times x_c$：\textbf{出射幅}
+  （$V_\alpha d$ 项）；
+\item $U_{1+\alpha,1+\beta}$：bath 内部传播（对角 $\epsilon_\alpha$；多模 bath
+  时含 $H_{\mathrm{bath}}$ 块）。
+\end{itemize}
+\textbf{为什么杂质对角元可以是 0}：$B(\tau_c)$ 只承担 $H_q$ 部分的演化；
+杂质自身演化由骨架门 $A(\ell) = e^{-i\ell H_{\mathrm{imp}}}$ 承担。
+
+\subsection{组装算法与 Schur 消元的推导}
+
+实现（compact\_delta）把\textbf{接口变量与 bath 变量放进同一个大反对称矩阵}
+$A$（接口块 $E$、交叉块 $C$、bath 块 $B$；put\_G 逐项：上三角 $+\!=v$、
+下三角 $-\!=v$；逐 pair 测度与热/迹边都作为线性项进入 $A$），然后
+\textbf{一步 Schur 消掉全部 bath 变量}：
+\begin{equation}
+\int \mathcal{D}b_{\mathrm{bath}}\;
+e^{\frac12 (\mathrm{if},\mathrm{bath})^{\mathsf T} A (\mathrm{if},\mathrm{bath})}
+= \Pf(B)\;
+e^{\frac12 (\text{if})^{\mathsf T}\big(E + C B^{-1} C^{\mathsf T}\big)(\text{if})} ,
+\end{equation}
+\textbf{推导}（分块配方法，从 §1.6 规则直接读出）：把指数按块写出
+\begin{equation}
+\tfrac12 \eta_{\mathrm{if}}^{\mathsf T} E\, \eta_{\mathrm{if}}
++ \eta_{\mathrm{if}}^{\mathsf T} C\, b
++ \tfrac12 b^{\mathsf T} B b ,
+\end{equation}
+对 bath 变量 $b$ 用 §1.6 规则（源 = $C^{\mathsf T}\eta_{\mathrm{if}}$，线性项
+系数矩阵 = $B$）：积分给 $\Pf(B)\cdot\exp[+\tfrac12\eta_{\mathrm{if}}^{\mathsf T} C B^{-1} C^{\mathsf T}\eta_{\mathrm{if}}]$。
+合并接口块即得 Schur 公式。（反对称块约定使 $C$/$C^{\mathsf T}$ 的摆法有一个
+记法差；数值上实现为 $E + C(B\setminus C^{\mathsf T})$，正确性由 §5 证书锁定。）
+
+随后 $G = \antisym(E + CB^{-1}C^{\mathsf T})$（反对称化：Gaussian 指数只需
+反对称部分）。\textbf{对照}：$G$ 与 IFGTEMPO influence\_matrix\_G 逐位一致
+（order 2 的 $4\times4$、order 4 含负 cell 的 $12\times12$，max$|\Delta G| = 0$）。
+
+（等价观点：也可以\textbf{逐 cell 顺序 Schur}——每乘一个 cell 把该 cell 的
+bath 变量积掉、接口集合向前扩展一格。两种次序结果相同——高斯积分次序无关；
+实现取``一次大 Schur''。）
+
+\subsection{U(1) 结构与同 kind 零}
+
+$H_q$ 数量守恒 $\Rightarrow$ 装配的每一项都连接一个 creation 类槽位与一个
+annihilation 类槽位 $\Rightarrow$ 大 $A$ 与其 Schur 结果保持结构
+$\Rightarrow$
+\begin{equation}
+G_{(\bar,\bar)} = G_{(a,a)} = 0 \quad\text{(all orders: verified 0)}。
+\end{equation}
+这条性质是 §\ref{sec:ifelim} 行扫表示可行性的关键。
+
+\subsection{归一化 $\nu$}\label{sec:nu}
+
+Schur 抛掉的常数（$\Pf(B)$ 等）连同 bath 热态归一化构成
+\begin{equation}
+\nu = Z_N/Z = \frac{\tr[\text{bath-chain 2nd-quantized trace}]}{\tr[e^{-\beta H_{\mathrm{bath}}}]},
+\end{equation}
+（bath\_norm；分子 = 链上逐 cell $U_{22}$ 块乘积的二次量子化迹——即 bath
+配分函数在链传播下的值。）闭合配分函数 $Z = (\text{contraction})\cdot\nu\cdot\Pf(G)$；
+比值型观测量中 $\nu\Pf$ 消去。
+
+\textbf{本步小结}：bath 积掉后，剩余多项式只含杂质轨迹腿：
+\begin{equation}
+P(x) = Z^{-1}\, e^{\frac12 x^{\mathsf T} G x}\, K[x]\cdot(\text{measures/closure included}),
+\end{equation}
+——在 compact 实现里这是最终形态（接口腿即轨迹腿）；在两扇区记法中它还带
+接口交叉测度，其消去是 §\ref{sec:ifelim} 的内容（两种记法的等价由 §5 证书链锁定）。
+
+\section{第二步：积掉 IF Grassmann 变量——Pfaffian 恒等式与消元核}\label{sec:ifelim}
+
+\subsection{接口交叉测度作为源（逐分量）}
+
+两扇区记法（$a$ = 接口 IF 变量、$x$ = 杂质轨迹变量，二者由接口交叉测度连接）：
+\begin{equation}
+P(a,x) = \nu\Pf(B)\;
+e^{\frac12 a^{\mathsf T} G a}
+\prod_c e^{-\bar a_c\, x^{\eta}_c - \bar \bar x_c\, a_c}
+\, K[x]\, M_0 .
+\end{equation}
+逐符号：$c$ 遍历接口（= cell 边界，$c = 1..N_c$）；$x^{\eta}_c$ = 接口 $c$ 上
+杂质轨迹的 annihilation 腿（前向支），$\bar \bar x_c$ = creation 腿（后向支）；
+交叉测度是\textbf{两扇区构造的接口恒等分辨率}（每个 U$_{\mathrm{imp}}$--U$_{\mathrm{bath}}$
+接口一个，逐接口独立因子——它的非独立性正是 §2 的 Schur 要一次做完的原因）。
+
+把交叉测度读成 Gaussian 的\textbf{线性源}：
+\begin{equation}
+j[\bar a_c] = -x^{\eta}_c, \qquad j[a_c] = -\bar \bar x_c ,
+\end{equation}
+即\textbf{源 = partner 杂质腿}（bar$\leftrightarrow$eta 交叉；``partner 槽位''
+映射的定义）。
+
+\subsection{带源高斯积分（Pfaffian 恒等式的 n=2 展开）}
+
+\textbf{规则}（标准费米高斯积分；n=2 展开验证如下）：
 \begin{equation}
 \int \mathcal{D}a\; e^{\frac12 a^{\mathsf T} G a + j^{\mathsf T} a}
-= \Pf(G)\; e^{-\frac12 j^{\mathsf T} G^{-1} j}.
+= \Pf(G)\; e^{-\frac12 j^{\mathsf T} G^{-1} j} .
 \end{equation}
-代入源 $j$，积掉全部 IF 变量后：
+
+\textbf{n=2 展开验证}：单接口，$a = (\bar a, a)$ 两个生成元，
+$G = \begin{psmallmatrix} 0 & g \\ -g & 0 \end{psmallmatrix}$
+（反对称 $2\times2$，$g = G_{\bar a, a}$ 即该接口的高斯幅），源
+$j^{\mathsf T} a = j_{\bar a}\bar a + j_a a$，其中 $j_{\bar a} = -\theta$
+（$\theta$ = impurity-eta 腿）、$j_a = -\bar\theta$（$\bar\theta$ 腿）——把
+杂质腿也记为生成元（它们是同一 Grassmann 代数的成员，这是路径积分的机制：
+所有腿都是生成元）。逐项展开（全部只到二阶；更高阶因生成元重复而为零）：
+\begin{itemize}
+\item $e^{\frac12 a^{\mathsf T}Ga}$：
+  $\frac12 a^{\mathsf T}Ga = \frac12(g\bar a\,a + a\,(-g)\,\bar a) = g\,\bar a\,a$
+  （用了 $a\bar a = -\bar a a$），故 $= 1 + g\,\bar a\,a$；
+\item $e^{j^{\mathsf T}a} = 1 + j_{\bar a}\bar a + j_a a + j_{\bar a}j_a\,\bar a\,a\times(符号)$。
+  $(j^{\mathsf T}a)^2$ 项：$j_{\bar a}\bar a\cdot j_a a$ 重排符号分析——两个源的积
+  $(-\theta)(-\bar\theta)\bar a\,a = \theta\bar\theta\,\bar a\,a$：把 $\bar\theta$
+  移过 $\bar a$（反号）再移过 $a$（反号）……净符号 $(+1)$，得
+  $+\theta\bar\theta\,\bar a\,a$；
+\item \textbf{乘积}：$(1 + g\bar a\,a)(1 + \theta\bar\theta\,\bar a\,a)$ 中含
+  $\bar a a$ 的项：$g\bar a\,a$ 与 $\theta\bar\theta\,\bar a\,a$；二者之和
+  $= (g + \theta\bar\theta)\,\bar a\,a$。注意 4 生成元项
+  $(g\bar a\,a)(\theta\bar\theta\,\bar a\,a) = 0$（$\bar a$ 重复）。
+\item \textbf{积分}（按逐对规则 $\int \bar a\,a = +1$，符号即 elim\_sign 的
+  约定通道）：$\int (g + \theta\bar\theta)\,\bar a\,a = g\,(1 + \theta\bar\theta)$。
+\end{itemize}
+
+\textbf{结果}：单接口消元给出 $g\,(1 + \theta\bar\theta)$——即杂质腿对上的核
+$g\,\theta\bar\theta$ 加常数 $g$。\textbf{一般 n}：$e^{j^{\mathsf T}a}$ 展开到
+二阶（更高阶为零），其二阶项与 $\frac12 a^{\mathsf T}Ga$ 的交叉把
+$\frac12 j^{\mathsf T}G^{-1}j$ 吸收进指数（标准费米高斯积分），得规则式；杂质
+腿对的核由 $G^{-1}$ 的 partner 读出给出（下节）。
+
+\textbf{本步是精确恒等式}：实现层面由 Step B 暴力 Berezin 积分逐系数对照
+锁定（$\le 2.2\times10^{-16}$，orders 1/2/4 全验）。
+
+\subsection{消元核 D 的读出（partner 映射）}
+
+一般 $N_c$ 接口、$4N_c$ 个杂质腿（每接口 $\bar x^{+}, x^{+}, \bar x^{-}, x^{-}$ 四条）：
 \begin{equation}
-\int \mathcal{D}a\; P(a,x)
-= \nu\,\Pf(G)\; e^{\sum_{\lambda<\lambda'} D_{\lambda\lambda'}\theta_\lambda\theta_{\lambda'}}\, K[x]\, M_0,
-\qquad
-D_{\lambda\lambda'} = -\tfrac12\big(G^{-1}_{ik} - G^{-1}_{ki}\big),
+D[\lambda,\lambda'] = -\tfrac12\big(G^{-1}_{ik} - G^{-1}_{ki}\big),\qquad
+i = \mathrm{slot}(\bar\lambda),\ k = \mathrm{slot}(\lambda') ,
 \end{equation}
-其中 $i,k$ 是 $\lambda,\lambda'$ 的 partner IF 槽位（即 $D = -\bar G^{-1}$ 在
-partner 映射下的读出，$\bar G^{-1} = (G^{-1}-G^{-{\mathsf T}})/2$）。
-\textbf{这一步是精确恒等式}：暴力 Berezin 积分与解析式逐系数一致
-（$\le 2.2\times10^{-16}$，orders 1/2/4 全验）。
+逐符号：$\lambda,\lambda'$ = 两条杂质轨迹腿；$\mathrm{slot}(\bar\lambda)$ =
+$\lambda$ 的 \textbf{partner IF 槽位}（源映射：bar$\leftrightarrow$eta 交叉——
+$\lambda = \bar x^{+}(c)$ 的 partner 是 IF 槽位 $(c, +, \mathrm{eta})$，
+$\lambda' = x^{+}(c')$ 的 partner 是 $(c', +, \mathrm{bar})$）；$-\frac12(\cdot-\cdot)$
+是把 $G^{-1}$ 反对称化后按 (bar$\to$eta) 有向读出的\textbf{反对称化因子}；
+绝对符号 elim\_sign $= -1$ 由 Step B 证书锁定（纯约定）。
 
-\subsection{D 的结构：bar$\to$eta 有向块}
+\subsection{同 kind 零与行分解（Q1 判决）}
 
-$G^{-1}$（同 $G$）只有 (bar, eta) 跨类元 $\Rightarrow$ $D$ 只含
-\textbf{bar$\to$eta 有向对}，同 kind 单项式（bar--bar / eta--eta）恒为零
-（全 order 验证 0 个）。因此
+§2.5 的 U(1) 结构经 Schur 与求逆保持 $\Rightarrow$ $G^{-1}$ 同 kind 元为零
+$\Rightarrow$ $D$ 同 kind 元为零（全 order 数值验证 0 个）$\Rightarrow$
 \begin{equation}
-e^{\sum D} = \prod_{\bar r}\Big(1 + \theta_{\bar r}
-\textstyle\sum_c D_{rc}\theta_c\Big)
+e^{\sum D} = \prod_{\text{bar } r}\Big(1 + \theta_{\bar r}\sum_c D[r,c]\,\theta_c\Big)
 \end{equation}
-按行分解（每行一个 partialmpo，键维 2）——partialif 行扫完整承载消元核
-（Q1 判决：全 order 0 个同 kind 单项式）。这是 GTEMPO hybriddynamics 能直接
-消费 $D$ 的机制基础。消元不损失任何信息；代价是 $D$ 的非局域性（IF 键维按
-$4^{N_c}$ 增长，生产上用键维截断控制）。
+按行分解——每行一个 partialmpo、键维 2，hybriddynamics 行扫完整承载
+（Q1 判决）。\textbf{消元精确、无近似}；代价是 $D$ 非局域（IF 键维按
+$4^{N_c}$ 增长，生产上键维截断）。
 
-\section{杂质部分与 1/2/4 阶完全组装}
+\subsection{两种记法的关系（一步 vs 两步）}
 
-\subsection{杂质扇区：K 因子}
+compact 实现把 §2（Schur）与 §3（Pfaffian 消元）\textbf{融合为一次大
+Schur}：接口槽位直接取为轨迹腿（交叉测度成为 Gaussian 的对角恒等对
+$U_{11} = 1$，其与轨迹腿的连接由骨架链承担）。两种记法的最终多项式逐位
+等价——等价性的证书链：（1）$G$ vs IFGTEMPO 逐位；（2）消元核 vs 暴力积分
+逐系数；（3）管线 vs Fock 离散链机器级；（4）管线 vs IFGTEMPO 机器级。
+§3 的两步记法用于推导与验证，§2 的融合记法用于实现。
 
-杂质核是\textbf{精确 Fock 传播子}的链（任意 $\epsilon_d$、$U$，逐门精确）：
+\section{杂质部分与 1/2/4 阶组装}\label{sec:assembly}
+
+\subsection{杂质核 K 链}
+
+杂质扇区\textbf{不走高斯积分}（$H_{\mathrm{imp}}$ 含 $U$ 项，非二次型）——
+走精确 Fock 门：
 \begin{equation}
 K[x] = \langle \bar x_0^{+}|\rho_0|x_0^{-}\rangle
 \prod_{t=1}^{N_c+1}\langle \bar x_t^{+}|A(\ell_t)|x_{t-1}^{+}\rangle
 \prod_{t=N_c+1}^{1}\langle \bar x_{t-1}^{-}|A(\ell_t)^\dagger|x_t^{-}\rangle,
-\qquad A(\ell) = e^{-i\ell H_{\mathrm{imp}}},
+\qquad A(\ell) = e^{-i\ell H_{\mathrm{imp}}} .
 \end{equation}
-$N_c$ = cell 数（接口数），$\ell_t$ = 门时长（$N_c+1$ 个）。前向链止于末层
-creation 腿、后向链止于末层 annihilation 腿——开放端读出挂在这两条腿上。
+$A(\ell)$ 对多带含 $U$ 时是 $2^{\mathrm{bands}}$ 维 Fock 矩阵的精确指数
+——\textbf{门内无近似}；近似只在门与 cell 的分割方式（调度）里。
 
-\subsection{Trotter 调度表（order 1/2/4）}
-
-$A$/$B$ 分割 $e^{-i(A+B)\delta t}$：$A$-因子（杂质门，进 $K$）与 $B$-cell
-（bath+耦合，进 $G$）交错合并：
+\subsection{Trotter 调度表}
 
 \begin{center}
-\begin{tabular}{@{}lp{4.3cm}p{5.6cm}p{4.6cm}@{}}
+\begin{tabular}{@{}lp{4.3cm}p{5.6cm}p{4.4cm}@{}}
 \toprule
 order & cells（进 $G$） & links（进 $K$） & 全局阶 \\
 \midrule
-1 & $\mathrm{fill}(\delta t, N)$ & $[\delta t,\dots,\delta t,\,0]$ & $O(\delta t^2)$：精确顶点幅已重求和 $[A,B]\delta t^2$ 首项 \\
-2 & $\mathrm{fill}(\delta t, N)$ & $[\delta t/2,\,\delta t,\dots,\,\delta t/2]$ & $O(\delta t^2)$（对称） \\
-4 & $[a,b,a]\delta t\times N$ & $[a/2,\,c,\,c,\,(a,c,c){\times}(N{-}1),\,a/2]$ & $O(\delta t^4)$ \\
+1 & $\mathrm{fill}(\delta t, N)$ & $[\delta t\times N,\,0]$（末位 0：开放端在末时刻） & $O(\delta t^2)$（机理 §\ref{sec:o1mech}） \\
+2 & $\mathrm{fill}(\delta t, N)$ & $[\delta t/2,\,\delta t\times(N{-}1),\,\delta t/2]$ & $O(\delta t^2)$（对称，下节推导） \\
+4 & $[a,b,a]\delta t\times N$ & $[a/2,\,c,\,c,\,(a,c,c){\times}(N{-}1),\,a/2]$ & $O(\delta t^4)$（下节推导） \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-（order 1 与 order 2 对角 $H_{\mathrm{imp}}$ + 对角初态下逐位同链——已知恒等式。）
+links 比 cells 多一个（链两端各一门）。order 1 links 末位 0 的恒等门不可跳
+（§\ref{sec:conv}）。
 
-\subsection{order 4：回文 Suzuki 的必要性}
+\subsection{回文与阶条件（order 2 与 4 的推导）}
 
-标准 Suzuki 四阶 = \textbf{回文组合} $S_4 = S_2(a\delta t)\,S_2(b\delta t)\,S_2(a\delta t)$：
+记 $X = -i\tau_1 A$、$Y = -i\tau_2 B$、$Z = -i\tau_3 A$（$\tau_i$ = 各 A/B
+因子时长）。对 $e^{X}e^{Y}e^{Z}$，BCH 展开的指数二阶项：
 \begin{equation}
-2a + b = 1,\qquad 2a^3 + b^3 = 0
-\;\Longrightarrow\;
-a = \frac{1}{2-\sqrt[3]{2}} \approx 1.2252,\quad
-b = 1 - 2a \approx -1.4505 < 0,\quad
-c = \frac{a+b}{2} < 0.
+\tfrac12[X,Y] + \tfrac12[Y,Z] + \tfrac14\big([X,Z] + [Z,X]\big) .
 \end{equation}
-三个条件缺一不可：
-(1) $2a+b=1$：一阶正确性；
-(2) \textbf{回文}（时间反演对称）：奇幂（$O(\delta t^3)$）BCH 余项恒零的充要
-条件——非回文序 $S_2(a)^2 S_2(b)$ 携带 $O(\delta t^3)$，渐近比值滑向 8
-（实测 12.7$\to$9.0 序列）——曾实现的错误序；
-(3) $2a^3+b^3=0$：三阶相消，与回文序联立解出上权重。
-
-负 cell（$b<0$）是三阶相消的必然代价：接口格点非均匀且时间倒卷（macro 内边界
-$t + a\delta t \to t + (a{+}b)\delta t$）。回文链（合并相邻 $A$ 后）
+order 2 的链 $X = -i\delta t A/2$、$Y = -i\delta t B$、$Z = -i\delta t A/2$：
+$[X,Z] = 0$（同为 $A$ 向），且 $[Y,Z] = [Y,X]\cdot(\tau\ \text{equal})$，于是
 \begin{equation}
-A(a/2)\,B(a)\,A(c)\,B(b)\,A(c)\,B(a)\,A(a/2)
+\tfrac12[X,Y] + \tfrac12[Y,X] = 0 :
 \end{equation}
-逐步构造（cell 边界逐一 Schur）即得 order-4 的 $G$ 与 $K$。实测：比值序列
-$14.4\to15.6\to15.9\to\mathbf{16.0}$（$N{=}16$ 定点 15.97/16.12，渐近拟合
-$p = 3.98/3.99$）。
+\textbf{$\delta t^2$ 项恰好相消}（``对称/回文''的代数含义：首尾两个 A-半步
+相等使两个 commutator 贡献互抵）。残留从 $\delta t^3$ 起 ⇒ 单步
+$O(\delta t^3)$、$N$ 步全局 $O(\delta t^2)$。
 
-\subsection{原生格上的完全组装与锁定约定}
+\textbf{order 4}：回文 Suzuki $S_4 = S_2(a\delta t)\,S_2(b\delta t)\,S_2(a\delta t)$，
+合并链（相邻 $A$ 因子相加：$a/2 + b/2 = c$ 等）后逐宏步
+\begin{equation}
+A(a/2)\,B(a)\,A(c)\,B(b)\,A(c)\,B(a)\,A(a/2),
+\qquad c = \frac{a+b}{2} .
+\end{equation}
+权重条件：
+\begin{equation}
+2a + b = 1\ \ (\text{first order: total time}),\qquad 2a^3 + b^3 = 0\ \ (\text{third-order cancellation}),
+\end{equation}
+解出 $a = 1/(2-\sqrt[3]{2}) \approx 1.2252$、$b = 1-2a \approx -1.4505 < 0$。
+\textbf{回文性的角色}：组合中 S2 因子序正读倒读一致 $\Rightarrow$ 所有奇幂
+BCH 余项成对相消；\textbf{非回文序 $S_2(a)^2 S_2(b)$} 的 $\delta t^3$ 项不再
+满足该条件——实测比值序列 $12.7\to9.0$（滑向 8，即 $p\to3$）是其失效的数值
+表现；修正为回文序后比值恢复 16（$N{=}16$ 定点 15.97/16.12）。\textbf{负
+cell 的必然性}：$2a^3 + b^3 = 0$ 要求 $b < 0$（两个正立方之和不能为零）——
+三阶相消必须有反向步，接口格点因此非均匀且时间倒卷（macro 内边界
+$t + a\delta t \to t + (a{+}b)\delta t = t - 0.225\delta t$）。
 
-GTEMPO 原生实时格（$N = N_c{+}1$ gaps：node 1 = $t{=}0$、node $2..N_c{+}1$ =
-接口、node $k$ = 开放端）上的三个因子：
-\begin{enumerate}
-\item \textbf{IF 因子}：compact\_delta 的 $M$ 矩阵（$D$ 的 bar$\to$eta 有向读）
-  经 hybriddynamics 行扫；
-\item \textbf{骨架}：按调度的杂质门（\textbf{每 gap 一门，$\tau{=}0$ 恒等门不可
-  跳}——恒等传播子携带相干态分辨率 $\prod(1+\bar cc)$，是测度的一部分）+
-  接口反测度 $(1-\bar xx)$（补偿隐式 pair 分辨率的重复施加；锁定
-  $\mathrm{cc}=-1$）+ Keldysh 折返（$e^{-\bar x^- x^+}$）+ $\rho_0$ 热态；
-\item \textbf{归一化}：$\mathrm{normdelta} = \nu\Pf(G)$ 进 scaling；
-  $Z = \mathrm{integrate}\cdot\normdelta$。
-\end{enumerate}
-消元核与骨架的约定\textbf{成对锁定}（$Z{=}1$ 与 Fock 双证书标定）：
-$\mathrm{cc}=-1$、$\mathrm{sgn}=-1$、无 siteflip、无 node-1 修正。
+\subsection{order 1 全局二阶的机理}\label{sec:o1mech}
 
-\subsection{读出约定（闭环的出口）}
+order 1 的裸分裂 $A(\delta t)\,B(\delta t)$ 单步只有 $O(\delta t)$——但严格
+核管线的实测全局阶是 \textbf{$p = 2$}。机理：分裂的领头误差
+$[A,B]\delta t^2/2$ 是``杂质门与耦合演化的交错缺失''；严格 cell
+$B(\delta t) = e^{-i\delta t\,h}$ 的耦合顶点幅对 $V$ 的任意幂精确，它把这项
+交错\textbf{重新生成到所有阶}（$D$ 的二阶交叉项正是 $[A,B]\delta t^4$ 的
+内容），残留从更高阶起 $\Rightarrow$ 全局 $O(\delta t^2)$。冻结核（顶点冻结
+在 cell 内）没有这个重求和 $\Rightarrow$ 全局 $O(\delta t)$（实测 $p\approx1$）。
+最终裁判是数值：order 1 比值 4.00、$p = 2.01$（Toulouse）/1.98（Anderson）。
+
+\subsection{组装约定逐条（每条的理由）}\label{sec:conv}
+
+\begin{center}
+\begin{tabular}{@{}p{2.6cm}p{5.6cm}p{7.2cm}@{}}
+\toprule
+约定 & 内容 & 理由 \\
+\midrule
+每 gap 一门 & $\tau = 0$ 恒等门不可跳 & 恒等传播子张量携带该 pair 的相干态分辨率 $\prod(1+\bar cc)$，是测度的一部分；跳过丢测度（$Z$ 偏 $\sim\frac12$） \\
+接口反测度 cc $= -1$ & 接口 pair 乘 $(1 - \bar x x)$ & 隐式 pair 分辨率被消元重复计入一次；幂零代数 $(1-\bar xx)(1+\bar xx) = 1$ 精确抵消 \\
+归一化 normdelta & $\nu\Pf(G)$ 进 scaling & 闭合 $Z = \mathrm{integrate}\cdot$norm；比值型观测量自动消去 \\
+消元符号 sgn $= -1$ & $M = -\bar G^{-1}$ 的 partner 读 & Step B 暴力积分证书锁定（绝对符号纯约定） \\
+无 siteflip & $M$ 不预翻 & 行扫 machinery（partialmpo）内部处理位点序符号；预翻双重 \\
+门符号 & 前向 $e^{-i\ell H}$、后向 $e^{+i\ell H}$ & Keldysh 两支的物理演化方向 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{读出约定（闭环的出口）}\label{sec:readout}
 
 \begin{itemize}
-\item $n(T)$：折返点自由腿对 $(a_k^{+},\bar a_k^{-})$ 的 2 腿 GTerm 投影
-  （与稠密 $\rho(T)$ 投影同约定；occupation 的 insert\_n 带 $O(\delta t)$
-  有效时刻偏移，勿用）；
-\item $\langle n_1 n_2\rangle$：band-1 + band-2 两条折返腿 GTerm 的乘积投影；
+\item $n(T)$：折返点自由腿对 $(a_k^{+}, \bar a_k^{-})$ 的 2 腿 GTerm 投影。
+  理由：轮廓折返把前向末腿与后向末腿配对，插入
+  $\theta_{a^{+}}\theta_{\bar a^{-}}$ 与折返双线性共享腿、按幂零性自动相消
+  ——与稠密 $\rho(T)$ 投影同一约定（occupation 的 insert\_n 带
+  $O(\delta t)$ 有效时刻偏移，勿用）；
+\item $\langle n_1 n_2\rangle$：band-1 + band-2 两条折返腿 GTerm 的乘积投影
+  （幂零性保证乘积 = 4 腿单项式）；
 \item gt/lt：$c(t_f)$ @ 开放端 backward-eta 腿；
   $\mathrm{greater}[k{+}1] = \langle c(t_f)c^\dagger(k\delta t)\rangle$ 用
-  GTerm(fwd\_bar@层 $k{+}1$, csite)，$\mathrm{lesser}[k{+}1] =
+  GTerm(fwd\_bar@层 $k{+}1$, csite)；$\mathrm{lesser}[k{+}1] =
   \langle c^\dagger(k\delta t)c(t_f)\rangle$ 用 GTerm(bwd\_bar@层 $k$, csite)；
-  裸关联、$Z$ 归一；\textbf{有效半步时刻} $G^{>} \approx (k{+}\frac12)\delta t$、
-  $G^{<} \approx (k{-}\frac12)\delta t$；
+  裸关联、$Z$ 归一。\textbf{有效半步时刻}：门链把算符时刻推到相邻门的中点
+  ——$G^{>}$ 的插入腿在层 $k{+}1$（时间 $(k{+}\frac12)\delta t$）、$G^{<}$ 在
+  层 $k$（$(k{-}\frac12)\delta t$）；与 IFGTEMPO 同约定读出逐位对齐；
 \item $\rho(T)$：开放腿提取（FormB 路线）或折返跨越投影。
 \end{itemize}
 
-\section{闭环验证阶梯与数值汇总}
+\subsection{多带推广}\label{sec:multi}
+
+bands $> 1$：IF 因子逐带复制（每带独立 bath 与 $D$）；杂质门用多带 Fock
+传播子（$2^{\mathrm{bands}}$ 维含 $U$ 项）——\textbf{$U$ 项把两带的轨迹腿
+耦合进同一门张量}（非每带独立）；折返逐 band 施加。已验证：双带 Anderson
+$U{=}1.5$ 的 $n/\langle n_1n_2\rangle$/gt/lt 与 IFGTEMPO 直接同模型对齐
+（$\le 8.6\times10^{-14}$）。
+
+\section{闭环验证阶梯（每个数字的出处）}
 
 \begin{center}
-\begin{tabular}{@{}p{2.2cm}p{8.6cm}p{5.4cm}@{}}
+\begin{tabular}{@{}p{2.4cm}p{7.0cm}p{3.4cm}p{2.6cm}@{}}
 \toprule
-阶梯 & 判据 & 结果 \\
+阶梯 & 判据 & 结果 & 出处 \\
 \midrule
-恒等式级 & $\epsilon_d=0$：$Z=1$（任意 order/N） & 最差 $4.6\times10^{-13}$ \\
-代数级 & 暴力 Berezin $\int\mathcal{D}a$ == $\nu\Pf\cdot e^{D}$ & $\le 2.2\times10^{-16}$ \\
-离散链级 & n/$\langle n_1n_2\rangle$/$\rho$/gt,lt vs 同调度 Fock 直算 & $\le 3.8\times10^{-15}/3.8\times10^{-14}$ \\
-对齐级 & vs IFGTEMPO 直接同模型（$U{=}1.5$ 双带） & $\le 2.2\times10^{-14}$（n）、$\le 8.6\times10^{-14}$（gt/lt） \\
-连续极限级 & vs ED（有效时刻），order 1/2/4 & $p = 2/2/4$；比值 $\to$ 4/4/16 \\
+恒等式级 & $\epsilon_d = 0$：$Z = 1$（任意 order/N；测度/簿记证书） & 最差 $4.6\times10^{-13}$ & zidentity \\
+代数级 & 暴力 Berezin $\int\mathcal{D}a$ == $\nu\Pf\cdot e^{D}$ & $\le 2.2\times10^{-16}$ & formb\_dense Step B \\
+结构级 & 消元核同 kind 项 / bar$\to$eta 充分性 & 0 个 / PASS & samekind\_check / restrictd\_probe \\
+离散链级 & n/$\langle n_1n_2\rangle$/$\rho$/gt,lt vs 同调度 Fock 直算 & $\le 3.8\times10^{-15}/3.8\times10^{-14}$ & verify\_compact / formb\_dense Step C \\
+对齐级 & vs IFGTEMPO 直接同模型（$U{=}1.5$ 双带） & $\le 2.2\times10^{-14}$（n）、$\le 8.6\times10^{-14}$（gt/lt） & verify\_align\_u15 / verify\_gtlt\_align \\
+连续极限级 & vs ED（有效时刻），order 1/2/4 & $p = 2/2/4$；比值 $\to$ 4/4/16 & scaling\_compact\_models / realtime \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-各 order 一览（Toulouse/单模 bath 与 Anderson $U{=}1.5$/双带，$n(T)$ 标度）：
-Toulouse $p = 2.01/2.01/3.94$（渐近段 $2.00/2.00/3.99$）、
-Anderson $p = 1.98/1.98/3.94$（渐近段 $1.997/1.997/3.990$）。
+各 order 一览（$n(T)$ 标度）：Toulouse $p = 2.01/2.01/3.94$（渐近段
+$2.00/2.00/3.99$）；Anderson $p = 1.98/1.98/3.94$（渐近段
+$1.997/1.997/3.990$）；order 4 比值序列 $14.4\to15.6\to15.9\to16.0$
+（$N{=}16$ 定点 15.97/16.12）。
 
-两点已知的非误差项（预期行为，勿误判）：
-order 4 粗端（$\delta t = 0.4$）误差仅略优于 order 1——Suzuki 负 cell 的大误差
-常数所致的预渐近区，斜率 4 在细端兑现；
-quapi 路线 order 1 $N{=}1$ 的 $n_0$ 偏差——调度表"末位补零"约定在 $N{=}1$ 时
-清掉唯一 cell 的边缘情况（该路线 order 4 本就不支持）。
+两条已知的非误差项（预期行为）：（1）order 4 粗端（$\delta t = 0.4$）误差仅
+略优于 order 1——Suzuki 负 cell 的大误差常数的预渐近区；（2）quapi 路线
+order 1 $N{=}1$ 的 $n_0$ 偏差——调度表``末位补零''约定在 $N{=}1$ 清掉唯一
+cell 的边缘情况。
 
 \section{边界与延拓}
 
 \begin{itemize}
-\item \textbf{quapi 路线}（点基 $\Delta$）：仅 orders 1/2——Suzuki 的杂质门插在
-  bath cell 之间，点基 $\Delta$ 的点对点直连假设不成立；
+\item \textbf{quapi 路线}（点基 $\Delta$）：仅 orders 1/2——Suzuki 的杂质门
+  插在 bath cell 之间，点基 $\Delta$ 的点对点直连假设不成立；
 \item \textbf{连续谱 bath}：原生管线接受有限模 $(H_{\mathrm{bath}}, V)$
   （$\delta$ 谱 = 精确）；真连续谱需先谱离散化（求积节点，误差随模式数收敛）
   ——IFGTEMPO 的连续谱路线（Volterra + 谱求积，无模式化）在均匀 $\delta t$
