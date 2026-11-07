@@ -3,14 +3,14 @@
 #
 # 对齐 U1GTEMPO2（~/Documents/Missile/U1GTEMPO2）的模块结构，但全部建立在
 # GTEMPO 已有的 Z2 GMPS 框架之上；对任意 ConstImpurityHamiltonian（任意带数）
-# 与一般有界谱浴成立——单元级实时核对 Dirac-δ 谱走闭式精确路径，一般谱走
+# 与一般有界谱浴成立——单元级实时核统一走 QuAPI `Δt` 谱路径（离散谱精确极点
 # QuAPI 单元级积分的谱路径（kernels.jl）：
 #
 #   U1GTEMPO2 模块       本目录对应          说明
 #   ------------------   -----------------   ------------------------------
 #   contours.jl          contours.jl         N 个全宽源单元的轮廓（无端点）
 #   kernels.jl           kernels.jl          Weyl N×N 浴核 + coupling_norm
-#   exponentials.jl      （并入 kernels）    单元积分闭式（Dirac-δ）/ 谱路径（一般浴）
+#   exponentials.jl      （并入 kernels）    QuAPI Δt 谱路径（离散谱精确极点装配）
 #   tensors.jl           tensors.jl          单元核 → Z2 site tensors
 #   system.jl            system.jl           Weyl/一阶系统因子 K（folded 链）
 #   influence.jl         influence.jl        IF：完全复用 GTEMPO hybriddynamics
@@ -57,7 +57,7 @@ export AbstractWeylContour, WeylRealTime, WeylImagTime, WeylMixedTime
 export weyl_lattice, ncells, stepλ, cell_interval, boundary_times, cell_indices
 # —— 浴核（对齐 kernels.jl / exponentials.jl）
 export HybridizationKernel, hybridization, coupling_norm
-export realtime_kernel_trace, realtime_kernel_quapi, α_weight
+export realtime_kernel_quapi, α_weight
 # —— 系统因子（对齐 system.jl）
 export local_weight, system_factor, WeylInsertion
 # —— IF / 收缩 / 求解 / 观测量（对齐 influence / contraction / solver / measurement）

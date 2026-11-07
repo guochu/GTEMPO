@@ -540,3 +540,22 @@ validation/kcoeff_mine.jl / kcoeff_u1.jl / kcoeff_compare.jl
 results/convergence.csv 基准数据
 results/ifcoeff_*、kcoeff_*             交叉核对数据与报告
 ```
+
+## 2026-11-07 第十二轮补遗 3（实时核特例移除：QuAPI 统一路径）记录
+
+1. **`realtime_kernel_trace`（Dirac-δ 闭式浴迹特例）删除**。实时核统一走
+   QuAPI `Δt` 谱路径——QuAPI 对离散谱（DiracDelta / DiscreteSpectrum）
+   取**精确极点装配**（`_normal_bath_modes`，数值精确无求积误差），特例
+   无存在必要。删除前双路径互验（kernel_paths_check ① 段）：四块
+   max|Δ| ≤ **4.08e-17**（机器精度），与第八轮 #4 记录一致。
+2. **改动清单**：hybridization 分派去 DiracDelta 分支；kernels.jl 删
+   ~200 行（_singlemode_ops/_cell_E/_gmul/realtime_kernel_trace 及
+   storage 开关）；导出清单同步；README/模块头/文档字符串更新为
+   「三轮廓统一 QuAPI 谱路径（离散谱精确极点装配）」。
+3. **回归（全部逐位无损）**：kernel_paths_check（δ 端到端 3.0e-5/7.6e-6、
+   双 δ τ+rt）、rt_fastpath（7.58e-6/1.90e-6；两带 2.12e-5…1.34e-6）、
+   twopoint_m2_check（M=1 3.67e-5、M=2 1.71e-3）、toulouse/singlemodebath
+   scaling（2.002/1.996/2.004/2.001）、mixed_twopoint 6.82e-4。scaling
+   CSV 仅末位浮点漂移（4e-17 核差的传播，斜率不变）。
+4. kernel_paths_check.jl 重写：① 段改为 QuAPI 路径端到端（默认分派），
+   原「双路径逐块对照」段随特例移除而退役（互验结论已归档本条）。

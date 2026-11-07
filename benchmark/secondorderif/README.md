@@ -10,7 +10,7 @@ src/                       SecondOrderWeyl 模块（完整版算法）
   contours.jl                WeylRealTime / WeylImagTime / weyl_lattice /
                              ChronoKeldyshOrdering（实时时序顺序存储）
   kernels.jl                 单元级浴核：虚时 QuAPI Δτ（一般浴）；实时
-                             Dirac-δ 闭式精确路径 + QuAPI Δt 谱路径（一般浴）
+                             QuAPI Δt 谱路径统一（离散谱精确极点装配；δ 闭式特例已于 2026-11-07 移除）
   tensors.jl                 单元核 → Z2 site tensors（逐变量分级精确 SVD）
   system.jl                  local_weight / system_factor / WeylInsertion
                              （实时 K = ChronoKeldysh 时序直铺，零 permute!）
@@ -82,7 +82,7 @@ Z₂/Z₁² = 1.0、⟨n₁+n₂⟩ = 2×单带（机器精度）——mixed 与
 ## 一般浴支持
 
 - 虚时核：QuAPI `Δτ`，任意有界谱（含 `DiscreteSpectrum` 多 δ 谱）；
-- 实时核：Dirac-δ 走闭式精确路径；一般谱走 QuAPI `Δt`（单元级积分值，
+- 实时核：全部浴型统一走 QuAPI `Δt`（离散谱精确极点装配；一般谱 quadgk；
   `[1:N,1:N]` 直接截取）——双路径在 Dirac-δ 上互验 ≤4e-17；双 δ（两模）
   浴端到端 vs ED 通过（`validation/kernel_paths_check.jl`）；
 - `α_weight(spec::DiscreteSpectrum) = Σ αₙ`（多 δ 谱的总耦合）。
