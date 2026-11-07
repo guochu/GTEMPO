@@ -72,7 +72,7 @@ $H_{\mathrm{imp}}$。这个分配不是唯一可能，但它使 $h$ 的 bath 侧
 
 | 步骤 | 积掉的对象 | 方法 | 输出 | 实现位置 |
 |---|---|---|---|---|
-| （1） | 物理 bath 的相干场 | 逐 cell 精确高斯积分 + Schur | 接口变量上的 Gaussian $G$ | `contour_G` / `compact_delta` |
+| （1） | 物理 bath 的相干场 | 逐 cell 精确高斯积分 + Schur | 接口变量上的 Gaussian $G$ | `compact_delta` |
 | （2） | IF（接口）Grassmann 变量 | 带源高斯积分（Pfaffian 恒等式） | 杂质轨迹腿上的消元核 $D$ | `delta_eff` 恒等式 |
 | （3） | ——（组装） | 调度门链 + 消元核 + 测度/闭合 | 收缩 → 读出 | `sysdynamics_exact!` + `hybriddynamics` + `gtlt_compact` |
 

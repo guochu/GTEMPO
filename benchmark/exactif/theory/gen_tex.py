@@ -38,7 +38,8 @@ SUB = {'₀': '_0', '₁': '_1', '₂': '_2'}
 SUP = {'¹': '^1', '²': '^2', '³': '^3', '⁴': '^4', '⁺': '^+', '⁻': '^-',
        'ᵀ': '^{T}', 'ᵢ': '_i', 'η': '', '⁻¹': '^{-1}'}
 for uni, rep in SUB.items():
-    s = s.replace(uni, '$' + rep + '$') if uni in s else None
+    if uni in s:
+        s = s.replace(uni, '$' + rep + '$')
 # 上标/下标更精确处理：这些出现在 code span 外的地方
 for uni, rep in [('⁻¹', r'$^{-1}$'), ('ᵀ', r'$^{\mathsf T}$'), ('ᵢ', r'$_i$')]:
     s = s.replace(uni, rep)

@@ -41,39 +41,38 @@ A 吸收为全步长），零长度 cell 补齐使核节点与格点切片一一
 | 文件 | 内容 |
 |---|---|
 
-| `src/NativeExact.jl` | **IF 严格核核心模块**（IFGTEMPO-free，原 common.jl + NativeExact 合并）：①原生管线 `exactif_native_compact`（紧凑消元）/`exactif_native_quapi`（orders 1/2）/`compact_delta`/`contour_G`/`sysdynamics_exact!`/`gtlt_compact`（双时 gt/lt）；②Z 证书机器 `exact_Δt` 适配器 + `exactif_pipeline`/`frozen_pipeline` 双管线（zidentity 依赖）；③`plot_png` 绘图助手 |
-| `src/FormB.jl` | **形态 B 的 GTEMPO GMPS 移植**：紧凑 IMP-only lattice 上的 Δ_eff/反测度/K 装配（GTEMPO GrassmannMPS 因子 + pair transfer 收缩） |
+| `src/NativeExact.jl` | **IF 严格核核心模块**（IFGTEMPO-free，原 common.jl + NativeExact 合并）：①原生管线 `exactif_native_compact`（紧凑消元，orders 1/2/4 主力）/`exactif_native_quapi`（orders 1/2，QuAPI-Δ 数据源）/`compact_delta`/`sysdynamics_exact!`/`gtlt_compact`（双时 gt/lt）/`open_rho_native`（ρ(T) 开放腿读出）；②Z 证书机器 `exact_Δt` 适配器 + `exactif_pipeline`/`frozen_pipeline` 双管线（zidentity 依赖）；③`plot_png` 绘图助手 |
 | `theory/MATHEMATICS.tex/.pdf` | **形态 B 数学原理文档（LaTeX 正式版，8 页）**：两扇区路径积分 → IF 变量高斯消元（Δ_eff 推导）→ 收缩语义/迹闭合 → GTEMPO pair 机制对接（反测度/graded 读出符号）（xelatex 编译，`ctexart`） |
 | `theory/keldysh.md/.tex/.pdf` | **严格 IF 实时核全流程闭环理论（Keldysh 轮廓）**：①bath 精确积掉（两扇区 Gaussian + Schur）→ ②IF Grassmann 变量积掉（Pfaffian 恒等式与消元核 D）→ ③1/2/4 阶调度与杂质部分完全组装（含回文 Suzuki 必要性）→ 读出约定与闭环验证阶梯 |
 | `theory/MATHEMATICS.md` | 数学原理文档的 Markdown 版（与 .tex 同内容；供仓库内直接预览） |
 | `validation/zidentity.jl` | **Z 恒等式证书**（ε_d=0 时 Z·prefactor == 1，全部 order 机器精度） |
-| `validation/formb_dense.jl` | **形态 B（消元式单扇区）稠密系数级验证**：IF 变量从两扇区 lattice 精确积掉，与 Fock/GMPS 三方对齐（`FORMB_QUICK=1` 快测档）。**已 IFGTEMPO-free**（Fock 参照链/调度表本地化，鸭子类型 bath 参数）——活跃验证链的共享稠密机器 |
-| `validation/formb_legacy_ifgtempo.jl` | 形态 B 验证电池的 IFGTEMPO 依赖部分（fock_chain_two_spin + Step D 三方对齐）；需先 `using IFGTEMPO` 再 include |
+| `validation/formb_dense.jl` | **形态 B（消元式单扇区）稠密系数级验证 + 活跃验证链的共享稠密机器**：IF 变量从两扇区 lattice 精确积掉，与 Fock 对齐（`FORMB_QUICK=1` 快测档）。**已 IFGTEMPO-free**（Fock 参照链/调度表本地化，鸭子类型 bath 参数） |
 | `validation/verify_compact.jl` | 紧凑路线对齐矩阵（离散链 + Z/V=0 双证书；`ARGS=trunc` 截断档） |
-| `validation/scaling_compact.jl` | 紧凑路线 Trotter 标度 vs 精确连续演化（p = 2.01/2.01/3.99） |
 | `validation/scaling_compact_models.jl` | **两模型（Toulouse + 单模 bath Anderson U≠0）error scaling + 真阶判定**；结果分别写入 `toulouse/`、`singlemodebath/` |
 | `validation/verify_align.jl` | 与 IFGTEMPO GMPS 的直接对齐（两自旋 U=0 解耦恒等式）+ quapi 回归（`ARGS=quapi`） |
 | `validation/verify_align_u15.jl` | **IFGTEMPO 直接同模型对齐（U=1.5 Anderson）**：双可观测量 n_up + ⟨n₁n₂⟩，8 组 ≤2.2e-14 |
 | `validation/verify_gtlt_align.jl` | **双时 gt/lt Green 函数系列对齐**：①单带 vs IFGTEMPO 解耦 flavor-1（4 组）、⑤双带 U=1.5 直接同模型（3 组），全部 ≤8.6e-14；附 ED 有效时刻 Trotter 收敛 |
-| `validation/verify_formb.jl` | FormB 移植的对齐验证：单自旋 vs Fock、两自旋 vs Fock vs IFGTEMPO GMPS 三方 |
-| `validation/scaling_formb.jl` | FormB 的 Trotter 阶数标度（vs 精确连续演化，叠加 IFGTEMPO 参照点；`ARGS = single | twospin | plot`） |
-| `validation/formb_scaling_*.png/.csv` | FormB 标度图记录：orders 1/2 → p=2.00、order 4 → p=3.99（单自旋 T=0.4）/ 4.16（两自旋 T=0.34）——**旧调度（非回文序）下的记录**，见"order-4 调度修正"一节勘误 |
-| `validation/native_probe.jl` / `restrictd_probe.jl` | 判决实验：native 腿集稠密标定（Q2）/ 消元核 bar→eta 块充分性（Q1） |
-| `validation/calibrate_native.jl` / `verify_native.jl` / `validate.jl` | 开放腿标定工作台 / contour_G 路线验证 / 形态 B 早期验证（保留作记录） |
 | `toulouse/realtime.jl` + `realtime.{png,csv}` | **Toulouse（U=0, ϵ_d=0.7）基于严格 IF 的 1/2/4 阶 Trotter error scaling**（紧凑消元路线；机器级预检 + 真阶判定 PASS；共享引擎 = `validation/scaling_compact_models.jl`） |
 | `singlemodebath/realtime.jl` + `realtime.{png,csv}` | **单模 bath Anderson（μ=0.7, U=1.5, bands=2）同上**（16 维 Fock 参照含 U 关联；PASS） |
 
-注：`twosector/`（两扇区权威标度基准，旧调度下的 p=4.05-4.11）已随本轮目录清理
+注：`twosector/`（两扇区权威标度基准，旧调度下的 p=4.05-4.11）已随 2026-11-06 目录清理
 移除——其 order-4 数值属旧调度的交叉区假象（见"order-4 调度修正"一节）；如需两扇区
 交叉验证，用 IFGTEMPO 的 `build_impurity_path`（已修回文调度）重建。
 
-**依赖状态（2026-11-06）**：`src/` 与活跃验证链（verify_compact / scaling_compact* /
-verify_gtlt_align / zidentity）**已 IFGTEMPO-free**——Fock 参照链与调度表本地化
-（`formb_dense.jl` 的鸭子类型 bath 参数 + `NativeExact.native_schedule`）。
-IFGTEMPO 仅在两处出现：①对齐参照脚本（verify_align* / verify_gtlt_align——
-"用 IFGTEMPO 验证自己"的证据链，保留）；②legacy 验证记录
-（verify_formb / scaling_formb / native_probe / restrictd_probe / validate +
-`formb_legacy_ifgtempo.jl`，各自自行加载 IFGTEMPO）。
+**2026-11-07 早期代码清理**：以下已被紧凑路线取代/仅具历史价值的代码已删除
+（结论保留于下方沿革记录与 git 历史）：`src/FormB.jl`（形态 B GMPS 移植）、
+`validation/verify_formb.jl`/`scaling_formb.jl`/`formb_legacy_ifgtempo.jl`
+（FormB 验证链，IFGTEMPO 依赖）、`validation/native_probe.jl`/`restrictd_probe.jl`
+（判决实验，结论已锁定进实现）、`validation/verify_native.jl`/`calibrate_native.jl`/`validate.jl`
+（contour_G 路线与早期验证——contour_G 路线的 `exact_delta`/`exactif_native_pipeline`
+已从 NativeExact.jl 移除）、`validation/scaling_compact.jl`（被 scaling_compact_models.jl
+取代）、`formb_scaling_*.{csv,png}`（旧调度标度图记录）。
+
+**依赖状态（2026-11-07）**：`src/` 与活跃验证链（zidentity / verify_compact /
+scaling_compact_models / 各模型 realtime）**已 IFGTEMPO-free**——Fock 参照链与
+调度表本地化（`formb_dense.jl` 的鸭子类型 bath 参数 + `NativeExact.native_schedule`）。
+IFGTEMPO 仅在对齐参照脚本出现（verify_align* / verify_gtlt_align——
+"用 IFGTEMPO 验证自己"的证据链，保留）。
 
 运行（GTEMPO 根目录）：
 
@@ -87,8 +86,6 @@ julia --project=. benchmark/exactif/validation/verify_align.jl quapi      # quap
 julia --project=. benchmark/exactif/validation/verify_align_u15.jl        # IFGTEMPO 同模型 U=1.5 对齐
 julia --project=. benchmark/exactif/validation/formb_dense.jl             # 形态 B 消元验证（稠密，全量）
 FORMB_QUICK=1 julia --project=. benchmark/exactif/validation/formb_dense.jl   # 快测档
-julia --project=. benchmark/exactif/validation/verify_formb.jl            # FormB GMPS 移植对齐（全量）
-FORMB_QUICK=1 julia --project=. benchmark/exactif/validation/verify_formb.jl  # 快测档
 julia --project=. benchmark/exactif/toulouse/realtime.jl                  # Toulouse 严格 IF 1/2/4 阶标度（出图）
 julia --project=. benchmark/exactif/singlemodebath/realtime.jl            # Anderson 严格 IF 1/2/4 阶标度（出图）
 ```
@@ -212,8 +209,9 @@ path values（`if_path_values` 的 I[S]）与相干态多项式的 Pfaffian 系�
 
 目标：在只有一套杂质轨迹变量的 lattice 上，用"消元后的有效核"替换
 "接口交叉测度 + IF 因子"，达到与 IFGTEMPO 两扇区 / Fock 离散链逐位一致，
-为将来集成到 GTEMPO 单扇区 lattice 做准备。实现与全部验证在
-`validation/formb_dense.jl`（稠密系数级）与 `src/FormB.jl`（GMPS 移植）；
+为将来集成到 GTEMPO 单扇区 lattice 做准备。稠密验证在
+`validation/formb_dense.jl`（保留，兼作活跃验证链的共享稠密机器）；
+GMPS 移植（原 `src/FormB.jl`）已于 2026-11-07 随早期代码清理删除。
 `FORMB_QUICK=1` 为快测档。
 
 **公式（单自旋记号；消元是精确恒等式）**：
@@ -276,10 +274,16 @@ order 4 × N=1（单自旋）；order 4 的完整标度验证以 `twosector/`（
    ⟨n⟩ 用 ntT 的开放腿投影约定；
 5. order 4：MPS 端按 3N 层铺设（同 twosector），无 dense 的规模问题。
 
-### 形态 B 的 GTEMPO GMPS 移植（`src/FormB.jl`，已完成 2026-11-04）
+### 形态 B 的 GTEMPO GMPS 移植（已完成 2026-11-04；代码已于 2026-11-07 清理删除）
+
+> 历史记录：本节的实现 `src/FormB.jl` 与验证 `validation/verify_formb.jl`/
+> `scaling_formb.jl` 已删除（被紧凑消元路线 `compact_delta`/`exactif_native_compact`
+> 取代）；数学原理文档 `theory/MATHEMATICS.*` 与稠密验证 `validation/formb_dense.jl`
+> 保留。标度图 `formb_scaling_*` 属旧调度（非回文序）记录，随脚本删除，
+> 勘误见"order-4 调度修正"一节。
 
 稠密验证锁定的装配原样移植到 GTEMPO 的 GrassmannMPS 机制
-（`src/FormB.jl` + 对齐验证 `validation/verify_formb.jl`）：
+（原 `src/FormB.jl` + 对齐验证 `validation/verify_formb.jl`）：
 
 - **lattice**：IMP-only 紧致格（timelocallattice 变量序滤掉 :IF，相邻
   pair 结构保持；order 4 时层数 = 3N）。
@@ -331,25 +335,31 @@ order 4 × N=1（单自旋）；order 4 的完整标度验证以 `twosector/`（
   U=0 类验证）；③精确档 bond 按 4^N 增长（Δ_eff 的 G⁻¹ 非局域性），
   大 N 走截断档。
 
-### 单扇区管线的现状（保留并标注）
+### 管线现状（2026-11-07 清理后的最终接口）
 
-单扇区 exactif 管线（`src/NativeExact.jl` 的 `exactif_pipeline`，Z 证书对照用）保留作为对照
-（其诊断脚本 toulouse/、singlemodebath/ 的旧 realtime.jl 已于 2026-11-06 替换为
-紧凑路线的 1/2/4 阶标度，旧 gt/lt 诊断图随脚本删除）：
-- Z 恒等式证书（ε_d = 0，全 order 机器精度）仍是最锐利的严格性证书；
-- ⟨n(T)⟩（`ntT`）与 Fock 一致到 ~1e-5 地板；
-- gt/lt 系列（`gtlt_exactif`）受上述闭合差异限制，只表现 O(δt)
-  （order 1/2）与不收敛（order 4 的 gt）；
-- 与 IFGTEMPO 完全对齐的**两条已验证路径**：①两扇区构造
-  （两扇区构造，GMPS，已实测 2/2/4 阶标度；脚本已移除，交叉验证走 IFGTEMPO `build_impurity_path`）；②**消元式单扇区**
-  （`validation/formb_dense.jl`，稠密系数级，三方逐位对齐——见
-  "形态 B 实施规范"一节）。将来的 GTEMPO 库内集成可在两者之间选择：
-  两扇区=接口变量分离+交叉测度（lattice 层改动大），消元式=一套变量+
-  Δ_eff 核（`AbstractRealCorrelationFunction` 适配器 + 开放对反测度，
-  与现有单扇区管线结构最接近）。
+- **生产路线 = 紧凑消元管线**：`exactif_native_compact`（`compact_delta` +
+  `sysdynamics_exact!`，orders 1/2/4）——机器精度对齐 IFGTEMPO 与 Fock 离散链，
+  真阶标度 2/2/4（见下方"已验证"与"order-4 调度修正"）；双时 gt/lt 走
+  `gtlt_compact`，ρ(T) 走 `open_rho_native`。
+- **`exactif_native_quapi`**（orders 1/2，QuAPI-Δ 数据源）保留作回归
+  （verify_align.jl quapi 档；缓存 bug 修复后逐位/机器精度）。
+- **`exact_Δt` 适配器 + `exactif_pipeline`/`frozen_pipeline`** 仅保留作
+  **Z 证书对照**（`validation/zidentity.jl`）：ε_d = 0 时严格核
+  Z·prefactor == 1 全 order 机器精度，冻结核偏差 O(δt)——区分严格/冻结的
+  最锐利证书。
+- 早期路线（contour_G 路线的 `exact_delta`/`exactif_native_pipeline`、形态 B
+  GMPS 移植 `FormB.jl`）已于 2026-11-07 删除；两扇区交叉验证走 IFGTEMPO
+  `build_impurity_path`。将来的 GTEMPO 库内集成在两扇区构造（接口变量分离 +
+  交叉测度，lattice 层改动大）与消元式单扇区（一套变量 + Δ_eff 核，
+  与现有单扇区管线结构最接近，即本目录紧凑路线）之间选择。
 
 
-## GTEMPO 原生管线（NativeExact，2026-11-05，进行中）
+## GTEMPO 原生管线（NativeExact）——开发记录（2026-11-05~06）
+
+> 本节为开发过程记录。其中提到的 contour_G 路线（`exact_delta`/
+> `exactif_native_pipeline`）与判决实验脚本（`native_probe.jl`/
+> `restrictd_probe.jl`/`verify_native.jl`/`calibrate_native.jl`）已于
+> 2026-11-07 删除，最终接口以文件表与"管线现状"一节为准。
 
 把形态 B 的消元式构造搬到 GTEMPO 原生接口（`src/NativeExact.jl`，IFGTEMPO-free）：
 
@@ -490,7 +500,7 @@ Order 4 的剩余差异 = 同 kind 块在原生骨架上的正确配对方式（
 ```
 julia --project=. benchmark/exactif/validation/verify_compact.jl          # 精确档矩阵 + 双证书
 julia --project=. benchmark/exactif/validation/verify_compact.jl trunc    # 截断档（order 4 N=2,3）
-julia --project=. benchmark/exactif/validation/scaling_compact.jl         # p = 2/2/4 标度
+julia --project=. benchmark/exactif/validation/scaling_compact_models.jl  # p = 2/2/4 标度
 julia --project=. benchmark/exactif/validation/verify_align.jl            # IFGTEMPO 直接对齐
 julia --project=. benchmark/exactif/validation/verify_align.jl quapi      # quapi 路线回归
 ```
@@ -545,13 +555,14 @@ singlemodebath/toulouse 诊断）建议用修正后调度重跑更新。验证�
 图：`toulouse/realtime.{png,csv}` 与 `singlemodebath/realtime.{png,csv}`（含 O(δt)/O(δt²)/O(δt⁴)
 参考线与拟合斜率标注）。
 
-### 判决实验脚本（validation/）
+### 判决实验（结论已锁定进实现，脚本于 2026-11-07 删除）
 
-- `restrictd_probe.jl`：Q1 判决（D 的 bar→eta 块充分性）——PASS。
-- `native_probe.jl`：native 腿集两扇区消元 × 原生骨架的稠密标定（旋钮
-  trace/fold/res/nodek/norm；判定开放腿约定下的精确组合；注意其对
-  GTEMPO g_trace 语义的稠密仿真与真实机器有 δt³ 级偏差，GMPS 判决以
-  真实机器为准）。
+- Q1（消元核 D 的 bar→eta 块充分性）：**PASS**——D 只含 bar→eta 有向对
+  （0 个同 kind 单项式），行扫完整承载。
+- Q2（native 腿集两扇区消元 × 原生骨架的稠密标定，旋钮
+  trace/fold/res/nodek/norm）：判定开放腿约定下的精确组合
+  （`res=boundary + fold=neg + nodek 分辨率 + norm=Pf`；注意其对 GTEMPO
+  g_trace 语义的稠密仿真与真实机器有 δt³ 级偏差，GMPS 判决以真实机器为准）。
 
 ## 相关修改（本轮）
 

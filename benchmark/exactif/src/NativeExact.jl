@@ -40,9 +40,9 @@ using LinearAlgebra
 using QuAPI: AbstractRealCorrelationFunction
 using Z2Tensors: TruncationScheme
 
-export NativeSchedule, native_schedule, trotter_factors, ExactDelta, exact_delta, gtlt_compact,
-       compact_delta, contour_G, bath_norm, pfaffian, quapi_delta, prefdelta, normdelta,
-       sysdynamics_exact!, exactif_native_pipeline,
+export NativeSchedule, native_schedule, trotter_factors, ExactDelta, gtlt_compact,
+       compact_delta, bath_norm, pfaffian, quapi_delta, prefdelta, normdelta,
+       sysdynamics_exact!,
        exactif_native_quapi, exactif_native_compact, open_rho_native,
        ExactIFKernel, exact_Δt, sysdynamics_factors!, exactif_pipeline, frozen_pipeline,
        plot_png
@@ -181,16 +181,6 @@ _ifslot(c::Int, br::Symbol, stat::Symbol) =
 _partner_slot(c::Int, br::Symbol, stat::Symbol) =
     _ifslot(c, br, stat === :bar ? :eta : :bar)
 
-"""bath pair（mode k, branch br, node p）的两个槽位（bar, eta），1-based。
-
-bath pair 只存在于 node 1..nl+1：node 1 挂热边（t=0），node nl+1 挂迹边
-（物理 T 端，= 接口 nl）；开放端无 cell 耦合、无 bath pair。"""
-function _bslot(nl::Int, m::Int, k::Int, br::Symbol, p::Int)
-    nbp = nl + 1
-    base = 4 * nl + (k - 1) * 4 * nbp + (br === :+ ? 0 : 2 * nbp) + (p - 1) * 2
-    return base + 1, base + 2
-end
-
 """Q kernel 缝合（IFGTEMPO _add_mapped_q_matrix! 的移植）：把 (bar_imp,
 eta_imp) IF 对与 bath 输出 bars/输入 etas 经 U 缝合；trace_bra 翻转输出行
 （compact 的 ⟨−ψ̄| 约定）。"""
@@ -214,65 +204,6 @@ function _q_add!(A::Matrix{ComplexF64}, bar_imp::Int, eta_imp::Int,
         end
     end
     return A
-end
-
-"""
-    contour_G(Hbath, V, β, cells; trace_style=:edge) -> (G, ν)
-
-native 布局的两扇区 bath Gaussian `G`（接口 IF 槽位上，4·nl 维反对称）与
-归一化 `ν = ZN/Z`。`Hbath`（bath 单粒子矩阵）、`V`（耦合幅）、`β`、`cells`
-（二次型 cell 时长）。
-
-装配（QuAPI exact-Δt 同构的 pair 布局 + FormB 的两扇区语义）：
-cell c 连接 node c → c+1，锚接口 c 的 (br) 对；bath pair 链
-(+,1)→(+,2)→…→(+,nl+1)（forward）、(−,nl+1)→…→(−,1)（backward）；
-热边 (+,1) bars × (−,1) etas（exp(−β·Hbath)）；迹边（:edge = (−,nl+1) bar ×
-(+,nl+1) eta 系数 −1；:flip = 末个 forward Q 输出行翻转）；每 bath pair
-−γ̄γ 测度。Schur 消 bath 块后取反对称部分。
-"""
-function contour_G(Hbath::Matrix{ComplexF64}, V::Vector{ComplexF64}, β::Real,
-                   cells::Vector{Float64}; trace_style::Symbol=:edge)
-    m = length(V)
-    nl = length(cells)
-    nif = 4 * nl
-    nbp = nl + 1
-    nb = 4 * m * nbp
-    A = zeros(ComplexF64, nif + nb, nif + nb)
-    h = _coupled_h(V, Hbath)
-    Us = [exp(-1im * cell .* h) for cell in cells]
-    bars(br, p) = [_bslot(nl, m, kk, br, p)[1] for kk in 1:m]
-    etas(br, p) = [_bslot(nl, m, kk, br, p)[2] for kk in 1:m]
-    for c in 1:nl   # forward：输入 (+,c) etas → 输出 (+,c+1) bars，锚接口 c
-        flip = (trace_style === :flip && c == nl)
-        _q_add!(A, _ifslot(c, :+, :bar), _ifslot(c, :+, :eta),
-                bars(:+, c + 1), etas(:+, c), Us[c]; trace_bra = flip)
-    end
-    for c in 1:nl   # backward：输入 (−,c+1) etas → 输出 (−,c) bars，锚接口 c
-        _q_add!(A, _ifslot(c, :-, :bar), _ifslot(c, :-, :eta),
-                bars(:-, c), etas(:-, c + 1), adjoint(Us[c]); trace_bra = false)
-    end
-    if trace_style === :edge
-        for kk in 1:m
-            _put_G!(A, _bslot(nl, m, kk, :-, nbp)[1],
-                    _bslot(nl, m, kk, :+, nbp)[2], -1.0)
-        end
-    elseif trace_style !== :flip
-        error("trace_style 必须是 :edge 或 :flip")
-    end
-    thermal = exp(-Float64(β) .* Hbath)
-    for i in 1:m, j in 1:m
-        _put_G!(A, _bslot(nl, m, i, :+, 1)[1], _bslot(nl, m, j, :-, 1)[2],
-                thermal[i, j])
-    end
-    for kk in 1:m, br in (:+, :-), p in 1:nbp   # bath pair 测度 −γ̄γ
-        _put_G!(A, _bslot(nl, m, kk, br, p)[1], _bslot(nl, m, kk, br, p)[2], -1.0)
-    end
-    E = A[1:nif, 1:nif]
-    C = A[1:nif, nif+1:end]
-    B = A[nif+1:end, nif+1:end]
-    effective = E + C * (B \ transpose(C))
-    G = 0.5 .* (effective .- transpose(effective))
-    return G, bath_norm(V, Hbath, β, cells)
 end
 
 """占据态模式列表。"""
@@ -375,42 +306,6 @@ function Base.getindex(x::ExactDelta, i::GrassmannContourIndex, j::GrassmannCont
     v = x.M[x.pos[GrassmannContourIndex(i.j, i.branch, i.band, true)],
             x.pos[GrassmannContourIndex(j.j, j.branch, j.band, false)]]
     return (i.branch != j.branch) ? -v : v
-end
-
-"""
-    exact_delta(Hbath, V, β, sched, lattice; trace_style=:edge) -> ExactDelta
-
-由两扇区 bath Gaussian 构造接口消元核。`sched`（NativeSchedule）给出 nl；
-`lattice` 的 node p 承接 schedule 点 p−1（node 1 = t=0，接口 c = node c+1，
-node k = 开放端）。D 只作用在接口腿上（node 2..nl+1）；读矩阵行 = ā 腿、
-列 = a 腿（全节点），`M[ā(λ), a(λ')] = GA[partner(λ), partner(λ')]`。
-"""
-function exact_delta(Hbath::Matrix{ComplexF64}, V::Vector{ComplexF64}, β::Real,
-                     sched::NativeSchedule, lattice::AbstractRealGrassmannLattice;
-                     trace_style::Symbol=:edge)
-    nl = length(sched.cells)
-    (lattice.k == nl + 2) || throw(DimensionMismatch(
-        "lattice 须含 nl+2 个节点（Nt = nl+1）；k = $(lattice.k)，nl = $nl"))
-    G, ν = contour_G(Hbath, V, β, sched.cells; trace_style)
-    GA = (inv(G) .- transpose(inv(G))) ./ 2
-    k = lattice.k
-    pos = Dict{GrassmannContourIndex,Int}()
-    for band in 1:lattice.bands, br in (:+, :-), p in 1:k
-        row = 4 * k * (band - 1) + 2 * k * (br === :+ ? 0 : 1) + 2 * (p - 1) + 1
-        pos[GrassmannContourIndex(p, br, band, true)] = row    # 行（ā）
-        pos[GrassmannContourIndex(p, br, band, false)] = row + 1   # 列（a）
-    end
-    M = zeros(ComplexF64, 4 * lattice.bands * k, 4 * lattice.bands * k)
-    for band in 1:lattice.bands, c in 1:nl, br in (:+, :-),
-        c2 in 1:nl, br2 in (:+, :-)
-        # 行 = bar 腿（接口 c，node c+1），列 = eta 腿（接口 c2，node c2+1）
-        v = GA[_partner_slot(c, br, :bar), _partner_slot(c2, br2, :eta)]
-        iszero(v) && continue
-        row = pos[GrassmannContourIndex(c + 1, br, band, true)]
-        col = pos[GrassmannContourIndex(c2 + 1, br2, band, false)]
-        M[row, col] = v
-    end
-    return ExactDelta(pos, M, G, ν, pfaffian(G))
 end
 
 """
@@ -636,56 +531,14 @@ end
 # ---------------------------------------------------------------------------
 
 """
-    exactif_native_pipeline(bathp, model, N, δt; order=2, trunc, β, bands,
-                            trace_style=:edge, counter_c=1)
-        -> (lat, mpsK, mpsIs, deltas, norm)
-
-GTEMPO 原生严格核实时管线（消元式）。`bathp`：每带的 (Hbath, V) 元组向量
-（单带传 `(x,)`；两带传 `(up, dn)`，各为 NamedTuple(hb = Hbath, v = V)）。
-
-返回 `lat`（原生 lattice）、`mpsK`（sysdynamics_exact 的系统因子）、
-`mpsIs[band]`（ExactDelta 的 IF 因子，partialif 行扫生成）、`deltas[band]`
-（ExactDelta 对象，含 G/ν/pf）、`norm = ∏_band ν·pf`（收缩 Z 须乘）。
-观测量直接用 GTEMPO 的 integrate/gf/occupation（Z 乘 `norm`）。
-"""
-function exactif_native_pipeline(bathp::Union{Tuple,Vector}, model::GTEMPO.AbstractImpurityHamiltonian,
-                                 N::Integer, δt::Real;
-                                 order::Integer=2, trunc::TruncationScheme=GTEMPO.Defaults.alg_trunc_if(),
-                                 β::Real=0.0, bands::Int=1,
-                                 trace_style::Symbol=:edge, counter_c::Int=1)
-    sched = native_schedule(order, N, δt)
-    nl = length(sched.cells)
-    lat = GTEMPO.GrassmannLattice(N=nl + 1, δt=δt, contour=:real, bands=bands)
-    specs = normalize_bathspecs(bathp, bands)
-    deltas = ExactDelta[]
-    mpsIs = GTEMPO.GrassmannMPS[]
-    norm = 1.0 + 0.0im
-    for band in 1:bands
-        d = exact_delta(specs[band].hb, specs[band].v, β, sched, lat;
-                        trace_style)
-        mpsI = GTEMPO.hybriddynamics(lat, d; band=band, trunc=trunc)
-        push!(deltas, d)
-        push!(mpsIs, mpsI)
-        norm *= normdelta(d)
-    end
-    mpsK = sysdynamics_exact!(GTEMPO.vacuumstate(ComplexF64, lat), lat, model,
-                              sched; bands, trunc, counter_c, β)
-    return (lat = lat, mpsK = mpsK, mpsIs = mpsIs, deltas = deltas, norm = norm,
-            sched = sched)
-end
-
-"""
     exactif_native_quapi(bath, model, N, δt; order=2, trunc, β, counter_c=0)
         -> (lat, mpsK, mpsIs, deltas, norm, links, cells)
 
 **验证过的主力配方**（2026-11-05 标定）：QuAPI 严格核（`exact_fermionic_Δt_cells`
 的补零 cell 表，与 common.jl 的 trotter_factors 配对）作 Δ 数据源 + 原生骨架。
-与 exactif_native_pipeline 的差异：Δ 来自 QuAPI 数据源（IFGTEMPO-free），
 cell/gate 表 = 补零 pair 网格（每 gap 一个 Trotter 因子），**无反测度**
 （QuAPI-Δ 相对测度+单位链骨架定义，隐式 g_trace 正是其所要）。
-
-收敛性（εd=0.7 单模 bath，热态 ρ₀，折返腿插入读出）：Z ≈ 1（1e-5），
-n(T) vs Fock ~1e-5（ntT 约定地板）。
+orders 1/2 路线（QuAPI 点基 Δ 无法承载 order 4 的 cell 间杂质门）。
 """
 function exactif_native_quapi(bath, model, N::Integer, δt::Real;
                               order::Integer=2, trunc::TruncationScheme=GTEMPO.Defaults.alg_trunc_if(),
@@ -790,23 +643,6 @@ function gtlt_compact(pipe; band::Int=1)
         lesser[k + 1] = GTEMPO.integrate(lat, mpsN, mpsIs...) * norm / Z
     end
     return greater, lesser
-end
-
-"""每带 bath 规格：(hb = Hbath 矩阵, v = 耦合幅向量)。单带可省元组层。"""
-function normalize_bathspecs(bathp, bands::Int)
-    specs = bathp isa Tuple ? collect(bathp) : collect(bathp)
-    length(specs) == bands || throw(DimensionMismatch("bath 规格数须等于 bands"))
-    out = NamedTuple[]
-    for s in specs
-        if s isa NamedTuple && haskey(s, :hb)
-            push!(out, s)
-        elseif s isa Tuple{Matrix{ComplexF64},Vector{ComplexF64}}
-            push!(out, (hb = s[1], v = s[2]))
-        else
-            push!(out, (hb = s.bath_hamiltonian, v = s.hybridization))
-        end
-    end
-    return out
 end
 
 

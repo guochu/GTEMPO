@@ -1,7 +1,7 @@
 # 形态 B（消元式单扇区）的数学原理
 
-本文档给出 `form_b/formb_dense.jl`（稠密系数级验证）与 `src/FormB.jl`
-（GTEMPO GrassmannMPS 移植）所实现表示的完整数学推导：从 IFGTEMPO 的
+本文档给出 `form_b/formb_dense.jl`（稠密系数级验证，保留）与 `src/FormB.jl`
+（GTEMPO GrassmannMPS 移植，已于 2026-11-07 随早期代码清理删除）所实现表示的完整数学推导：从 IFGTEMPO 的
 两扇区 Grassmann 路径积分出发，把 bath 影响 IF 的生成元**精确**积掉，
 得到只剩一套杂质轨迹变量的等价表示，并说明它与 GTEMPO pair 收缩机制
 的逐条对接。所有公式均被代码验证（验证入口见文末表格）。
