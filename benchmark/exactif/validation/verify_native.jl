@@ -50,11 +50,11 @@ function main(; Nmax::Int=2)
     trunc = NoTruncation()
 
     # ---- Fock 参照 ----
-    up = FiniteBath(HB, VV, BETA)
+    up = (bath_hamiltonian=HB, hybridization=VV, beta=BETA)
     imp = (eps = 0.7, rho0 = ComplexF64[1 0; 0 0])
     refs = Dict{Tuple{Int,Int},Any}()
     for order in (1, 2), N in 1:Nmax
-        sched = trotter_schedule(order, N, T_TOT / N)
+        sched = NativeExact.native_schedule(order, N, T_TOT / N)
         refs[(order, N)] = fock_chain_single(up, 0.7, sched, imp.rho0)
     end
 
