@@ -490,6 +490,30 @@ U=0 因子化恒等式、配对结合律、逐支撑 Python 参照链。
 4. 工具：`validation/diag_u1_tau_twopoint.jl` +
    `validation/u1_tau_twopoint_alignment.md`（判决档案）。
 
+## 2026-11-07 第十二轮补遗 2（混合/实时两点金标准对照）记录
+
+1. **混合两点与 U1GTEMPO2 机器精度对齐 ✅（「bug」不存在）**：
+   diag_u1_mixed_twopoint.jl 三框架同模型（双带 Anderson U=0.8、δ 浴
+   α=0.5、β=1、T=0.4、order 2、Nτ=Nt=N、(i≥j) 全网格 × {greater,
+   lesser}，含 (+,0) 转折点与 − 支 ddag）：N=4 |mine−U1| = **3.7e-14**、
+   N=8 = **7.5e-12**；两框架 vs ED 同样收敛（6.78e-4 → 1.69e-4，
+   干净 O(h²)，无尾部）。此前「未对齐」是因为从未跑过直接对比。
+2. **U1 lesser 分支陷阱（重要使用备注）**：U1GTEMPO2 raw_correlation 的
+   lesser 默认分支 = d@(+,i), d†@(−,j)（与本侧约定一致）——若强制
+   branch=:+, reference_branch=:+ 会把 lesser **结构性变成 greater**
+   （i>j 时 + 支 contour 时间序恒给出 greater），数值上完全等于 greater
+   列。对照 U1 时不要覆盖默认分支。
+3. **rt 两点金标准对照（正确参考下重验）**：rt 的 ED 参考此前有两处
+   错误并已修正——① 因子化初态 ρ₀ = e^{−βH₀}/Z 与 H 不对易，两时关联
+   必须显式演化（Tr[ρ₀ d(Δ)d†]，不能用平衡态平移不变辅助函数）；
+   ② (i,i) 等时 lesser核 = **n(tᵢ)（演化后的占据）**，非 n(0)——旧检查
+   的 1.5e-3 级「误差」即此参考伪影（被 2e-3 阈值吸收）。修正后：
+   Nt=8 本侧与 U1 最差误差**逐位相同**（1.359e-3 @ g(8,7)）；唯一互差
+   = 首格边界点 g(1,0)，2.97e-3 → 7.49e-4（Nt 4→8）精确 O(h²)——
+   两框架物理一致、边界离散化细节不同，均在验收线内。
+4. 工具：`validation/diag_u1_mixed_twopoint.jl`（混合 + 实时两段，含
+   正确 rt 参考实现：因子化 ρ₀ 两时演化 + 演化等时占据）。
+
 ## 文件
 
 ```
