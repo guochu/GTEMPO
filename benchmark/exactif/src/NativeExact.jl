@@ -1,5 +1,8 @@
 # =============================================================================
-# src/NativeExact.jl —— 形态 B 消元式的 GTEMPO 原生管线（摆脱 IFGTEMPO）
+# src/NativeExact.jl —— IF 严格核核心模块（IFGTEMPO-free）
+#
+# ① 形态 B 消元式的 GTEMPO 原生管线（紧凑消元 + QuAPI-Δ 两条路线）；
+# ② Z 证书机器（exact_Δt 适配器双管线，原 common.jl）与绘图助手。
 #
 # 把 FormB（消元式单扇区，与两扇区/Fock 逐位对齐）的构造移植到 GTEMPO 原生
 # 实时管线：原生 lattice（只含杂质 Grassmann 变量）+ 原生 partialif 行扫 +
@@ -40,7 +43,9 @@ using Z2Tensors: TruncationScheme
 export NativeSchedule, native_schedule, trotter_factors, ExactDelta, exact_delta, gtlt_compact,
        compact_delta, contour_G, bath_norm, pfaffian, quapi_delta, prefdelta, normdelta,
        sysdynamics_exact!, exactif_native_pipeline,
-       exactif_native_quapi, exactif_native_compact, open_rho_native
+       exactif_native_quapi, exactif_native_compact, open_rho_native,
+       ExactIFKernel, exact_Δt, sysdynamics_factors!, exactif_pipeline, frozen_pipeline,
+       plot_png
 
 # ---------------------------------------------------------------------------
 # Trotter 调度（IFGTEMPO trotter_schedule 的移植，GTEMPO 侧）
@@ -90,7 +95,7 @@ function native_schedule(order::Integer, N::Integer, dt::Real)
 end
 
 # ---------------------------------------------------------------------------
-# 补零 pair 网格调度表（common.jl trotter_factors 的移植；QuAPI-Δ 配对用）
+# 补零 pair 网格调度表（QuAPI-Δ 配对与适配器管线共用）
 # ---------------------------------------------------------------------------
 
 """order ∈ (1,2,4) 的补零 pair 网格表：每 gap 一个 Trotter 因子。
@@ -98,7 +103,7 @@ end
 gate_durations[g] = gap g 的杂质门时长（0 = 恒等门，不跳过——恒等窗携带
 该 pair 的相干态分辨率重叠）；cell_durations[g] = gap g 的二次型 cell
 时长（0 = 无 cell；传入 QuAPI exact_fermionic_Δt_cells 的逐 cell 表，
-点数 = length+1 = lattice 接口节点数）。与 common.jl trotter_factors 逐位一致。
+点数 = length+1 = lattice 接口节点数）。order-4 为回文组合（与 native_schedule 一致）。
 """
 function trotter_factors(order::Integer, N::Integer, δt::Real)
     N >= 1 || throw(ArgumentError("number of macro steps must be at least one"))
@@ -893,6 +898,192 @@ function open_rho_native(factors::Tuple{GMPS,GMPS}; ρ_sign::Number=1.0 + 0im)
         rho[bra + 1, ket + 1] += ρ_sign * blk[1, 1]
     end
     return rho
+end
+
+
+# ---------------------------------------------------------------------------
+# Z 证书机器（原 common.jl）：exact_Δt 适配器双管线 + 绘图助手
+# ---------------------------------------------------------------------------
+
+"""
+    ExactIFKernel
+
+严格核 exact_Δt（QuAPI `exact_fermionic_Δt_cells`）在 GTEMPO 格点腿空间上的
+稠密高斯 Δ + 整体 prefactor，作为 `QuAPI.AbstractRealCorrelationFunction` 的
+子类型直接供 `hybriddynamics!` 的行扫消费。读序节点规则：系数 =
+Δ[ā(i 节点), a(j 节点)]，跨支块内嵌 Keldysh 负号（行扫读数处补偿回物理块）。
+符号约定由 ε_d=0 空杂质 Z·prefactor == 1 的机器精度恒等式标定
+（validation/zidentity.jl）。
+"""
+mutable struct ExactIFKernel <: QuAPI.AbstractRealCorrelationFunction
+    pos::Dict{GrassmannContourIndex,Int}
+    Δ::Matrix{ComplexF64}
+    prefactor::ComplexF64
+end
+GTEMPO.TK.scalartype(::Type{<:ExactIFKernel}) = ComplexF64
+branches(::ExactIFKernel) = (:+, :-)
+
+function Base.getindex(x::ExactIFKernel, i::GrassmannContourIndex, j::GrassmannContourIndex)
+    (i.conj == j.conj) && return zero(ComplexF64)
+    v = x.Δ[x.pos[GrassmannContourIndex(i.j, i.branch, i.band, true)],
+            x.pos[GrassmannContourIndex(j.j, j.branch, j.band, false)]]
+    return (i.branch != j.branch) ? -v : v
+end
+
+"""
+    exact_Δt(bath, cells::AbstractVector{<:Real}) -> ExactIFKernel
+
+严格核 exact_Δt：bath + 耦合的二次型 cell 演化被精确处理（单粒子传播子
+exp(-iτh)），杂质相干腿在节点插入，bath 腿经 Schur 精确积掉。`cells[k]` 是
+第 k 个 cell 的长度（0 = 恒等 cell；order 4 的 Suzuki 内层 cell 为负）。
+收缩时必须把 `prefactor` 乘进 Z。
+"""
+function exact_Δt(bath, cells::AbstractVector{<:Real})
+    ex = exact_fermionic_Δt_cells(bath.spectrum; β=bath.β, cells=collect(Float64.(cells)), μ=bath.μ)
+    pos = Dict{GrassmannContourIndex,Int}(l => k for (k, l) in enumerate(ex.hmat.basis))
+    return ExactIFKernel(pos, ex.hmat.Δ, ex.prefactor)
+end
+
+"""
+    sysdynamics_factors!(gmps, lat, model, gates; trunc) -> GrassmannMPS
+
+按因子调度放置杂质传播门：pair i 上 `gate_durations[i] ≠ 0` 时把
+`fock_propagator(model, branch, τ)` 放在切片 (i → i+1) 之间（前向支沿时间
+方向，后向支 bra/ket 互换、时长取同一表）。`gates` 为 `trotter_factors` 的
+NamedTuple。时不变模型仅按时长缓存 SparseGMPS。τ=0 的门**不能跳过**——
+恒等传播子张量携带该 pair 的相干态分辨率重叠，是路径积分测度的一部分。
+"""
+function sysdynamics_factors!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice,
+                              model::AbstractImpurityHamiltonian, gates;
+                              trunc::TruncationScheme=GTEMPO.Defaults.alg_trunc_sys())
+    (lattice.Nt == gates.npairs) ||
+        throw(DimensionMismatch("lattice must carry Nt == npairs slice pairs"))
+    cache = Dict{Tuple,Any}()
+    for branch in (:+, :-)
+        for i in 1:gates.npairs
+            fm = GTEMPO.fock_propagator(model, branch, gates.gate_durations[i])
+            sparse = GTEMPO._propagator_sparsegmps(lattice, fm, i, branch, cache, nothing)
+            gmps = mult!(gmps, sparse, trunc=trunc)[1]
+        end
+    end
+    return gmps
+end
+
+"""
+    exactif_pipeline(bath, model, N, δt; order, trunc, β, bands) ->
+        (lat, mpsK, mpsIs, kernel, factors)
+
+严格核适配器管线（exact_Δt 行扫 IF，cell 调度零补齐到每个 pair）+ 按调度的
+杂质门 + Keldysh 折返闭合 + 杂质热态初态。`kernel` 是严格核对象（收缩 Z 须
+再乘 `kernel.prefactor`）。与 `exactif_native_compact` 的区别：IF 数据源是
+QuAPI 的点基严格核（bath 以谱对象 `bath.spectrum` 给出）而非紧凑消元 Δ。
+"""
+function exactif_pipeline(bath, model::AbstractImpurityHamiltonian, N::Integer, δt::Real;
+                          order::Integer=2, trunc::TruncationScheme=Defaults.alg_trunc_if(),
+                          β::Real=bath.β, bands::Int=1)
+    factors = trotter_factors(order, N, δt)
+    lat = GrassmannLattice(N=factors.npairs, δt=δt, contour=:real, bands=bands)
+    kernel = exact_Δt(bath, factors.cell_durations)
+    mpsI1 = hybriddynamics(lat, kernel; trunc=trunc, band=1)
+    mpsIs = GrassmannMPS[mpsI1]
+    for band in 2:bands
+        push!(mpsIs, swapband(mpsI1, lat, 1, band; trunc=trunc))
+    end
+    mpsK = sysdynamics_factors!(vacuumstate(ComplexF64, lat), lat, model, factors; trunc=trunc)
+    for band in 1:bands
+        mpsK = boundarycondition!(mpsK, lat, band=band, trunc=trunc)
+    end
+    mpsK = systhermalstate!(mpsK, lat, model; trunc=trunc, β=β)
+    return (lat=lat, mpsK=mpsK, mpsIs=mpsIs, kernel=kernel, factors=factors)
+end
+
+"""
+    frozen_pipeline(bath, model, N, δt; trunc, β, bands) -> (lat, mpsK, mpsIs)
+
+冻结核（QuAPI Δt）参考管线：`correlationfunction` + `hybriddynamics` +
+`sysdynamics`（均匀全步长杂质演化）。作 Z 证书与标度的冻结核对照。
+"""
+function frozen_pipeline(bath, model::AbstractImpurityHamiltonian, N::Integer, δt::Real;
+                         trunc::TruncationScheme=Defaults.alg_trunc_if(), β::Real=bath.β,
+                         bands::Int=1)
+    lat = GrassmannLattice(N=N, δt=δt, contour=:real, bands=bands)
+    corr = correlationfunction(bath, lat)
+    mpsI1 = hybriddynamics(lat, corr; trunc=trunc, band=1)
+    mpsIs = GrassmannMPS[mpsI1]
+    for band in 2:bands
+        push!(mpsIs, swapband(mpsI1, lat, 1, band; trunc=trunc))
+    end
+    mpsK = sysdynamics(lat, model; trunc=trunc)
+    for band in 1:bands
+        mpsK = boundarycondition!(mpsK, lat, band=band, trunc=trunc)
+    end
+    mpsK = systhermalstate!(mpsK, lat, model; trunc=trunc, β=β)
+    return lat, mpsK, mpsIs
+end
+
+# ------------------------------------------------------------- 绘图助手 --
+
+const PY_PLOTTER = raw"""
+import sys, csv, math
+from collections import defaultdict
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+csv_path, png_path, title, xlabel, ylabel = sys.argv[1:6]
+series = defaultdict(list)
+with open(csv_path) as f:
+    for row in csv.DictReader(f):
+        series[row["series"]].append((float(row["dt"]), float(row["relerr"])))
+
+fig, ax = plt.subplots(figsize=(7.6, 5.2))
+colors = ["#7f7f7f", "#d62728", "#1f77b4", "#2ca02c", "#9467bd"]
+dts = None
+for i, ((name, pts), c) in enumerate(zip(sorted(series.items()), colors)):
+    pts.sort()
+    dt = [p[0] for p in pts]
+    er = [p[1] for p in pts]
+    dts = dt
+    ax.loglog(dt, er, "o-", color=c, label=name)
+    x = [math.log(d) for d in dt]
+    y = [math.log(e) for e in er]
+    n = len(x)
+    xm, ym = sum(x) / n, sum(y) / n
+    p = sum((xi - xm) * (yi - ym) for xi, yi in zip(x, y)) / \
+        sum((xi - xm) ** 2 for xi in x)
+    ax.annotate(f"order = {p:.2f}", xy=(dt[-1], er[-1]),
+                xytext=(4, -13 if i % 2 == 0 else 9),
+                textcoords="offset points", fontsize=9, color=c)
+
+# O(dt^p) 参考线：锚在第一条曲线的首/尾点
+_, pts0 = sorted(series.items())[0]
+d1, e1 = min(pts0)
+d2 = max(dts)
+for p, ls in ((1, "--"), (2, ":"), (4, "-.")):
+    ax.loglog([d1, d2], [e1, e1 * (d2 / d1) ** p], ls, color="gray", lw=1,
+              label=rf"$O(\delta t^{p})$")
+
+ax.set_xlabel(xlabel)
+ax.set_ylabel(ylabel)
+ax.set_title(title, fontsize=11)
+ax.grid(True, which="both", alpha=0.3)
+ax.legend(loc="best", fontsize=9)
+fig.tight_layout()
+fig.savefig(png_path, dpi=150)
+print("图 ->", png_path)
+"""
+
+"""log-log 标度图（matplotlib，经临时 python 脚本）：argv = csv, png, title, xlabel, ylabel。"""
+function plot_png(csv, png, title, xlabel, ylabel)
+    py = tempname()
+    open(py, "w") do io
+        write(io, PY_PLOTTER)
+    end
+    try
+        run(`python3 $py $csv $png $title $xlabel $ylabel`)
+    finally
+        rm(py; force=true)
+    end
 end
 
 end # module NativeExact

@@ -15,7 +15,7 @@ functionals*, **PRB 107, 125103 (2023)**（`benchmark/NgReichman2023.pdf`）；
 - **严格核 `exact_Δt`**（QuAPI `exactfermionic.jl`）：bath + 耦合的二次型
   cell 演化 `B = e^{-δt·Σ(εc†c + V(d†c+c†d))}` 被**精确**处理（单粒子传播子
   显式矩阵指数），杂质相干腿在节点插入，bath 腿经 Grassmann 高斯 Schur
-  消元精确积掉。本目录经 `exact_Δt(bath, cells)`（`src/common.jl`）适配为
+  消元精确积掉。本目录经 `exact_Δt(bath, cells)`（`src/NativeExact.jl`）适配为
   GTEMPO `AbstractRealCorrelationFunction`，直接供 `hybriddynamics!` 的
   partialmpo 行扫消费（无 Prony、无 Toeplitz 近似）。
 
@@ -40,8 +40,8 @@ A 吸收为全步长），零长度 cell 补齐使核节点与格点切片一一
 
 | 文件 | 内容 |
 |---|---|
-| `src/common.jl` | exact_Δt 适配器、Trotter 调度、调度版 sysdynamics、完整管线、ED 参考、标度驱动 |
-| `src/NativeExact.jl` | **GTEMPO 原生严格核管线**（IFGTEMPO-free）：`exactif_native_compact`（紧凑消元，全 order 验证绿）、`exactif_native_quapi`（orders 1/2）、`compact_delta`/`contour_G`/`sysdynamics_exact!`、`gtlt_compact`（双时 gt/lt 系列，IFGTEMPO 约定的原生镜像） |
+
+| `src/NativeExact.jl` | **IF 严格核核心模块**（IFGTEMPO-free，原 common.jl + NativeExact 合并）：①原生管线 `exactif_native_compact`（紧凑消元）/`exactif_native_quapi`（orders 1/2）/`compact_delta`/`contour_G`/`sysdynamics_exact!`/`gtlt_compact`（双时 gt/lt）；②Z 证书机器 `exact_Δt` 适配器 + `exactif_pipeline`/`frozen_pipeline` 双管线（zidentity 依赖）；③`plot_png` 绘图助手 |
 | `src/FormB.jl` | **形态 B 的 GTEMPO GMPS 移植**：紧凑 IMP-only lattice 上的 Δ_eff/反测度/K 装配（GTEMPO GrassmannMPS 因子 + pair transfer 收缩） |
 | `theory/MATHEMATICS.tex/.pdf` | **形态 B 数学原理文档（LaTeX 正式版，8 页）**：两扇区路径积分 → IF 变量高斯消元（Δ_eff 推导）→ 收缩语义/迹闭合 → GTEMPO pair 机制对接（反测度/graded 读出符号）（xelatex 编译，`ctexart`） |
 | `theory/MATHEMATICS.md` | 数学原理文档的 Markdown 版（与 .tex 同内容；供仓库内直接预览） |
@@ -168,7 +168,7 @@ Trotter 调度（`trotter_schedule(order, N, dt)`），对精确连续 Fock 演�
    恒等核闭合（IFGTEMPO 的零时长恒等核：N+1 个核、无额外折返双线性；
    迹在该约定下逐位精确）。
 4. **可观测提取**：`insert_n!`（清零位点张量偶宇称块）带 O(δt) 有效时刻
-   偏移；`ntT`（`src/common.jl`）的折返跨越 2 腿 `GTerm` 投影是与稠密参考
+   偏移；折返跨越 2 腿 `GTerm` 投影（`ntT` 约定，已并入读出实现）是与稠密参考
    一致的约定，应作为 ⟨n(T)⟩/dd-型可观测的标准实现。
 5. **多带**：`boundarycondition!` 对 bands > 1 必须逐 band 施加（本轮
    在 benchmark 侧修复，库侧 `sysdynamics` 路径已正确）。
@@ -332,7 +332,7 @@ order 4 × N=1（单自旋）；order 4 的完整标度验证以 `twosector/`（
 
 ### 单扇区管线的现状（保留并标注）
 
-单扇区 exactif 管线（`src/common.jl` 的 `exactif_pipeline`）保留作为对照
+单扇区 exactif 管线（`src/NativeExact.jl` 的 `exactif_pipeline`，Z 证书对照用）保留作为对照
 （其诊断脚本 toulouse/、singlemodebath/ 的旧 realtime.jl 已于 2026-11-06 替换为
 紧凑路线的 1/2/4 阶标度，旧 gt/lt 诊断图随脚本删除）：
 - Z 恒等式证书（ε_d = 0，全 order 机器精度）仍是最锐利的严格性证书；

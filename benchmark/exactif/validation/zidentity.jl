@@ -13,9 +13,14 @@
 #                      secondorder/convergence.jl）
 #     严格核 exact_Δt：|Z − 1| ≈ 1e-14（全部 order、全部 N）
 #
-# 运行：julia --project=<GTEMPO 根> benchmark/exactif/zidentity.jl
+# 运行：julia --project=<GTEMPO 根> benchmark/exactif/validation/zidentity.jl
 # =============================================================================
-include(joinpath(@__DIR__, "..", "src", "common.jl"))
+using GTEMPO
+using Printf
+using ImpurityModelBase          # fermionicbath / DiracDelta
+using Z2Tensors: truncdimcutoff
+include(joinpath(@__DIR__, "..", "src", "NativeExact.jl"))
+using .NativeExact
 
 const MODEL_T = 0.4
 const β = 1.0

@@ -30,7 +30,6 @@ const GT_ROOT = dirname(dirname(pathof(GTEMPO)))
 include(joinpath(@__DIR__, "..", "src", "NativeExact.jl"))
 using .NativeExact
 include(joinpath(GT_ROOT, "benchmark", "exactif", "validation", "formb_dense.jl"))
-include(joinpath(GT_ROOT, "benchmark", "exactif", "src", "common.jl"))   # plot_png/PY_PLOTTER
 
 # ---- 模型参数（诊断基准同款）----
 const MODEL_T = 0.4
