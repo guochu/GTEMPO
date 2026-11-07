@@ -468,6 +468,28 @@ U=0 因子化恒等式、配对结合律、逐支撑 Python 参照链。
    扫描；③ χ₀ 解析推导务必先验证前提（F≡0 的测量外推到 F≠0 是本轮
    过矫正根因）。
 
+## 2026-11-07 第十二轮补遗（金标准对照：U1GTEMPO2 无此病；根因最终定位）记录
+
+1. **判决（diag_u1_tau_twopoint.jl，三框架同模型对比）**：U1GTEMPO2 的
+   τ 两点**无结构尾部**——U=0 双带列与单带离散化地板逐位相同
+   （4.805e-5…1.468e-4），U=0.8 全列 2.0e-5~1.65e-4 干净；本基准同列
+   3.0e-4~2.9e-3（尾部）。**金标准自身不受影响**。
+2. **根因最终定位（修正 7782c0b 的「收缩引擎架构固有」表述）**：两框架
+   **不共用收缩引擎**——U1GTEMPO2 是独立栈（直接 TensorKit，自有
+   GMPS/berezin_vertex 配对），键标签 = `U1Irrep⊠U1Irrep⊕FermionParity`
+   （**每带独立粒子数电荷**）；本基准的 GTEMPO 栈 = 单 Z2 宇称，
+   (1,0)/(0,1) 合并同扇区 ⟹ 跨带融合符号错标 = 尾部。K 侧符号不可修
+   证明不变，但正确修复 = **grading 升级**（非符号）。
+3. **升级规格已知**：GTEMPO 核心 Z2Irrep 硬编码 36 处
+   （integration/observables/grassmannmps/lattices/sysdynamics），泛化
+   = 核心重构；完整参考实现 = U1GTEMPO2 的 SpinSector 方案
+   （tensors.jl `split_cell`/`from_core` 电荷标签拆分、`local_weight`
+   的 graded⊗ 符号 `(−1)^{popcount(a)·popcount(b)}`、显式 oddlater）。
+   在升级落地前，本基准 1.71e-3 的 τ 两点为已知最优 Z2 值，与金标准
+   的差距（~1e-3，奇插入链）记录为已知限制。
+4. 工具：`validation/diag_u1_tau_twopoint.jl` +
+   `validation/u1_tau_twopoint_alignment.md`（判决档案）。
+
 ## 文件
 
 ```
