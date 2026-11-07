@@ -46,7 +46,8 @@ A 吸收为全步长），零长度 cell 补齐使核节点与格点切片一一
 | `theory/MATHEMATICS.tex/.pdf` | **形态 B 数学原理文档（LaTeX 正式版，8 页）**：两扇区路径积分 → IF 变量高斯消元（Δ_eff 推导）→ 收缩语义/迹闭合 → GTEMPO pair 机制对接（反测度/graded 读出符号）（xelatex 编译，`ctexart`） |
 | `theory/MATHEMATICS.md` | 数学原理文档的 Markdown 版（与 .tex 同内容；供仓库内直接预览） |
 | `validation/zidentity.jl` | **Z 恒等式证书**（ε_d=0 时 Z·prefactor == 1，全部 order 机器精度） |
-| `validation/formb_dense.jl` | **形态 B（消元式单扇区）稠密系数级验证**：IF 变量从两扇区 lattice 精确积掉，与 Fock/GMPS 三方对齐（`FORMB_QUICK=1` 快测档） |
+| `validation/formb_dense.jl` | **形态 B（消元式单扇区）稠密系数级验证**：IF 变量从两扇区 lattice 精确积掉，与 Fock/GMPS 三方对齐（`FORMB_QUICK=1` 快测档）。**已 IFGTEMPO-free**（Fock 参照链/调度表本地化，鸭子类型 bath 参数）——活跃验证链的共享稠密机器 |
+| `validation/formb_legacy_ifgtempo.jl` | 形态 B 验证电池的 IFGTEMPO 依赖部分（fock_chain_two_spin + Step D 三方对齐）；需先 `using IFGTEMPO` 再 include |
 | `validation/verify_compact.jl` | 紧凑路线对齐矩阵（离散链 + Z/V=0 双证书；`ARGS=trunc` 截断档） |
 | `validation/scaling_compact.jl` | 紧凑路线 Trotter 标度 vs 精确连续演化（p = 2.01/2.01/3.99） |
 | `validation/scaling_compact_models.jl` | **两模型（Toulouse + 单模 bath Anderson U≠0）error scaling + 真阶判定**；结果分别写入 `toulouse/`、`singlemodebath/` |
@@ -64,6 +65,14 @@ A 吸收为全步长），零长度 cell 补齐使核节点与格点切片一一
 注：`twosector/`（两扇区权威标度基准，旧调度下的 p=4.05-4.11）已随本轮目录清理
 移除——其 order-4 数值属旧调度的交叉区假象（见"order-4 调度修正"一节）；如需两扇区
 交叉验证，用 IFGTEMPO 的 `build_impurity_path`（已修回文调度）重建。
+
+**依赖状态（2026-11-06）**：`src/` 与活跃验证链（verify_compact / scaling_compact* /
+verify_gtlt_align / zidentity）**已 IFGTEMPO-free**——Fock 参照链与调度表本地化
+（`formb_dense.jl` 的鸭子类型 bath 参数 + `NativeExact.native_schedule`）。
+IFGTEMPO 仅在两处出现：①对齐参照脚本（verify_align* / verify_gtlt_align——
+"用 IFGTEMPO 验证自己"的证据链，保留）；②legacy 验证记录
+（verify_formb / scaling_formb / native_probe / restrictd_probe / validate +
+`formb_legacy_ifgtempo.jl`，各自自行加载 IFGTEMPO）。
 
 运行（GTEMPO 根目录）：
 

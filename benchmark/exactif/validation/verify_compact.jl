@@ -54,8 +54,8 @@ end
 
 """Fock 离散链参照（同 schedule、同热态 ρ₀）。"""
 function fock_ref(order::Int, N::Int, eps_d::Real)
-    up = FiniteBath(HB, VV, BETA)
-    sched = trotter_schedule(order, N, T_TOT / N)
+    up = (bath_hamiltonian=HB, hybridization=VV, beta=BETA)
+    sched = NativeExact.native_schedule(order, N, T_TOT / N)
     ρ = fock_chain_single(up, eps_d, sched, thermal_rho0(eps_d, BETA))
     return real(ρ[2, 2]) / real(tr(ρ))
 end

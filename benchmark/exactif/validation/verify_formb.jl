@@ -17,6 +17,7 @@ push!(LOAD_PATH, IFT_ROOT)
 using IFGTEMPO
 
 include(joinpath(@__DIR__, "formb_dense.jl"))   # Fock 参照链（含 T_TOT/BETA/EPS_D）
+include(joinpath(@__DIR__, "formb_legacy_ifgtempo.jl"))  # fock_chain_two_spin + Step D（需 IFGTEMPO）
 include(joinpath(@__DIR__, "..", "src", "FormB.jl"))
 using .FormB
 

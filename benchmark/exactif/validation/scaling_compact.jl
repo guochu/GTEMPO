@@ -29,12 +29,12 @@ thermal_rho0(eps_d, β) = (H = ComplexF64[0 0; 0 eps_d]; exp(-β .* H) / tr(exp(
 
 """精确连续演化参照：单模 bath 全 H（4×4）精确对角化。"""
 function exact_continuous()
-    up = FiniteBath(HB, VV, BETA)
+    up = (bath_hamiltonian=HB, hybridization=VV, beta=BETA)
     m = 1
     nt = 1 + m
     dim = 1 << nt
     ops = [annih_op(dim, k) for k in 0:(nt - 1)]
-    hQ = bath_one_particle_hamiltonian(up)          # 杂质能级 0
+    hQ = NativeExact._coupled_h(VV, HB)             # 杂质能级 0（耦合单粒子 h）
     Hq = zeros(ComplexF64, dim, dim)
     for i in 1:(m + 1), j in 1:(m + 1)
         iszero(hQ[i, j]) || (Hq .+= hQ[i, j] .* (ops[i]' * ops[j]))

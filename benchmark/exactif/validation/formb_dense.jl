@@ -33,10 +33,12 @@
 using LinearAlgebra, Printf
 using GTEMPO
 
-const IFT_ROOT = joinpath(dirname(dirname(dirname(pathof(GTEMPO)))), "IFGTEMPO")
-isdir(IFT_ROOT) || error("IFGTEMPO 仓库未找到：$IFT_ROOT")
-push!(LOAD_PATH, IFT_ROOT)
-using IFGTEMPO
+# 本文件已 IFGTEMPO-free：trotter_schedule 等价物由调用方提供
+# （活跃脚本用 NativeExact.native_schedule，见各脚本头部）；legacy 验证函数
+# （step_a/b/c、dense_case nflav=2、single_models 等）在**调用时**从调用方
+# 作用域解析 influence_matrix_G/FiniteBath/TwoSpinImpurityModel 等 IFGTEMPO
+# 名字——include 本文件前先 `using IFGTEMPO` 的 legacy 脚本不受影响，
+# 活跃脚本（不加载 IFGTEMPO）不得调用这些函数。
 
 # ---------------------------------------------------------------------------
 # 稠密 Grassmann 多项式机器
@@ -391,14 +393,34 @@ function chain_operator(Hq::AbstractMatrix, Him::AbstractMatrix,
     return U
 end
 
-"""单自旋离散链：ρ_disc = Tr_bath[U (ρ₀⊗ρ_b) U†]（mode 序：imp=0, bath≥1）。"""
-function fock_chain_single(up::FiniteBath, eps_d::Real,
-                           sched::TrotterSchedule, rho0::AbstractMatrix)
+"""bath 模式数（鸭子类型：IFGTEMPO FiniteBath 或 NamedTuple(beta=..., hybridization=...)）。"""
+bath_modes(up) = length(up.hybridization)
+
+"""耦合单粒子 h（mode 1 = 杂质，能级 0；mode k+1 = bath mode k）。
+与 IFGTEMPO bath_one_particle_hamiltonian / NativeExact._coupled_h 同约定。"""
+function bath_one_particle_h(up)
+    m = bath_modes(up)
+    h = zeros(ComplexF64, m + 1, m + 1)
+    for k in 1:m
+        h[1, k+1] = conj(up.hybridization[k])
+        h[k+1, 1] = up.hybridization[k]
+        h[k+1, k+1] = up.bath_hamiltonian[k, k]
+    end
+    return h
+end
+
+"""单自旋离散链：ρ_disc = Tr_bath[U (ρ₀⊗ρ_b) U†]（mode 序：imp=0, bath≥1）。
+
+`up` 鸭子类型：需 bath_hamiltonian / hybridization / beta 字段
+（IFGTEMPO FiniteBath 或 NamedTuple(bath_hamiltonian=..., hybridization=..., beta=...)）；
+`sched` 需 .cells / .links（NativeSchedule 或 TrotterSchedule）。"""
+function fock_chain_single(up, eps_d::Real,
+                           sched, rho0::AbstractMatrix)
     m = bath_modes(up)
     nt = 1 + m
     dim = 1 << nt
     ops = [annih_op(dim, k) for k in 0:(nt - 1)]
-    hQ = bath_one_particle_hamiltonian(up)          # impurity level 0
+    hQ = bath_one_particle_h(up)          # impurity level 0
     Hq = zeros(ComplexF64, dim, dim)
     for i in 1:(m + 1), j in 1:(m + 1)
         iszero(hQ[i, j]) && continue
@@ -422,44 +444,6 @@ function fock_chain_single(up::FiniteBath, eps_d::Real,
     rho = zeros(ComplexF64, 2, 2)
     for b in 0:((1 << m) - 1), a in 0:1, a2 in 0:1
         rho[a + 1, a2 + 1] += rtot[(b << 1 | a) + 1, (b << 1 | a2) + 1]
-    end
-    return rho
-end
-
-"""两自旋离散链（mode 序：imp_up=0, imp_dn=1, up-bath, dn-bath）。"""
-function fock_chain_two_spin(up::FiniteBath, dn::FiniteBath,
-                             imp::TwoSpinImpurityModel, sched::TrotterSchedule)
-    mu, md = bath_modes(up), bath_modes(dn)
-    nt = 2 + mu + md
-    dim = 1 << nt
-    ops = [annih_op(dim, k) for k in 0:(nt - 1)]
-    Hq = zeros(ComplexF64, dim, dim)
-    Hb = zeros(ComplexF64, dim, dim)
-    for (model, off, impmode) in ((up, 2, 0), (dn, 2 + mu, 1))
-        for i in 1:bath_modes(model), j in 1:bath_modes(model)
-            Hq .+= model.bath_hamiltonian[i, j] .* (ops[off + i]' * ops[off + j])
-            Hb .+= model.bath_hamiltonian[i, j] .* (ops[off + i]' * ops[off + j])
-        end
-        for i in 1:bath_modes(model)
-            Hq .+= conj(model.hybridization[i]) .* (ops[impmode + 1]' * ops[off + i])
-            Hq .+= model.hybridization[i] .* (ops[off + i]' * ops[impmode + 1])
-        end
-    end
-    Him = imp.epsilon_up .* (ops[1]' * ops[1]) +
-          imp.epsilon_down .* (ops[2]' * ops[2]) +
-          imp.interaction_u .* (ops[1]' * ops[1]) * (ops[2]' * ops[2])
-    # ρ_b 嵌入全空间，按 bath 配分函数归一（杂质维度 4）
-    Zb = tr(exp(-up.beta .* Hb)) / 4
-    rb = exp(-up.beta .* Hb) ./ Zb
-    U = chain_operator(Hq, Him, sched.cells, sched.links)
-    r0 = zeros(ComplexF64, dim, dim)
-    for b in 0:((1 << (nt - 2)) - 1), a in 0:3, a2 in 0:3
-        r0[(b << 2 | a) + 1, (b << 2 | a2) + 1] = imp.initial_density[a + 1, a2 + 1]
-    end
-    rtot = U * (r0 * rb) * adjoint(U)
-    rho = zeros(ComplexF64, 4, 4)
-    for b in 0:((1 << (nt - 2)) - 1), a in 0:3, a2 in 0:3
-        rho[a + 1, a2 + 1] += rtot[(b << 2 | a) + 1, (b << 2 | a2) + 1]
     end
     return rho
 end
@@ -767,59 +751,6 @@ function step_c_elim_contraction(elim_sign, pf_conv, int_conv)
     return all_ok
 end
 
-"""Step D：两自旋消元式收缩 vs Fock vs IFGTEMPO GMPS（权威对齐）。"""
-function step_d_two_spin(elim_sign, pf_conv, int_conv)
-    up = FiniteBath([0.4 0.1; 0.1 0.3], [0.23 + 0.11im, 0.15 - 0.05im], BETA)
-    dn = FiniteBath([0.38 0.08; 0.08 0.28], [0.19 - 0.07im, 0.12 + 0.04im], BETA)
-    imp = TwoSpinImpurityModel(0.35, -0.22, 1.0)
-    println("═"^72)
-    println("Step D：两自旋消元式收缩 vs Fock vs IFGTEMPO GMPS（gtempo_density_matrix_direct）")
-    println("═"^72)
-    # 断言：我们的两 flavor 布局 == timelocallattice
-    for N in (1, 2)
-        smap, vars, L = build_sites(N, 2)
-        lat = timelocallattice(N)
-        for v in vars
-            g = IFGTEMPO.index(lat, GrassmannVariable(v.typ, v.t, v.br, v.stat, v.f))
-            g == smap[v] || error("lattice 布局与 timelocallattice 不一致：$v")
-        end
-    end
-    println("  lattice 布局 == timelocallattice（N=1,2 全变量逐位断言通过）")
-    all_ok = true
-    quick = get(ENV, "FORMB_QUICK", "0") == "1"
-    # 两自旋消元 L = 12 + 8·nl：order 4（nl=3N）N=1 已是 2^36，dense 不做
-    grid = quick ? [(1, 1)] : [(o, n) for o in (1, 2) for n in (1, 2)]
-    for (order, N) in grid
-        dt = T_TOT / N
-        sched = trotter_schedule(order, N, dt)
-        rho_ref = fock_chain_two_spin(up, dn, imp, sched)
-        path = build_impurity_path(up, dn, N, dt; order = order,
-                                   impurity_model = imp, cutoff = 1e-12)
-        rho_gmps = gtempo_density_matrix_direct(path.factors...)
-        data_up = influence_matrix_G(up, sched.cells)
-        data_dn = influence_matrix_G(dn, sched.cells)
-        nl4 = length(sched.cells)
-        pf = pf_mine(data_up, nl4, 1; step_sign = pf_conv.step_sign,
-                     order = pf_conv.order) *
-             pf_mine(data_dn, nl4, 2; step_sign = pf_conv.step_sign,
-                     order = pf_conv.order)
-        res = dense_case(order = order, N = N, nflav = 2,
-                         models = [(Ginv = inv(data_up.G),), (Ginv = inv(data_dn.G),)],
-                         imp = imp, mode = :elim, conv = int_conv,
-                         elim_sign = elim_sign, pf_scale = pf)
-        errz = abs(res.Z - 1)
-        errf = maxabsdiff(res.rho, rho_ref)
-        errg = maxabsdiff(res.rho, rho_gmps)
-        errgf = maxabsdiff(rho_gmps, rho_ref)
-        ok = errz < 1e-8 && errf < 1e-8 && errg < 1e-7
-        all_ok &= ok
-        @printf("  order %d N=%d : Z-1 = %.2e | 消元-Fock %.2e | 消元-GMPS %.2e | GMPS-Fock %.2e  %s\n",
-                order, N, errz, errf, errg, errgf, passfail(ok))
-    end
-    println()
-    return all_ok
-end
-
 function main()
     println("形态 B（消元式单扇区）稠密系数级验证")
     @printf("参数：T = %.2f, β = %.1f, ε_d = %.2f\n\n", T_TOT, BETA, EPS_D)
@@ -827,10 +758,9 @@ function main()
     elim_sign = step_b_elimination(conv_two)
     calib = step_c_calibrate(elim_sign)
     ok_c = step_c_elim_contraction(elim_sign, calib.pf_conv, calib.int_conv)
-    ok_d = step_d_two_spin(elim_sign, calib.pf_conv, calib.int_conv)
     println("═"^72)
     println("总结：Step C（单自旋 N=1..4 × order 1/2/4）", passfail(ok_c),
-            "；Step D（两自旋 GMPS 对齐）", passfail(ok_d))
+            "（Step D 两自旋 GMPS 对齐已移至 formb_legacy_ifgtempo.jl）")
     println("锁定约定：两扇区收缩 (step_sign $(conv_two.step_sign), order ",
             "$(conv_two.order), closure_k $(conv_two.closure_k))；消元式 pf 定向 ",
             "(step_sign $(calib.pf_conv.step_sign), order $(calib.pf_conv.order))；",

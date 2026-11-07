@@ -96,7 +96,7 @@ function anderson_ref(; mode::Symbol, order::Int=2, N::Int=1)
     end
     rb = anderson_rho_bath()
     if mode === :chain
-        sched = trotter_schedule(order, N, MODEL_T / N)
+        sched = NativeExact.native_schedule(order, N, MODEL_T / N)
         U = chain_operator(Hq, Him, collect(Float64.(sched.cells)),
                            collect(Float64.(sched.links)))
     else
@@ -108,16 +108,16 @@ end
 
 """Toulouse 参照（复用 formb_dense 的链机器；连续 = 4 维精确对角化）。"""
 function toulouse_ref(; mode::Symbol, order::Int=2, N::Int=1)
-    up = FiniteBath(HB_M, VB_M, BETA_M)
+    up = (bath_hamiltonian=HB_M, hybridization=VB_M, beta=BETA_M)
     if mode === :chain
-        sched = trotter_schedule(order, N, MODEL_T / N)
+        sched = NativeExact.native_schedule(order, N, MODEL_T / N)
         ρ = fock_chain_single(up, EPS_D_M, sched, thermal2(EPS_D_M, BETA_M))
         return real(ρ[2, 2]) / real(tr(ρ))
     end
     m = 1
     dim = 1 << (1 + m)
     ops = [annih_op(dim, k) for k in 0:m]
-    hQ = bath_one_particle_hamiltonian(up)
+    hQ = NativeExact._coupled_h(VB_M, HB_M)
     Hq = zeros(ComplexF64, dim, dim)
     for i in 1:(m + 1), j in 1:(m + 1)
         iszero(hQ[i, j]) || (Hq .+= hQ[i, j] .* (ops[i]' * ops[j]))
