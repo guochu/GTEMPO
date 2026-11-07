@@ -37,7 +37,7 @@ using LinearAlgebra
 using QuAPI: AbstractRealCorrelationFunction
 using Z2Tensors: TruncationScheme
 
-export NativeSchedule, native_schedule, trotter_factors, ExactDelta, exact_delta,
+export NativeSchedule, native_schedule, trotter_factors, ExactDelta, exact_delta, gtlt_compact,
        compact_delta, contour_G, bath_norm, pfaffian, quapi_delta, prefdelta, normdelta,
        sysdynamics_exact!, exactif_native_pipeline,
        exactif_native_quapi, exactif_native_compact, open_rho_native
@@ -748,6 +748,43 @@ function exactif_native_compact(HB::Matrix{ComplexF64}, V::Vector{ComplexF64},
                               bands=bands, trunc=trunc, β=β, counter_c=counter_c)
     return (lat = lat, mpsK = mpsK, mpsIs = mpsIs, deltas = deltas, norm = norm,
             links = links, cells = cells)
+end
+
+"""
+    gtlt_compact(pipe; band=1) -> (greater, lesser)
+
+紧凑消元管线的双时杂质 Green 函数系列（裸关联，无 ±i 因子；IFGTEMPO
+`gtempo_greens_function_direct` 的原生格镜像，约定逐条对应）：
+
+- `c(t_f)` 插在开放端节点 `lat.k` 的 backward-eta 腿（`imp(N+1,−,eta)` 同位）；
+- `greater[k+1] = ⟨c(t_f) c†(k·δt)⟩`：GTerm 插在 forward-bar@layer k+1
+  （native 节点 k+2）与 csite；
+- `lesser[k+1]  = ⟨c†(k·δt) c(t_f)⟩`：GTerm 插在 backward-bar@layer k
+  （native 节点 k+1）与 csite；
+- `Z = integrate·norm` 归一（norm = ν·Pf 在比值中消去）；k = 0..N
+  （N = length(cells)，层时刻 k·δt_slice）。
+
+对 orders 1/2，层时刻即物理网格 k·δt；order 4 的层为 sub-cell 切片。
+有效算符时刻（半步）：G^> ≈ (k+0.5)δt、G^< ≈ (k−0.5)δt。
+"""
+function gtlt_compact(pipe; band::Int=1)
+    (; lat, mpsK, mpsIs, norm, cells) = pipe
+    N = length(cells)
+    Z = GTEMPO.integrate(lat, mpsK, mpsIs...) * norm
+    csite = GrassmannContourIndex(lat.k, conj=false, branch=:-, band=band)
+    greater = zeros(ComplexF64, N + 1)
+    lesser = zeros(ComplexF64, N + 1)
+    for k in 0:N
+        g1 = GrassmannContourIndex(k + 2, conj=true, branch=:+, band=band)
+        mpsN = copy(mpsK)
+        GTEMPO.apply!(GTEMPO.GTerm(lat[g1], lat[csite], coeff=1.0), mpsN)
+        greater[k + 1] = GTEMPO.integrate(lat, mpsN, mpsIs...) * norm / Z
+        l1 = GrassmannContourIndex(k + 1, conj=true, branch=:-, band=band)
+        mpsN = copy(mpsK)
+        GTEMPO.apply!(GTEMPO.GTerm(lat[l1], lat[csite], coeff=1.0), mpsN)
+        lesser[k + 1] = GTEMPO.integrate(lat, mpsN, mpsIs...) * norm / Z
+    end
+    return greater, lesser
 end
 
 """每带 bath 规格：(hb = Hbath 矩阵, v = 耦合幅向量)。单带可省元组层。"""

@@ -41,7 +41,7 @@ A 吸收为全步长），零长度 cell 补齐使核节点与格点切片一一
 | 文件 | 内容 |
 |---|---|
 | `src/common.jl` | exact_Δt 适配器、Trotter 调度、调度版 sysdynamics、完整管线、ED 参考、标度驱动 |
-| `src/NativeExact.jl` | **GTEMPO 原生严格核管线**（IFGTEMPO-free）：`exactif_native_compact`（紧凑消元，全 order 验证绿）、`exactif_native_quapi`（orders 1/2）、`compact_delta`/`contour_G`/`sysdynamics_exact!` |
+| `src/NativeExact.jl` | **GTEMPO 原生严格核管线**（IFGTEMPO-free）：`exactif_native_compact`（紧凑消元，全 order 验证绿）、`exactif_native_quapi`（orders 1/2）、`compact_delta`/`contour_G`/`sysdynamics_exact!`、`gtlt_compact`（双时 gt/lt 系列，IFGTEMPO 约定的原生镜像） |
 | `src/FormB.jl` | **形态 B 的 GTEMPO GMPS 移植**：紧凑 IMP-only lattice 上的 Δ_eff/反测度/K 装配（GTEMPO GrassmannMPS 因子 + pair transfer 收缩） |
 | `theory/MATHEMATICS.tex/.pdf` | **形态 B 数学原理文档（LaTeX 正式版，8 页）**：两扇区路径积分 → IF 变量高斯消元（Δ_eff 推导）→ 收缩语义/迹闭合 → GTEMPO pair 机制对接（反测度/graded 读出符号）（xelatex 编译，`ctexart`） |
 | `theory/MATHEMATICS.md` | 数学原理文档的 Markdown 版（与 .tex 同内容；供仓库内直接预览） |
@@ -52,6 +52,7 @@ A 吸收为全步长），零长度 cell 补齐使核节点与格点切片一一
 | `validation/scaling_compact_models.jl` | **两模型（Toulouse + 单模 bath Anderson U≠0）error scaling + 真阶判定**；结果分别写入 `toulouse/`、`singlemodebath/` |
 | `validation/verify_align.jl` | 与 IFGTEMPO GMPS 的直接对齐（两自旋 U=0 解耦恒等式）+ quapi 回归（`ARGS=quapi`） |
 | `validation/verify_align_u15.jl` | **IFGTEMPO 直接同模型对齐（U=1.5 Anderson）**：双可观测量 n_up + ⟨n₁n₂⟩，8 组 ≤2.2e-14 |
+| `validation/verify_gtlt_align.jl` | **双时 gt/lt Green 函数系列对齐**：①单带 vs IFGTEMPO 解耦 flavor-1（4 组）、⑤双带 U=1.5 直接同模型（3 组），全部 ≤8.6e-14；附 ED 有效时刻 Trotter 收敛 |
 | `validation/verify_formb.jl` | FormB 移植的对齐验证：单自旋 vs Fock、两自旋 vs Fock vs IFGTEMPO GMPS 三方 |
 | `validation/scaling_formb.jl` | FormB 的 Trotter 阶数标度（vs 精确连续演化，叠加 IFGTEMPO 参照点；`ARGS = single | twospin | plot`） |
 | `validation/formb_scaling_*.png/.csv` | FormB 标度图记录：orders 1/2 → p=2.00、order 4 → p=3.99（单自旋 T=0.4）/ 4.16（两自旋 T=0.34）——**旧调度（非回文序）下的记录**，见"order-4 调度修正"一节勘误 |
