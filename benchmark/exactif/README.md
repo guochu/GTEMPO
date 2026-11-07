@@ -57,8 +57,8 @@ A 吸收为全步长），零长度 cell 补齐使核节点与格点切片一一
 | `validation/formb_scaling_*.png/.csv` | FormB 标度图记录：orders 1/2 → p=2.00、order 4 → p=3.99（单自旋 T=0.4）/ 4.16（两自旋 T=0.34）——**旧调度（非回文序）下的记录**，见"order-4 调度修正"一节勘误 |
 | `validation/native_probe.jl` / `restrictd_probe.jl` | 判决实验：native 腿集稠密标定（Q2）/ 消元核 bar→eta 块充分性（Q1） |
 | `validation/calibrate_native.jl` / `verify_native.jl` / `validate.jl` | 开放腿标定工作台 / contour_G 路线验证 / 形态 B 早期验证（保留作记录） |
-| `toulouse/realtime.jl` + `compact_scaling_toulouse.{png,csv}` | Toulouse（U=0, ϵ_d=0.7）：单扇区诊断标度 + **紧凑路线真 1/2/4 阶 error scaling** |
-| `singlemodebath/realtime.jl` + `compact_scaling_anderson.{png,csv}` | 单模 bath Anderson（μ=0.7, U=1.5）：同上 |
+| `toulouse/realtime.jl` + `realtime.{png,csv}` | **Toulouse（U=0, ϵ_d=0.7）基于严格 IF 的 1/2/4 阶 Trotter error scaling**（紧凑消元路线；机器级预检 + 真阶判定 PASS；共享引擎 = `validation/scaling_compact_models.jl`） |
+| `singlemodebath/realtime.jl` + `realtime.{png,csv}` | **单模 bath Anderson（μ=0.7, U=1.5, bands=2）同上**（16 维 Fock 参照含 U 关联；PASS） |
 
 注：`twosector/`（两扇区权威标度基准，旧调度下的 p=4.05-4.11）已随本轮目录清理
 移除——其 order-4 数值属旧调度的交叉区假象（见"order-4 调度修正"一节）；如需两扇区
@@ -78,15 +78,14 @@ julia --project=. benchmark/exactif/validation/formb_dense.jl             # 形�
 FORMB_QUICK=1 julia --project=. benchmark/exactif/validation/formb_dense.jl   # 快测档
 julia --project=. benchmark/exactif/validation/verify_formb.jl            # FormB GMPS 移植对齐（全量）
 FORMB_QUICK=1 julia --project=. benchmark/exactif/validation/verify_formb.jl  # 快测档
-julia --project=. benchmark/exactif/toulouse/realtime.jl                  # Toulouse 单扇区诊断（出图）
-julia --project=. benchmark/exactif/singlemodebath/realtime.jl            # Anderson 单扇区诊断（出图）
+julia --project=. benchmark/exactif/toulouse/realtime.jl                  # Toulouse 严格 IF 1/2/4 阶标度（出图）
+julia --project=. benchmark/exactif/singlemodebath/realtime.jl            # Anderson 严格 IF 1/2/4 阶标度（出图）
 ```
 
-**注意**：`toulouse/` 与 `singlemodebath/` 的 `realtime.jl` 是 GTEMPO 单扇区管线的
-**诊断基准**，受上述闭合约定差异限制，其 gt/lt 系列只表现 O(δt) 收敛（order 1/2）或
-不收敛（order 4），**不**是对严格核 2/4 阶的验证；同文件夹的
-`compact_scaling_*.{png,csv}` 才是紧凑消元路线的真 1/2/4 阶标度结果。两扇区
-交叉验证看 IFGTEMPO 的 `test_trotter_orders.jl`（已修回文调度）。
+**注意**：`toulouse/` 与 `singlemodebath/` 的 `realtime.jl`（2026-11-06 起）是
+**紧凑消元路线的严格 IF 1/2/4 阶标度**——旧的单扇区 gt/lt 诊断脚本（受闭合约定
+差异限制、order 4 不收敛）已删除。两扇区交叉验证看 IFGTEMPO 的
+`test_trotter_orders.jl`（已修回文调度）。
 
 ## 已验证的结论
 
@@ -323,7 +322,9 @@ order 4 × N=1（单自旋）；order 4 的完整标度验证以 `twosector/`（
 
 ### 单扇区管线的现状（保留并标注）
 
-单扇区 exactif 管线（`src/common.jl` 的 `exactif_pipeline`）保留作为对照：
+单扇区 exactif 管线（`src/common.jl` 的 `exactif_pipeline`）保留作为对照
+（其诊断脚本 toulouse/、singlemodebath/ 的旧 realtime.jl 已于 2026-11-06 替换为
+紧凑路线的 1/2/4 阶标度，旧 gt/lt 诊断图随脚本删除）：
 - Z 恒等式证书（ε_d = 0，全 order 机器精度）仍是最锐利的严格性证书；
 - ⟨n(T)⟩（`ntT`）与 Fock 一致到 ~1e-5 地板；
 - gt/lt 系列（`gtlt_exactif`）受上述闭合差异限制，只表现 O(δt)
@@ -530,7 +531,7 @@ orders 2/4 × N=1,2 共 8 组全部 ≤2.2e-14 PASS。
 singlemodebath/toulouse 诊断）建议用修正后调度重跑更新。验证全绿：verify_compact
 两档 + IFGTEMPO 直接对齐（orders 2/4 × N=1,2 ≤2.7e-14）。
 
-图：`toulouse/compact_scaling_toulouse.{png,csv}` 与 `singlemodebath/compact_scaling_anderson.{png,csv}`（含 O(δt)/O(δt²)/O(δt⁴)
+图：`toulouse/realtime.{png,csv}` 与 `singlemodebath/realtime.{png,csv}`（含 O(δt)/O(δt²)/O(δt⁴)
 参考线与拟合斜率标注）。
 
 ### 判决实验脚本（validation/）

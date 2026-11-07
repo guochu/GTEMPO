@@ -16,8 +16,10 @@
 #     order 1 与 2 全局二阶——IFGTEMPO/-twosector 已知结论），order 4 → p≈4
 #     （每减半 δt 误差 ÷16，与 order 2 的 ÷4 可区分）。
 #
-# 输出：results/compact_scaling_{toulouse,anderson}.{csv,png} + 终端判定表。
-# 运行：julia --project=<GTEMPO 根> benchmark/exactif/src/scaling_compact_models.jl
+# 共享引擎：两模型各自的 realtime.jl（toulouse/、singlemodebath/）include 本文件
+# 并调用 run_realtime_scaling(tag)；直接运行本文件 = 两模型全流程。
+# 输出：各模型文件夹的 realtime.{csv,png} + 终端判定表。
+# 运行：julia --project=<GTEMPO 根> benchmark/exactif/validation/scaling_compact_models.jl
 # =============================================================================
 using Printf
 using LinearAlgebra
@@ -163,25 +165,28 @@ end
 _slope(xs, ys) = (sum((xs .- sum(xs) / length(xs)) .* (ys .- sum(ys) / length(ys))) /
                   sum(abs2, xs .- sum(xs) / length(xs)))
 
-"""机器级预检：管线 vs Fock 离散链（确认 U≠0 管线 = 离散链的精确收缩）。"""
-function precheck()
+"""机器级预检（单模型）：管线 vs Fock 离散链（确认管线 = 离散链的精确收缩）。"""
+function precheck_model(tag::String, model, bands::Int)
     println("═"^78)
-    println("机器级预检：紧凑管线 vs Fock 离散 Trotter 链（同 schedule、同热态 ρ₀）")
+    println("机器级预检 [$tag]：紧凑管线 vs Fock 离散 Trotter 链（同 schedule、同热态 ρ₀）")
     println("═"^78)
     notrunc = NoTruncation()
     trunc = GTEMPO.truncdimcutoff(D=512, ϵ=1e-12)
-    for (tag, model, bands) in (("Toulouse", ToulouseIM(ϵ_d=EPS_D_M), 1),
-                                ("Anderson", AndersonIM(U=UINT_M, ϵ_d=EPS_D_M), 2))
-        for (order, N) in ((2, 1), (2, 2), (4, 1), (4, 2))
-            ref = bands == 1 ?
-                  toulouse_ref(mode=:chain, order=order, N=N) :
-                  anderson_ref(mode=:chain, order=order, N=N)
-            nt = compact_nt_model(model, bands; order=order, N=N,
-                                  trunc=(N == 1 ? notrunc : trunc))
-            @printf("  %-8s order %d N=%d : n = %.12f | chain %.12f | Δ = %.3e\n",
-                    tag, order, N, nt, ref, abs(nt - ref))
-        end
+    for (order, N) in ((2, 1), (2, 2), (4, 1), (4, 2))
+        ref = bands == 1 ?
+              toulouse_ref(mode=:chain, order=order, N=N) :
+              anderson_ref(mode=:chain, order=order, N=N)
+        nt = compact_nt_model(model, bands; order=order, N=N,
+                              trunc=(N == 1 ? notrunc : trunc))
+        @printf("  %-8s order %d N=%d : n = %.12f | chain %.12f | Δ = %.3e\n",
+                tag, order, N, nt, ref, abs(nt - ref))
     end
+end
+
+"""机器级预检（两模型）。"""
+function precheck()
+    precheck_model("Toulouse", ToulouseIM(ϵ_d=EPS_D_M), 1)
+    precheck_model("Anderson", AndersonIM(U=UINT_M, ϵ_d=EPS_D_M), 2)
 end
 
 """标度主流程：单模型 × orders 1/2/4 × N 网格 → CSV/PNG + 判定。"""
@@ -191,12 +196,11 @@ function scaling_model(tag::String, model, bands::Int, ref_exact::Float64)
     println("═"^78)
     trunc = GTEMPO.truncdimcutoff(D=512, ϵ=1e-12)
     Ns = [1, 2, 4, 8]   # order 4 的 N=16 渐近验证见 README（比值 15.97/16.12，p≈3.99）
-    # 各模型的结果放进各自的模型文件夹（Toulouse → toulouse/，Anderson → singlemodebath/）
+    # 各模型的结果写进各自模型文件夹的 realtime.{csv,png}（Toulouse → toulouse/，
+    # Anderson → singlemodebath/）
     outdir = (tag == "Anderson") ? "singlemodebath" : "toulouse"
-    csv = joinpath(GT_ROOT, "benchmark", "exactif", outdir,
-                   "compact_scaling_$(lowercase(tag)).csv")
-    png = joinpath(GT_ROOT, "benchmark", "exactif", outdir,
-                   "compact_scaling_$(lowercase(tag)).png")
+    csv = joinpath(GT_ROOT, "benchmark", "exactif", outdir, "realtime.csv")
+    png = joinpath(GT_ROOT, "benchmark", "exactif", outdir, "realtime.png")
     names = String[]
     errs = Vector{Vector{Float64}}()
     open(csv, "w") do io
@@ -250,6 +254,21 @@ function scaling_model(tag::String, model, bands::Int, ref_exact::Float64)
     return ps
 end
 
+"""单模型实时标度入口（各模型文件夹的 realtime.jl 调用）：机器级预检 + 标度 + 出图。"""
+function run_realtime_scaling(tag::String)
+    if tag == "Anderson"
+        model = AndersonIM(U=UINT_M, ϵ_d=EPS_D_M)
+        bands = 2
+        n_ex = anderson_ref(mode=:exact)
+    else
+        model = ToulouseIM(ϵ_d=EPS_D_M)
+        bands = 1
+        n_ex = toulouse_ref(mode=:exact)
+    end
+    precheck_model(tag, model, bands)
+    return scaling_model(tag, model, bands, n_ex)
+end
+
 function main()
     precheck()
     ps_t = scaling_model("Toulouse", ToulouseIM(ϵ_d=EPS_D_M), 1,
@@ -261,4 +280,6 @@ function main()
             ps_t..., ps_a...)
 end
 
-main()
+if abspath(PROGRAM_FILE) == @__FILE__
+    main()
+end
