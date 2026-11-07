@@ -111,10 +111,12 @@ function run_pipeline(Δ, ν, siteflip, cc, eps_d; N=2, order=2)
     end
     mpsK = GTEMPO.boundarycondition!(mpsK, lat; band=1, trunc=NoTruncation())
     Z = GTEMPO.integrate(lat, mpsK, mpsI) * ν
-    b = GrassmannContourIndex(1, conj=true, branch=:τ, band=1)
-    gv = GTEMPO.gf(lat, (GrassmannContourIndex(lat.Nτ, conj=false, branch=:τ, band=1), b),
-                   mpsK, mpsI, Z=Z)
-    return Z, real(gv)          # gτ(β⁻) 约定 = ⟨n⟩（firstorder 教程同款）
+    b1 = GrassmannContourIndex(1, conj=true, branch=:τ, band=1)
+    g_end = real(GTEMPO.gf(lat, (GrassmannContourIndex(lat.Nτ, conj=false, branch=:τ, band=1), b1),
+                           mpsK, mpsI, Z=Z))
+    g_1 = real(GTEMPO.gf(lat, (GrassmannContourIndex(1, conj=false, branch=:τ, band=1), b1),
+                         mpsK, mpsI, Z=Z))
+    return Z, (g = g_end, g1 = g_1, one_minus = 1 - g_1, one_minus_end = 1 - g_end)
 end
 
 # ================================================================== 主程序 --
@@ -132,12 +134,12 @@ function main()
         zref = real(zd)                                    # 物理链迹（未归一）
         println("─"^74)
         @printf("N=%d  稠密锚: Z = %.12f  n = %.12f\n", N, zref, n_dense)
-        for sgn in (1, -1), siteflip in (false, true), cc in (0, 1, -1)
+        for (sgn, siteflip, cc) in ((1, true, 0), (1, false, 0), (1, true, -1), (-1, true, 0))
             Δ = sgn == 1 ? Δfull : -Δfull
-            z, n = run_pipeline(Δ, ν_a, siteflip, cc, EPS_D; N=N)
-            @printf("  sgn=%+d sf=%d cc=%+d : Z = %14.10f (err %9.2e)   n = %12.10f (err %9.2e)\n",
+            z, r = run_pipeline(Δ, ν_a, siteflip, cc, EPS_D; N=N)
+            @printf("  sgn=%+d sf=%d cc=%+d : Z = %12.8f (err %8.1e) | gτ(end)=%9.6f gτ(1)=%9.6f 1−gτ(1)=%9.6f 1−gτ(end)=%9.6f | 锚 n=%.6f\n",
                     sgn, siteflip, cc, real(z), abs(real(z) - zref),
-                    n, abs(n - n_dense))
+                    r.g, r.g1, r.one_minus, r.one_minus_end, n_dense)
         end
     end
 end
