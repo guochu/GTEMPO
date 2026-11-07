@@ -44,6 +44,7 @@ A 吸收为全步长），零长度 cell 补齐使核节点与格点切片一一
 | `src/NativeExact.jl` | **IF 严格核核心模块**（IFGTEMPO-free，原 common.jl + NativeExact 合并）：①原生管线 `exactif_native_compact`（紧凑消元）/`exactif_native_quapi`（orders 1/2）/`compact_delta`/`contour_G`/`sysdynamics_exact!`/`gtlt_compact`（双时 gt/lt）；②Z 证书机器 `exact_Δt` 适配器 + `exactif_pipeline`/`frozen_pipeline` 双管线（zidentity 依赖）；③`plot_png` 绘图助手 |
 | `src/FormB.jl` | **形态 B 的 GTEMPO GMPS 移植**：紧凑 IMP-only lattice 上的 Δ_eff/反测度/K 装配（GTEMPO GrassmannMPS 因子 + pair transfer 收缩） |
 | `theory/MATHEMATICS.tex/.pdf` | **形态 B 数学原理文档（LaTeX 正式版，8 页）**：两扇区路径积分 → IF 变量高斯消元（Δ_eff 推导）→ 收缩语义/迹闭合 → GTEMPO pair 机制对接（反测度/graded 读出符号）（xelatex 编译，`ctexart`） |
+| `theory/keldysh.md/.tex/.pdf` | **严格 IF 实时核全流程闭环理论（Keldysh 轮廓）**：①bath 精确积掉（两扇区 Gaussian + Schur）→ ②IF Grassmann 变量积掉（Pfaffian 恒等式与消元核 D）→ ③1/2/4 阶调度与杂质部分完全组装（含回文 Suzuki 必要性）→ 读出约定与闭环验证阶梯 |
 | `theory/MATHEMATICS.md` | 数学原理文档的 Markdown 版（与 .tex 同内容；供仓库内直接预览） |
 | `validation/zidentity.jl` | **Z 恒等式证书**（ε_d=0 时 Z·prefactor == 1，全部 order 机器精度） |
 | `validation/formb_dense.jl` | **形态 B（消元式单扇区）稠密系数级验证**：IF 变量从两扇区 lattice 精确积掉，与 Fock/GMPS 三方对齐（`FORMB_QUICK=1` 快测档）。**已 IFGTEMPO-free**（Fock 参照链/调度表本地化，鸭子类型 bath 参数）——活跃验证链的共享稠密机器 |
