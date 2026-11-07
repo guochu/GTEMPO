@@ -231,4 +231,6 @@ function main()
                 N, real(zn / z), abs(real(zn / z) - ed_n(EPS_D)))
     end
 end
-main()
+if abspath(PROGRAM_FILE) == @__FILE__
+    main()
+end
