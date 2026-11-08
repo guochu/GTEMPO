@@ -209,27 +209,23 @@ function main()
         push!(rows, hz .- vend .- nanc .* hz); push!(rhs, 0.0 + 0.0im)
     end
     A = hcat(rows...)
-    Ist = A * ((A' * A + 1e-13 * I) \ rhs)
-    @printf("联合残差 = %.3e\n", norm(A' * Ist - rhs))
+    Ist = A * pinv(A' * A + 1e-13 * I; rtol=1e-12) * rhs
+    res = norm(A' * Ist - rhs)
+    @printf("联合残差 = %.3e\n", res)
     ivec = zeros(ComplexF64, 1 << L)
     for (i, Aset) in enumerate(EVENS)
         ivec[1 + sum(1 << p for p in Aset; init=0)] = Ist[i]
     end
     ν_eff = Ist[1]
     target = ivec ./ ν_eff
-    println("\nI*/ν_eff 非零项：")
-    for (i, Aset) in enumerate(EVENS)
-        v = Ist[i] / ν_eff
-        abs(v) > 1e-8 || continue
-        @printf("   %-16s : %11.7f\n", Aset, real(v))
-    end
 
-    # ---- 候选构造（ring → 管线位映射；ring pos p 的 bar/eta ↔ 切片 p+1）
+    # ---- 候选构造 ----
     rpos(p, isbar) = begin
         s = p + 1
         isbar ? LAT[GrassmannContourIndex(s, :τ, 1, true)] - 1 :
                 LAT[GrassmannContourIndex(s, :τ, 1, false)] - 1
     end
+    rp = rpos
     Ws, _ = interval_operators(fill(BETA / N, N), fill(BETA / N, N), 0.0)
     tot, Ld = dense_ring_table(Ws)
     bath_gens = Int[]
@@ -238,102 +234,110 @@ function main()
     end
     Timp = integrate_out(tot, Ld, bath_gens)
     ν_r = Timp[1]
-    Tm = zeros(ComplexF64, 1 << L)
+    c1 = zeros(ComplexF64, 1 << L)
     for idx in 1:length(Timp)
-        Timp[idx] == 0 && continue
-        bits = [p for p in 0:(Ld-1) if (idx - 1) >> p & 1 == 1]
-        nb = [rpos(b ÷ 4 + 1, b % 4 == 0) for b in bits]
-        Tm[1 + sum(1 << b for b in nb; init=0)] += Timp[idx]
+        c = Timp[idx]
+        c == 0 && continue
+        bits = [q for q in 0:(Ld-1) if (idx - 1) >> q & 1 == 1]
+        nb = [rp(b ÷ 4 + 1, b % 4 == 0) for b in bits]
+        c1[1 + sum(1 << b for b in nb; init=0)] += c
     end
-    c1 = Tm ./ Tm[1]
-
-    # c2：去杂质 resolution pair（pair(bar_p, eta_{p+1})，环闭合）——逐 pair exp 除
+    c1 = c1 ./ c1[1]
     Mcand = copy(c1)
     for p in 1:N
-        pb = rpos(p, true); pe = rpos(p == N ? 1 : p + 1, false)
-        # 该 pair 的 canonical monomial 系数除以 −1（resolution factor 1 − θθ）
+        pb = rp(p, true); pe = rp(p == N ? 1 : p + 1, false)
         key = 1 + (1 << pb) + (1 << pe)
-        Mcand[key] = Mcand[key] + 1.0        # 去掉 −1 分辨率：+1 抵消
+        Mcand[key] = Mcand[key] + 1.0
     end
     c2 = Mcand ./ Mcand[1]
 
     # c3：exp-form(−D_Schur)
-    M, Iset, Bset, mm = ring_M()
+    h0 = hcoupled()
+    mm = size(h0, 1)
+    cells0 = fill(BETA / N, N)
+    Us = [exp(-cells0[r] .* h0) for r in 1:N]
+    M = zeros(ComplexF64, mm * N, mm * N)
+    for r in 1:N
+        sgn = r == N ? +1.0 : -1.0
+        for s2 in 1:mm, s1 in 1:mm
+            M[(r-1)*mm + s2, (r-1)*mm + s1] += sgn * Us[r][s2, s1]
+        end
+        nxt = r == N ? 1 : r + 1
+        for s in 1:mm
+            M[(r-1)*mm + s, (nxt-1)*mm + s] += 1.0
+        end
+    end
+    Iset = [(r-1)*mm + 1 for r in 1:N]
+    Bset = [(r-1)*mm + s for r in 1:N for s in 2:mm]
     Dschur = -(M[Iset, Iset] - M[Iset, Bset] * (M[Bset, Bset] \ M[Bset, Iset]))
     c3 = zeros(ComplexF64, 1 << L); c3[1] = 1.0
     for j in 1:N, i in 1:N
         iszero(Dschur[i, j]) && continue
-        pb = rpos(i, true); pe = rpos(j, false)
+        pb = rp(i, true); pe = rp(j, false)
         sg = pb > pe ? -1.0 : 1.0
-        monos = Tuple{Vector{Int}, ComplexF64}[(Int[], 1.0 + 0.0im),
-                                               (sort([pb, pe]), -Dschur[i, j] * sg)]
-        c3 = mul_monomials!(zeros(ComplexF64, 1 << L), c3, L, Monomials(monos))
+        c3 = mul_monomials!(zeros(ComplexF64, 1 << L), c3, L,
+                            Monomials([(Int[], 1.0 + 0.0im),
+                                       (sort([pb, pe]), -Dschur[i, j] * sg)]))
     end
     c3 = c3 ./ c3[1]
 
-    # ---- F2：有序实行积族拟合（直接对 target，无 oracle）
-    # 行 a = ∏_b exp(Δ_ab·sg_ab·θθ)，Δ 实 3×3，行序 π；参数 = Δ(9 实) + ln C
-    SL = [1, 2, 3]
-    BARP3 = [LAT[GrassmannContourIndex(sl, :τ, 1, true)] - 1 for sl in SL]
-    ETAP3 = [LAT[GrassmannContourIndex(sl, :τ, 1, false)] - 1 for sl in SL]
-    PR3 = [(BARP3[a], ETAP3[b], BARP3[a] > ETAP3[b] ? -1.0 : 1.0) for a in 1:3, b in 1:3]
-    function fam_table(x, order)
-        M = reshape(x[1:9], 3, 3)
-        acc = zeros(ComplexF64, 1 << L); acc[1] = exp(x[10])
-        for a in order
-            for b in 1:3
-                iszero(M[a, b]) && continue
-                pb, pe, sg = PR3[a, b]
-                monos = Tuple{Vector{Int}, ComplexF64}[(Int[], 1.0 + 0.0im),
-                                                       (sort([pb, pe]), M[a, b] * sg)]
-                acc = mul_monomials!(zeros(ComplexF64, 1 << L), acc, L, Monomials(monos))
-            end
+    # ---- 闭式 c4：I* = P_K(0)⁻¹ × P_dense_imp(0)（真空期望值代数推导）----
+    pk = zeros(ComplexF64, 1 << L); pk[1] = 1.0
+    pkinv = zeros(ComplexF64, 1 << L); pkinv[1] = 1.0
+    for p in 1:N
+        s1 = p + 1
+        s2 = p == N ? 2 : p + 2
+        pb = LAT[GrassmannContourIndex(s1, :τ, 1, true)] - 1
+        pe = LAT[GrassmannContourIndex(s2, :τ, 1, false)] - 1
+        pk = mul_monomials!(zeros(ComplexF64, 1 << L), pk, L,
+                            Monomials([(Int[], 1.0 + 0.0im), (sort([pb, pe]), -1.0 + 0.0im)]))
+        pkinv = mul_monomials!(zeros(ComplexF64, 1 << L), pkinv, L,
+                               Monomials([(Int[], 1.0 + 0.0im), (sort([pb, pe]), +1.0 + 0.0im)]))
+    end
+    pbc1 = LAT[GrassmannContourIndex(1, :τ, 1, true)] - 1
+    pbc2 = LAT[GrassmannContourIndex(LAT.k, :τ, 1, false)] - 1
+    pk = mul_monomials!(zeros(ComplexF64, 1 << L), pk, L,
+                        Monomials([(Int[], 1.0 + 0.0im), (sort([pbc1, pbc2]), -1.0 + 0.0im)]))
+    pkinv = mul_monomials!(zeros(ComplexF64, 1 << L), pkinv, L,
+                           Monomials([(Int[], 1.0 + 0.0im), (sort([pbc1, pbc2]), +1.0 + 0.0im)]))
+    Ws0, _ = interval_operators(cells0, cells0, 0.0)
+    pden, Ld = dense_ring_table(Ws0)
+    bg0 = Int[]
+    for p in 1:N
+        push!(bg0, 4 * (p - 1) + 2, 4 * (p - 1) + 3)
+    end
+    pden_imp = integrate_out(pden, Ld, bg0)
+    pden_pipe = zeros(ComplexF64, 1 << L)
+    for idx in 1:length(pden_imp)
+        c = pden_imp[idx]
+        c == 0 && continue
+        bits = [q for q in 0:(Ld-1) if (idx - 1) >> q & 1 == 1]
+        nb = [rp(b ÷ 4 + 1, b % 4 == 0) for b in bits]
+        pden_pipe[1 + sum(1 << b for b in nb; init=0)] += c
+    end
+    # mul_tables 本地版（canonical 多项式乘）
+    mul_tables_loc(a, b, Ll) = begin
+        monos = Tuple{Vector{Int}, ComplexF64}[]
+        for idx in 1:length(b)
+            b[idx] == 0 && continue
+            push!(monos, ([q for q in 0:(Ll-1) if (idx - 1) >> q & 1 == 1], b[idx]))
         end
-        return acc
+        return mul_monomials!(zeros(ComplexF64, 1 << Ll), a, Ll, Monomials(monos))
     end
-    bestfam = (Inf, nothing, nothing)
-    for perm in permutations((1, 2, 3))
-        # 多起点牛顿（实 10 参数）
-        for trial in 1:6
-            x0 = vcat(0.5randn(9), [0.0])
-            xx = copy(x0)
-            for it in 1:200
-                Fv = [fam_table(xx, perm)[CFGIDX[i]] - target[CFGIDX[i]] for i in 1:length(EVENS)]
-                J = zeros(ComplexF64, length(Fv), 10)
-                for p in 1:10
-                    xp = copy(xx); xp[p] += 1e-6
-                    J[:, p] = [fam_table(xp, perm)[CFGIDX[i]] - fam_table(xx, perm)[CFGIDX[i]] for i in 1:length(EVENS)] ./ 1e-6
-                end
-                dx = real.(pinv(J' * J + 1e-12 * I) * (-J' * Fv))
-                xx += dx
-                norm(Fv) < 1e-13 && break
-            end
-            rf = norm([fam_table(xx, perm)[CFGIDX[i]] - target[CFGIDX[i]] for i in 1:length(EVENS)])
-            if rf < bestfam[1]
-                bestfam = (rf, copy(xx), perm)
-            end
-            rf < 1e-12 && break
-        end
-        bestfam[1] < 1e-12 && break
-    end
-    @printf("\nF2 有序实行积：最优 |F| = %.3e（行序 %s）\n", bestfam[1], string(bestfam[3]))
-    if bestfam[1] < 1e-10
-        M = reshape(bestfam[2][1:9], 3, 3)
-        println("Δ̃（实，行=切片1缝,2,3；列=eta1缝,2,3）= ")
-        display(round.(M, digits=6))
-        @printf("C = %.6f\n", exp(bestfam[2][10]))
-    end
+    c4 = mul_tables_loc(pkinv, pden_pipe, L)
+    c4 = c4 ./ c4[1]
 
-    println("\n候选 vs I*/ν_eff（|Δ| 最大）与 ∅：")
-    for (nm, cand) in [("c1 T_imp 映射", c1), ("c2 c1 去分辨率", c2), ("c3 exp(−D_Schur)", c3)]
-        err = maximum(abs.(cand - target))
-        @printf("   %-18s : max err = %9.3e   ∅ = %.6f\n", nm, err, real(cand[1]))
+    # ---- 判决输出 ----
+    println("\n候选对联合行的残差：")
+    for (nm, cand) in [("c1 T_imp 映射", c1), ("c2 c1 去分辨率", c2), ("c3 exp(−D_Schur)", c3),
+                       ("c4 P_K⁻¹·P_dense_imp", c4)]
+        r = [dot(rows[r], cand[CFGIDX]) - rhs[r] for r in eachindex(rows)]
+        @printf("   %-22s : |r| = %9.3e\n", nm, norm(r))
     end
-    println("\n目标（I*/ν_eff）pair 项 vs c1 pair 项：")
-    for (i, Aset) in enumerate(EVENS)
-        (length(Aset) == 2) || continue
-        @printf("   %-8s : 目标 %10.6f  c1 %10.6f  c3 %10.6f\n", Aset,
-                real(target[CFGIDX[i]]), real(c1[CFGIDX[i]]), real(c3[CFGIDX[i]]))
+    println("\n候选 vs min-norm I*/ν_eff：")
+    for (nm, cand) in [("c1", c1), ("c2", c2), ("c3", c3), ("c4", c4)]
+        err = maximum(abs.(cand - target))
+        @printf("   %-4s : max err = %9.3e   ∅ = %.6f\n", nm, err, real(cand[1]))
     end
 end
 main()

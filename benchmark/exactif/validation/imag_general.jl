@@ -97,23 +97,21 @@ function mk_injected(LAT)
     return injected
 end
 
-"""pipeline-v2 K 链（门 c=e^{−τε}−1 @切片 g+1；分辨率 s=−1；BC）。"""
-function mk_kchain(LAT, NL::Int, order::Int)
+"""pipeline-v2 K 链（门 c=e^{−τε}−1 @切片 g=区间起点，含缝位合并门；分辨率 s=−1；BC）。"""
+function mk_kchain(LAT, nl::Int, order::Int, ring_links0::Vector{Float64})
     kchain = function(eps_d)
-        sched = NativeExact.native_schedule(order, NL, BETA / NL)
-        ring_links = vcat(sched.links[1] + sched.links[end], sched.links[2:end-1])
         mps = GTEMPO.vacuumstate(ComplexF64, LAT)
-        for g in 1:NL
+        for g in 1:nl
             iszero(eps_d) && continue
             s = g + 1
             pb = LAT[GrassmannContourIndex(s, :τ, 1, true)]
             pe = LAT[GrassmannContourIndex(s, :τ, 1, false)]
             mps = GTEMPO.apply!(exp(GTEMPO.GTerm(pb, pe;
-                                 coeff=ComplexF64(exp(-ring_links[g] * eps_d) - 1.0))), mps)
+                                 coeff=ComplexF64(exp(-ring_links0[g] * eps_d) - 1.0))), mps)
         end
-        for p in 1:NL
+        for p in 1:nl
             s1 = p + 1
-            s2 = p == NL ? 2 : p + 2
+            s2 = p == nl ? 2 : p + 2
             pb = LAT[GrassmannContourIndex(s1, :τ, 1, true)]
             pe = LAT[GrassmannContourIndex(s2, :τ, 1, false)]
             mps = GTEMPO.apply!(exp(GTEMPO.GTerm(pb, pe; coeff=ComplexF64(-1.0))), mps)
@@ -121,7 +119,7 @@ function mk_kchain(LAT, NL::Int, order::Int)
         p1 = LAT[GrassmannContourIndex(1, :τ, 1, true)]
         p2 = LAT[GrassmannContourIndex(LAT.k, :τ, 1, false)]
         mps = GTEMPO.apply!(exp(GTEMPO.GTerm(p1, p2; coeff=ComplexF64(-1.0))), mps)
-        return mps, ring_links
+        return mps, ring_links0
     end
     return kchain
 end
@@ -155,15 +153,24 @@ function main()
     outdir = joinpath(GT_ROOT, "benchmark", "exactif", "validation")
 
     # 先解调度：环区间数 nl（order 4 = 3N ≠ N！lattice/门循环全用 nl）
-    sched0 = NativeExact.native_schedule(order, NL, BETA / NL)
-    ring_links0 = vcat(sched0.links[1] + sched0.links[end], sched0.links[2:end-1])
-    nl = length(ring_links0)
+    # env 覆盖：IMAG_CELLS="c1,c2,..." + IMAG_RLINKS="g1,g2,..."（自定义调度隔离实验）
+    if haskey(ENV, "IMAG_CELLS") && haskey(ENV, "IMAG_RLINKS")
+        cells_env = [parse(Float64, x) for x in split(ENV["IMAG_CELLS"], ",")]
+        rlinks_env = [parse(Float64, x) for x in split(ENV["IMAG_RLINKS"], ",")]
+        sched0 = (cells = cells_env, links = rlinks_env)
+        ring_links0 = rlinks_env
+        nl = length(rlinks_env)
+    else
+        sched0 = NativeExact.native_schedule(order, NL, BETA / NL)
+        ring_links0 = vcat(sched0.links[1] + sched0.links[end], sched0.links[2:end-1])
+        nl = length(ring_links0)
+    end
     LAT, L, EVENS, CFGIDX = lat_geom(nl)
     pairs_of_l = pairs_of
     all_subsets = mk_all_subsets(L)
     idxof(A) = findfirst(==(A), EVENS)
     injected = mk_injected(LAT)
-    kchain = mk_kchain(LAT, nl, order)
+    kchain = mk_kchain(LAT, nl, order, ring_links0)
     mobiusI = mk_mobiusI(EVENS, pairs_of, all_subsets, idxof)
 
     hgrid = [0.0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0, 1.125, 1.25, 1.375, 1.5, 1.625, 1.75, 1.875]
