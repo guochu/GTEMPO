@@ -118,7 +118,8 @@ function mk_kchain(LAT, nl::Int, order::Int, ring_links0::Vector{Float64})
         end
         p1 = LAT[GrassmannContourIndex(1, :τ, 1, true)]
         p2 = LAT[GrassmannContourIndex(LAT.k, :τ, 1, false)]
-        mps = GTEMPO.apply!(exp(GTEMPO.GTerm(p1, p2; coeff=ComplexF64(-1.0))), mps)
+        cbc = parse(Float64, get(ENV, "IMAG_CBC", "-1.0"))
+        mps = GTEMPO.apply!(exp(GTEMPO.GTerm(p1, p2; coeff=ComplexF64(cbc))), mps)
         return mps, ring_links0
     end
     return kchain
