@@ -182,6 +182,7 @@ function main()
     # 大 |εd| 处内核 O(1) 恢复条件数，min-norm 解不再放大伪方向）
     eds_env = haskey(ENV, "IMAG_EDS") ?
         [parse(Float64, x) for x in split(ENV["IMAG_EDS"], ",")] : nothing
+    edstag = get(ENV, "IMAG_EDSTAG", "3")
 
     if mode == "h"
         if eds_env === nothing
@@ -189,7 +190,7 @@ function main()
             file = joinpath(outdir, "imag_$(tag)_h$part.csv")
         else
             eds = eds_env
-            file = joinpath(outdir, "imag_$(tag)_h3.csv")
+            file = joinpath(outdir, "imag_$(tag)_h$edstag.csv")
         end
         open(file, "w") do io
             println(io, "ed,ib,re,im")
@@ -213,7 +214,7 @@ function main()
             file = joinpath(outdir, "imag_$(tag)_g$part.csv")
         else
             eds = eds_env
-            file = joinpath(outdir, "imag_$(tag)_g3.csv")
+            file = joinpath(outdir, "imag_$(tag)_g$edstag.csv")
         end
         b1p = LAT[GrassmannContourIndex(1, conj=true, branch=:τ, band=1)]
         open(file, "w") do io
@@ -279,16 +280,25 @@ function main()
         flush(stdout)
         # 求解器（2026-11-08 判决）：非均匀调度行矩阵病态（小时长门的 (e^{−τε}−1)
         # 内核系数 ~1e-2，高阶组合行 ~1e-12），ridge=1e-13 加在 A'A 上淹没 σ≲3e-7
-        # 的真实解方向 → 8e-5 假不一致。改截断 SVD（min-norm，tol 相对 σ₁）。
+        # 的真实解方向 → 8e-5 假不一致。改截断 SVD（min-norm）。
+        # 容差模式：IMAG_SVDTOLREL="r1,r2,..."（相对 σ₁，一次进程扫描多档——
+        # 强结构解 vs 尾部方向的取舍直接决定网格外行为）；
+        # IMAG_SVDTOL（绝对，默认 1e-14）。
         F = svd(A)
-        abstol = parse(Float64, get(ENV, "IMAG_SVDTOL", "1e-14"))
-        keep = F.S .> abstol
-        Ist = F.U * ((F.V' * rhs) ./ ifelse.(keep, F.S, Inf))
-        res = norm(A' * Ist - rhs)
         dtrue = norm(rhs - F.V * (F.V' * rhs))
-        @printf("NL=%d order=%d 联合残差 = %.3e（SVD keep=%d/%d, tol=%.0e）真距离 = %.3e\n",
-                NL, order, res, count(keep), length(F.S), abstol, dtrue)
-        @printf("‖Ist‖∞ = %.3e\n", maximum(abs, Ist)); flush(stdout)
+        @printf("真距离 = %.3e\n", dtrue)
+        tols = if haskey(ENV, "IMAG_SVDTOLREL")
+                [("rel", parse(Float64, x)) for x in split(ENV["IMAG_SVDTOLREL"], ",")]
+            else
+                [("abs", parse(Float64, get(ENV, "IMAG_SVDTOL", "1e-14")))]
+        end
+        for (mode, tol) in tols
+            keep = mode == "rel" ? F.S .> tol * F.S[1] : F.S .> tol
+            Ist = F.U * ((F.V' * rhs) ./ ifelse.(keep, F.S, Inf))
+            res = norm(A' * Ist - rhs)
+            @printf("\n[NL=%d order=%d tol=%s%.0e] 联合残差 = %.3e（keep=%d/%d）‖Ist‖∞ = %.3e\n",
+                    NL, order, mode, tol, res, count(keep), length(F.S), maximum(abs, Ist))
+            flush(stdout)
         ν_eff = Ist[1]
         println("ν_eff = ", ν_eff); flush(stdout)
         ivec = zeros(ComplexF64, 1 << L)
@@ -309,7 +319,7 @@ function main()
         end
         err = maximum(abs.(tcur - ivec))
         @printf("因子数 = %d，重构误差 = %.3e\n", length(factors), err); flush(stdout)
-        err < 1e-8 || error("实现失败")
+        err >= 1e-8 && (@printf("重构失败，跳过该档\n"); continue)
         # 端到端
         println("端到端（真实 GMPS 链 + integrate + gf）："); flush(stdout)
         maxerr_z = 0.0; maxerr_n = 0.0
@@ -341,6 +351,7 @@ function main()
         end
         @printf("NL=%d order=%d 最大误差：Z %.2e / n %.2e  %s\n", NL, order, maxerr_z, maxerr_n,
                 (maxerr_z < 1e-10 && maxerr_n < 1e-10) ? "✅ PASS" : "✗ FAIL")
+            end
     end
 end
 main()
