@@ -154,12 +154,16 @@ function main()
     tag = "n$(NL)o$(order)m$(MODELTAG)"
     outdir = joinpath(GT_ROOT, "benchmark", "exactif", "validation")
 
-    LAT, L, EVENS, CFGIDX = lat_geom(NL)
+    # 先解调度：环区间数 nl（order 4 = 3N ≠ N！lattice/门循环全用 nl）
+    sched0 = NativeExact.native_schedule(order, NL, BETA / NL)
+    ring_links0 = vcat(sched0.links[1] + sched0.links[end], sched0.links[2:end-1])
+    nl = length(ring_links0)
+    LAT, L, EVENS, CFGIDX = lat_geom(nl)
     pairs_of_l = pairs_of
     all_subsets = mk_all_subsets(L)
     idxof(A) = findfirst(==(A), EVENS)
     injected = mk_injected(LAT)
-    kchain = mk_kchain(LAT, NL, order)
+    kchain = mk_kchain(LAT, nl, order)
     mobiusI = mk_mobiusI(EVENS, pairs_of, all_subsets, idxof)
 
     hgrid = [0.0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0, 1.125, 1.25, 1.375, 1.5, 1.625, 1.75, 1.875]
@@ -212,6 +216,8 @@ function main()
     end
 
     if mode == "closure"
+        cells = sched0.cells
+        length(cells) == length(ring_links0) || error("调度表长度不配")
         # 载入行
         hrows = Dict{Float64, Vector{ComplexF64}}()
         for part in (1, 2)
@@ -239,12 +245,12 @@ function main()
         end
         rows = Vector{Vector{ComplexF64}}(); rhs = ComplexF64[]
         for ed in sort(collect(keys(hrows)))
-            push!(rows, hrows[ed]); push!(rhs, fock_anchor(cells, cells, ed)[1])
+            push!(rows, hrows[ed]); push!(rhs, fock_anchor(cells, ring_links0, ed)[1])
         end
         for ed in sort(collect(keys(grows)))
             hz = hrows[ed]
             vend = grows[ed][length(EVENS) .+ (1:length(EVENS))]
-            nanc = real(fock_anchor(cells, cells, ed)[2])
+            nanc = real(fock_anchor(cells, ring_links0, ed)[2])
             push!(rows, hz .- vend .- nanc .* hz); push!(rhs, 0.0 + 0.0im)
         end
         A = hcat(rows...)
@@ -297,7 +303,7 @@ function main()
             tend = GTEMPO.GTerm(LAT[GrassmannContourIndex(LAT.Nτ, conj=false, branch=:τ, band=1)], b1c; coeff=1)
             graw = GTEMPO.integrate(LAT, GTEMPO._mult_A(tend, mpsK), mpsI)
             npipe = 1 - real(graw / (z / ν_eff))
-            za, na = fock_anchor(cells, cells, ed)
+            za, na = fock_anchor(cells, ring_links0, ed)
             ez = abs(real(z) - real(za)); en = abs(npipe - real(na))
             maxerr_z = max(maxerr_z, ez); maxerr_n = max(maxerr_n, en)
             @printf("εd=%.2f : Z = %12.8f（err %9.2e）  n = %9.6f（锚 %9.6f, err %9.2e）\n",
