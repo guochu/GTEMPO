@@ -177,10 +177,20 @@ function main()
     hgrid = [0.0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0, 1.125, 1.25, 1.375, 1.5, 1.625, 1.75, 1.875]
     ggrid = [0.0, 0.125, 0.25, 0.5, 0.75, 1.0, 1.5, 1.875]
     cells = fill(BETA / NL, NL)
+    # env 覆盖：IMAG_EDS="e1,e2,..."（自定义 εd 网格，写 _h3/_g3；用于大 |εd|
+    # 锚点补测——非均匀调度小时长门的内核在物理 εd 区间近共线（条件 ~1e12），
+    # 大 |εd| 处内核 O(1) 恢复条件数，min-norm 解不再放大伪方向）
+    eds_env = haskey(ENV, "IMAG_EDS") ?
+        [parse(Float64, x) for x in split(ENV["IMAG_EDS"], ",")] : nothing
 
     if mode == "h"
-        eds = hgrid[part == 1 ? (1:8) : (9:16)]
-        file = joinpath(outdir, "imag_$(tag)_h$part.csv")
+        if eds_env === nothing
+            eds = hgrid[part == 1 ? (1:8) : (9:16)]
+            file = joinpath(outdir, "imag_$(tag)_h$part.csv")
+        else
+            eds = eds_env
+            file = joinpath(outdir, "imag_$(tag)_h3.csv")
+        end
         open(file, "w") do io
             println(io, "ed,ib,re,im")
             for ed in eds
@@ -198,8 +208,13 @@ function main()
     end
 
     if mode == "g"
-        eds = ggrid[part == 1 ? (1:4) : (5:8)]
-        file = joinpath(outdir, "imag_$(tag)_g$part.csv")
+        if eds_env === nothing
+            eds = ggrid[part == 1 ? (1:4) : (5:8)]
+            file = joinpath(outdir, "imag_$(tag)_g$part.csv")
+        else
+            eds = eds_env
+            file = joinpath(outdir, "imag_$(tag)_g3.csv")
+        end
         b1p = LAT[GrassmannContourIndex(1, conj=true, branch=:τ, band=1)]
         open(file, "w") do io
             println(io, "ed,ib,z_re,z_im,ge_re,ge_im,g1_re,g1_im")
@@ -226,10 +241,9 @@ function main()
     if mode == "closure"
         cells = sched0.cells
         length(cells) == length(ring_links0) || error("调度表长度不配")
-        # 载入行
+        # 载入行（glob 全部 imag_<tag>_{h,g}*.csv，含大 εd 补测的 _h3/_g3；同 εd 后者覆盖）
         hrows = Dict{Float64, Vector{ComplexF64}}()
-        for part in (1, 2)
-            file = joinpath(outdir, "imag_$(tag)_h$part.csv")
+        for file in sort(filter(f -> occursin("imag_$(tag)_h", f) && endswith(f, ".csv"), readdir(outdir, join=true)))
             for (i, ln) in enumerate(eachline(file))
                 i == 1 && continue
                 f = split(strip(ln), ",")
@@ -239,8 +253,7 @@ function main()
             end
         end
         grows = Dict{Float64, Vector{ComplexF64}}()
-        for part in (1, 2)
-            file = joinpath(outdir, "imag_$(tag)_g$part.csv")
+        for file in sort(filter(f -> occursin("imag_$(tag)_g", f) && endswith(f, ".csv"), readdir(outdir, join=true)))
             for (i, ln) in enumerate(eachline(file))
                 i == 1 && continue
                 f = split(strip(ln), ",")
@@ -251,6 +264,7 @@ function main()
                 g[2length(EVENS) + ib] = ComplexF64(parse(Float64, f[7]), parse(Float64, f[8]))
             end
         end
+        println("行数据：h $(length(hrows)) 点 / g $(length(grows)) 点"); flush(stdout)
         rows = Vector{Vector{ComplexF64}}(); rhs = ComplexF64[]
         for ed in sort(collect(keys(hrows)))
             push!(rows, hrows[ed]); push!(rhs, fock_anchor(cells, ring_links0, ed)[1])
@@ -263,10 +277,18 @@ function main()
         end
         A = hcat(rows...)
         flush(stdout)
-        Ist = A * ((A' * A + 1e-13 * I) \ rhs)
+        # 求解器（2026-11-08 判决）：非均匀调度行矩阵病态（小时长门的 (e^{−τε}−1)
+        # 内核系数 ~1e-2，高阶组合行 ~1e-12），ridge=1e-13 加在 A'A 上淹没 σ≲3e-7
+        # 的真实解方向 → 8e-5 假不一致。改截断 SVD（min-norm，tol 相对 σ₁）。
+        F = svd(A)
+        abstol = parse(Float64, get(ENV, "IMAG_SVDTOL", "1e-14"))
+        keep = F.S .> abstol
+        Ist = F.U * ((F.V' * rhs) ./ ifelse.(keep, F.S, Inf))
         res = norm(A' * Ist - rhs)
-        @printf("NL=%d order=%d 联合残差 = %.3e\n", NL, order, res)
-        flush(stdout)
+        dtrue = norm(rhs - F.V * (F.V' * rhs))
+        @printf("NL=%d order=%d 联合残差 = %.3e（SVD keep=%d/%d, tol=%.0e）真距离 = %.3e\n",
+                NL, order, res, count(keep), length(F.S), abstol, dtrue)
+        @printf("‖Ist‖∞ = %.3e\n", maximum(abs, Ist)); flush(stdout)
         ν_eff = Ist[1]
         println("ν_eff = ", ν_eff); flush(stdout)
         ivec = zeros(ComplexF64, 1 << L)
