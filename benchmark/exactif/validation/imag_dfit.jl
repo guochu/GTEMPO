@@ -165,16 +165,20 @@ function main()
     gfit = get(ENV, "IMAG_GFIT", "0") == "1"
     if gfit
         gdata = Dict{String, Dict{Float64, Vector{ComplexF64}}}()
+        gfamok = Dict{String, Bool}()
         for fam in ("s", "p")
-            famnp[fam] == 0 && continue
+            famnp[fam] == 0 && (gfamok[fam] = false; continue)
             data = Dict{Float64, Vector{ComplexF64}}()
+            allp = true
             for part in (1, 2)
                 file = joinpath(outdir, "imag_n2o4ma_$(fam)$(part)g.csv")
-                isfile(file) || error("缺 $(file)")
+                if !isfile(file)
+                    allp = false; break
+                end
                 for (i, ln) in enumerate(eachline(file))
                     i == 1 && continue
                     f = split(strip(ln), ",")
-                    length(f) == 4 || break
+                    length(f) == 4 || (allp = false; break)
                     ed = parse(Float64, f[1]); jp = parse(Int, f[2])
                     g = get!(data, ed, zeros(ComplexF64, 0))
                     if jp > length(g)
@@ -183,14 +187,41 @@ function main()
                     g[jp] = ComplexF64(parse(Float64, f[3]), parse(Float64, f[4]))
                 end
             end
-            gdata[fam] = data
+            gfamok[fam] = allp && all(ed -> haskey(data, ed), heds)
+            gfamok[fam] && (gdata[fam] = data)
+            println("g 族 ", fam, gfamok[fam] ? "：完整" : "：不全，联合设计中排除")
+        end
+        # 联合设计仅用 g 覆盖完整的族（inj 恒有）
+        keepcols = vcat(fill(true, NE), [fam == "s" ? gfamok["s"] : (fam == "p" ? gfamok["p"] : false) for _ in 1:0])
+        keepcols = trues(NE + famnp["s"] + famnp["p"])
+        for (fam, off) in (("s", off_s), ("p", off_p))
+            if !get(gfamok, fam, false)
+                keepcols[off:off + famnp[fam] - 1] .= false
+            end
+        end
+        gdict = Dict{Float64, Vector{ComplexF64}}()
+        for part in (1, 2)
+            file = joinpath(outdir, "imag_n2o4ma_i$(part)g.csv")
+            isfile(file) || error("缺 $(file)")
+            for (i, ln) in enumerate(eachline(file))
+                i == 1 && continue
+                f = split(strip(ln), ",")
+                length(f) == 4 || break
+                ed = parse(Float64, f[1]); jp = parse(Int, f[2])
+                g = get!(gdict, ed, zeros(ComplexF64, 0))
+                if jp > length(g)
+                    append!(g, zeros(ComplexF64, jp - length(g) + 1024)); gdict[ed] = g
+                end
+                g[jp] = ComplexF64(parse(Float64, f[3]), parse(Float64, f[4]))
+            end
         end
         function gprobe_row(ed::Float64)
             r = Vector{ComplexF64}(undef, ncol)
-            r[1:NE] .= rawrows[ed]   # 占位（inj 列在 g 行中不用——见下行覆盖）
+            haskey(gdict, ed) || error("inj g 行缺 εd=$ed")
+            r[1:NE] .= gdict[ed][1:NE]
             for (fam, off) in (("s", off_s), ("p", off_p))
                 np = famnp[fam]
-                np == 0 && continue
+                (np == 0 || !haskey(gdata, fam)) && continue
                 haskey(gdata[fam], ed) || error("g 族 $fam 缺 εd=$ed")
                 r[off:off + np - 1] .= gdata[fam][ed][1:np]
             end
@@ -213,7 +244,9 @@ function main()
             prow = probe_row(ed); grow = gprobe_row(ed)
             push!(rows2, grow .- (1.0 - na) .* prow); push!(rhs2, 0.0 + 0.0im)
         end
-        A2 = permutedims(hcat(rows2...))
+        A2 = permutedims(hcat(rows2...))[:, keepcols]
+        AH = AH[:, keepcols]
+        AHg = AHg[:, keepcols]
         cnrm2 = [norm(A2[:, j]) for j in 1:size(A2, 2)]
         cnrm2[cnrm2 .== 0] .= 1.0
         An2 = A2 ./ cnrm2'
@@ -260,13 +293,14 @@ function main()
     # 解文件（best keep）
     (reltol, Ist) = bestkeep
     file = joinpath(outdir, "imag_n2o4ma_dsol.csv")
+    colmap = [j for j in 1:(NE + famnp["s"] + famnp["p"]) if gfit ? keepcols[j] : true]
     open(file, "w") do io
         println(io, "fam,jp,re,im")
-        for j in eachindex(Ist)
-            abs(Ist[j]) > 1e-13 || continue
+        for (k, j) in enumerate(colmap)
+            abs(Ist[k]) > 1e-13 || continue
             fam = j <= NE ? "inj" : (j <= NE + famnp["s"] ? "s" : "p")
             jp = j <= NE ? j : (j <= NE + famnp["s"] ? j - NE : j - NE - famnp["s"])
-            println(io, fam, ",", jp, ",", real(Ist[j]), ",", imag(Ist[j]))
+            println(io, fam, ",", jp, ",", real(Ist[k]), ",", imag(Ist[k]))
         end
     end
     @printf("解已存 %s（best rel=%.0e, maxhold=%.2e，非零 %d 项）\n", file, reltol, besterr,

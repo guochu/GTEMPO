@@ -86,7 +86,12 @@ function main()
 
     # 探针族定义
     probes = Vector{Any}()
-    if family == "s"
+    if family == "i"
+        # (i) 普通注入族（coeff +1，与 h 行同基）
+        for B in EVENS
+            push!(probes, (B, ones(Float64, length(B) ÷ 2), :sign))
+        end
+    elseif family == "s"
         # (a) 8192 随机符号模式注入：σ ∈ {±1}^{npairs(B)} 每B一个随机模式
         for (ib, B) in enumerate(EVENS)
             np2 = length(B) ÷ 2
@@ -112,7 +117,7 @@ function main()
         return mps
     end
 
-    file = joinpath(outdir, "imag_n2o4ma_$(family)$part.csv")
+    file = joinpath(outdir, "imag_n2o4ma_$(family)$part$(channel == "g" ? "g" : "").csv")
     open(file, "w") do io
         println(io, "ed,jp,re,im")
         for (ipt, ed) in enumerate(eds_part)
