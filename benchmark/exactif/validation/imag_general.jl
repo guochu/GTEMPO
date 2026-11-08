@@ -100,21 +100,21 @@ end
 """pipeline-v2 K 链（门 c=e^{−τε}−1 @切片 g=区间起点，含缝位合并门；分辨率 s=−1；BC）。"""
 function mk_kchain(LAT, nl::Int, order::Int, ring_links0::Vector{Float64})
     kchain = function(eps_d)
+        # dense 环序交错：G₁ R₁ G₂ R₂ … G_nl R_nl，BC 最后
         mps = GTEMPO.vacuumstate(ComplexF64, LAT)
-        for g in 1:nl
-            iszero(eps_d) && continue
-            s = g + 1
-            pb = LAT[GrassmannContourIndex(s, :τ, 1, true)]
-            pe = LAT[GrassmannContourIndex(s, :τ, 1, false)]
-            mps = GTEMPO.apply!(exp(GTEMPO.GTerm(pb, pe;
-                                 coeff=ComplexF64(exp(-ring_links0[g] * eps_d) - 1.0))), mps)
-        end
         for p in 1:nl
+            iszero(eps_d) || begin
+                sg = p + 1
+                gb = LAT[GrassmannContourIndex(sg, :τ, 1, true)]
+                ge = LAT[GrassmannContourIndex(sg, :τ, 1, false)]
+                mps = GTEMPO.apply!(exp(GTEMPO.GTerm(gb, ge;
+                                     coeff=ComplexF64(exp(-ring_links0[p] * eps_d) - 1.0))), mps)
+            end
             s1 = p + 1
             s2 = p == nl ? 2 : p + 2
-            pb = LAT[GrassmannContourIndex(s1, :τ, 1, true)]
-            pe = LAT[GrassmannContourIndex(s2, :τ, 1, false)]
-            mps = GTEMPO.apply!(exp(GTEMPO.GTerm(pb, pe; coeff=ComplexF64(-1.0))), mps)
+            rb = LAT[GrassmannContourIndex(s1, :τ, 1, true)]
+            re = LAT[GrassmannContourIndex(s2, :τ, 1, false)]
+            mps = GTEMPO.apply!(exp(GTEMPO.GTerm(rb, re; coeff=ComplexF64(-1.0))), mps)
         end
         p1 = LAT[GrassmannContourIndex(1, :τ, 1, true)]
         p2 = LAT[GrassmannContourIndex(LAT.k, :τ, 1, false)]

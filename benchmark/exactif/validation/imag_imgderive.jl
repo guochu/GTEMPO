@@ -95,6 +95,10 @@ function embed2(m2::Matrix{ComplexF64}, s::Int)
 end
 const CS = [embed2(c2, s) for s in 1:K]; const CDS = [embed2(cd2, s) for s in 1:K]
 const ZS = [embed2(z2, s) for s in 1:K]
+const VAC = begin                                     # ⊗_s |0⟩（c 的右零矢）
+    v = zeros(ComplexF64, DIM); v[1] = 1.0; v
+end
+vev(M) = real(dot(VAC, M * VAC))
 
 # ---------------- img 弦规范候选 ----------------
 # 生成器位置 pos（0-based L）：切片 s = 切片映射（pos p ↔ slice（K - p÷2）——由 lat 索引取）
@@ -182,7 +186,7 @@ function main()
                 end
                 Mi = Mi * Mi2
             end
-            got = real(tr(M * Mi))
+            got = vev(M * Mi)
             err = max(err, abs(got - want))
             mode == 0 && push!(perprobe, got)
         end
@@ -244,5 +248,33 @@ function main()
         maxerr = max(maxerr, abs(ztrue - zimg))
     end
     @printf("h-行 img 重构 max err = %.3e\n", maxerr)
+
+    # ---- X 求解：联合行在 64 维算符空间；检验 X ∈ img 像空间 ----
+    # img 基：全部偶单项式的 img（含 I）——行向量 = ⟨0|ρK·img(m)|0⟩
+    imgbasis = [Matrix{ComplexF64}(I, DIM, DIM)]
+    for Aset in sort(EVENS; by=length)
+        isempty(Aset) && continue
+        push!(imgbasis, img_mono(Aset, mode))
+    end
+    nbasis = length(imgbasis)
+    println("\nimg 基维数 = ", nbasis)
+    rowsX = Vector{Vector{ComplexF64}}(); rhsX = ComplexF64[]; tagX = String[]
+    for ed in hgrid
+        mpsK, _ = kchain(ed)
+        # img(S_K(εd))：多项式展开线性映射
+        S = mps_to_dense0(mpsK)
+        rhoK = zeros(ComplexF64, DIM, DIM)
+        for (loc, c) in [(q for q in 0:(L-1) if false) for _ in 1:0] end
+        for idx in 1:(1 << L)
+            c = S[idx]
+            c == 0 && continue
+            bits = [q for q in 0:(L-1) if (idx - 1) >> q & 1 == 1]
+            rhoK .+= c .* img_mono(bits, mode)
+        end
+        zref = fock_anchor(CELLS, CELLS, ed)[1]
+        for (bi, Bm) in enumerate(imgbasis)
+            push!(rowsX, [real2c(vevc(rhoK * Bm)) for _ in 1:1])  # 占位
+        end
+    end
 end
 main()
