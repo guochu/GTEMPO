@@ -237,16 +237,27 @@ function main()
     println(head)
     if gfit
         # 设计加倍：h 行（rhs=Z 锚）+ g 约束行（vend − (1−n)hz = 0）
+        # 非齐次 vend 目标：g 行 rhs = (1−n)·Z（IMAG_NHOM=1）或齐次约束（默认）
+        nhom = get(ENV, "IMAG_NHOM", "1") == "1"
         rows2 = Vector{Vector{ComplexF64}}(); rhs2 = ComplexF64[]
         for (i, ed) in enumerate(anchors)
             push!(rows2, A[i, :]); push!(rhs2, rhs[i])
             na = real(fock_anchor(cells, ring_links, ed)[2])
             prow = probe_row(ed); grow = gprobe_row(ed)
-            push!(rows2, grow .- (1.0 - na) .* prow); push!(rhs2, 0.0 + 0.0im)
+            if nhom
+                push!(rows2, grow); push!(rhs2, (1.0 - na) .* rhs[i])
+            else
+                push!(rows2, grow .- (1.0 - na) .* prow); push!(rhs2, 0.0 + 0.0im)
+            end
         end
         A2 = permutedims(hcat(rows2...))[:, keepcols]
         AH = AH[:, keepcols]
         AHg = AHg[:, keepcols]
+        # 行加权：全部行用 1/|rhs|（相对残差最小化；nhom 下 g 行 = 1/|vend target|）
+        nA = length(anchors)
+        w2 = [1.0 / max(abs(rhs2[i]), 1e-30) for i in 1:length(rhs2)]
+        w2 = w2 / norm(w2) * sqrt(length(w2))
+        A2 = A2 .* w2; rhs2 = rhs2 .* w2
         cnrm2 = [norm(A2[:, j]) for j in 1:size(A2, 2)]
         cnrm2[cnrm2 .== 0] .= 1.0
         An2 = A2 ./ cnrm2'
@@ -254,9 +265,50 @@ function main()
         F = svd(An2)
         cnrm = cnrm2
         A = A2; rhs = rhs2
-        println("联合设计 ", size(A2, 1), "×", size(A2, 2),
+        println("联合设计 ", size(A2, 1), "×", size(A2, 2), "（行加权 rel+partner）",
                 "  rank(>1e-12·σ1) = ", count(>(1e-12 * F.S[1]), F.S))
     end
+    # ---- 行加权方案扫描（IMAG_ROWWT：none|rel|norm，默认 none；仅 GFIT=0）----
+    rowwt_name = get(ENV, "IMAG_ROWWT", "none")
+    wts = rowwt_name == "rel" ? [1.0 / max(abs(rhs[i]), 1e-30) for i in 1:length(rhs)] :
+          rowwt_name == "norm" ? [1.0 / max(norm(A[i, :]), 1e-30) for i in 1:length(rhs)] :
+          ones(Float64, length(rhs))
+    wts = wts / norm(wts) * sqrt(length(wts))
+    if rowwt_name != "none" && !gfit
+        Aw = A .* wts; rhsw = rhs .* wts
+        cnrm = [norm(Aw[:, j]) for j in 1:size(Aw, 2)]
+        cnrm[cnrm .== 0] .= 1.0
+        An2 = Aw ./ cnrm'
+        F = svd(An2)
+        A = Aw; rhs = rhsw
+        println("行加权 = ", rowwt_name, "  rank(>1e-12·σ1) = ", count(>(1e-12 * F.S[1]), F.S))
+    end
+
+    # ---- OMP 稀疏证书探索（IMAG_OMP=1）----
+    if get(ENV, "IMAG_OMP", "0") == "1"
+        println("\nOMP 稀疏探索：")
+        supp = Int[]
+        r = copy(rhs)
+        for step in 1:600
+            corr = [abs(dot(An2[:, j], r)) for j in 1:size(An2, 2)]
+            push!(supp, argmax(corr))
+            cf = An2[:, supp] \ rhs
+            r = rhs - An2[:, supp] * cf
+            if step in (10, 30, 60, 100, 200, 400, 600)
+                herr = 0.0; hstr = ""
+                for (i, ed) in enumerate(holdout)
+                    pred = real(dot(AH[i, supp] ./ cnrm[supp], cf))
+                    truth = real(fock_anchor(cells, ring_links, ed)[1])
+                    herr = max(herr, abs(pred - truth))
+                    hstr *= @sprintf(" %11.7f", pred)
+                end
+                @printf("  OMP k=%-4d res=%.3e maxhold=%.3e%s\n", step, norm(r), herr, hstr)
+                flush(stdout)
+            end
+        end
+        return
+    end
+
     bestkeep = nothing; besterr = Inf
     for reltol in [1e-6, 1e-8, 1e-9, 1e-10, 1e-11, 1e-12, 1e-13, 1e-14]
         keep = F.S .> reltol * F.S[1]

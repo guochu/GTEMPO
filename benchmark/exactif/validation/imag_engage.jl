@@ -186,6 +186,6 @@ function main()
         flush(stdout)
     end
     @printf("maxerr：Z %.2e / n %.2e  %s\n", maxerrz, maxerrn,
-            (maxerrz < 5e-7 && maxerrn < 5e-7) ? "✅ PASS（order-4 探针循环精度）" : "✗")
+            (maxerrz < 1e-9 && maxerrn < 1e-9) ? "✅ PASS（order-4 机器精度）" : "✗")
 end
 main()
