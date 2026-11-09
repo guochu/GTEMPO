@@ -169,3 +169,37 @@ O_I（无函数类污染问题）→ 反演 img 构造 I-MPS → 端到端。基
 **待办/边界**：机器精度已达成，遗留为工程项：第二模型电池、order-4 标度图
 （vs N）、解的稀疏化/单 MPS 表示（当前 = 探针循环，解稠密 23583 项）、
 orders 1/2 的同框架复验（均匀案例的行加权复验）。
+
+## 8. 遗留问题清算（2026-11-09 第二轮）
+
+**① 第二模型电池 ✅**：配方模型无关的直接证据——K 链只含杂质门（bath 仅经
+fock_anchor rhs 进入），探针复合值全部模型无关 → 模型电池 = 换 rhs 重拟合。
+WB=2.0 AB=0.3：holdout Z/n maxhold 6.5e-12；单 MPS（OMP 稀疏解 k=200）
+端到端 **Z 1.15e-13 / n 5.9e-14 ✅ PASS**。数据/解：n2o4mb_dsol_omp.csv。
+
+**② 解稀疏化 + 单 MPS ✅（超越预期）**：OMP（列归一设计 + ColumnNorm QR 秩守卫）
+在联合 82×24576 设计上 **k=200 即机器精度**（holdout n 3.4e-14）——真实影响泛函
+在探针族中 200-稀疏（vs 稠密 min-norm 23583 项）。单 MPS 构建 = Σ c_j·probe_j
+（GTEMPO Base.:+ 块对角加法，200 项 35s，键维线性增长）——
+**端到端 ✅：模型 a Z 1.2e-13 / n 5.5e-14；模型 b Z 1.15e-13 / n 5.9e-14**。
+经典管线形状恢复：mpsI 建一次，每 εd 两次 integrate。
+⚠ 工程坑：OMP 导出必须除列归一因子（cf_j/cnrm_j）——首次导出漏除 →
+"单 MPS 垃圾"假阳性（实为系数错，非规范问题）。
+
+**③ canonical 线性判决（imag_lintest.jl）**：⚠ 早期判读作废——该测试跑在
+未归一化的坏解上；归一化修复后单 MPS 直接通过，canonical 线性问题不再阻路
+（单 MPS 的复合 = 张量级线性组合的直接体现，无需 canonical 中间表示）。
+
+**④ N=1（nl=3）order-4：开放边界**。诊断：
+- Z 通道锚点拟合机器精度（res 3e-14，41 锚点 rank 11）——K 链自洽；
+- **插入通道恒零**（vend ≡ 0，所有探针、所有 εd、所有插入节点 2/3/4）——
+  nl=3 环的折返读出腿与 K 链结构碰撞，_mult_A 插入后复合恒零；
+- 联合拟合不一致（res 1.47）完全由零插入通道引起；
+- Z-only holdout 发散（Runge 插值病：锚点间 wild 振荡，稀疏族 384 列在
+  L=8 下采样不足，±1 符号族 + 随机复系数族仍不够）。
+待办：nl=3 的 K 链分辨率配对/读出约定需对 dense 路线单独校准
+（imag_dense 的 N=1 order-4 是机器精度参照）。
+
+**⑤ 全套参数化**：imag_probes/dfit/engage 均支持 env（IMAG_TAG/IMAG_NL/
+IMAG_WB/IMAG_AB/IMAG_SOLTAG/IMAG_SOL/IMAG_SINGLE/IMAG_OMP/IMAG_ROWWT/
+IMAG_NHOM）——电池化就绪。

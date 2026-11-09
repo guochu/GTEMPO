@@ -20,7 +20,8 @@ include(joinpath(GT_ROOT, "benchmark", "exactif", "src", "NativeExact.jl"))
 using .NativeExact
 
 const BETA = 1.0
-const WB, AB = 1.0, 0.5
+const WB = parse(Float64, get(ENV, "IMAG_WB", "1.0"))
+const AB = parse(Float64, get(ENV, "IMAG_AB", "0.5"))
 HB = ComplexF64[WB;;]
 VB = ComplexF64[sqrt(AB) + 0.0im]
 hcoupled() = NativeExact._coupled_h(VB, HB)
@@ -89,7 +90,14 @@ end
 function build_probes(LAT, EVENS, fam::String)
     rng = MersenneTwister(20261109)
     NE = length(EVENS)
-    if fam == "s"
+    if fam == "c"
+        probes = Vector{Tuple{Vector{Int}, Vector{ComplexF64}}}()
+        for B in EVENS
+            np2 = length(B) ÷ 2
+            push!(probes, (B, [ComplexF64(randn(rng), randn(rng)) for _ in 1:np2]))
+        end
+        return probes
+    elseif fam == "s"
         probes = Vector{Tuple{Vector{Int}, Vector{Float64}}}()
         for B in EVENS
             np2 = length(B) ÷ 2
@@ -110,7 +118,11 @@ end
 
 function main()
     outdir = joinpath(GT_ROOT, "benchmark", "exactif", "validation")
-    NL, order = 2, 4
+    NL = parse(Int, get(ENV, "IMAG_NL", "2"))
+    order = 4
+    TAG = get(ENV, "IMAG_TAG", "n2o4ma")
+    single = get(ENV, "IMAG_SINGLE", "0") == "1"
+    solfile = get(ENV, "IMAG_SOL", "$(TAG)_dsol.csv")
     sched = NativeExact.native_schedule(order, NL, BETA / NL)
     ring_links = vcat(sched.links[1] + sched.links[end], sched.links[2:end-1])
     nl = length(ring_links)
@@ -120,7 +132,7 @@ function main()
 
     # 解文件
     sol = Vector{Tuple{String,Int,ComplexF64}}()
-    for (i, ln) in enumerate(eachline(joinpath(outdir, "imag_n2o4ma_dsol.csv")))
+    for (i, ln) in enumerate(eachline(joinpath(outdir, solfile)))
         i == 1 && continue
         f = split(strip(ln), ",")
         push!(sol, (f[1], parse(Int, f[2]), ComplexF64(parse(Float64, f[3]), parse(Float64, f[4]))))
@@ -141,7 +153,12 @@ function main()
             Dict{Int, Any}()
         end
         get!(cache, jp) do
-            if fam == "inj"
+            if fam == "c"
+                probes = probecache["c_list"] === nothing ?
+                    build_probes(LAT, EVENS, "c") : probecache["c_list"]
+                (B, σ) = probes[jp]
+                inj(B, σ)
+            elseif fam == "inj"
                 A = EVENS[jp]
                 inj(A, ones(Float64, length(A) ÷ 2))
             elseif fam == "s"
@@ -159,12 +176,45 @@ function main()
             end
         end
     end
+    probecache["c_list"] = build_probes(LAT, EVENS, "c")
     probecache["s_list"] = build_probes(LAT, EVENS, "s")
     probecache["p_list"] = build_probes(LAT, EVENS, "p")
 
     eds = isempty(ARGS) ? [0.0, 0.35, 0.7, 1.05, 1.4] :
         [parse(Float64, x) for x in ARGS]
     b1c = LAT[GrassmannContourIndex(1, conj=true, branch=:τ, band=1)]
+
+    if single
+        # ---- 单 MPS 构建：mpsI = Σ c_j·probe_j（OMP 稀疏解，加法键维线性增长）----
+        println("单 MPS 构建（$(length(sol)) 项加法）..."); flush(stdout)
+        t0s = time()
+        mpsI = nothing
+        for (k, (fam, jp, c)) in enumerate(sol)
+            P = getprobe(fam, jp)
+            mpsI = isnothing(mpsI) ? c * P : mpsI + c * P
+            k % 50 == 0 && (println("  add #$k/$(length(sol)) ($(round(time()-t0s, digits=1))s)"); flush(stdout))
+        end
+        println("mpsI 构建完成（$(round(time()-t0s, digits=1))s，site 数 ", length(mpsI), "）"); flush(stdout)
+        maxerrz = 0.0; maxerrn = 0.0
+        for ed in eds
+            mpsK = mk_kchain(LAT, ring_links, ed)
+            tend = GTEMPO.GTerm(LAT[GrassmannContourIndex(LAT.Nτ, conj=false, branch=:τ, band=1)], b1c; coeff=1)
+            mpsKend = GTEMPO._mult_A(tend, mpsK)
+            z = GTEMPO.integrate(LAT, mpsK, mpsI)
+            vend = GTEMPO.integrate(LAT, mpsKend, mpsI)
+            npipe = real(1 - vend / z)
+            (za, na) = fock_anchor(cells, ring_links, ed)
+            ez = abs(real(z) - real(za)); en = abs(npipe - real(na))
+            maxerrz = max(maxerrz, ez); maxerrn = max(maxerrn, en)
+            @printf("εd=%-6.2f : Z = %12.8f（锚 %12.8f, err %.2e）  n = %9.6f（锚 %9.6f, err %.2e）\n",
+                    ed, real(z), real(za), ez, npipe, real(na), en)
+            flush(stdout)
+        end
+        @printf("maxerr：Z %.2e / n %.2e  %s\n", maxerrz, maxerrn,
+                (maxerrz < 1e-9 && maxerrn < 1e-9) ? "✅ PASS（单 MPS order-4 机器精度）" : "✗")
+        return
+    end
+
     maxerrz = 0.0; maxerrn = 0.0
     for ed in eds
         mpsK = mk_kchain(LAT, ring_links, ed)

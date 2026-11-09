@@ -18,7 +18,10 @@ include(joinpath(GT_ROOT, "benchmark", "exactif", "src", "NativeExact.jl"))
 using .NativeExact
 
 const BETA = 1.0
-const WB, AB = 1.0, 0.5
+const WB = parse(Float64, get(ENV, "IMAG_WB", "1.0"))
+const AB = parse(Float64, get(ENV, "IMAG_AB", "0.5"))
+const TAG = get(ENV, "IMAG_TAG", "n2o4ma")
+const SOLTAG = get(ENV, "IMAG_SOLTAG", TAG)
 HB = ComplexF64[WB;;]
 VB = ComplexF64[sqrt(AB) + 0.0im]
 hcoupled() = NativeExact._coupled_h(VB, HB)
@@ -52,7 +55,9 @@ end
 
 function main()
     outdir = joinpath(GT_ROOT, "benchmark", "exactif", "validation")
-    NL, order = 2, 4
+    tag = TAG
+    NL = parse(Int, get(ENV, "IMAG_NL", "2"))
+    order = 4
     sched = NativeExact.native_schedule(order, NL, BETA / NL)
     ring_links = vcat(sched.links[1] + sched.links[end], sched.links[2:end-1])
     nl = length(ring_links); L = 2 * (nl + 1)
@@ -66,7 +71,7 @@ function main()
 
     # ---- h 行（mobius 逆）→ zeta 正变换恢复 raw 注入行 ----
     hrows = Dict{Float64, Vector{ComplexF64}}()
-    for file in sort(filter(f -> occursin("imag_n2o4ma_h", f) && endswith(f, ".csv"), readdir(outdir, join=true)))
+    for file in sort(filter(f -> occursin("imag_$(tag)_h", f) && endswith(f, ".csv"), readdir(outdir, join=true)))
         for (i, ln) in enumerate(eachline(file))
             i == 1 && continue
             f = split(strip(ln), ",")
@@ -103,11 +108,11 @@ function main()
     # 族数据载入：inj（rawrows）+ s/p CSV
     famdata = Dict{String, Dict{Float64, Vector{ComplexF64}}}()
     famnp = Dict{String, Int}()
-    for fam in ("s", "p")
+    for fam in ("s", "p", "c")
         data = Dict{Float64, Vector{ComplexF64}}()
         np = 0
-        for part in (1, 2)
-            file = joinpath(outdir, "imag_n2o4ma_$(fam)$(part).csv")
+        for part in (1, 2, 3)
+            file = joinpath(outdir, "imag_$(tag)_$(fam)$(part).csv")
             isfile(file) || continue
             for (i, ln) in enumerate(eachline(file))
                 i == 1 && continue
@@ -134,12 +139,13 @@ function main()
     # 列布局：inj(NE) | s(np_s) | p(np_p)
     off_s = NE + 1
     off_p = NE + famnp["s"] + 1
-    ncol = NE + famnp["s"] + famnp["p"]
+    off_c = NE + famnp["s"] + famnp["p"] + 1
+    ncol = NE + famnp["s"] + famnp["p"] + famnp["c"]
 
     function probe_row(ed::Float64)
         r = Vector{ComplexF64}(undef, ncol)
         r[1:NE] .= rawrows[ed]
-        for (fam, off) in (("s", off_s), ("p", off_p))
+        for (fam, off) in (("s", off_s), ("p", off_p), ("c", off_c))
             np = famnp[fam]
             np == 0 && continue
             haskey(famdata[fam], ed) || error("族 $fam 缺 εd=$ed")
@@ -148,6 +154,11 @@ function main()
         return r
     end
 
+    if haskey(famdata, "c") && haskey(famdata["c"], -4.5)
+        println("DEBUG famdata[c][-4.5][1:3] = ", famdata["c"][-4.5][1:3])
+        println("DEBUG probe_row(-4.5)[385:387] = ", probe_row(-4.5)[385:387])
+        println("DEBUG off_s/off_p/off_c/ncol = ", off_s, "/", off_p, "/", off_c, "/", ncol)
+    end
     A = permutedims(hcat([probe_row(ed) for ed in anchors]...))
     rhs = [fock_anchor(cells, ring_links, ed)[1] for ed in anchors]
     @printf("设计矩阵 %d×%d\n", size(A, 1), size(A, 2)); flush(stdout)
@@ -166,14 +177,14 @@ function main()
     if gfit
         gdata = Dict{String, Dict{Float64, Vector{ComplexF64}}}()
         gfamok = Dict{String, Bool}()
-        for fam in ("s", "p")
+        for fam in ("s", "p", "c")
             famnp[fam] == 0 && (gfamok[fam] = false; continue)
             data = Dict{Float64, Vector{ComplexF64}}()
             allp = true
-            for part in (1, 2)
-                file = joinpath(outdir, "imag_n2o4ma_$(fam)$(part)g.csv")
+            for part in (1, 2, 3)
+                file = joinpath(outdir, "imag_$(tag)_$(fam)$(part)g.csv")
                 if !isfile(file)
-                    allp = false; break
+                    continue
                 end
                 for (i, ln) in enumerate(eachline(file))
                     i == 1 && continue
@@ -193,15 +204,15 @@ function main()
         end
         # 联合设计仅用 g 覆盖完整的族（inj 恒有）
         keepcols = vcat(fill(true, NE), [fam == "s" ? gfamok["s"] : (fam == "p" ? gfamok["p"] : false) for _ in 1:0])
-        keepcols = trues(NE + famnp["s"] + famnp["p"])
-        for (fam, off) in (("s", off_s), ("p", off_p))
+        keepcols = trues(NE + famnp["s"] + famnp["p"] + famnp["c"])
+        for (fam, off) in (("s", off_s), ("p", off_p), ("c", off_c))
             if !get(gfamok, fam, false)
                 keepcols[off:off + famnp[fam] - 1] .= false
             end
         end
         gdict = Dict{Float64, Vector{ComplexF64}}()
-        for part in (1, 2)
-            file = joinpath(outdir, "imag_n2o4ma_i$(part)g.csv")
+        for part in (1, 2, 3)
+            file = joinpath(outdir, "imag_$(tag)_i$(part)g.csv")
             isfile(file) || error("缺 $(file)")
             for (i, ln) in enumerate(eachline(file))
                 i == 1 && continue
@@ -261,6 +272,19 @@ function main()
         cnrm2 = [norm(A2[:, j]) for j in 1:size(A2, 2)]
         cnrm2[cnrm2 .== 0] .= 1.0
         An2 = A2 ./ cnrm2'
+        all(isfinite, An2) || begin
+            bad = findall(x -> !isfinite(x), A2)
+            println("非有限位置（前 20，行×列 → 1-based）：", bad[1:min(20, end)])
+            for (ri, ci) in Tuple.(bad[1:min(10, end)])
+                fam = ci <= NE ? "inj" : (ci <= NE + famnp["s"] ? "s" : (ci <= NE + famnp["s"] + famnp["p"] ? "p" : "c"))
+                jp = ci <= NE ? ci : (ci <= NE + famnp["s"] ? ci - NE : (ci <= NE + famnp["s"] + famnp["p"] ? ci - NE - famnp["s"] : ci - NE - famnp["s"] - famnp["p"]))
+                ch = ri <= length(anchors) ? "z" : (gfit ? "g" : "z")
+                edv = ri <= length(anchors) ? anchors[ri] : anchors[ri - length(anchors)]
+                @printf("   行 %d (εd=%.3f, %s 通道) 列 %d (族 %s, jp %d)\n", ri, edv, ch, ci, fam, jp)
+            end
+            error("联合设计含非有限值 503 项见上")
+        end
+        @printf("联合设计量级：max|A2|=%.2e\n", maximum(abs, A2))
         global F, cnrm, An2, A2, rhs2
         F = svd(An2)
         cnrm = cnrm2
@@ -289,23 +313,41 @@ function main()
         println("\nOMP 稀疏探索：")
         supp = Int[]
         r = copy(rhs)
-        for step in 1:600
+        bestk = 0; besterr = Inf
+        for step in 1:200
             corr = [abs(dot(An2[:, j], r)) for j in 1:size(An2, 2)]
             push!(supp, argmax(corr))
-            cf = An2[:, supp] \ rhs
+            cf = qr(An2[:, supp], ColumnNorm()) \ rhs
             r = rhs - An2[:, supp] * cf
-            if step in (10, 30, 60, 100, 200, 400, 600)
+            if step in (10, 20, 30, 40, 60, 80, 100, 150, 200)
                 herr = 0.0; hstr = ""
                 for (i, ed) in enumerate(holdout)
-                    pred = real(dot(AH[i, supp] ./ cnrm[supp], cf))
-                    truth = real(fock_anchor(cells, ring_links, ed)[1])
+                    pred = gfit ? real(1 - dot(AHg[i, supp] ./ cnrm[supp], cf) /
+                                        dot(AH[i, supp] ./ cnrm[supp], cf)) :
+                                  real(dot(AH[i, supp] ./ cnrm[supp], cf))
+                    truth = gfit ? real(fock_anchor(cells, ring_links, ed)[2]) :
+                                   real(fock_anchor(cells, ring_links, ed)[1])
                     herr = max(herr, abs(pred - truth))
                     hstr *= @sprintf(" %11.7f", pred)
                 end
                 @printf("  OMP k=%-4d res=%.3e maxhold=%.3e%s\n", step, norm(r), herr, hstr)
                 flush(stdout)
+                herr < besterr && ((bestk, besterr) = (step, herr))
             end
         end
+        # 导出 best-k 稀疏解
+        cf = qr(An2[:, supp[1:bestk]], ColumnNorm()) \ rhs
+        file = joinpath(outdir, "$(SOLTAG)_dsol_omp.csv")
+        open(file, "w") do io
+            println(io, "fam,jp,re,im")
+            for (m, j) in enumerate(supp[1:bestk])
+                abs(cf[m]) > 1e-16 || continue
+                fam = j <= NE ? "inj" : (j <= NE + famnp["s"] ? "s" : "p")
+                jp = j <= NE ? j : (j <= NE + famnp["s"] ? j - NE : j - NE - famnp["s"])
+                cn = cnrm[j]; println(io, fam, ",", jp, ",", real(cf[m]/cn), ",", imag(cf[m]/cn))
+            end
+        end
+        @printf("OMP 稀疏解（k=%d, maxhold=%.2e）已存 %s\n", bestk, besterr, file)
         return
     end
 
@@ -344,14 +386,14 @@ function main()
                  : "真值                    2.5890924    2.2281719    1.9525846    1.7403380")
     # 解文件（best keep）
     (reltol, Ist) = bestkeep
-    file = joinpath(outdir, "imag_n2o4ma_dsol.csv")
+    file = joinpath(outdir, "$(SOLTAG)_dsol.csv")
     colmap = [j for j in 1:(NE + famnp["s"] + famnp["p"]) if gfit ? keepcols[j] : true]
     open(file, "w") do io
         println(io, "fam,jp,re,im")
         for (k, j) in enumerate(colmap)
             abs(Ist[k]) > 1e-13 || continue
-            fam = j <= NE ? "inj" : (j <= NE + famnp["s"] ? "s" : "p")
-            jp = j <= NE ? j : (j <= NE + famnp["s"] ? j - NE : j - NE - famnp["s"])
+            fam = j <= NE ? "inj" : (j <= NE + famnp["s"] ? "s" : (j <= NE + famnp["s"] + famnp["p"] ? "p" : "c"))
+            jp = j <= NE ? j : (j <= NE + famnp["s"] ? j - NE : (j <= NE + famnp["s"] + famnp["p"] ? j - NE - famnp["s"] : j - NE - famnp["s"] - famnp["p"]))
             println(io, fam, ",", jp, ",", real(Ist[k]), ",", imag(Ist[k]))
         end
     end

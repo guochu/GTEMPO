@@ -61,9 +61,11 @@ end
 
 function main()
     family = ARGS[1]; part = parse(Int, ARGS[2])
+    TAG = get(ENV, "IMAG_TAG", "n2o4ma")
+    NLm = parse(Int, get(ENV, "IMAG_NL", "2"))
     channel = length(ARGS) >= 3 ? ARGS[3] : "z"      # z = 普通复合；g = 末位插入通道
     outdir = joinpath(GT_ROOT, "benchmark", "exactif", "validation")
-    NL, order = 2, 4
+    NL, order = NLm, 4
     sched = NativeExact.native_schedule(order, NL, BETA / NL)
     ring_links = vcat(sched.links[1] + sched.links[end], sched.links[2:end-1])
     nl = length(ring_links)
@@ -73,7 +75,7 @@ function main()
 
     # 锚点 εd 集 = h 行的 εd 全集（41 点；holdout 4 点也在内）
     eds = Float64[]
-    for file in sort(filter(f -> occursin("imag_n2o4ma_h", f) && endswith(f, ".csv"), readdir(outdir, join=true)))
+    for file in sort(filter(f -> occursin("imag_$(TAG)_h", f) && endswith(f, ".csv"), readdir(outdir, join=true)))
         for (i, ln) in enumerate(eachline(file))
             i == 1 && continue
             push!(eds, parse(Float64, split(strip(ln), ",")[1]))
@@ -86,7 +88,14 @@ function main()
 
     # 探针族定义
     probes = Vector{Any}()
-    if family == "i"
+    if family == "c"
+        # (c) 随机复系数注入（幅度+相位随机，张量采样更丰富）
+        for B in EVENS
+            np2 = length(B) ÷ 2
+            σ = [ComplexF64(randn(rng), randn(rng)) for _ in 1:np2]
+            push!(probes, (B, σ, :sign))
+        end
+    elseif family == "i"
         # (i) 普通注入族（coeff +1，与 h 行同基）
         for B in EVENS
             push!(probes, (B, ones(Float64, length(B) ÷ 2), :sign))
@@ -109,7 +118,7 @@ function main()
     end
     println("探针数：$(length(probes))"); flush(stdout)
 
-    inj = function(A::Vector{Int}, σ::Vector{Float64})
+    inj = function(A::Vector{Int}, σ)
         mps = GTEMPO.vacuumstate(ComplexF64, LAT)
         for (i, c) in zip(1:2:length(A), σ)
             mps = GTEMPO.apply!(exp(GTEMPO.GTerm(A[i] + 1, A[i+1] + 1; coeff=ComplexF64(c))), mps)
@@ -117,7 +126,8 @@ function main()
         return mps
     end
 
-    file = joinpath(outdir, "imag_n2o4ma_$(family)$part$(channel == "g" ? "g" : "").csv")
+    parttag = part
+    file = joinpath(outdir, "imag_$(TAG)_$(family)$(parttag)$(channel == "g" ? "g" : "").csv")
     open(file, "w") do io
         println(io, "ed,jp,re,im")
         for (ipt, ed) in enumerate(eds_part)
