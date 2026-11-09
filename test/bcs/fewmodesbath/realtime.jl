@@ -50,7 +50,7 @@
 		# ↓↓ 正常项装配（(a↓,ā↓)·(−Δ)，核转置）造成的 δt 无关系统底。2026-11-03
 		# 修复（BCS getindex 改指数系数语义，canonical (ā↓,a↓)·(+Δ)）后
 		# 降至 7.2e-5/1.1e-4（纯离散化），容差收紧到 1e-3 锁定修复。基准见
-		# benchmark/firstorderif/singlemodebath/bcs_realtime.jl
+		# docs/tutorials/firstorderif/singlemodebath/bcs_realtime.jl
 		@test relerr(g1, gt_ed) < 1.0e-3
 		@test relerr(g2, lt_ed) < 1.0e-3
 	end

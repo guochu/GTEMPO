@@ -40,7 +40,7 @@
 		g2 = gτ_ed(H, a, adag, 0:δτ:β, β)
 		# with the τ-ring accessor reverted to the raw (cell) read the error is
 		# ~0.0048, dominated by a D-independent ~0.5% residual of the few-mode
-		# bcs_ed reference itself (see performance/firstorder/bcs_vertex_shift_accuracy.jl)
+		# bcs_ed reference itself (see docs/tutorials/firstorderif/singlemodebath)
 		@test relerr(g1, g2) < 1.0e-2
 	end
 

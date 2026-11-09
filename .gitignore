@@ -8,6 +8,4 @@ CVTemporaryFiles
 docs/build
 osee
 performance
-benchmark/**/*.md
-benchmark/**/*.html
-benchmark/**/*.tex
+extensions
