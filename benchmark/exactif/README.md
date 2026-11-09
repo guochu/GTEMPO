@@ -36,7 +36,7 @@ A 吸收为全步长），零长度 cell 补齐使核节点与格点切片一一
 
 ## 文件
 
-**目录结构**：`src/` = 核心代码；`validation/` = 验证/标定/标度脚本及其记录；`theory/` = 数学原理文档；`toulouse/`、`singlemodebath/` = 各自模型的测试脚本 + 测试结果。
+**目录结构**：`src/` = 核心代码（NativeExact.jl 单核心模块）；`commons/` = 两模型文件夹共享的 helper（realtime 引擎 `scaling_compact_models.jl` + `formb_dense.jl` 稠密参照机器 + 虚轴标度 `imag_commons.jl` + 共享绘图脚本）；`toulouse/`、`singlemodebath/` = 各自模型的实时/虚轴测试脚本 + 数据 + 图；`theory/` = 数学原理文档；`imag_theory_notes.md` = 虚轴严格 IF 全程理论笔记（τ2/探针族/单 MPS/调度阶数）。`validation/` 已清空——工作期脚本与数据在 git 历史（commit 843b92f..c25ea43），结论沉淀于 `imag_theory_notes.md` 与下表。
 
 | 文件 | 内容 |
 |---|---|

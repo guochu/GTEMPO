@@ -14,5 +14,5 @@
 # 输出：本文件夹 realtime.csv / realtime.png。
 # 运行：julia --project=<GTEMPO 根> benchmark/exactif/singlemodebath/realtime.jl
 # =============================================================================
-include(joinpath(@__DIR__, "..", "validation", "scaling_compact_models.jl"))
+include(joinpath(@__DIR__, "..", "commons", "scaling_compact_models.jl"))
 run_realtime_scaling("Anderson")
