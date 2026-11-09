@@ -2,6 +2,9 @@
 ===
 
 **benchmark/exactif/theory/keldysh.md**（2026-11-07，详导版）
+> **排版**：keldysh.tex 为手工维护的结构化 LaTeX（amsthm 恒等式/引理/规则/证书
+> 环境 + booktabs 表格 + 编号公式），与 md 平行、分别维护（同 MATHEMATICS 约定）；
+> gen_tex.py 的 pandoc 生成已弃用（转换损坏标题与表格）。
 配套实现：`src/NativeExact.jl`；验证入口：`validation/verify_compact.jl`、
 `verify_gtlt_align.jl`、`verify_align_u15.jl`、`scaling_compact_models.jl`、`zidentity.jl`。
 
