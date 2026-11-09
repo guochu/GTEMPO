@@ -183,6 +183,9 @@ function main()
     eds = isempty(ARGS) ? [0.0, 0.35, 0.7, 1.05, 1.4] :
         [parse(Float64, x) for x in ARGS]
     b1c = LAT[GrassmannContourIndex(1, conj=true, branch=:τ, band=1)]
+    ins = get(ENV, "IMAG_INS", "ntau_bar1")
+    b1e = LAT[GrassmannContourIndex(1, conj=false, branch=:τ, band=1)]
+    bkc = LAT[GrassmannContourIndex(LAT.k, conj=true, branch=:τ, band=1)]
 
     if single
         # ---- 单 MPS 构建：mpsI = Σ c_j·probe_j（OMP 稀疏解，加法键维线性增长）----
@@ -198,7 +201,8 @@ function main()
         maxerrz = 0.0; maxerrn = 0.0
         for ed in eds
             mpsK = mk_kchain(LAT, ring_links, ed)
-            tend = GTEMPO.GTerm(LAT[GrassmannContourIndex(LAT.Nτ, conj=false, branch=:τ, band=1)], b1c; coeff=1)
+            tend = ins == "b4c_b1e" ? GTEMPO.GTerm(bkc, b1e; coeff=1) :
+                   GTEMPO.GTerm(LAT[GrassmannContourIndex(LAT.Nτ, conj=false, branch=:τ, band=1)], b1c; coeff=1)
             mpsKend = GTEMPO._mult_A(tend, mpsK)
             z = GTEMPO.integrate(LAT, mpsK, mpsI)
             vend = GTEMPO.integrate(LAT, mpsKend, mpsI)
@@ -218,7 +222,8 @@ function main()
     maxerrz = 0.0; maxerrn = 0.0
     for ed in eds
         mpsK = mk_kchain(LAT, ring_links, ed)
-        tend = GTEMPO.GTerm(LAT[GrassmannContourIndex(LAT.Nτ, conj=false, branch=:τ, band=1)], b1c; coeff=1)
+        tend = ins == "b4c_b1e" ? GTEMPO.GTerm(bkc, b1e; coeff=1) :
+               GTEMPO.GTerm(LAT[GrassmannContourIndex(LAT.Nτ, conj=false, branch=:τ, band=1)], b1c; coeff=1)
         mpsKend = GTEMPO._mult_A(tend, mpsK)
         z = 0.0 + 0.0im; vend = 0.0 + 0.0im
         for (k, (fam, jp, c)) in enumerate(sol)

@@ -111,7 +111,7 @@ function main()
     for fam in ("s", "p", "c")
         data = Dict{Float64, Vector{ComplexF64}}()
         np = 0
-        for part in (1, 2, 3)
+        for part in (1, 2, 3, 4)
             file = joinpath(outdir, "imag_$(tag)_$(fam)$(part).csv")
             isfile(file) || continue
             for (i, ln) in enumerate(eachline(file))
@@ -181,7 +181,7 @@ function main()
             famnp[fam] == 0 && (gfamok[fam] = false; continue)
             data = Dict{Float64, Vector{ComplexF64}}()
             allp = true
-            for part in (1, 2, 3)
+            for part in (1, 2, 3, 4)
                 file = joinpath(outdir, "imag_$(tag)_$(fam)$(part)g.csv")
                 if !isfile(file)
                     continue
@@ -211,7 +211,7 @@ function main()
             end
         end
         gdict = Dict{Float64, Vector{ComplexF64}}()
-        for part in (1, 2, 3)
+        for part in (1, 2, 3, 4)
             file = joinpath(outdir, "imag_$(tag)_i$(part)g.csv")
             isfile(file) || error("缺 $(file)")
             for (i, ln) in enumerate(eachline(file))
