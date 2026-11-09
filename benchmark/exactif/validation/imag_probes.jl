@@ -133,8 +133,12 @@ function main()
         for (ipt, ed) in enumerate(eds_part)
             mpsK = mk_kchain(LAT, ring_links, ed)
             if channel == "g"
+                ins = get(ENV, "IMAG_INS", "ntau_bar1")
                 b1c = LAT[GrassmannContourIndex(1, conj=true, branch=:τ, band=1)]
-                tend = GTEMPO.GTerm(LAT[GrassmannContourIndex(LAT.Nτ, conj=false, branch=:τ, band=1)], b1c; coeff=1)
+                b1e = LAT[GrassmannContourIndex(1, conj=false, branch=:τ, band=1)]
+                b4c = LAT[GrassmannContourIndex(LAT.k, conj=true, branch=:τ, band=1)]
+                tend = ins == "b4c_b1e" ? GTEMPO.GTerm(b4c, b1e; coeff=1) :
+                       GTEMPO.GTerm(LAT[GrassmannContourIndex(LAT.Nτ, conj=false, branch=:τ, band=1)], b1c; coeff=1)
                 mpsK = GTEMPO._mult_A(tend, mpsK)
             end
             t0 = time()

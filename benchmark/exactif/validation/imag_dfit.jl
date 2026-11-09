@@ -230,7 +230,7 @@ function main()
             r = Vector{ComplexF64}(undef, ncol)
             haskey(gdict, ed) || error("inj g 行缺 εd=$ed")
             r[1:NE] .= gdict[ed][1:NE]
-            for (fam, off) in (("s", off_s), ("p", off_p))
+            for (fam, off) in (("s", off_s), ("p", off_p), ("c", off_c))
                 np = famnp[fam]
                 (np == 0 || !haskey(gdata, fam)) && continue
                 haskey(gdata[fam], ed) || error("g 族 $fam 缺 εd=$ed")
@@ -273,16 +273,27 @@ function main()
         cnrm2[cnrm2 .== 0] .= 1.0
         An2 = A2 ./ cnrm2'
         all(isfinite, An2) || begin
-            bad = findall(x -> !isfinite(x), A2)
-            println("非有限位置（前 20，行×列 → 1-based）：", bad[1:min(20, end)])
-            for (ri, ci) in Tuple.(bad[1:min(10, end)])
-                fam = ci <= NE ? "inj" : (ci <= NE + famnp["s"] ? "s" : (ci <= NE + famnp["s"] + famnp["p"] ? "p" : "c"))
-                jp = ci <= NE ? ci : (ci <= NE + famnp["s"] ? ci - NE : (ci <= NE + famnp["s"] + famnp["p"] ? ci - NE - famnp["s"] : ci - NE - famnp["s"] - famnp["p"]))
-                ch = ri <= length(anchors) ? "z" : (gfit ? "g" : "z")
-                edv = ri <= length(anchors) ? anchors[ri] : anchors[ri - length(anchors)]
-                @printf("   行 %d (εd=%.3f, %s 通道) 列 %d (族 %s, jp %d)\n", ri, edv, ch, ci, fam, jp)
+            open(joinpath(outdir, "nan_dump.txt"), "w") do io
+                bad = findall(x -> !isfinite(x), A2)
+                println(io, "非有限计数：", length(bad))
+                for (ri, ci) in Tuple.(bad)
+                    ch = ri <= length(anchors) ? "z" : "g"
+                    ei = ri <= length(anchors) ? ri : ri - length(anchors)
+                    println(io, "行 $ri (ch=$ch, ed=$(anchors[ei])) 列 $ci")
+                end
+                println(io, "A2 尺寸：", size(A2))
             end
-            error("联合设计含非有限值 503 项见上")
+            open(joinpath(outdir, "nan_row_dump.txt"), "w") do io
+                badr = unique(ri for (ri, ci) in Tuple.(findall(x -> !isfinite(x), A2)))
+                for ri in badr
+                    println(io, "=== 行 $ri（前 12 非有限列的值）===")
+                    cols = [ci for (ri2, ci) in Tuple.(findall(x -> !isfinite(x), A2)) if ri2 == ri]
+                    for ci in cols[1:min(12, end)]
+                        println(io, "  col $ci : ", A2[ri, ci])
+                    end
+                end
+            end
+            error("见 nan_dump.txt / nan_row_dump.txt")
         end
         @printf("联合设计量级：max|A2|=%.2e\n", maximum(abs, A2))
         global F, cnrm, An2, A2, rhs2
@@ -348,6 +359,45 @@ function main()
             end
         end
         @printf("OMP 稀疏解（k=%d, maxhold=%.2e）已存 %s\n", bestk, besterr, file)
+        return
+    end
+
+    # ---- Tikhonov 岭扫描（IMAG_RIDGE=1：λ 由 holdout 驱动，治零空间振荡）----
+    if get(ENV, "IMAG_RIDGE", "0") == "1"
+        println("\n岭扫描（加权设计 + 列归一；λ 相对 σ1²）：")
+        s1 = F.S[1]
+        best = (Inf, nothing, 0.0)
+        for lr in [-14, -12, -10, -9, -8, -7, -6, -5, -4, -3]
+            λ = 10.0^lr * s1^2
+            c = (An2' * An2 + λ * I) \ (An2' * rhs)
+            resa = norm(An2 * c - rhs)
+            herr = 0.0; line = @sprintf("λ=1e%-3d res=%.2e", lr, resa)
+            for (i, ed) in enumerate(holdout)
+                hz = dot(AH[i, :] ./ cnrm, c)
+                vend = dot(AHg[i, :] ./ cnrm, c)
+                npred = real(1 - vend / hz)
+                truthn = real(fock_anchor(cells, ring_links, ed)[2])
+                zerr = abs(real(dot(AH[i, :] ./ cnrm, c)) - real(fock_anchor(cells, ring_links, ed)[1]))
+                herr = max(herr, abs(npred - truthn), zerr)
+                line *= @sprintf("  n=%.4f zerr=%.1e", npred, zerr)
+            end
+            line *= @sprintf("  maxhold=%.2e", herr)
+            println(line); flush(stdout)
+            herr < best[1] && ((best) = (herr, c, resa))
+        end
+        herr, c, resa = best
+        file = joinpath(outdir, "$(SOLTAG)_dsol_ridge.csv")
+        open(file, "w") do io
+            println(io, "fam,jp,re,im")
+            for j in 1:size(An2, 2)
+                abs(c[j]) > 1e-14 || continue
+                fam = j <= NE ? "inj" : (j <= NE + famnp["s"] ? "s" : (j <= NE + famnp["s"] + famnp["p"] ? "p" : "c"))
+                jp = j <= NE ? j : (j <= NE + famnp["s"] ? j - NE : (j <= NE + famnp["s"] + famnp["p"] ? j - NE - famnp["s"] : j - NE - famnp["s"] - famnp["p"]))
+                cn = cnrm[j]
+                println(io, fam, ",", jp, ",", real(c[j] / cn), ",", imag(c[j] / cn))
+            end
+        end
+        @printf("岭解已存 %s（maxhold=%.2e）\n", file, herr)
         return
     end
 
