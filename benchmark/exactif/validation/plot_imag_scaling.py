@@ -45,9 +45,9 @@ def slope(k):
     x0 = math.log(pts[0][0]); x1 = math.log(pts[-1][0])
     y0 = math.log(pts[0][1]); y1 = math.log(pts[-1][1])
     return (y1 - y0) / (x1 - x0)
-ax.annotate(f"convergence ={abs(slope(1)):.2f}$", xy=(22, data[1][-2][1]), color=C[1],
+ax.annotate(f"convergence  p = {abs(slope(1)):.2f}", xy=(22, data[1][-2][1]), color=C[1],
             fontsize=10, xytext=(26, data[1][-2][1] * 1.35))
-ax.annotate(f"convergence ={abs(slope(4)):.2f}$", xy=(22, data[4][-2][1]), color=C[4],
+ax.annotate(f"convergence  p = {abs(slope(4)):.2f}", xy=(22, data[4][-2][1]), color=C[4],
             fontsize=10, xytext=(26, data[4][-2][1] * 0.6))
 
 ax.set_xlabel(r"$N$  ($\Delta\tau=\beta/N$)", fontsize=11)
