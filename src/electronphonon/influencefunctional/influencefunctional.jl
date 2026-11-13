@@ -1,1 +1,0 @@
-include("partialif/partialif.jl")

@@ -1,3 +1,12 @@
+# sysdynamics：杂质模型层入口
+#
+# 保留（零改动）：predefined 模型（AndersonIM/ToulouseIM/IRLM/KanamoriIM）与
+# generalimpurity 的 Fock 空间纯数值接口（fockmatrix/fock_propagator/
+# fock_thermalstate——cell automaton K 构造的数据源，src/port/system.jl 消费）。
+# 旧装配路径（_propagator_sparsegmps 窗口 mult!、sysdynamics_fast、bare 族、
+# 8 个 *_deprecated、termdynamics、fermionoperator）已随 D2 裁决删除；
+# K 构造统一走 cell automaton（Phase 2 接线）。
+
 """
 	AbstractImpurityHamiltonian
 
@@ -11,106 +20,46 @@ abstract type AbstractImpurityHamiltonian end
 	ConstImpurityHamiltonian <: AbstractImpurityHamiltonian
 
 Constant (time-independent) impurity Hamiltonian; quench Hamiltonians
-belong here. Only `ConstImpurityHamiltonian` supports `sysdynamics_fast`.
-Interface: `fock_propagator(model, branch, dt)`.
+belong here. Interface: `fock_propagator(model, branch, dt)`.
 """
 abstract type ConstImpurityHamiltonian <: AbstractImpurityHamiltonian end
 """
 	AbstractTdImpurityHamiltonian <: AbstractImpurityHamiltonian
 
-Time-dependent impurity Hamiltonian; only `sysdynamics` is supported.
-Interface: `fock_propagator(model, branch, dt, t)` on the real-time
-branches (`:+`/`:-`), with `t` the left endpoint of the physical time
-interval of the step.
+Time-dependent impurity Hamiltonian. Interface: `fock_propagator(model,
+branch, dt, t)` on the real-time branches (`:+`/`:-`), with `t` the left
+endpoint of the physical time interval of the step.
 """
 abstract type AbstractTdImpurityHamiltonian <: AbstractImpurityHamiltonian end
 
-# interface for AbstractImpurityHamiltonian 
-fock_propagator(model::ConstImpurityHamiltonian, branch::Symbol, dt::Real) = error("fock_propagator not implemented for model $(typeof(model))")
-fock_thermalstate(h::AbstractImpurityHamiltonian, β::Real) = error("fock_thermalstate not implemented for model $(typeof(h))")
-fock_propagator(model::AbstractTdImpurityHamiltonian, branch::Symbol, dt::Real, t::Real) = error("fock_propagator not implemented for model $(typeof(model))")
+# interface for AbstractImpurityHamiltonian
+fock_propagator(model::ConstImpurityHamiltonian, branch::Symbol, dt::Real) =
+    error("fock_propagator not implemented for model $(typeof(model))")
+fock_thermalstate(h::AbstractImpurityHamiltonian, β::Real) =
+    error("fock_thermalstate not implemented for model $(typeof(h))")
+fock_propagator(model::AbstractTdImpurityHamiltonian, branch::Symbol, dt::Real, t::Real) =
+    error("fock_propagator not implemented for model $(typeof(model))")
 # constant models: the propagator on the real-time branches is time-independent,
 # the branch time t is ignored
-fock_propagator(model::ConstImpurityHamiltonian, branch::Symbol, dt::Real, t::Real) = fock_propagator(model, branch, dt)
+fock_propagator(model::ConstImpurityHamiltonian, branch::Symbol, dt::Real, t::Real) =
+    fock_propagator(model, branch, dt)
 
 """
 	num_bands(h) -> Int
 
 Number of impurity bands of the model. Defaults to the `bands` field of
-the model; models without such a field define their own method (e.g.
-`AndersonIM` reports 2 and `ToulouseIM` reports 1).
+the model; models without such a field define their own method.
 """
 num_bands(h::AbstractImpurityHamiltonian) = h.bands
 
-# hybriddynamics(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::AbstractImpurityModel) = error("hybriddynamics not implemented for model $(typeof(model))")
-# hybriddynamics(lattice::AbstractGrassmannLattice, model::AbstractImpurityModel; kwargs...) = hybriddynamics(vacuumstate(lattice), lattice, model; kwargs...)
-
-sysdynamicsstepper!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::ConstImpurityHamiltonian; kwargs...) = error("sysdynamicsstepper! not implemented for model $(typeof(model))")
-
-# Deprecated Trotterized dynamics: the exact propagator sysdynamics /
-# baresysdynamics (built from the Fock-space propagator) supersedes
-# these; kept for reference and comparison
-"""
-	sysdynamics_deprecated(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian; kwargs...)
-
-Deprecated Trotterized impurity dynamics, superseded by the exact
-`sysdynamics`. The bulk connection terms ⟨āᵢaⱼ⟩ (j=i-1 for 1 ≤ i ≤ N)
-are absorbed into the propagator; the boundary connection term with
-i=N, j=1 is treated separately in `boundarycondition`.
-"""
-sysdynamics_deprecated(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian; kwargs...) = sysdynamics_deprecated!(copy(gmps), lattice, model; kwargs...)
-sysdynamics_deprecated(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian; kwargs...) = sysdynamics_deprecated!(vacuumstate(lattice), lattice, model; kwargs...)
-
-"""
-	sysdynamics_deprecated!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian; kwargs...)
-
-The inplace version of `sysdynamics_deprecated`.
-"""
-function sysdynamics_deprecated!(gmps::GrassmannMPS, lattice::AbstractImagGrassmannLattice, model::AbstractImpurityHamiltonian; trunc::TruncationScheme=Defaults.alg_trunc_sys())
-	return sysdynamics_imaginary_deprecated!(gmps, lattice, model; trunc=trunc)
-end
-
-
-function sysdynamics_deprecated!(gmps::GrassmannMPS, lattice::AbstractRealGrassmannLattice, model::AbstractImpurityHamiltonian;
-						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
-	if isnothing(branch)
-		sysdynamics_forward_deprecated!(gmps, lattice, model; trunc=trunc)
-		return sysdynamics_backward_deprecated!(gmps, lattice, model; trunc=trunc)
-	else
-		(branch in (:+, :-)) || throw(ArgumentError("branch must be one of :+ or :-"))
-		return (branch == :+) ? sysdynamics_forward_deprecated!(gmps, lattice, model; trunc=trunc) : sysdynamics_backward_deprecated!(gmps, lattice, model; trunc=trunc)
-	end
-end
-
-function sysdynamics_deprecated!(gmps::GrassmannMPS, lattice::AbstractMixedGrassmannLattice, model::AbstractImpurityHamiltonian;
-						branch::Union{Nothing, Symbol}=nothing, trunc::TruncationScheme=Defaults.alg_trunc_sys())
-	if isnothing(branch)
-		sysdynamics_forward_deprecated!(gmps, lattice, model; trunc=trunc)
-		sysdynamics_backward_deprecated!(gmps, lattice, model; trunc=trunc)
-		return sysdynamics_imaginary_deprecated!(gmps, lattice, model; trunc=trunc)
-	else
-		if branch == :+
-			return sysdynamics_forward_deprecated!(gmps, lattice, model; trunc=trunc)
-		elseif branch == :-
-			return sysdynamics_backward_deprecated!(gmps, lattice, model; trunc=trunc)
-		else
-			(branch == :τ) || throw(ArgumentError("branch must be one of :+, :- or :τ"))
-			return sysdynamics_imaginary_deprecated!(gmps, lattice, model; trunc=trunc)
-		end
-	end
-end
-
-
-
-# per-model Taylor-expanded steps of the deprecated dynamics
-sysdynamics_forward_deprecated!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian; kwargs...) = error("sysdynamics_forward_deprecated! not implemented for model $(typeof(model))")
-sysdynamics_backward_deprecated!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian; kwargs...) = error("sysdynamics_backward_deprecated! not implemented for model $(typeof(model))")
-sysdynamics_imaginary_deprecated!(gmps::GrassmannMPS, lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian; kwargs...) = error("sysdynamics_imaginary_deprecated! not implemented for model $(typeof(model))")
-
-# predefined models
 include("predefined/siam.jl")
 include("predefined/irlm.jl")
 include("predefined/skmodel.jl")
 
-# general model
 include("generalimpurity/generalimpurity.jl")
+
+# 公开皮肤：杂质模型类型与接口（旧 export 名保持）
+export AbstractImpurityHamiltonian, ConstImpurityHamiltonian, AbstractTdImpurityHamiltonian,
+       ImpurityHamiltonian, QuenchedImpurityHamiltonian, TdImpurityHamiltonian, TdImpurityOp,
+       AndersonIM, ToulouseIM, IRLM, KanamoriIM
+export num_bands, fock_propagator, fock_thermalstate, fockmatrix, fockstate

@@ -4,17 +4,13 @@ authors = ["Guo Chu <guochu604b@gmail.com>", "Sun Zhijie <zjsun@mail.ustc.edu.cn
 version = "0.0.1"
 
 [deps]
-ExpExp = "05571471-befe-4da2-8d73-f7916647c25f"
-FiniteMPSAlgorithms = "b7c1d2a3-4e5f-4a6b-8c7d-9e0f1a2b3c4d"
+GrassmannMPS = "8f6e1d24-5a70-4b3e-9c2a-71b7e0d5a001"
 ImpurityModelBase = "a5817ebb-6d84-46c1-a17a-d25f868e249e"
-KrylovKit = "0b1a1467-8014-51b9-945f-bf0ae24f4b77"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+MatrixAlgebraKit = "6c742aac-3347-4629-af66-fc926824e5e4"
 QuAPI = "49288508-9298-4753-b2e7-d320e8956d6c"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
-Strided = "5e0ebb24-38b0-5f93-81fe-25c709ecae67"
-TensorOperations = "6aa20fa7-93e2-5fca-9bc0-fbd0db3c71a2"
-TupleTools = "9d95972d-f1c8-5527-a6e0-b4b365fa01f6"
-Z2Tensors = "fbfa7797-1d9b-4030-96ff-ac5316b66f85"
+TensorKit = "07d1fe3e-3e46-537d-9eac-e9e13d0d4cec"
 
 [extras]
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
