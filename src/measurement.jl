@@ -1,0 +1,149 @@
+# measurement.jl：观测量（inserted-K 重建路线，D5 两轨之一；secondorderif
+# measurement.jl 同约定）。
+#
+# 全部经「带插入重建 K → GM 引擎 integrate → /Z」：
+#   occupation(branch j; band)      n̂（逐带或总）在 (branch, j) 边界 :left
+#   greater(i, j=0)                 d@(+,i) :left；ddag@(+,j) :left（j=0 折 ρ₀ 左）
+#                                   ——0⁺：同切位 ddag 先 push（⟨dd†⟩=1−n）
+#   lesser(i, j=0)                  d@(+,i) :left；ddag@(−,j) :right（j=0 折 ρ₀ 右）
+#   matsubara(i, j=0)               d@(τ,i)、ddag@(τ,j) 均 :left
+# 边界 j ∈ 0..N（0 = ρ₀ 切位）；rt 顶点 branch=:+、τ 顶点 branch=:τ。
+# τ 链 G(β,0) = +⟨d†d⟩（热环等时同号；j==0 平移路由属 secondorderif M≥2 的
+# Z2 栈绕尾技巧，GM 栈 F≡0 前提下不需要——D5 验收时按 golden 裁决）。
+
+"""
+    _fock_ops(bands) -> Vector{Matrix{ComplexF64}}
+
+各带 JW 湮灭算符（band 1 = MSB；FockMatrix 约定）。
+"""
+_fock_ops(bands::Int) = _fock_annihilators(bands)
+
+"n̂ 算符（band=nothing → 全带总占据）"
+function _number_op(bands::Int, band::Union{Nothing,Int})
+    d = _fock_ops(bands)
+    if band === nothing
+        acc = d[1]' * d[1]
+        for b in 2:bands; acc += d[b]' * d[b]; end
+        return acc
+    end
+    (1 <= band <= bands) || throw(BoundsError(1:bands, band))
+    return d[band]' * d[band]
+end
+
+"插入 K 重建的公共尾程：K′ = sysdynamics(...; insertions) → integrate(K′, Is...) / Z"
+function _inserted_expectation(lattice, model, Is, Z, insertions; order=1, coupling_norm=0.0,
+                               initial_state=nothing, spec=nothing)
+    K = sysdynamics(lattice, model; order, initial_state, coupling_norm, insertions,
+                    spec=spec === nothing ? symmetry_spec(lattice.symmetry) : spec)
+    num = integrate(K, Is...)
+    return num / Z
+end
+
+"""
+    occupation(lattice, model, kernel, Is...; j, branch, band=nothing,
+               order=1, coupling_norm=0.0, initial_state=nothing, Z) -> Complex
+
+⟨n̂(t_j)⟩（`band` 缺省 = 总占据；j ≥ 1 在 (branch, j) 边界，j = 0 折 ρ₀/
+热迹）。`Is` = 各带 IF 链；`Z` = 无插入分母。
+"""
+function occupation(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian,
+                    kernel::Union{Nothing,HybridizationKernel}, Is...; j::Integer, branch::Symbol=default_branch(lattice),
+                    band::Union{Nothing,Int}=nothing, order::Integer=kernel_order(kernel),
+                    coupling_norm::Real=kernel_coupling_norm(kernel), initial_state=nothing, Z)
+    ins = [OperatorInsertion(branch, Int(j), _number_op(lattice.bands, band))]
+    return _inserted_expectation(lattice, model, Is, Z, ins; order=Int(order),
+                                 coupling_norm=coupling_norm, initial_state=initial_state)
+end
+
+"缺省分支：虚时 :τ、实时/混合 rt 顶点 :+"
+default_branch(lattice::AbstractGrassmannLattice) =
+    lattice isa AbstractImagGrassmannLattice ? :τ : :+
+
+"""
+    raw_correlation(lattice, model, kernel, Is...; i, j=0, kind=:greater, ...) -> Complex
+
+两点函数 ⟨d(tᵢ) ddag(tⱼ)⟩（greater）/ ⟨ddag(tⱼ) d(tᵢ)⟩（lesser）；实时/混合
+专用（虚时用 matsubara）。0⁺ push 序约定见文件头。
+"""
+function raw_correlation(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian,
+                         kernel::HybridizationKernel, Is...; i::Integer, j::Integer=0,
+                         kind::Symbol=:greater, order::Integer=kernel_order(kernel),
+                         coupling_norm::Real=kernel_coupling_norm(kernel), initial_state=nothing)
+    (lattice isa AbstractRealGrassmannLattice || lattice isa AbstractMixedGrassmannLattice) ||
+        throw(ArgumentError("实时/混合轮廓专用；纯虚时用 matsubara"))
+    d = _fock_ops(lattice.bands)[1]; ddag = d'
+    ins = OperatorInsertion[]
+    if kind === :greater
+        # ⟨d(tᵢ) ddag(tⱼ)⟩：同切位 0⁺ = ⟨dd†⟩ ⟹ ddag 先 push、d 后 push
+        push!(ins, OperatorInsertion(:+, Int(j), ddag))
+        push!(ins, OperatorInsertion(:+, Int(i), d))
+    elseif kind === :lesser
+        # ⟨ddag(tⱼ) d(tᵢ)⟩：d@(+,i) left；ddag@(−,j) right
+        push!(ins, OperatorInsertion(:+, Int(i), d))
+        push!(ins, OperatorInsertion(:-, Int(j), ddag; side=:right))
+    else
+        throw(ArgumentError("kind must be :greater or :lesser"))
+    end
+    return _inserted_expectation(lattice, model, Is, 1.0, ins; order=Int(order),
+                                 coupling_norm=coupling_norm, initial_state=initial_state)
+end
+
+"greater(tᵢ, tⱼ=0) = −i⟨d(tᵢ)ddag(tⱼ)⟩（归一化走 occupation 同款 Z 分母）"
+function greater(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian,
+                 kernel::HybridizationKernel, Is...; i::Integer, j::Integer=0, Z,
+                 kwargs...)
+    (lattice isa AbstractRealGrassmannLattice || lattice isa AbstractMixedGrassmannLattice) ||
+        throw(ArgumentError("虚时轮廓用 matsubara"))
+    return -1.0im * _normalized_two_point(lattice, model, kernel, Is, Z, i, j, :greater; kwargs...)
+end
+
+"lesser(tᵢ, tⱼ=0) = +i⟨ddag(tⱼ)d(tᵢ)⟩"
+function lesser(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian,
+                kernel::HybridizationKernel, Is...; i::Integer, j::Integer=0, Z,
+                kwargs...)
+    (lattice isa AbstractRealGrassmannLattice || lattice isa AbstractMixedGrassmannLattice) ||
+        throw(ArgumentError("虚时轮廓用 matsubara"))
+    return 1.0im * _normalized_two_point(lattice, model, kernel, Is, Z, i, j, :lesser; kwargs...)
+end
+
+function _normalized_two_point(lattice, model, kernel, Is, Z, i, j, kind; kwargs...)
+    d = _fock_ops(lattice.bands)[1]; ddag = d'
+    ins = OperatorInsertion[]
+    if kind === :greater
+        push!(ins, OperatorInsertion(:+, Int(j), ddag))
+        push!(ins, OperatorInsertion(:+, Int(i), d))
+    else
+        push!(ins, OperatorInsertion(:+, Int(i), d))
+        push!(ins, OperatorInsertion(:-, Int(j), ddag; side=:right))
+    end
+    return _inserted_expectation(lattice, model, Is, Z, ins;
+                                 order=kernel_order(kernel), coupling_norm=kernel_coupling_norm(kernel),
+                                 initial_state=get(kwargs, :initial_state, nothing))
+end
+
+"""
+    matsubara(lattice, model, kernel, Is...; i, j=0, ...) -> Complex
+
+虚时格林函数 G(τᵢ − τⱼ)：d@(τ,i)、ddag@(τ,j) 均 :left。τ 链等时
+G(β,0) = +⟨d†d⟩（热环等时同号）。
+"""
+function matsubara(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian,
+                   kernel::HybridizationKernel, Is...; i::Integer, j::Integer=0, Z,
+                   order::Integer=kernel_order(kernel), coupling_norm::Real=kernel_coupling_norm(kernel),
+                   initial_state=nothing)
+    lattice isa AbstractImagGrassmannLattice || throw(ArgumentError("虚时轮廓专用"))
+    d = _fock_ops(lattice.bands)[1]; ddag = d'
+    ins = [OperatorInsertion(:τ, Int(i), d), OperatorInsertion(:τ, Int(j), ddag)]
+    return _inserted_expectation(lattice, model, Is, Z, ins; order=Int(order),
+                                 coupling_norm=coupling_norm, initial_state=initial_state)
+end
+
+# kernel 元数据便捷（耦合范数/order 随 kernel 携带）
+kernel_coupling_norm(k::HybridizationKernel) = k.coupling_norm === nothing ? 0.0 : k.coupling_norm
+kernel_order(k::HybridizationKernel) = get(k.diagnostics, :order, 1)
+
+# ---------------------------------------------------------------------------
+# 公开皮肤
+# ---------------------------------------------------------------------------
+
+export occupation, greater, lesser, matsubara, default_branch

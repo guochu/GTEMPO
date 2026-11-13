@@ -19,7 +19,7 @@ import GrassmannMPS as GM
 import TensorKit as TK
 using TensorKit: ⊗, ⊠, ←, SectorVector, SectorDict
 import MatrixAlgebraKit as MAK
-using LinearAlgebra: Diagonal, I, norm
+using LinearAlgebra: Diagonal, I, norm, diag
 
 # ---------------------------------------------------------------------------
 # 对称性 spec（扇区类型注册面：本文件是唯一允许按对称性分支的位置之一，
@@ -40,28 +40,48 @@ symmetry_spec(s::Symbol) = get(SYMMETRY_SPECS, s, nothing) === nothing ?
     throw(ArgumentError("unknown symmetry :$s (allowed: :z2, :z2z2, :u1, :u1u1)")) :
     SYMMETRY_SPECS[s]
 
-# 荷标签代数（Int 与 NTuple{2,Int} 皆可）
+# 荷标签代数。
+# U1 形（:u1/:u1u1）：整数荷（Int / NTuple{2,Int}），普通加减。
+# 宇并形（:z2/:z2z2）：标签 = 奇并向量（Z2Label 包装 Int，算术 mod 2——
+#   +1 与 −1 同扇区，±1 整数算术会把两扇区压重）；宇并加法 = 异或、
+#   负号 = 恒等。普通泛型代码对标签只做 qadd/qsub/qneg/==/sort/hash。
+struct Z2Label
+    n::Int
+    Z2Label(n::Integer) = new(mod(Int(n), 2))
+end
+Base.:(==)(a::Z2Label, b::Z2Label) = a.n == b.n
+Base.hash(a::Z2Label, h::UInt) = hash(a.n, h)
+Base.isless(a::Z2Label, b::Z2Label) = a.n < b.n
+Base.show(io::IO, a::Z2Label) = print(io, "ζ", a.n)
+
 @inline qadd(a::Int, b::Int) = a + b
 @inline qsub(a::Int, b::Int) = a - b
 @inline qneg(a::Int) = -a
 @inline qadd(a::NTuple{2,Int}, b::NTuple{2,Int}) = (a[1] + b[1], a[2] + b[2])
 @inline qsub(a::NTuple{2,Int}, b::NTuple{2,Int}) = (a[1] - b[1], a[2] - b[2])
 @inline qneg(a::NTuple{2,Int}) = (-a[1], -a[2])
+@inline qadd(a::Z2Label, b::Z2Label) = Z2Label(a.n + b.n)
+@inline qsub(a::Z2Label, b::Z2Label) = Z2Label(a.n + b.n)
+@inline qneg(a::Z2Label) = a
+@inline qadd(a::NTuple{2,Z2Label}, b::NTuple{2,Z2Label}) = (qadd(a[1], b[1]), qadd(a[2], b[2]))
+@inline qsub(a::NTuple{2,Z2Label}, b::NTuple{2,Z2Label}) = (qadd(a[1], b[1]), qadd(a[2], b[2]))
+@inline qneg(a::NTuple{2,Z2Label}) = a
 
-@inline zero_charge(::Union{Z2Spec,U1Spec}) = 0
-@inline zero_charge(::Union{Z2Z2Spec,U1U1Spec}) = (0, 0)
+@inline zero_charge(::Z2Spec) = Z2Label(0)
+@inline zero_charge(::U1Spec) = 0
+@inline zero_charge(::Z2Z2Spec) = (Z2Label(0), Z2Label(0))
+@inline zero_charge(::U1U1Spec) = (0, 0)
 
-"荷标签 → bosonic 扇区（费米符号在 backend 符号层；宇并形取 mod 2）"
-sector(::Z2Spec, q::Int) = TK.Z2Irrep(mod(q, 2))
+"荷标签 → bosonic 扇区（费米符号在 backend 符号层）"
+sector(::Z2Spec, q::Z2Label) = TK.Z2Irrep(q.n)
 sector(::U1Spec, q::Int) = TK.U1Irrep(q)
-sector(::Z2Z2Spec, q::NTuple{2,Int}) =
-    Z2Z2((TK.Z2Irrep(mod(q[1], 2)), TK.Z2Irrep(mod(q[2], 2))))
+sector(::Z2Z2Spec, q::NTuple{2,Z2Label}) = Z2Z2((TK.Z2Irrep(q[1].n), TK.Z2Irrep(q[2].n)))
 sector(::U1U1Spec, q::NTuple{2,Int}) = ChargeCharge(TK.U1Irrep(q[1]), TK.U1Irrep(q[2]))
 
 "bosonic 扇区 → 荷标签（LegacyTruncation 排序与 _convert_site 用）"
-charge_label(::Z2Spec, s::TK.Z2Irrep) = Int(s.n)
+charge_label(::Z2Spec, s::TK.Z2Irrep) = Z2Label(Int(s.n))
 charge_label(::U1Spec, s::TK.U1Irrep) = Int(s.charge)
-charge_label(::Z2Z2Spec, s::Z2Z2) = (Int(s[1].n), Int(s[2].n))
+charge_label(::Z2Z2Spec, s::Z2Z2) = (Z2Label(Int(s[1].n)), Z2Label(Int(s[2].n)))
 charge_label(::U1U1Spec, s::ChargeCharge) = (Int(s[1].charge), Int(s[2].charge))
 
 "扇区类型（qspace 构造用）"
@@ -86,9 +106,13 @@ function bands_guard(s::Symbol, bands::Int)
     return bands
 end
 
-"变量荷：band b 上 η 生成元的荷标签（η̄ = qneg）"
-var_charge(::Union{Z2Spec,U1Spec}, band::Int, bands::Int) = 1
-var_charge(::Union{Z2Z2Spec,U1U1Spec}, band::Int, bands::Int) = band == 1 ? (1, 0) : (0, 1)
+"变量荷：band b 上 η 生成元的荷标签（η̄ = qneg）
+——宇并形算术 mod 2 后 η̄ ≡ η（同一标签），带内 (a,ā) 区分在站形槽位，
+不在荷上；荷分辨形 band→槽位映射照旧。"
+var_charge(::Z2Spec, band::Int, bands::Int) = Z2Label(1)
+var_charge(::U1Spec, band::Int, bands::Int) = 1
+var_charge(::Z2Z2Spec, band::Int, bands::Int) = band == 1 ? (Z2Label(1), Z2Label(0)) : (Z2Label(0), Z2Label(1))
+var_charge(::U1U1Spec, band::Int, bands::Int) = band == 1 ? (1, 0) : (0, 1)
 
 "站形：band b 的物理站空间（单荷形全站同形；双荷形按带奇偶交替朝向——
 :u1u1 = U1GTEMPO2 同款 up/down 交替站形）"
@@ -264,7 +288,8 @@ function compress!(x::GM.GMPS; trunc::Truncation=Truncation())
     cutoff_log = iszero(trunc.cutoff) ? -Inf : log(trunc.cutoff) - (GM.logscale(x) - original_logscale)
     cutoff = cutoff_log == -Inf ? 0.0 :
              cutoff_log > log(floatmax(Float64)) ? floatmax(Float64) : exp(cutoff_log)
-    strategy = LegacyTruncation(chain_spec(x), TK.sectortype(x[1]), Truncation(maxdim=trunc.maxdim, rtol=trunc.rtol, cutoff=cutoff), GM.logscale(x))
+    strategy = LegacyTruncation(chain_spec(x), typeof(zero_charge(chain_spec(x))),
+                                Truncation(maxdim=trunc.maxdim, rtol=trunc.rtol, cutoff=cutoff), GM.logscale(x))
     GM.rightorth!(x; trunc=strategy)
     L = length(x)
     dn = zeros(L - 1); re = similar(dn)
@@ -366,7 +391,7 @@ function from_core(spec::AbstractSymmetrySpec, data, leftlabels, rightlabels, c)
         r = qadd(q, s)
         r in rightlabels || continue
         li = findall(==(q), leftlabels); ri = findall(==(r), rightlabels)
-        t[(sector(spec, q), sector(spec, s), TK.dual(sector(spec, r)))] .= data[li, si, ri]
+        t[(sector(spec, q), sector(spec, s), TK.dual(sector(spec, r)))] .= data[li, si:si, ri]
     end
     t
 end

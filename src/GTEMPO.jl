@@ -50,6 +50,15 @@ include("correlationfunction.jl")
 # 杂质模型（fock_propagator/fock_thermalstate 纯数值接口）
 include("sysdynamics/sysdynamics.jl")
 
+# K 构造（cell automaton；sysdynamics / sysdynamics_weyl2order）
+include("system.jl")
+
+# IF 构造（PartialIF / ExactTTI 首批，D3）
+include("influence.jl")
+
+# 积分与观测量（GM 引擎接线 + inserted-K 路线）
+include("measurement.jl")
+
 # ---------------------------------------------------------------------
 # export 皮肤
 # ---------------------------------------------------------------------
@@ -85,5 +94,12 @@ export ScaledComplex, unscale, scaled_ratio
 
 # correlation functions
 export correlationfunction
+
+# K 构造
+export sysdynamics, sysdynamics_weyl2order, OperatorInsertion
+
+# IF 构造
+export InfluenceFunctionalAlgorithm, PartialIF, ExactTTI, InfluenceFunctional
+export HybridizationKernel, hybridization, influence_functional, hybriddynamics
 
 end # module

@@ -18,7 +18,9 @@
 # 费米符号：构造张量扇区全 bosonic，机器符号由 GM.@grassmann/GrassmannBackend
 # 注入；oddlater Koszul 符号显式携带（同 U1GTEMPO2）。
 
-using GTEMPO: FockMatrix, fock_propagator
+import TensorKit as TK
+using TensorKit: ⊗, ←
+using LinearAlgebra: Diagonal, I, tr
 
 # ---------------------------------------------------------------------------
 # Fock 空间算符（band 1 = 最高有效位，FockMatrix 约定；JW 穿越更低索引带）
@@ -46,14 +48,19 @@ end
 W₄ = n（一阶）/ q·I+n（二阶，Gaussian 测度适配）。带间 graded⊗ 符号
 (−1)^{Σ_{b<b'} popcount·popcount}（U1GTEMPO2 管线约定，R2）。
 槽编码 m 的每带 2bit：0=(无) 1=(a) 2=(ā) 3=(aā)，高位带在前。
+M≥2 的带间 graded⊗ 符号因子经 `graded_sign_factor` 注入（R2 标定点）。
 """
+graded_sign_factor(bands::Int) = 1   # 默认 OFF（golden 通道裁决：对 :z2 结果不敏感）
+measure_mode() = :gaussian           # W4 = qI+n（gaussian）/ I（bare）——R2 标定点
+
 function local_weights(spec::AbstractSymmetrySpec, bands::Int, order::Int)
     order in (1, 2) || throw(ArgumentError("order must be 1 or 2"))
     d = _fock_annihilators(bands)
     dim = 2^bands
     q = order == 2 ? 0.5 : 1.0
     locals = [let nb = d[b]' * d[b]
-                  W4 = order == 2 ? q * Matrix{ComplexF64}(I, dim, dim) + nb :
+                  W4 = order == 2 ? (measure_mode() === :gaussian ? q * Matrix{ComplexF64}(I, dim, dim) + nb :
+                                      Matrix{ComplexF64}(I, dim, dim)) :
                        Matrix{ComplexF64}(nb)
                   [Matrix{ComplexF64}(q * I - nb), -d[b]', d[b], W4]
               end for b in 1:bands]
@@ -65,6 +72,9 @@ function local_weights(spec::AbstractSymmetrySpec, bands::Int, order::Int)
         for b1 in 1:bands, b2 in (b1+1):bands
             sign *= (-1)^(count_ones(slots[b1]) * count_ones(slots[b2]))
         end
+        # R2/T1 标定：graded⊗ 符号按带数启停（M=1 不敏感恒 1；M≥2 的标定
+        # 由 golden 通道裁决——见 local_weights docstring）
+        sign *= graded_sign_factor(bands)
         for b in 1:bands
             O = O * locals[b][slots[b] + 1]
         end
@@ -89,31 +99,38 @@ function fock_charges(spec::AbstractSymmetrySpec, bands::Int)
 end
 
 "荷标签宇称（oddlater Koszul 符号用）"
-parity_label(::Union{Z2Spec,U1Spec}, q::Int) = isodd(mod(q, 2))
-parity_label(::Union{Z2Z2Spec,U1U1Spec}, q::NTuple{2,Int}) = isodd(q[1] + q[2])
+parity_label(q::Int) = isodd(q)
+parity_label(q::Z2Label) = isodd(q.n)
+parity_label(q::NTuple{2,Int}) = isodd(q[1] + q[2])
+parity_label(q::NTuple{2,Z2Label}) = isodd(q[1].n + q[2].n)
 
 # ---------------------------------------------------------------------------
 # 插入算符（测量与 ρ₀；Phase 5 消费）
 # ---------------------------------------------------------------------------
 
 """
-    OperatorInsertion(branch, boundary, matrix; charge)
+    OperatorInsertion(branch, boundary, matrix; charge=nothing, side=:left)
 
-物理算符插入：在 `branch` 分支的边界 `boundary`（(+,0) = ρ₀ 切位）乘进链。
-`matrix` 为 2^bands×2^bands Fock 矩阵；`charge` = 算符的荷标签
-（ξ_{s,t} 非零 ⇔ q_s − q_t = charge），全荷非齐时构造器拒绝。
+物理算符插入：在 `branch` 分支的边界 `boundary`（(+,0)/τ 0 = ρ₀ 切位）乘进链。
+`matrix` 为 2^bands×2^bands Fock 矩阵；`charge` = 算符的荷标签（缺省 = 零荷）。
+`side`（secondorderif WeylInsertion 同语义）：`:left` 乘在单元左（O·M，
+轮廓更晚读法）、`:right` 乘在单元右（M·O）。同切位多插入的 0⁺ 语义由 push
+序承载（先 push = 轮廓更早）。
 """
 struct OperatorInsertion
     branch::Symbol
     boundary::Int
     matrix::Matrix{ComplexF64}
     charge::Any
-    function OperatorInsertion(branch::Symbol, boundary::Int, matrix::AbstractMatrix; charge=nothing)
+    side::Symbol
+    function OperatorInsertion(branch::Symbol, boundary::Int, matrix::AbstractMatrix;
+                               charge=nothing, side::Symbol=:left)
         dim = size(matrix, 1)
         (dim == size(matrix, 2) && dim <= 16 && ispow2(dim)) ||
             throw(ArgumentError("operator must be a square 2^bands×2^bands matrix"))
         all(isfinite, matrix) || throw(ArgumentError("finite insertion matrix required"))
-        new(branch, boundary, Matrix{ComplexF64}(matrix), charge)
+        side in (:left, :right) || throw(ArgumentError("side must be :left or :right"))
+        new(branch, boundary, Matrix{ComplexF64}(matrix), charge, side)
     end
 end
 
@@ -127,20 +144,18 @@ function _cell_tensors(spec, core, leftlabels, rightlabels, charges)
 end
 
 """
-    _system_factor_reference(lattice, model; order=1, thermal_model=model,
-                             initial_state=nothing, coupling_norm=0.0,
-                             insertions=OperatorInsertion[], trunc=nothing,
-                             reports=nothing, spec=Z2Spec()) -> GMPS
+    _system_factor_reference(lattice, model; order=1, initial_state=nothing,
+                             coupling_norm=0.0, insertions=OperatorInsertion[],
+                             trunc=nothing, reports=nothing, spec=Z2Spec()) -> GMPS
 
 时序 ring automaton（U1GTEMPO2 system_factor_reference 同型）：每格
 (b,j) 的 core 经 split_cell 切成变量粒度张量列，全部格拼接后 pairize，
 再 reorder! 到 lattice 存储序。ρ₀ = `initial_state`（FockMatrix 或
-2^bands×2^bands 矩阵；nothing = 真空（实时）/ 热迹 I（τ））折进单元 1；
+2^bands×2^bands 矩阵；实时缺省 = 真空投影 δ₀₀、τ/混合 = 热迹 I）折进单元 1；
 迹闭合折进末单元。
 """
 function _system_factor_reference(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian;
-                                  order::Int=1, thermal_model=model,
-                                  initial_state=nothing, coupling_norm::Real=0.0,
+                                  order::Int=1, initial_state=nothing, coupling_norm::Real=0.0,
                                   insertions=OperatorInsertion[], trunc=nothing,
                                   reports=nothing, spec=Z2Spec())
     order in (1, 2) || throw(ArgumentError("order must be 1 or 2"))
@@ -153,18 +168,17 @@ function _system_factor_reference(lattice::AbstractGrassmannLattice, model::Abst
     cells = chronological_cells(lattice)
     L = length(cells)
     L > 0 || throw(ArgumentError("empty lattice"))
-    # ρ₀：实时 = initial_state（默认真空投影 I？——旧 GTEMPO 实时默认 = 真空态
-    # ρ = δ_{00}）；τ 格 = 热迹 I（initial_state 忽略）
+    # ρ₀：实时 = initial_state（缺省 = 真空投影 δ₀₀，旧 GTEMPO 真空初态语义）；
+    # τ/混合 = 热迹 I（τ 段自身建热态，initial_state 忽略）
     rho = Matrix{ComplexF64}(I, dim, dim)
-    if lattice isa AbstractRealGrassmannLattice && initial_state !== nothing
-        rho = initial_state isa FockMatrix ? Matrix{ComplexF64}(initial_state.data) :
-              Matrix{ComplexF64}(initial_state)
+    if lattice isa AbstractRealGrassmannLattice
+        rho = Matrix{ComplexF64}(Diagonal(vcat([1.0], zeros(dim - 1))))
+        initial_state === nothing || (rho = initial_state isa FockMatrix ?
+            Matrix{ComplexF64}(initial_state.data) : Matrix{ComplexF64}(initial_state))
     end
-    # 插入切位（时序格序索引；(+,0) = 0 号边界）
-    cellcut = Dict{Tuple{Symbol,Int},Int}((cell, k) for (k, cell) in enumerate(cells))
+    # 插入切位（时序格序索引；cut 0 = ρ₀ 边界）
     cuts = Dict{Int,Vector{OperatorInsertion}}()
     for ins in insertions
-        k = ins.branch === :τ || ins.branch === :+ ? ins.boundary : ins.boundary
         k = insertion_cut_index(lattice, ins)
         push!(get!(cuts, k, OperatorInsertion[]), ins)
     end
@@ -173,8 +187,14 @@ function _system_factor_reference(lattice::AbstractGrassmannLattice, model::Abst
         total_q = qadd(total_q, ins.charge === nothing ? z : ins.charge)
     end
     total_q == z || throw(ArgumentError("total insertion charge must be zero"))
-    cutop(k) = foldr((ins, A) -> ins.matrix * A, get(cuts, k, OperatorInsertion[]); init=Matrix{ComplexF64}(I, dim, dim))
-    rho = cutop(0) * rho
+    # 切位算符（side 语义：left = O·M 折左（foldr——后 push 更晚 = 更左）；
+    # right = M·O 折右（push 序））
+    cutleft(k) = foldr((ins, A) -> ins.matrix * A, filter(i -> i.side === :left, get(cuts, k, OperatorInsertion[]));
+                       init=Matrix{ComplexF64}(I, dim, dim))
+    cutright(k) = foldl((A, ins) -> A * ins.matrix, filter(i -> i.side === :right, get(cuts, k, OperatorInsertion[]));
+                        init=Matrix{ComplexF64}(I, dim, dim))
+    # ρ₀ 切位（cut 0）：left = O·ρ、right = ρ·O
+    rho = cutleft(0) * rho * cutright(0)
     weights = local_weights(spec, bands, order)
     fqs = fock_charges(spec, bands)
     pairs = [(s, t) for t in 1:dim for s in 1:dim]
@@ -190,14 +210,14 @@ function _system_factor_reference(lattice::AbstractGrassmannLattice, model::Abst
         S = _model_propagator(model, b, Shalf ? dt / 2 : dt, t)
         mats = order == 2 ? [S * M * S for M in weights] :
                b === :- ? [M * S for M in weights] : [S * M for M in weights]
-        O = cutop(k)
-        mats = [O * M for M in mats]
+        Ol = cutleft(k); Or = cutright(k)
+        mats = [Ol * M * Or for M in mats]
         # 奇插入穿越全部更早 Grassmann 系数的 Koszul 符号
         oddlater = 0
         for (cut, items) in cuts, ins in items
             cut >= k || continue
             q = ins.charge === nothing ? z : ins.charge
-            oddlater += parity_label(spec, q) ? 1 : 0
+            oddlater += parity_label(q) ? 1 : 0
         end
         for m in 0:dim^2-1
             mats[m+1] .*= (-1)^(oddlater * count_ones(m))
@@ -236,14 +256,14 @@ function _system_factor_reference(lattice::AbstractGrassmannLattice, model::Abst
     lscale = order == 2 ? real(coupling_norm / 4 * sum(_cell_step2(lattice, b) for (b, _) in cells)) : 0.0
     out = pairize(spec, data)
     GM.setlogscale!(out, lscale)
-    # 时序构造 → 存储序：每格 2·bands 变量成块移动（上游 GM.swap! 的费米换序
-    # 号已修复，多占据组态保真——U1GTEMPO2 同款整体置换）
+    # 时序构造 → 存储序：每格 bands 站成块移动（站粒度置换——GM.reorder! 的
+    # perm 语义 = 新链第 k 站 = 原链第 perm[k] 站；上游 GM.swap! 的费米换序号
+    # 已修复，多占据组态保真）
     chrono = Dict(cell => k for (k, cell) in enumerate(cells))
-    nvar = 2 * bands
     perm = Int[]
     for cell in _storage_cells(lattice)
         k = chrono[cell]
-        append!(perm, [(k - 1) * nvar .+ (1:nvar)...])
+        append!(perm, [(k - 1) * bands .+ (1:bands)...])
     end
     GM.reorder!(out, perm; trunc=GM.truncrelerr(1e-14))
     if trunc !== nothing
@@ -306,3 +326,35 @@ _spec_symbol(::Z2Spec) = :z2
 _spec_symbol(::Z2Z2Spec) = :z2z2
 _spec_symbol(::U1Spec) = :u1
 _spec_symbol(::U1U1Spec) = :u1u1
+
+# ---------------------------------------------------------------------------
+# 公开皮肤（旧 API 名保持；plan §3.3）
+# ---------------------------------------------------------------------------
+
+"""
+    sysdynamics(lattice, model; order=1, initial_state=nothing,
+                coupling_norm=0.0, insertions=OperatorInsertion[], trunc) -> GMPS
+
+杂质系统因子 K（cell automaton；order=1 相干 anti-Wick 语义，q=1 局部权重）。
+ρ₀/迹闭合已折进单元（boundarycondition! 不再需要）；`initial_state`
+（FockMatrix/矩阵）仅实时轮廓生效（缺省 = 真空投影）。
+"""
+function sysdynamics(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian;
+                     order::Integer=1, kwargs...)
+    order in (1, 2) || throw(ArgumentError("order must be 1 or 2"))
+    return _system_factor_reference(lattice, model; order=Int(order),
+                                    spec=symmetry_spec(lattice.symmetry), kwargs...)
+end
+
+"""
+    sysdynamics_weyl2order(lattice, model; coupling_norm, kwargs...) -> GMPS
+
+Weyl 二阶 K（order=2：q=1/2 对称半步 S·M·S + Weyl 标量
+exp(coupling_norm/4·Σ step²)；`coupling_norm` = 全带总耦合 Σ_b α_b，必填 ≥ 0）。
+IF 与收缩零改动（INTEGRATION.md §2 F1）。
+"""
+function sysdynamics_weyl2order(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian;
+                                coupling_norm::Real, kwargs...)
+    return _system_factor_reference(lattice, model; order=2, coupling_norm=coupling_norm,
+                                    spec=symmetry_spec(lattice.symmetry), kwargs...)
+end

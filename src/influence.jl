@@ -48,29 +48,42 @@ end
 """
     hybridization(lattice, corr; coupling_norm=nothing) -> HybridizationKernel
 
-从 QuAPI 关联函数（correlationfunction 的输出）提取 canonical 单元级核。
-读数约定 = 旧 partialif 消费面的净语义（INTEGRATION.md §6-T7 / kernels.jl）：
-Δ[i,j] = corr[a_i, ā_j] ×(实时跨支 −1)×(混合 τ↔rt 由 QuAPI Δm 块已嵌差号——
-直读)。`coupling_norm` 缺省时对 DiracDelta/DiscreteSpectrum 精确求 Σα，一般谱
-数值积分（需要 QuadGK 时由调用方传入）。
+从 QuAPI 离散化函数直接提取 canonical 单元级核（IF = exp(Σ ā_i Δ_ij a_j)）——
+secondorderif kernels.jl 同款三路径（ED 验证过）：
+- 虚时：Δτ 的单元矩阵 [1:Nτ, 1:Nτ]；
+- 实时：Δt 谱路径（离散谱精确极点装配），四块 [1:Nt, 1:Nt] 直读
+  （块值 = 单元级全宽积分；QuAPI 内嵌的 Keldysh 跨支号与旧消费端 gate
+  在净语义中相消 ⟹ canonical = raw）；
+- 混合：Δm 九块，rt [1:Nt]/τ [1:Nτ]；Δm 的 τ↔rt 交叉块相对物理核差一个
+  整体负号（KernelCorrView 预翻 = 净读数）⟹ canonical 取负。
+`coupling_norm` 由调用方传入（全带总耦合 Σ_b α_b）。
 """
-function hybridization(lattice::AbstractGrassmannLattice, corr; coupling_norm=nothing)
+function hybridization(lattice::AbstractGrassmannLattice, bath::AbstractBath; coupling_norm=nothing)
     blocks = Dict{Tuple{Symbol,Symbol},Matrix{ComplexF64}}()
-    keldysh = branches(lattice) == (:+, :-)   # 实时：跨支读数补负号
-    for b1 in branches(lattice), b2 in branches(lattice)
-        n1 = b1 === :τ ? lattice.kτ : (lattice isa AbstractRealGrassmannLattice ? lattice.k : lattice.Nt)
-        n2 = b2 === :τ ? lattice.kτ : (lattice isa AbstractRealGrassmannLattice ? lattice.k : lattice.Nt)
-        M = Matrix{ComplexF64}(undef, n1, n2)
-        for i in 1:n1, j in 1:n2
-            ai = GrassmannContourIndex(i, b1, 1, false)
-            āj = GrassmannContourIndex(j, b2, 1, true)
-            v = corr[ai, āj]
-            keldysh && b1 !== b2 && (v = -v)
-            M[i, j] = v
+    if lattice isa AbstractImagGrassmannLattice
+        corr = QuAPI.Δτ(bath; N=lattice.Nτ, δτ=lattice.δτ)
+        blocks[(:τ, :τ)] = Matrix{ComplexF64}(corr.data[1:lattice.Nτ, 1:lattice.Nτ])
+    elseif lattice isa AbstractRealGrassmannLattice
+        qt = QuAPI.Δt(bath; N=lattice.Nt, t=lattice.Nt * lattice.δt)
+        for (b1, b2) in ((:+, :+), (:+, :-), (:-, :+), (:-, :-))
+            Mq = QuAPI.branch(qt; b1=b1, b2=b2)
+            blocks[(b1, b2)] = Matrix{ComplexF64}(Mq[1:lattice.Nt, 1:lattice.Nt])
         end
-        blocks[(b1, b2)] = M
+    else
+        qm = QuAPI.Δm(bath; Nτ=lattice.Nτ, t=lattice.Nt * lattice.δt, Nt=lattice.Nt, δτ=lattice.δτ)
+        ri(c2) = c2 === :τ ? (1:lattice.Nτ) : (1:lattice.Nt)
+        for b1 in (:+, :-, :τ), b2 in (:+, :-, :τ)
+            Mq = QuAPI.branch(qm; b1=b1, b2=b2)
+            M = Matrix{ComplexF64}(Mq[ri(b1), ri(b2)])
+            (b1 === :τ) !== (b2 === :τ) && (M = -M)   # Δm τ↔rt 交叉块内嵌负号
+            blocks[(b1, b2)] = M
+        end
     end
     return HybridizationKernel(lattice, blocks; coupling_norm)
+end
+
+function hybridization(lattice::AbstractGrassmannLattice, corr; coupling_norm=nothing)
+    throw(ArgumentError("hybridization 需要浴对象（QuAPI 直接提取）；经 correlationfunction 的 accessor 路线已随 T7 标定退役"))
 end
 
 # ---------------------------------------------------------------------------
@@ -116,41 +129,37 @@ end
     partial_if(lattice, kernel; band=1, trunc=Truncation(), reports) -> GMPS
 
 PartialIF：IF = Π_row exp(ā_row Σ_j Δ_row,j a_j) 的逐行因子积（精确）。
-`band` 选择 IF 所在带（生成元荷/站位随带）。
+`band` 选择 IF 所在带（生成元荷/站位随带）。行/列序 = 链存储格序
+（_storage_cells），values 与 cols 逐位对齐。
 """
 function partial_if(lattice::AbstractGrassmannLattice, kernel::HybridizationKernel;
                     band::Int=1, trunc::Truncation=Truncation(), reports=CompressionReport[])
     spec = symmetry_spec(lattice.symmetry)
     out = vacuumstate(lattice)
-    charges = _site_charges(spec, lattice, band)
-    cols = _cell_indices(lattice, band)
-    nb = branches(lattice)
-    for b in nb, i in 1:(b === :τ ? lattice.kτ : (lattice isa AbstractRealGrassmannLattice ? lattice.k : lattice.Nt))
-        values = vcat([kernel.blocks[(b, a)][i, :] for a in nb]...)
+    charges = _site_charges(spec, lattice)
+    cells = _storage_cells(lattice)              # 存储格序
+    cols = [_cell_var_index(lattice, cell, band, false) for cell in cells]   # a 变量位
+    ncells = length(cells)
+    for (m, (b, j)) in enumerate(cells)
+        # 行 = 格 (b,j)（branch 局部下标 j）；列值按存储格序逐位取核
+        values = [kernel.blocks[(b, cell[1])][j, cell[2]] for cell in cells]
         all(iszero, values) && continue
-        anchor = _cell_index(lattice, b, i, band)
+        anchor = _cell_var_index(lattice, (b, j), band, true)   # ā 变量位
         out = multiply(out, partial_row(spec, charges, anchor, cols, values); trunc, reports)
     end
     out
 end
 
-"IF 变量荷序列（全链每格 2·bands 变量；带 b 的 (a, ā) 荷）"
-function _site_charges(spec::AbstractSymmetrySpec, lattice, band::Int)
+"IF 变量荷序列（全链 = nblocks 格 × 每格 2·bands 变量，存储序）"
+function _site_charges(spec::AbstractSymmetrySpec, lattice)
     per_cell = cell_charges(spec, lattice.bands)
     return repeat(per_cell, nblocks(lattice))
 end
 
-"全链单元位序列（带 b 的 a 变量位；IF 行/列用）"
-function _cell_indices(lattice::AbstractGrassmannLattice, band::Int)
-    out = Int[]
-    for cell in _storage_cells(lattice)
-        push!(out, block_offset(lattice, cell_block(lattice, cell)) + 2 * (band - 1))
-    end
-    return out
+"单元 (b,j) 的带 band 变量位：conj=false → a（奇位）、true → ā（偶位）"
+function _cell_var_index(lattice, cell::Tuple{Symbol,Int}, band::Int, conj::Bool)
+    return block_offset(lattice, cell_block(lattice, cell)) + 2 * (band - 1) + Int(conj)
 end
-"单元 (b, j) 的带 band a 变量位"
-_cell_index(lattice, b::Symbol, j::Int, band::Int) =
-    block_offset(lattice, cell_block(lattice, (b, j))) + 2 * (band - 1)
 
 # ---------------------------------------------------------------------------
 # 矩阵铅笔拟合（U1GTEMPO2 fit_exponentials 原样）
@@ -229,7 +238,7 @@ function memory_cell(roots, opens, closes)
 end
 
 function embed_cells(spec, lattice, localdata, memorycharges, cellvars; band=1)
-    charges = _site_charges(spec, lattice, band)
+    charges = _site_charges(spec, lattice)
     L = 2 * nblocks(lattice) * lattice.bands
     data = Vector{Any}(undef, L)
     labels = [reduce(qadd, (memorycharges[a] for a in eachindex(memorycharges) if mask & (1 << (a - 1)) != 0);
@@ -245,8 +254,9 @@ function embed_cells(spec, lattice, localdata, memorycharges, cellvars; band=1)
         i in active && continue
         v = i == 1 ? qspace(spec, [zero_charge(spec)]) : TK.domain(data[i-1])[1]
         t = TK.zeros(ComplexF64, v ⊗ pspace(spec, charges[i]) ← v)
+        G = TK.sectortype(t)
         for q in TK.sectors(v)
-            b = t[(q, one(ChargeCharge), TK.dual(q))]
+            b = t[(q, one(G), TK.dual(q))]
             reshape(b, size(b, 1), size(b, 3)) .= I(size(b, 1))
         end
         data[i] = t
@@ -275,8 +285,8 @@ function contact_factor(spec, lattice, band, bs, D)
     core = zeros(ComplexF64, 1, 1 << nv, 1)
     for (mask, value) in poly; core[1, mask + 1, 1] = value; end
     js = bs[1] === :τ ? (1:n) : (n:-1:1)
-    vars = [[_cell_index(lattice, b, j, band) + (bar ? 1 : 0) for b in bs for bar in (false, true)] for j in js]
-    embed_cells(spec, lattice, core, ChargeCharge[], vars; band)
+    vars = [[_cell_var_index(lattice, (b, j), band, bar) for b in bs for bar in (false, true)] for j in js]
+    embed_cells(spec, lattice, core, Any[], vars; band)
 end
 
 # ---------------------------------------------------------------------------
@@ -305,7 +315,7 @@ function real_factors(emit, spec, lattice, k::HybridizationKernel, band, alg, di
     err <= max(alg.rtol, 1e-12) || throw(ArgumentError("ExactTTI real Keldysh relations fail: $err"))
     diagnostics[:keldysh_residual] = err
     q = var_charge(spec, band, lattice.bands)
-    vars = [[_cell_index(lattice, b, j, band) + (bar ? 1 : 0) for b in (:+, :-) for bar in (false, true)] for j in n:-1:1]
+    vars = [[_cell_var_index(lattice, (b, j), band, bar) for b in (:+, :-) for bar in (false, true)] for j in n:-1:1]
     for (component, y) in ((:greater, g), (:lesser, l))
         f = fit_exponentials(y; rtol=alg.rtol, maxterms=alg.maxterms, rightanchors=false)
         push!(residuals, f.relative_error)
@@ -328,6 +338,7 @@ function real_factors(emit, spec, lattice, k::HybridizationKernel, band, alg, di
 end
 
 function imag_factors(emit, spec, lattice, k::HybridizationKernel, band, alg, diagnostics)
+    z = zero_charge(spec)
     n = lattice.kτ
     M = k.blocks[(:τ, :τ)]; validate_tti(M; tol=alg.rtol)
     lower = ComplexF64[M[j+1, 1] for j in 1:n-1]; upper = ComplexF64[M[1, j+1] for j in 1:n-1]
@@ -337,7 +348,7 @@ function imag_factors(emit, spec, lattice, k::HybridizationKernel, band, alg, di
     diagnostics[:imag_expansion] = (; f..., fit_interval=(1, n - 1), convention=:integrated_lag_one)
     shift = 0im
     qcharge = var_charge(spec, band, lattice.bands)
-    vars = [[_cell_index(lattice, :τ, j, band) + (bar ? 1 : 0) for bar in (false, true)] for j in n:-1:1]
+    vars = [[_cell_var_index(lattice, (:τ, j), band, bar) for bar in (false, true)] for j in n:-1:1]
     for (w, q, a) in zip(f.weights, f.nodes, f.anchors)
         Z = 1 + q^n; abs(Z) >= 1e-8 || throw(ArgumentError("nearly singular thermal pole"))
         z = sqrt(w * Z); d = ComplexF64[1 0; 0 q]; F = ComplexF64[0 1; 0 0]
@@ -347,13 +358,13 @@ function imag_factors(emit, spec, lattice, k::HybridizationKernel, band, alg, di
             mat = a === :left ? bar[x+1] * ann[y+1] : (-1)^(x * y) * bar[y+1] * ann[x+1]
             core[:, 1+x+2y, :] .= kron(Matrix{ComplexF64}(I, 2, 2), mat)
         end
-        labels = a === :left ? [(0, 0), qneg(qcharge), qcharge, (0, 0)] :
-                 [(0, 0), qcharge, qneg(qcharge), (0, 0)]
+        labels = a === :left ? [z, qneg(qcharge), qcharge, z] :
+                 [z, qcharge, qneg(qcharge), z]
         ts = nothing; initial = ComplexF64[1, 0, 0, 1]; terminal = initial / Z
         for j in 1:n
             ci = core; ls = labels; rs = labels
-            if j == 1; ci = reshape(transpose(initial) * reshape(ci, 4, :), 1, 4, 4); ls = [(0, 0)]; end
-            if j == n; ci = reshape(reshape(ci, :, 4) * terminal, size(ci, 1), 4, 1); rs = [(0, 0)]; end
+            if j == 1; ci = reshape(transpose(initial) * reshape(ci, 4, :), 1, 4, 4); ls = [z]; end
+            if j == n; ci = reshape(reshape(ci, :, 4) * terminal, size(ci, 1), 4, 1); rs = [z]; end
             part = split_cell(spec, ci, ls, rs, [qcharge, qneg(qcharge)])
             ts === nothing ? (ts = part) : append!(ts, part)
         end
@@ -386,8 +397,9 @@ function embed_single(spec, lattice, single, station_positions)
         i in filled && continue
         v = i == 1 ? TK.oneunit(spaces[1]) : TK.domain(data[i-1])[1]
         t = TK.zeros(ComplexF64, v ⊗ spaces[i] ← v)
+        G = TK.sectortype(t)
         for q in TK.sectors(v)
-            b = t[(q, one(ChargeCharge), TK.dual(q))]
+            b = t[(q, one(G), TK.dual(q))]
             for kk in 1:size(b, 1); b[kk, 1, kk] = 1; end   # 仅 vac 槽（行 1）
         end
         data[i] = t
@@ -418,16 +430,16 @@ function cross_factors(emit, spec, lattice, k::HybridizationKernel, band, alg, d
     lattice isa AbstractMixedGrassmannLattice && lattice.Nt > 0 || return nothing
     ranks = Int[]; errors = Float64[]
     for (rowbs, colbs) in (((:τ,), (:+, :-)), ((:+, :-), (:τ,)))
-        rows = [_cell_index(lattice, b, j, band) for b in rowbs for j in 1:lattice.Nτ]
-        cols = [_cell_index(lattice, b, j, band) for b in colbs for j in 1:lattice.Nt]
+        rows = [_cell_var_index(lattice, (b, j), band, false) for b in rowbs for j in 1:lattice.Nτ]
+        cols = [_cell_var_index(lattice, (b, j), band, false) for b in colbs for j in 1:lattice.Nt]
         M = vcat([hcat([k.blocks[(a, b)] for b in colbs]...) for a in rowbs]...)
         U, S, V = MAK.svd_compact(M); sv = diag(S); tot = sum(abs2, sv); r = length(sv)
         while r > 0 && sum(abs2, sv[r:end]) <= alg.cross_rtol^2 * tot; r -= 1; end
         push!(ranks, r); push!(errors, iszero(tot) ? 0.0 : sqrt(sum(abs2, sv[r+1:end]) / tot))
         for j in 1:r
-            a = zeros(ComplexF64, length(_site_charges(spec, lattice, band))); b = zero(a)
+            a = zeros(ComplexF64, length(_site_charges(spec, lattice))); b = zero(a)
             a[rows] .= sqrt(sv[j]) * U[:, j]; b[cols] .= sqrt(sv[j]) * V[j, :]
-            emit(rankone_factor(spec, _site_charges(spec, lattice, band), a, b))
+            emit(rankone_factor(spec, _site_charges(spec, lattice), a, b))
         end
     end
     diagnostics[:cross_ranks] = ranks; diagnostics[:cross_residuals] = errors; nothing
@@ -457,21 +469,22 @@ _trunc(alg::PartialIF) = Truncation(maxdim=alg.maxdim, rtol=alg.rtol, cutoff=alg
 矩阵铅笔拟合 IF（U1GTEMPO2 ExactTTI 同型）：实轴 greater/lesser 双通道 +
 虚时热通道 + 混合交叉通道，各展成指数因子精确楔积。
 """
-Base.@kwdef struct ExactTTI <: InfluenceFunctionalAlgorithm
-    rtol::Float64 = 1e-10
-    maxterms::Int = 40
-    cross_rtol::Float64 = 1e-10
-    factor_rtol::Union{Nothing,Float64} = nothing
-    function ExactTTI(rtol, maxterms, cross_rtol, factor_rtol)
+struct ExactTTI <: InfluenceFunctionalAlgorithm
+    rtol::Float64
+    maxterms::Int
+    cross_rtol::Float64
+    factor_rtol::Union{Nothing,Float64}
+    function ExactTTI(; rtol::Real=1e-10, maxterms::Integer=40, cross_rtol::Real=rtol,
+                      factor_rtol::Union{Nothing,Real}=nothing)
+        Float64(rtol); Int(maxterms)
         0 < rtol < 1 && 0 < cross_rtol < 1 && maxterms >= 1 ||
             throw(ArgumentError("invalid IF fit settings"))
         factor_rtol === nothing || (isfinite(factor_rtol) && 0 <= factor_rtol < 1) ||
             throw(ArgumentError("invalid factor cleanup tolerance"))
-        new(rtol, maxterms, cross_rtol, factor_rtol)
+        new(Float64(rtol), Int(maxterms), Float64(cross_rtol),
+            factor_rtol === nothing ? nothing : Float64(factor_rtol))
     end
 end
-ExactTTI(; rtol::Real=1e-10, maxterms::Integer=40, cross_rtol::Real=rtol, factor_rtol::Union{Nothing,Real}=nothing) =
-    ExactTTI(Float64(rtol), Int(maxterms), Float64(cross_rtol), factor_rtol === nothing ? nothing : Float64(factor_rtol))
 
 struct InfluenceFunctional{K,S}
     kernel::K
@@ -513,3 +526,26 @@ function influence_functional(lattice::AbstractGrassmannLattice, kernel::Hybridi
     end
     InfluenceFunctional(kernel, state, band, diag, reports)
 end
+
+# ---------------------------------------------------------------------------
+# 公开皮肤：hybriddynamics（旧 API 名；corr → kernel → IF 链）
+# ---------------------------------------------------------------------------
+
+"""
+    hybriddynamics(lattice, corr, alg=PartialIF(); band=1, coupling_norm=nothing) -> GMPS
+
+从 QuAPI 关联函数构建 `band` 带的影响泛函链（influence_functional 便捷入口）。
+`coupling_norm`（全带总耦合 Σ_b α_b）仅在配合 Weyl 二阶 K 时需要，随 kernel
+携带给 sysdynamics_weyl2order。
+"""
+function hybriddynamics(lattice::AbstractGrassmannLattice, bath::AbstractBath,
+                        alg::InfluenceFunctionalAlgorithm=PartialIF();
+                        band::Int=1, coupling_norm::Union{Nothing,Real}=nothing,
+                        trunc::Truncation=Truncation())
+    kernel = hybridization(lattice, bath; coupling_norm=coupling_norm)
+    return influence_functional(lattice, kernel; alg, band, trunc).state
+end
+
+"integrate(lattice, x0, x1...) —— Berezin 迹（链 = (K, Is...)，GM 引擎）"
+integrate(lattice::AbstractGrassmannLattice, x0::GM.GMPS, x1::GM.GMPS...) = integrate(x0, x1...)
+integrate_scaled(lattice::AbstractGrassmannLattice, x0::GM.GMPS, x1::GM.GMPS...) = integrate_scaled(x0, x1...)
