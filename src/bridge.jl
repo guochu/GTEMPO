@@ -123,7 +123,8 @@ station_space(::U1U1Spec, band::Int) = GM.grassmannspace(ChargeCharge, isodd(ban
 
 "变量荷 → 站朝向（_convert_site 用；单荷形无朝向 → 返回 nothing 由调用方取全站同形）"
 station_flavor(::Union{Z2Spec,U1Spec}, q) = :up   # 单荷形 spin 被忽略，恒 :up 合法
-station_flavor(::Union{Z2Z2Spec,U1U1Spec}, q) = q[2] == 0 ? :up : :down
+station_flavor(::Z2Z2Spec, q) = iszero(q[2].n) ? :up : :down   # Z2Label 须拆 .n 比较（== Int 恒 false）
+station_flavor(::U1U1Spec, q) = q[2] == 0 ? :up : :down
 
 "键标签序列 → 分级空间（标签计数聚合；排序 = 标签升序保证扇区插入序确定）"
 function qspace(spec::AbstractSymmetrySpec, labels::AbstractVector)
