@@ -231,6 +231,29 @@ function cached_gf(lattice::AbstractGrassmannLattice, indices::NTuple{N,Grassman
 end
 
 """
+    nn(lattice, model, kernel, Is...; i, j, b1, b2, band, order, coupling_norm,
+       initial_state, Z) -> Complex
+
+密度-密度关联 ⟨n̂(b1,i; band1) n̂(b2,j; band2)⟩（非连通），inserted-K 双插入
+精确版；同切位同带（n̂² = n̂）退化为单插入。`band` = Int 或 (band1, band2)。
+"""
+function nn(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian,
+            kernel::Union{Nothing,HybridizationKernel}, Is...; i::Integer, j::Integer,
+            b1::Symbol=default_branch(lattice), b2::Symbol=b1,
+            band::Union{Int,Tuple{Int,Int}}=(1, 1), order::Integer=kernel_order(kernel),
+            coupling_norm::Real=kernel_coupling_norm(kernel), initial_state=nothing, Z)
+    band1, band2 = band isa Int ? (band, band) : band
+    if i == j && b1 === b2 && band1 == band2
+        ins = [OperatorInsertion(b1, Int(i), _number_op(lattice.bands, band1))]
+    else
+        ins = [OperatorInsertion(b1, Int(i), _number_op(lattice.bands, band1)),
+               OperatorInsertion(b2, Int(j), _number_op(lattice.bands, band2))]
+    end
+    return _inserted_expectation(lattice, model, Is, Z, ins; order=Int(order),
+                                 coupling_norm=coupling_norm, initial_state=initial_state)
+end
+
+"""
     cached_correlation(lattice, K, Is...; i, j=0, kind=:greater, band=1, cache) -> Complex
 
 原始两点单项式关联（胞坐标 0⁺ 点，语义与容差见 cached_gf 的 D5 说明）：
@@ -259,4 +282,4 @@ end
 # 公开皮肤
 # ---------------------------------------------------------------------------
 
-export occupation, greater, lesser, matsubara, default_branch
+export occupation, greater, lesser, matsubara, default_branch, nn
