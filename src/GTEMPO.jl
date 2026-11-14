@@ -102,4 +102,8 @@ export sysdynamics, sysdynamics_weyl2order, OperatorInsertion
 export InfluenceFunctionalAlgorithm, PartialIF, ExactTTI, InfluenceFunctional
 export HybridizationKernel, hybridization, influence_functional, hybriddynamics
 
+# 观测量（Phase 5b：inserted-K 边界观测 + 算符缓存原始关联两轨，D5 裁决见 measurement.jl）
+export occupation, greater, lesser, matsubara, default_branch
+export lattice_monomial, environments_cache, cached_Z, cached_gf, cached_correlation
+
 end # module
