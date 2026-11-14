@@ -47,7 +47,9 @@ end
 [q·I−n, −d†, d, W₄]：q = 1（一阶 anti-Wick）/ 1/2（Weyl）；
 W₄ = n（一阶）/ q·I+n（二阶，Gaussian 测度适配）。带间 graded⊗ 符号
 (−1)^{Σ_{b<b'} popcount·popcount}（U1GTEMPO2 管线约定，R2）。
-槽编码 m 的每带 2bit：0=(无) 1=(a) 2=(ā) 3=(aā)，高位带在前。
+槽编码 m 的每带 2bit：0=(无) 1=(ā) 2=(a) 3=(aā)，band 1 = 低位组（与
+split_cell 的 charges 序 LSB 剥离一致；Fock 态矩阵基仍为 band 1 = MSB，
+两者独立——m 只枚举槽积、不寻址 Fock 基）。
 M≥2 的带间 graded⊗ 符号因子经 `graded_sign_factor` 注入（R2 标定点）。
 """
 graded_sign_factor(bands::Int) = 1   # 默认 OFF（golden 通道裁决：对 :z2 结果不敏感）
@@ -66,7 +68,10 @@ function local_weights(spec::AbstractSymmetrySpec, bands::Int, order::Int)
               end for b in 1:bands]
     weights = Vector{Matrix{ComplexF64}}(undef, 4^bands)
     for m in 0:(4^bands)-1
-        slots = [(m >> (2 * (bands - b))) & 3 for b in 1:bands]
+        # m 的每带 2bit 组：band 1 = 低位组（U1GTEMPO2 m = Σ slot_b·4^{b−1} 同款
+        # 布局）——split_cell 按 charges 序 LSB→MSB 剥离物理位，charges 以 band 1
+        # 在前，两组约定必须一致，否则 bands≥2 时带内容互换（M=1 平凡不敏感）
+        slots = [(m >> (2 * (b - 1))) & 3 for b in 1:bands]
         O = Matrix{ComplexF64}(I, dim, dim)
         sign = 1
         for b1 in 1:bands, b2 in (b1+1):bands
