@@ -2,6 +2,44 @@
 
 本轮重构涉及的接口更改汇总。所有更改均已通过全量测试验证（行为不变或数值等价）。
 
+## GrassmannMPS 后端换轨：M=2/跨对称性/ExactTTI 修复批次（2026-11-14，grassmannmps-backend 分支）
+
+换轨后新栈（Chrono 格 + GM 引擎）的缺陷修复与验证批次，全部以 ED/golden 机器精度锚定：
+
+- **M=2 带互换**（`system.jl` local_weights）：m 槽解码 band 1 = 高位组 vs
+  split_cell charges 序 LSB 剥离（band 1 在前）冲突，bands≥2 时带内容互换
+  （M=1 平凡不敏感故 golden 全过）。症状：单带浴 occupation 给 α=0 常数、浴
+  落在与测量相反的带。修复 = 解码改 `(m >> 2(b−1))`（U1GTEMPO2 同款）。验证：
+  U=0 带因子化 ⟨n₁⟩≡M=1 机器精度；ED（绝对 ω 约定）real/imag × U=0/0.8 全收敛。
+- **:z2z2 flavor**（`bridge.jl` station_flavor）：Z2Label 与 Int 0 比较
+  恒 false → 荷分辨形全部路由 :down 站 → SectorMismatch。修后四对称形
+  （:z2/:u1/:z2z2/:u1u1）M=2 逐位相等。
+- **ExactTTI Chrono 布局适配**（`influence.jl`）：①real/imag 因子族轮廓守卫；
+  ②imag_factors `z=sqrt(wZ)` 遮蔽荷标签；③embed_single 站号表存储序；
+  ④real 通道/memory contact 在虚拟 ± 相邻布局构建后 GM.reorder! 到 Chrono 站序；
+  ⑤虚时 compact 通道链与 Chrono [格 Nτ…1] 天然同序，删除多余 reorder!。
+  修复后 ExactTTI ≡ PartialIF（IF 表逐位一致 ≤3.3e-15）且 ED 锚定
+  （imag 8.7e-4 / real 2.1e-5）。旧栈 exactttiif fixtures 改为仅参考
+  （其编码旧栈自身在案的 Prony ~5% 缺陷，新实现已超越）。
+- **Phase 5b 算符路线**（`measurement.jl`）：lattice_monomial（SparseGMPS
+  单项式、荷沿键穿线、中性闭合）+ environments_cache/cached_Z（O(1) 读左端）
+  + cached_gf（op∧K 楔积 + 单发 Zvalue 精确路径）。D5 裁决：边界观测保持
+  inserted-K 唯轨；算符路线 = 原始关联层（胞坐标 0⁺ 点，与边界插入差
+  O(接触项)）。GrassmannMPS 上游配套修 expectation() 的 cprime logscale 守卫
+  （右扫 rightlogscales 补偿缺口仍开放，见 GM 包）。
+- **nn 密度关联**：双插入精确版，ED 两时点验证 ≤9e-4（δt 二阶）、
+  同切位 nn(i,i)=occupation 精确。
+- **已知未决**：greater/lesser/matsubara/currents 的奇算符（d/ddag）插入
+  K' 链 label-flow 缺陷——插入必须显式带荷（已改，链可构）但迹仍错
+  （~e^{-155}，reorder 吸收 logscale −114）。Phase 5a 起 greater/lesser
+  从未被断言（golden 只锚 occupation）。electriccurrent/heatcurrent 公式
+  已就位但被此问题门控（measurement.jl 文件头有完整记录）。
+- **测试资产**：test/api/physics_battery.jl（23 项：ED/因子化/四形一致/
+  带对称）；test/fixtures/check_golden_exactttiif.jl（8 项：ExactTTI≡PartialIF
+  + ED 锚）；test/fixtures/check_golden_weyl.jl（8 项，机器精度）。
+  ED 参照约定铁律：浴模在绝对 ω 无 μ 移；U≠0 时 band-2 浴经 U 反馈，
+  单浴 ED 只匹配 (IF₁, vacuum) 设定。
+
 ## BCS 影响泛函 ↓↓ 正常项装配修正（2026-11-03）
 
 - **问题**：`bcsinfluencefunctional/partialif.jl` 的 BCS 单 IF 装配把 ↓↓ 正常通道实现为
