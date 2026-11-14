@@ -3,10 +3,18 @@
 #
 # 全部经「带插入重建 K → GM 引擎 integrate → /Z」：
 #   occupation(branch j; band)      n̂（逐带或总）在 (branch, j) 边界 :left
-#   greater(i, j=0)                 d@(+,i) :left；ddag@(+,j) :left（j=0 折 ρ₀ 左）
-#                                   ——0⁺：同切位 ddag 先 push（⟨dd†⟩=1−n）
-#   lesser(i, j=0)                  d@(+,i) :left；ddag@(−,j) :right（j=0 折 ρ₀ 右）
-#   matsubara(i, j=0)               d@(τ,i)、ddag@(τ,j) 均 :left
+#   nn(i, j; b1, b2, band)          n̂ 双插入密度-密度（ED 验证 ✓）
+#   greater/lesser/matsubara        ⚠️ 未决：奇算符（d/ddag）插入的 K' 链
+#                                   label-flow 有缺陷——不传 charge 时切分产
+#                                   零站（链归零）；传 charge（已改）链可构
+#                                   但迹 ~e^{-155}（reorder 吸收 logscale
+#                                   −114，值仍错）。golden 只锚 occupation
+#                                   （偶算符），greater/lesser 自 Phase 5a
+#                                   起从未被断言。修复方向：奇插入的
+#                                   prefix/荷流推导对照 U1GTEMPO2 solver.jl
+#                                   的 charged-insertion label 记账。
+#   electriccurrent/heatcurrent     公式正确（旧 currents.jl 同式），依赖上
+#                                   述两点 GF 路线——路线修复前勿用。
 # 边界 j ∈ 0..N（0 = ρ₀ 切位）；rt 顶点 branch=:+、τ 顶点 branch=:τ。
 # τ 链 G(β,0) = +⟨d†d⟩（热环等时同号；j==0 平移路由属 secondorderif M≥2 的
 # Z2 栈绕尾技巧，GM 栈 F≡0 前提下不需要——D5 验收时按 golden 裁决）。
@@ -63,7 +71,9 @@ default_branch(lattice::AbstractGrassmannLattice) =
     raw_correlation(lattice, model, kernel, Is...; i, j=0, kind=:greater, ...) -> Complex
 
 两点函数 ⟨d(tᵢ) ddag(tⱼ)⟩（greater）/ ⟨ddag(tⱼ) d(tᵢ)⟩（lesser）；实时/混合
-专用（虚时用 matsubara）。0⁺ push 序约定见文件头。
+专用（虚时用 matsubara）。0⁺ push 序约定见文件头。⚠️ 奇算符插入必须显式带荷
+（charge=var_charge/qneg）：charge=nothing 时 builder 的 prefix 不移位，奇单项
+式的电荷流不可表示 → K' 切分产出零站 → 链归零（偶算符 n̂ 不受影响）。
 """
 function raw_correlation(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian,
                          kernel::HybridizationKernel, Is...; i::Integer, j::Integer=0,
@@ -71,16 +81,18 @@ function raw_correlation(lattice::AbstractGrassmannLattice, model::AbstractImpur
                          coupling_norm::Real=kernel_coupling_norm(kernel), initial_state=nothing)
     (lattice isa AbstractRealGrassmannLattice || lattice isa AbstractMixedGrassmannLattice) ||
         throw(ArgumentError("实时/混合轮廓专用；纯虚时用 matsubara"))
+    spec = symmetry_spec(lattice.symmetry)
+    qc = var_charge(spec, 1, lattice.bands)
     d = _fock_ops(lattice.bands)[1]; ddag = d'
     ins = OperatorInsertion[]
     if kind === :greater
         # ⟨d(tᵢ) ddag(tⱼ)⟩：同切位 0⁺ = ⟨dd†⟩ ⟹ ddag 先 push、d 后 push
-        push!(ins, OperatorInsertion(:+, Int(j), ddag))
-        push!(ins, OperatorInsertion(:+, Int(i), d))
+        push!(ins, OperatorInsertion(:+, Int(j), ddag; charge=qneg(qc)))
+        push!(ins, OperatorInsertion(:+, Int(i), d; charge=qc))
     elseif kind === :lesser
         # ⟨ddag(tⱼ) d(tᵢ)⟩：d@(+,i) left；ddag@(−,j) right
-        push!(ins, OperatorInsertion(:+, Int(i), d))
-        push!(ins, OperatorInsertion(:-, Int(j), ddag; side=:right))
+        push!(ins, OperatorInsertion(:+, Int(i), d; charge=qc))
+        push!(ins, OperatorInsertion(:-, Int(j), ddag; charge=qneg(qc), side=:right))
     else
         throw(ArgumentError("kind must be :greater or :lesser"))
     end
@@ -107,14 +119,16 @@ function lesser(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamilt
 end
 
 function _normalized_two_point(lattice, model, kernel, Is, Z, i, j, kind; kwargs...)
+    spec = symmetry_spec(lattice.symmetry)
+    qc = var_charge(spec, 1, lattice.bands)
     d = _fock_ops(lattice.bands)[1]; ddag = d'
     ins = OperatorInsertion[]
     if kind === :greater
-        push!(ins, OperatorInsertion(:+, Int(j), ddag))
-        push!(ins, OperatorInsertion(:+, Int(i), d))
+        push!(ins, OperatorInsertion(:+, Int(j), ddag; charge=qneg(qc)))
+        push!(ins, OperatorInsertion(:+, Int(i), d; charge=qc))
     else
-        push!(ins, OperatorInsertion(:+, Int(i), d))
-        push!(ins, OperatorInsertion(:-, Int(j), ddag; side=:right))
+        push!(ins, OperatorInsertion(:+, Int(i), d; charge=qc))
+        push!(ins, OperatorInsertion(:-, Int(j), ddag; charge=qneg(qc), side=:right))
     end
     return _inserted_expectation(lattice, model, Is, Z, ins;
                                  order=kernel_order(kernel), coupling_norm=kernel_coupling_norm(kernel),
@@ -133,7 +147,9 @@ function matsubara(lattice::AbstractGrassmannLattice, model::AbstractImpurityHam
                    initial_state=nothing)
     lattice isa AbstractImagGrassmannLattice || throw(ArgumentError("虚时轮廓专用"))
     d = _fock_ops(lattice.bands)[1]; ddag = d'
-    ins = [OperatorInsertion(:τ, Int(i), d), OperatorInsertion(:τ, Int(j), ddag)]
+    qc = var_charge(symmetry_spec(lattice.symmetry), 1, lattice.bands)
+    ins = [OperatorInsertion(:τ, Int(i), d; charge=qc),
+           OperatorInsertion(:τ, Int(j), ddag; charge=qneg(qc))]
     return _inserted_expectation(lattice, model, Is, Z, ins; order=Int(order),
                                  coupling_norm=coupling_norm, initial_state=initial_state)
 end
@@ -279,7 +295,89 @@ function cached_correlation(lattice::AbstractGrassmannLattice, K::GM.GMPS, Is::G
 end
 
 # ---------------------------------------------------------------------------
+# Currents（Phase 5c 精确版：GF 求和公式 + 带荷双插入；旧 currents.jl 同公式）
+# ---------------------------------------------------------------------------
+
+"""
+    raw_lead_correlator(lattice, model, kernel, Is...; k, j, b2=:+, band=1, ...) -> Complex
+
+⟨ā(+,k; band) a(b2,j; band)⟩——current 公式的原始 GF（带荷双插入，约定与
+golden 验证过的 greater/lesser 同款：charge=nothing、:left 乘）。
+"""
+function raw_lead_correlator(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian,
+                             kernel::Union{Nothing,HybridizationKernel}, Is...; k::Integer, j::Integer,
+                             b2::Symbol=:+, band::Int=1, order::Integer=kernel_order(kernel),
+                             coupling_norm::Real=kernel_coupling_norm(kernel), initial_state=nothing, Z)
+    qc = var_charge(symmetry_spec(lattice.symmetry), band, lattice.bands)
+    d = _fock_ops(lattice.bands)[band]
+    ddag = d'
+    ins = [OperatorInsertion(b2, Int(j), d; charge=qc),
+           OperatorInsertion(:+, Int(k), ddag; charge=qneg(qc))]
+    return _inserted_expectation(lattice, model, Is, Z, ins; order=Int(order),
+                                 coupling_norm=coupling_norm, initial_state=initial_state)
+end
+
+"""
+    electriccurrent(lattice, model, kernel, Is...; k, band=1, Z, ...) -> Complex
+
+边界 t_k 的电流（GF 求和精确版）：`(2/δt)·Σ_{j<k}[η⁺⁺[k,j]·⟨ā(+,k)a(+,j)⟩ +
+η⁺⁻[k,j]·⟨ā(+,k)a(−,j)⟩]`，η⁺⁺ = kernel.blocks[(:+,:+)]（raw）、η⁺⁻ =
+−blocks[(:+,:−)]。⚠️ η 块禁走顶点移位 accessor（旧栈 ED 电流对比 4/8 vs 8/8
+教训在案，旧 currents.jl 注释原文）。
+"""
+function electriccurrent(lattice::AbstractRealGrassmannLattice, model::AbstractImpurityHamiltonian,
+                         kernel::HybridizationKernel, Is...; k::Integer, band::Int=1, Z,
+                         order::Integer=kernel_order(kernel), coupling_norm::Real=kernel_coupling_norm(kernel),
+                         initial_state=nothing)
+    ηpp = kernel.blocks[(:+, :+)]
+    ηpm = -kernel.blocks[(:+, :-)]
+    curr = 0.0im
+    for j in 1:k-1
+        curr += ηpp[k, j] * raw_lead_correlator(lattice, model, kernel, Is...; k=k, j=j, b2=:+,
+                                                band=band, Z=Z, order=Int(order),
+                                                coupling_norm=coupling_norm, initial_state=initial_state)
+        curr += ηpm[k, j] * raw_lead_correlator(lattice, model, kernel, Is...; k=k, j=j, b2=:-,
+                                                band=band, Z=Z, order=Int(order),
+                                                coupling_norm=coupling_norm, initial_state=initial_state)
+    end
+    return 2 * curr / lattice.δt
+end
+
+"浴谱 J(ω) → ωJ(ω)（热流权重；DiracDelta = α→ωα，一般有界谱经 similar 加权）"
+function _weighted_bath(bath)
+    spec = bath.spectrum
+    spec isa DiracDelta && return similar(bath, f=similar(spec, α=spec.ω * spec.α))
+    return similar(bath, f=similar(spec, w -> w * spec.f(w)))
+end
+
+"""
+    heatcurrent(lattice, model, bath, Is...; k, band=1, Z, order, coupling_norm,
+                initial_state) -> Complex
+
+热流 = ω 加权谱的电流（heatcorrelationfunction 同语义：J(ω) → ωJ(ω)）。
+η 系数取自加权核；关联函数按调用方原 K 的 order/coupling_norm 重建。
+"""
+function heatcurrent(lattice::AbstractRealGrassmannLattice, model::AbstractImpurityHamiltonian,
+                     bath::AbstractNormalBath, Is...; k::Integer, band::Int=1, Z,
+                     order::Integer=1, coupling_norm::Real=0.0, initial_state=nothing)
+    kernel_η = hybridization(lattice, _weighted_bath(bath))
+    ηpp = kernel_η.blocks[(:+, :+)]
+    ηpm = -kernel_η.blocks[(:+, :-)]
+    curr = 0.0im
+    for j in 1:k-1
+        curr += ηpp[k, j] * raw_lead_correlator(lattice, model, nothing, Is...; k=k, j=j, b2=:+,
+                                                band=band, Z=Z, order=Int(order),
+                                                coupling_norm=coupling_norm, initial_state=initial_state)
+        curr += ηpm[k, j] * raw_lead_correlator(lattice, model, nothing, Is...; k=k, j=j, b2=:-,
+                                                band=band, Z=Z, order=Int(order),
+                                                coupling_norm=coupling_norm, initial_state=initial_state)
+    end
+    return 2 * curr / lattice.δt
+end
+
+# ---------------------------------------------------------------------------
 # 公开皮肤
 # ---------------------------------------------------------------------------
 
-export occupation, greater, lesser, matsubara, default_branch, nn
+export occupation, greater, lesser, matsubara, default_branch, nn,
+       raw_lead_correlator, electriccurrent, heatcurrent
