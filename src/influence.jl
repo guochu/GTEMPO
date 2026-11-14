@@ -294,6 +294,7 @@ end
 # ---------------------------------------------------------------------------
 
 function real_factors(emit, spec, lattice, k::HybridizationKernel, band, alg, diagnostics)
+    lattice isa Union{AbstractRealGrassmannLattice,AbstractMixedGrassmannLattice} || return nothing
     n = lattice.k
     blocks = k.blocks
     residuals = Float64[]; nfactors = 0
@@ -338,6 +339,7 @@ function real_factors(emit, spec, lattice, k::HybridizationKernel, band, alg, di
 end
 
 function imag_factors(emit, spec, lattice, k::HybridizationKernel, band, alg, diagnostics)
+    lattice isa Union{AbstractImagGrassmannLattice,AbstractMixedGrassmannLattice} || return nothing
     z = zero_charge(spec)
     n = lattice.kτ
     M = k.blocks[(:τ, :τ)]; validate_tti(M; tol=alg.rtol)
@@ -351,8 +353,8 @@ function imag_factors(emit, spec, lattice, k::HybridizationKernel, band, alg, di
     vars = [[_cell_var_index(lattice, (:τ, j), band, bar) for bar in (false, true)] for j in n:-1:1]
     for (w, q, a) in zip(f.weights, f.nodes, f.anchors)
         Z = 1 + q^n; abs(Z) >= 1e-8 || throw(ArgumentError("nearly singular thermal pole"))
-        z = sqrt(w * Z); d = ComplexF64[1 0; 0 q]; F = ComplexF64[0 1; 0 0]
-        bar = (d, z * transpose(F)); ann = (Matrix{ComplexF64}(I, 2, 2), z * F)
+        amp = sqrt(w * Z); d = ComplexF64[1 0; 0 q]; F = ComplexF64[0 1; 0 0]
+        bar = (d, amp * transpose(F)); ann = (Matrix{ComplexF64}(I, 2, 2), amp * F)
         core = zeros(ComplexF64, 4, 4, 4)
         for x in 0:1, y in 0:1
             mat = a === :left ? bar[x+1] * ann[y+1] : (-1)^(x * y) * bar[y+1] * ann[x+1]
@@ -372,7 +374,8 @@ function imag_factors(emit, spec, lattice, k::HybridizationKernel, band, alg, di
         # order（上游 GM.swap! 费米换序号已修复，多占据组态保真）
         single = pairize(spec, ts)
         GM.reorder!(single, collect(n:-1:1); trunc=GM.truncrelerr(1e-14))
-        emit(embed_single(spec, lattice, single, [_cell_index(lattice, :τ, j, band) ÷ 2 + 1 for j in 1:n]))
+        # reorder! 后 single 的站 m = 存储块 m = 格 (n−m+1)；全链站号 = (m−1)·bands + band
+        emit(embed_single(spec, lattice, single, [(m - 1) * lattice.bands + band for m in 1:n]))
         # Channel contact is w*q^(n-1) for left and its negative for right.
         shift += (a === :left ? 1 : -1) * w * q^(n - 1)
     end
