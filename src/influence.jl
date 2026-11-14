@@ -284,6 +284,13 @@ function contact_factor(spec, lattice, band, bs, D)
     end
     core = zeros(ComplexF64, 1, 1 << nv, 1)
     for (mask, value) in poly; core[1, mask + 1, 1] = value; end
+    if bs == (:+, :-)
+        # 实时 ± 合并接触：虚拟布局构建 + reorder 到 Chrono 站序（同 real_factors）
+        vars = [_virtual_merged_vars(lattice, band, m) for m in 1:n]
+        fac = embed_cells(spec, lattice, core, Any[], vars; band)
+        GM.reorder!(fac, _virtual_to_chrono_perm(lattice, n); trunc=GM.truncrelerr(1e-14))
+        return fac
+    end
     js = bs[1] === :τ ? (1:n) : (n:-1:1)
     vars = [[_cell_var_index(lattice, (b, j), band, bar) for b in bs for bar in (false, true)] for j in js]
     embed_cells(spec, lattice, core, Any[], vars; band)
@@ -291,7 +298,33 @@ end
 
 # ---------------------------------------------------------------------------
 # ExactTTI：实/虚/交叉三族指数因子（U1GTEMPO2 real/imag/cross_factors 同型）
+#
+# 布局适配：memory_cell/contact 的合并胞转移按 U1GTEMPO2 存储 [± 相邻、j 降序]
+# 设计。Chrono 实时存储 = [(+,1)…(+,n)][(−,n)…(−,1)] ⟹ real 因子在**虚拟
+# ± 相邻布局**上构建（embed_cells 原样），再 `GM.reorder!` 置换到 Chrono 站序
+# （站粒度置换、费米换序号上游已修）。Chrono 虚时存储 [格 Nτ…1] 与 compact
+# 热通道链（降序物理时间、initial 在 τ=β）**天然同序** ⟹ 不 reorder 直嵌。
 # ---------------------------------------------------------------------------
+
+"虚拟合并胞 m（块 2m−1 = (+,n−m+1)、块 2m = (−,n−m+1)）的 band 带变量位
+（顺序 (a+,ā+,a−,ā−) = memory_cell opens/closes 腿序）"
+function _virtual_merged_vars(lattice, band, m)
+    B = lattice.bands
+    plus0 = (2m - 2) * 2B + 2(band - 1) + 1
+    minus0 = (2m - 1) * 2B + 2(band - 1) + 1
+    return [plus0, plus0 + 1, minus0, minus0 + 1]
+end
+
+"虚拟 ± 相邻布局 → Chrono 存储（τ 头原位、实时部分 [+ 升序][− 降序]）的
+站置换：GM.reorder! 语义 = 新链第 k 站 = 原链第 perm[k] 站"
+function _virtual_to_chrono_perm(lattice, n)
+    B = lattice.bands
+    off = lattice isa AbstractMixedGrassmannLattice ? lattice.Nτ : 0
+    blockperm(k) = k <= off ? k :
+                   k <= off + n ? 2(n - (k - off)) + 1 :
+                   2(k - off - n)
+    return [(blockperm(k) - 1) * B + s for k in 1:(off + 2n) for s in 1:B]
+end
 
 function real_factors(emit, spec, lattice, k::HybridizationKernel, band, alg, diagnostics)
     lattice isa Union{AbstractRealGrassmannLattice,AbstractMixedGrassmannLattice} || return nothing
@@ -316,7 +349,8 @@ function real_factors(emit, spec, lattice, k::HybridizationKernel, band, alg, di
     err <= max(alg.rtol, 1e-12) || throw(ArgumentError("ExactTTI real Keldysh relations fail: $err"))
     diagnostics[:keldysh_residual] = err
     q = var_charge(spec, band, lattice.bands)
-    vars = [[_cell_var_index(lattice, (b, j), band, bar) for b in (:+, :-) for bar in (false, true)] for j in n:-1:1]
+    vars = [_virtual_merged_vars(lattice, band, m) for m in 1:n]   # 虚拟 ± 相邻布局
+    perm = _virtual_to_chrono_perm(lattice, n)
     for (component, y) in ((:greater, g), (:lesser, l))
         f = fit_exponentials(y; rtol=alg.rtol, maxterms=alg.maxterms, rightanchors=false)
         push!(residuals, f.relative_error)
@@ -329,7 +363,9 @@ function real_factors(emit, spec, lattice, k::HybridizationKernel, band, alg, di
             closes = component === :greater ? [ComplexF64[z, 0, 0, 0], ComplexF64[0, 0, 0, zc]] :
                      [ComplexF64[0, 0, z, 0], ComplexF64[0, zc, 0, 0]]
             data = memory_cell([r, conj(r)], opens, closes)
-            emit(embed_cells(spec, lattice, data, [qneg(q), q], vars; band)); nfactors += 1
+            fac = embed_cells(spec, lattice, data, [qneg(q), q], vars; band)
+            GM.reorder!(fac, perm; trunc=GM.truncrelerr(1e-14))
+            emit(fac); nfactors += 1
         end
     end
     diagnostics[:real_fit_residuals] = residuals; diagnostics[:real_pole_factors] = nfactors
@@ -370,11 +406,10 @@ function imag_factors(emit, spec, lattice, k::HybridizationKernel, band, alg, di
             part = split_cell(spec, ci, ls, rs, [qcharge, qneg(qcharge)])
             ts === nothing ? (ts = part) : append!(ts, part)
         end
-        # Reverse stations from trace order (descending j) to ascending storage
-        # order（上游 GM.swap! 费米换序号已修复，多占据组态保真）
+        # Chrono 虚时存储 [格 Nτ…1]（块 b = 格 n−b+1）与 compact 链（降序物理
+        # 时间、initial 在 τ=β = 链首）**天然同序**——不再 reorder，直嵌：
+        # single 站 m（= 格 n−m+1）→ 块 m → 全链站 (m−1)·bands + band
         single = pairize(spec, ts)
-        GM.reorder!(single, collect(n:-1:1); trunc=GM.truncrelerr(1e-14))
-        # reorder! 后 single 的站 m = 存储块 m = 格 (n−m+1)；全链站号 = (m−1)·bands + band
         emit(embed_single(spec, lattice, single, [(m - 1) * lattice.bands + band for m in 1:n]))
         # Channel contact is w*q^(n-1) for left and its negative for right.
         shift += (a === :left ? 1 : -1) * w * q^(n - 1)
