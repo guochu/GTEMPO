@@ -283,3 +283,6 @@ end
 
 "真空链（GM 真空：左边界真空、键恒等穿透）"
 vacuumstate(lattice::AbstractGrassmannLattice) = GM.vacuumstate(ComplexF64, site_spaces(lattice))
+
+"lattice 携带的对称性 Symbol（D1；export 已声明）"
+symmetry(l::AbstractGrassmannLattice) = l.symmetry

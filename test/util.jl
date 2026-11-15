@@ -1,4 +1,4 @@
-# shared utilities for all test parts: spectra, Grassmann orderings and
+# shared utilities for all test parts: spectra and
 # exact-diagonalization (ED) reference builders in the fermionic bit basis
 
 # ---------------------------------------------------------------- spectra
@@ -6,13 +6,6 @@ f(D, ϵ) = sqrt(1-(ϵ/D)^2) / π
 spectrum_func(D) = spectrum(ϵ->f(D, ϵ), lb=-D, ub=D)   # semicircular spectrum
 spectrum_func() = spectrum_func(10)
 spectrum_func2(D=10) = spectrum(ϵ->f(D, ϵ), lb=0, ub=D) # half-line spectrum
-
-# ------------------------------------------------------- Grassmann orderings
-const imag_orderings   = [A1Ā1B1B̄1(), A1B1B̄1Ā1()]
-const real_orderings   = [A1Ā1B1B̄1a1ā1b1b̄1(), A1Ā1a1ā1B1B̄1b1b̄1(), a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2(),
-						  A1B1ā1b̄1Ā1B̄1a1b1()]
-const mixed_orderings  = [A1Ā1B1B̄1_A1Ā1a1ā1B1B̄1b1b̄1A2Ā2a2ā2B2B̄2b2b̄2(),
-						  A1Ā1B1B̄1_a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2()]
 
 # ---------------------------------------------------------------- metrics
 relerr(a, b) = norm(a - b) / norm(a)
@@ -122,6 +115,20 @@ function fermion_annihilators(m::Int)
 		(sign != 0) && (cs[i][t+1, s+1] = sign)
 	end
 	return cs
+end
+
+# ------------------------------------------- ED two-point reference helpers
+"""
+    greater_lesser_ed(H, a, adag, H0, ts, β)
+
+ED 实时 greater/lesser（初态 = 可分离热态 exp(−βH0)；H0 = 退耦 Hamiltonian）。
+"""
+function greater_lesser_ed(H, a, adag, H0, ts, β)
+    ρ = exp(-β * H0)
+    cache = eigencache(H)
+    gt = -im .* correlation_2op_1t(H, a, adag, ρ, ts, cache, reverse=false)
+    lt = im .* correlation_2op_1t(H, adag, a, ρ, ts, cache, reverse=true)
+    return gt, lt
 end
 
 # ------------------------------------------------------- ED model builders

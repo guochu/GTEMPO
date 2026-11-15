@@ -1,46 +1,26 @@
-@testset "API: correlationfunction" begin
+@testset "API: correlationfunction（QuAPI 包装）" begin
 	β = 1.0
+	bath = discretefermionicbath([1.0], [0.5]; β=β)
 
-	# imaginary-time lattice
+	# 虚时：Δτ 矩阵
 	lat = GrassmannLattice(N=4, δτ=0.25, contour=:imag)
-	corr = correlationfunction(fermionicbath(spectrum_func(), β=β, μ=0), lat)
+	corr = correlationfunction(bath, lat)
 	@test corr isa ImagCorrelationFunction
-	@test size(corr.data) == (lat.N, lat.N)
-
-	# a bosonic bath works on the Grassmann lattice as well (retarded channel)
-	corr = correlationfunction(bosonicbath(DiracDelta(ω=1, α=0.5), β=β), lat)
-	@test corr isa ImagCorrelationFunction
-
-	# real-time lattice
+	# 实时：QuAPI 关联对象四块
 	lat = GrassmannLattice(N=4, δt=0.1, contour=:real)
-	corr = correlationfunction(fermionicbath(spectrum_func(), β=β, μ=0), lat)
+	corr = correlationfunction(bath, lat)
 	@test corr isa RealCorrelationFunction
-	@test size(corr) == (lat.k, lat.k)   # compact four-vector storage, N+1 nodes
-
-	# mixed (Kadanoff) lattice: corr[GrassmannContourIndex, GrassmannContourIndex] over three branches
+	# 混合
 	lat = GrassmannLattice(Nt=3, δt=0.1, Nτ=4, δτ=0.25, contour=:mixed)
-	corr = correlationfunction(fermionicbath(spectrum_func(), β=β, μ=0), lat)
+	corr = correlationfunction(bath, lat)
 	@test corr isa MixedCorrelationFunction
-	for b1 in (:+, :-, :τ), b2 in (:+, :-, :τ)
-		@test corr[GrassmannContourIndex(1, b1, 1, false), GrassmannContourIndex(1, b2, 1, true)] isa Number
-	end
 end
 
-@testset "API: baths" begin
+@testset "API: baths（ImpurityModelBase 皮肤）" begin
 	β = 1.0
-	# fermionic bath with a continuous spectrum
+	bath = discretefermionicbath([1.0, 2.0], [0.5, 0.3]; β=β)
+	@test bath.β == β
 	bath = fermionicbath(spectrum_func(), β=β, μ=0.3)
 	@test bath.β == β && bath.μ == 0.3
-	# delta-spectrum bath
-	bath = fermionicbath(DiracDelta(ω=1, α=0.5), β=β)
-	@test bath.β == β
-	# bosonic bath
-	bath = bosonicbath(Leggett(d=3, ωc=1), β=β)
-	@test bath.β == β
-	# bcs bath wraps a normal fermionic bath with a pairing gap
-	bath2 = bcsbath(fermionicbath(spectrum_func(), β=β, μ=0), Δ=0.3)
-	@test bath2.Δ == 0.3 && bath2.β == β
-	# discretization of a continuous bath
-	disbath = discretebath(fermionicbath(spectrum_func(), β=β, μ=0), δw=0.2)
-	@test num_sites(disbath) > 0
+	@test bath isa AbstractNormalBath
 end

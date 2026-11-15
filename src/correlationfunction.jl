@@ -32,3 +32,12 @@ TK.scalartype(::Type{<:BCSCorrelationFunction{M}}) where M = scalartype(M)
 # 一个判断同时覆盖普通与 BCS）。虚时 τ 环与混合轮廓的块值即物理值，不动；
 # 玻色（Fock 路径）的历史存储本就带符号，同样不动（见 fockcontourindex.jl）。
 # ---------------------------------------------------------------------------
+
+# BCS bath：QuAPI 反常关联函数（cc/cn/nc/nn 四块有向指数系数；D7 仅 :z2 装配守卫在 bcs_partial_if）
+# bcs_Δτ/Δt/Δm 自身返回 BCSCorrelationFunction（四味块 cc/cn/nc/nn 装配在 QuAPI 内完成）
+correlationfunction(bath::AbstractBCSBath, lattice::ImagGrassmannLattice) =
+    bcs_Δτ(bath.f; β=bath.β, μ=bath.μ, Δ=bath.Δ, N=lattice.Nτ, δτ=lattice.δτ)
+correlationfunction(bath::AbstractBCSBath, lattice::RealGrassmannLattice) =
+    bcs_Δt(bath.f; β=bath.β, μ=bath.μ, Δ=bath.Δ, N=lattice.Nt, t=lattice.t)
+correlationfunction(bath::AbstractBCSBath, lattice::MixedGrassmannLattice) =
+    bcs_Δm(bath.f; β=bath.β, μ=bath.μ, Δ=bath.Δ, Nτ=lattice.Nτ, t=lattice.t, Nt=lattice.Nt, δτ=lattice.δτ)

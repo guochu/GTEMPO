@@ -4,28 +4,23 @@
 # 全部经「带插入重建 K → GM 引擎 integrate → /Z」：
 #   occupation(branch j; band)      n̂（逐带或总）在 (branch, j) 边界 :left
 #   nn(i, j; b1, b2, band)          n̂ 双插入密度-密度（ED 验证 ✓）
-#   greater/lesser/matsubara        ⚠️ 未决（诊断已收窄）：奇算符（d/ddag）插
-#                                   入的 K' 链迹恒零/垃圾。已排除：①builder——
-#                                   忠实复刻（含 cut-0 折叠 ρ₀ + prefix 机制）
-#                                   逐胞结构与 U1GTEMPO2 参照完全一致；②荷方向
-#                                   （与 U1GTEMPO2 correlation_insertions 一致）；
-#                                   ③宇并特异（:u1 整数荷同样失败）；④引擎 vs
-#                                   多项式——独立 dense oracle 与引擎双双确认
-#                                   多项式迹精确为零，而参照栈同构胞数据给出
-#                                   正确值 0.66−0.07i。⇒ **决定性实验已完
-#                                   成（2026-11-15）**：U1GTEMPO2 直接依赖本
-#                                   GM（同 uuid），参照栈 pairize 出的奇插入
-#                                   K' 链喂同一 GM.Zvalue 机器精度正确
-#                                   （0.66081−0.06945i）——**GM 引擎无罪，
-#                                   port 侧 split_cell/from_core/pairize 之一
-#                                   为凶**（逐胞 nnz 结构与参照一致但张量内容
-#                                   层有分歧；:u1 整数荷忠实链同样垃圾，非宇
-#                                   并特异）。**下会议首步**：双栈各 dump cell-1
-#                                   切分出的两个变量张量全块结构（扇区键+值）
-#                                   逐块 diff（:u1 荷标签可直接对应他们的
-#                                   ChargeCharge 首槽）。
-#   electriccurrent/heatcurrent     公式正确（旧 currents.jl 同式），依赖上
-#                                   述两点 GF 路线——路线修复前勿用。
+#   greater/lesser/matsubara        ✓ 已修复并对拍 U1GTEMPO2 机器精度（2026-11-15）。
+#                                   五处口径差全部定案：①builder prefix 必须以
+#                                   cut-0 插入荷为初值并逐胞累计（system.jl；奇
+#                                   插入链迹归零的真凶——偶算符 charge=nothing
+#                                   不受影响）；②荷方向 = 算符自荷（d=−q、
+#                                   ddag=+q，correlation_insertions 同款，此前全
+#                                   反向）；③push 序 = cutleft foldr 首 push 最左
+#                                   （同切位 0⁺：greater = d·ddag、lesser/电流 =
+#                                   ddag·d）；④matsubara 时序因子 (i≥j ? −1 : +1)
+#                                   且混合轮廓 τ 支放行；⑤order/coupling_norm 显
+#                                   式 kwargs 必须转发（_normalized_two_point 曾
+#                                   忽略 → 以 order=1 链对 order=2 的 Z 归一）。
+#                                   双栈对拍：实时 greater/lesser 3 点、虚时
+#                                   matsubara 4 点、occupation 4 点、lead 关联
+#                                   6 点（含同切位）全部 Δ ≤ 5e-15。
+#   electriccurrent/heatcurrent     GF 求和精确版；raw_lead_correlator 同上锚定
+#                                   （平衡态净电流离散伪影 O(δt)，旧栈同款量级）。
 # 边界 j ∈ 0..N（0 = ρ₀ 切位）；rt 顶点 branch=:+、τ 顶点 branch=:τ。
 # τ 链 G(β,0) = +⟨d†d⟩（热环等时同号；j==0 平移路由属 secondorderif M≥2 的
 # Z2 栈绕尾技巧，GM 栈 F≡0 前提下不需要——D5 验收时按 golden 裁决）。
@@ -97,13 +92,15 @@ function raw_correlation(lattice::AbstractGrassmannLattice, model::AbstractImpur
     d = _fock_ops(lattice.bands)[1]; ddag = d'
     ins = OperatorInsertion[]
     if kind === :greater
-        # ⟨d(tᵢ) ddag(tⱼ)⟩：同切位 0⁺ = ⟨dd†⟩ ⟹ ddag 先 push、d 后 push
-        push!(ins, OperatorInsertion(:+, Int(j), ddag; charge=qneg(qc)))
-        push!(ins, OperatorInsertion(:+, Int(i), d; charge=qc))
+        # ⟨d(tᵢ) ddag(tⱼ)⟩：荷 = 算符自荷（U1GTEMPO2 correlation_insertions 同款
+        # ——d 湮灭 = −q、ddag 产生 = +q）。push 序 = 算符左乘序（cutleft foldr
+        # 首 push 最左、最后作用）：同切位 0⁺ greater = d·ddag ⟹ d 先 push
+        push!(ins, OperatorInsertion(:+, Int(i), d; charge=qneg(qc)))
+        push!(ins, OperatorInsertion(:+, Int(j), ddag; charge=qc))
     elseif kind === :lesser
-        # ⟨ddag(tⱼ) d(tᵢ)⟩：d@(+,i) left；ddag@(−,j) right
-        push!(ins, OperatorInsertion(:+, Int(i), d; charge=qc))
-        push!(ins, OperatorInsertion(:-, Int(j), ddag; charge=qneg(qc), side=:right))
+        # ⟨ddag(tⱼ) d(tᵢ)⟩：同切位 0⁺ = ddag·d（a†a）⟹ ddag 先 push
+        push!(ins, OperatorInsertion(:-, Int(j), ddag; charge=qc))
+        push!(ins, OperatorInsertion(:+, Int(i), d; charge=qneg(qc)))
     else
         throw(ArgumentError("kind must be :greater or :lesser"))
     end
@@ -129,20 +126,27 @@ function lesser(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamilt
     return 1.0im * _normalized_two_point(lattice, model, kernel, Is, Z, i, j, :lesser; kwargs...)
 end
 
-function _normalized_two_point(lattice, model, kernel, Is, Z, i, j, kind; kwargs...)
+"两点归一化公共体（greater/lesser 宿主）：order/coupling_norm 显式转发
+（缺省随 kernel 元数据；hybridization 的 diagnostics 未登记 order 时返回
+1——**golden 教训：忽略调用方显式值会以 order=1 链对 order=2 的 Z 归一**）"
+function _normalized_two_point(lattice, model, kernel, Is, Z, i, j, kind;
+                               order::Integer=kernel_order(kernel),
+                               coupling_norm::Real=kernel_coupling_norm(kernel), kwargs...)
     spec = symmetry_spec(lattice.symmetry)
     qc = var_charge(spec, 1, lattice.bands)
     d = _fock_ops(lattice.bands)[1]; ddag = d'
     ins = OperatorInsertion[]
     if kind === :greater
-        push!(ins, OperatorInsertion(:+, Int(j), ddag; charge=qneg(qc)))
-        push!(ins, OperatorInsertion(:+, Int(i), d; charge=qc))
+        # push 序 = 左乘序（同切位 0⁺ greater = d·ddag）
+        push!(ins, OperatorInsertion(:+, Int(i), d; charge=qneg(qc)))
+        push!(ins, OperatorInsertion(:+, Int(j), ddag; charge=qc))
     else
-        push!(ins, OperatorInsertion(:+, Int(i), d; charge=qc))
-        push!(ins, OperatorInsertion(:-, Int(j), ddag; charge=qneg(qc), side=:right))
+        # lesser = ddag·d（a†a）
+        push!(ins, OperatorInsertion(:-, Int(j), ddag; charge=qc))
+        push!(ins, OperatorInsertion(:+, Int(i), d; charge=qneg(qc)))
     end
     return _inserted_expectation(lattice, model, Is, Z, ins;
-                                 order=kernel_order(kernel), coupling_norm=kernel_coupling_norm(kernel),
+                                 order=Int(order), coupling_norm=coupling_norm,
                                  initial_state=get(kwargs, :initial_state, nothing))
 end
 
@@ -156,18 +160,25 @@ function matsubara(lattice::AbstractGrassmannLattice, model::AbstractImpurityHam
                    kernel::HybridizationKernel, Is...; i::Integer, j::Integer=0, Z,
                    order::Integer=kernel_order(kernel), coupling_norm::Real=kernel_coupling_norm(kernel),
                    initial_state=nothing)
-    lattice isa AbstractImagGrassmannLattice || throw(ArgumentError("虚时轮廓专用"))
+    # τ↔τ 插入在混合（Kadanoff）轮廓同样合法（虚时支 = 热态构建腿）
+    lattice isa AbstractImagGrassmannLattice || lattice isa AbstractMixedGrassmannLattice ||
+        throw(ArgumentError("matsubara 需虚时或混合轮廓"))
     d = _fock_ops(lattice.bands)[1]; ddag = d'
     qc = var_charge(symmetry_spec(lattice.symmetry), 1, lattice.bands)
-    ins = [OperatorInsertion(:τ, Int(i), d; charge=qc),
-           OperatorInsertion(:τ, Int(j), ddag; charge=qneg(qc))]
-    return _inserted_expectation(lattice, model, Is, Z, ins; order=Int(order),
-                                 coupling_norm=coupling_norm, initial_state=initial_state)
+    ins = [OperatorInsertion(:τ, Int(i), d; charge=qneg(qc)),
+           OperatorInsertion(:τ, Int(j), ddag; charge=qc)]
+    # Matsubara 时序约定（U1GTEMPO2 matsubara 同款）：G(τᵢ,τⱼ) =
+    # (i ≥ j ? −1 : +1)·⟨d(τᵢ) ddag(τⱼ)⟩（τ 有序排列 ⟨T_τ dd†⟩ 的分支号）
+    return (i >= j ? -1 : 1) * _inserted_expectation(lattice, model, Is, Z, ins; order=Int(order),
+                                                     coupling_norm=coupling_norm, initial_state=initial_state)
 end
 
-# kernel 元数据便捷（耦合范数/order 随 kernel 携带）
+# kernel 元数据便捷（耦合范数/order 随 kernel 携带）；nothing（显式 order/
+# coupling_norm 路径）安全——kwarg 默认值在 kernel=nothing 时也求值
 kernel_coupling_norm(k::HybridizationKernel) = k.coupling_norm === nothing ? 0.0 : k.coupling_norm
+kernel_coupling_norm(::Nothing) = 0.0
 kernel_order(k::HybridizationKernel) = get(k.diagnostics, :order, 1)
+kernel_order(::Nothing) = 1
 
 # ---------------------------------------------------------------------------
 # Phase 5b：算符路线（GM ExpectationCache 快照 + SparseGMPS 单项式）——
@@ -251,7 +262,9 @@ cached_Z(cache::GM.ExpectationCache) = unscale(_scaled(GM.Zvalue(cache)))
 rightlogscales 记账），修复前本包装走精确路径。
 """
 function cached_gf(lattice::AbstractGrassmannLattice, indices::NTuple{N,GrassmannContourIndex},
-                   K::GM.GMPS, Is::GM.GMPS...) where {N}
+                   K::GM.GMPS, Is::GM.GMPS...; cache=nothing) where {N}
+    # cache 仅为与 cached_correlation 的透传接口兼容（D5 裁决：本路线走
+    # op∧K + 单发 Zvalue 精确路径，不用右扫快照——缺口见文件头 D5 注）
     op = lattice_monomial(lattice, indices)
     W = op * K
     return unscale(_scaled(GM.Zvalue([W, Is...])))
@@ -322,8 +335,9 @@ function raw_lead_correlator(lattice::AbstractGrassmannLattice, model::AbstractI
     qc = var_charge(symmetry_spec(lattice.symmetry), band, lattice.bands)
     d = _fock_ops(lattice.bands)[band]
     ddag = d'
-    ins = [OperatorInsertion(b2, Int(j), d; charge=qc),
-           OperatorInsertion(:+, Int(k), ddag; charge=qneg(qc))]
+    # push 序 = 左乘序：同切位 (k == j) 电流取 a†a 0⁺ 极限 ⟹ ddag 先 push
+    ins = [OperatorInsertion(:+, Int(k), ddag; charge=qc),
+           OperatorInsertion(b2, Int(j), d; charge=qneg(qc))]
     return _inserted_expectation(lattice, model, Is, Z, ins; order=Int(order),
                                  coupling_norm=coupling_norm, initial_state=initial_state)
 end
@@ -358,6 +372,8 @@ end
 function _weighted_bath(bath)
     spec = bath.spectrum
     spec isa DiracDelta && return similar(bath, f=similar(spec, α=spec.ω * spec.α))
+    # DiscreteSpectrum 无函数形式 similar（离散点线性插值容器）：权重逐点乘 ω
+    spec isa DiscreteSpectrum && return similar(bath, f=similar(spec, spec.ws .* spec.ws, spec.ws .* spec.fs))
     return similar(bath, f=similar(spec, w -> w * spec.f(w)))
 end
 

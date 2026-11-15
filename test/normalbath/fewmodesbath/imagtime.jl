@@ -1,167 +1,79 @@
-@testset "Few-mode bath, imaginary time: orderings & algorithms" begin
+@testset "Few-mode bath, imaginary time（ED）" begin
 	μ = 0.7; ω = 1.0; α = 0.5
 	δτ = 0.1; N = 8; β = N * δτ
-	trunc = truncdimcutoff(D=60, ϵ=1.0e-10)
 
-	# ED reference: one fermionic bath mode
+	# 单带单浴模（16 维 ED）
 	H, a, adag, H0 = singlemode_ed(μ=μ, U=0, bathspecs=[(ω, α)])
 	g_ed = gτ_ed(H, a, adag, 0:δτ:β, β)
 
-	spec = DiracDelta(ω=ω, α=α)
-	bath = fermionicbath(spec, β=β)
-	# analytic Toulouse solution for the δ spectrum — validates the ED conventions
-	g_analytic = [toulouse_Gτ(bath, τ; ϵ_d=μ) for τ in 0:δτ:β]
-	@test relerr(g_ed, g_analytic) < 1.0e-2
-
+	lat = GrassmannLattice(N=N, δτ=δτ, contour=:imag)
+	bath = discretefermionicbath([ω], [α]; β=β)
+	kernel = hybridization(lat, bath)
 	model = ToulouseIM(ϵ_d=μ)
-	for ordering in imag_orderings
-		lat = GrassmannLattice(N=N, δτ=δτ, contour=:imag, ordering=ordering)
-		corr = correlationfunction(bath, lat)
-		# all algorithms on the default ordering, the default algorithm on all orderings
-		algs = (ordering == imag_orderings[1]) ? if_algs(trunc) :
-			   [("PartialIF", PartialIF(trunc=trunc))]
-		for (name, alg) in algs
-			mpsI = hybriddynamics(lat, corr, alg)
-			mpsK = sysdynamics(lat, model, trunc=trunc)
-			mpsK = boundarycondition!(mpsK, lat)
-			g = gτ_series(lat, mpsK, mpsI)
-			# the vertex-shifted IF convention gives the PartialIF row product a
-			# slightly larger O(δτ) discretization constant (measured: halving
-			# δτ halves the error, 0.0114 → 0.0056 → 0.0028). The TTI
-			# algorithms on this short chain are instead limited by the Prony
-			# expansion of the vertex-shifted bulk generators (≈5%, not yet
-			# converging with δτ — to be fixed together with the short-time
-			# Prony expansion, cf. the TTI-IF block test in api/hybriddynamics)
-			tol = (name == "PartialIF") ? 2.0e-2 : 1.0e-1
-			@test relerr(g, g_ed) < tol
-		end
-	end
+	K, Is = fermionic_setup(lat, bath, model)
+	Z = integrate(K, Is...)
+	# 配分函数（含浴耦合的完整 ED 谱）
+	# 浴归一化（Z_B 铁律）+ 行因子化 O(δτ) 常数（~0.1/δτ，δτ=0.1）
+	@test real(Z) ≈ real(tr(exp(-β * H))) / (1 + exp(-β * ω)) rtol = 4e-2
+	# Matsubara G(τ, 0)（时序因子 −⟨a(τ)a†⟩）
+	m = [matsubara(lat, model, kernel, Is...; i=i, j=0, Z=Z) for i in 1:lat.k]
+	@test relerr(m, -g_ed[2:end]) < 2e-3
+	# occupation 平衡常数
+	occ = [occupation(lat, model, kernel, Is...; j=i, branch=:τ, Z=Z) for i in 1:lat.k]
+	n_exact = real(tr(adag * a * exp(-β * H))) / real(tr(exp(-β * H)))
+	@test maximum(abs.(occ .- n_exact)) < 1e-3
 end
 
-@testset "Few-mode bath, imaginary time: two bath modes" begin
+@testset "Few-mode bath, imaginary time: 两浴模" begin
 	μ = 0.7
 	δτ = 0.1; N = 10; β = N * δτ
-	trunc = truncdimcutoff(D=150, ϵ=1.0e-10)
 	specs = [(1.0, 0.3), (2.0, 0.4)]
-
-	# single-band impurity coupled to two bath modes (8-dimensional ED)
 	H, a, adag, H0 = singlemode_ed(μ=μ, U=0, bathspecs=specs, nbands=1)
 	g_ed = gτ_ed(H, a, adag, 0:δτ:β, β)
 
 	lat = GrassmannLattice(N=N, δτ=δτ, contour=:imag)
-	# the two δ modes are combined into one DiscreteSpectrum bath:
-	# DiscreteSpectrum(ws, fs) represents δ peaks at ws with weights fs
-	spec = DiscreteSpectrum([s[1] for s in specs], [s[2] for s in specs])
-	corr = correlationfunction(fermionicbath(spec, β=β), lat)
-	mpsI = hybriddynamics(lat, corr, trunc=trunc)
-	mpsK = sysdynamics(lat, ToulouseIM(ϵ_d=μ), trunc=trunc)
-	mpsK = boundarycondition!(mpsK, lat)
-	g = gτ_series(lat, mpsK, mpsI)
-	@test relerr(g, g_ed) < 2.0e-2
+	bath = discretefermionicbath([s[1] for s in specs], [s[2] for s in specs]; β=β)
+	kernel = hybridization(lat, bath)
+	model = ToulouseIM(ϵ_d=μ)
+	K, Is = fermionic_setup(lat, bath, model)
+	Z = integrate(K, Is...)
+	m = [matsubara(lat, model, kernel, Is...; i=i, j=0, Z=Z) for i in 1:lat.k]
+	@test relerr(m, -g_ed[2:end]) < 2e-3
 end
 
-@testset "Few-mode bath, imaginary time: two bands with U" begin
+@testset "Few-mode bath, imaginary time: 两带 U≠0" begin
 	μ = 0.7; U = 1.0; ω = 1.0; α = 0.5
 	δτ = 0.1; N = 10; β = N * δτ
-	trunc = truncdimcutoff(D=80, ϵ=1.0e-10)
-
-	# one bath mode per band
 	H, a, adag, H0 = singlemode_ed(μ=μ, U=U, bathspecs=[(ω, α), (ω, α)])
 	g_ed = gτ_ed(H, a, adag, 0:δτ:β, β)
 
-	lat = GrassmannLattice(N=N, δτ=δτ, contour=:imag, bands=2)
-	bath = fermionicbath(DiracDelta(ω=ω, α=α), β=β)
+	lat = GrassmannLattice(N=N, δτ=δτ, bands=2, contour=:imag)
+	bath = discretefermionicbath([ω], [α]; β=β)
+	kernel = hybridization(lat, bath)
 	model = AndersonIM(U=U, ϵ_d=μ)
-	mpsK, Is = fermionic_setup(lat, bath, model, trunc)
-	cache = environments(lat, mpsK, Is...)
-	g = cached_gf_fast(lat, mpsK, Is...; c1=false, c2=true, b1=:τ, b2=:τ, cache=cache)
-	# same PartialIF O(δτ) discretization constant as above (0.0110 at δτ = 0.1)
-	@test relerr(g, g_ed) < 2.0e-2
-
-	# occupation number ⟨n₁⟩ as an additional observable
-	n_gtempo = real.([occupation(lat, i, mpsK, Is..., Z=Zvalue(cache), band=1) for i in 1:lat.k])
-	ρ = exp(-β * H) / tr(exp(-β * H))
-	n_exact = real(tr(ρ * adag * a))
-	@test abs(n_gtempo[1] - n_exact) < 1.0e-2
+	K, Is = fermionic_setup(lat, bath, model)
+	Z = integrate(K, Is...)
+	@test real(Z) ≈ real(tr(exp(-β * H))) / (1 + exp(-β * ω))^2 rtol = 4e-2
+	m = [matsubara(lat, model, kernel, Is...; i=i, j=0, Z=Z) for i in 1:lat.k]
+	@test relerr(m, -g_ed[2:end]) < 2e-3
+	occ = occupation(lat, model, kernel, Is...; j=1, branch=:τ, band=1, Z=Z)
+	n_exact = real(tr(adag * a * exp(-β * H))) / real(tr(exp(-β * H)))
+	@test occ ≈ n_exact atol = 1e-3
 end
 
-@testset "Few-mode bath, imaginary time: quench Hamiltonian" begin
-	# on the imaginary axis only the pre-quench h0 enters (the :τ branch
-	# propagator); h1 is deliberately very different and must not matter
+@testset "Few-mode bath, imaginary time: quench（τ 支只感 hτ）" begin
 	μ0 = 0.7; μ1 = -1.3; ω = 1.0; α = 0.5
 	δτ = 0.1; N = 8; β = N * δτ
-	trunc = truncdimcutoff(D=60, ϵ=1.0e-10)
-
 	H, a, adag, H0 = singlemode_ed(μ=μ0, U=0, bathspecs=[(ω, α)])
 	g_ed = gτ_ed(H, a, adag, 0:δτ:β, β)
 
-	bath = fermionicbath(DiracDelta(ω=ω, α=α), β=β)
+	bath = discretefermionicbath([ω], [α]; β=β)
 	model = QuenchedImpurityHamiltonian([tunneling(1, 1, coeff=μ0)],
-										[tunneling(1, 1, coeff=μ1)]; bands=1)
+	                                    [tunneling(1, 1, coeff=μ1)]; bands=1)
 	lat = GrassmannLattice(N=N, δτ=δτ, contour=:imag)
-	corr = correlationfunction(bath, lat)
-	mpsI = hybriddynamics(lat, corr, trunc=trunc)
-	mpsK = sysdynamics(lat, model, trunc=trunc)
-	mpsK = boundarycondition!(mpsK, lat)
-	g = gτ_series(lat, mpsK, mpsI)
-	# same PartialIF O(δτ) discretization constant as the tests above (0.0114
-	# at δτ = 0.1, halving with δτ)
-	@test relerr(g, g_ed) < 2.0e-2
-end
-
-@testset "Few-mode bath, imaginary time: in-place ExactTTIIF hybriddynamics!" begin
-	# the whole workflow on one state: sysdynamics builds K, then
-	# hybriddynamics! merges the influence functional into K in place
-	μ = 0.7; ω = 1.0; α = 0.5
-	δτ = 0.1; N = 8; β = N * δτ
-	trunc = truncdimcutoff(D=60, ϵ=1.0e-10)
-
-	H, a, adag, H0 = singlemode_ed(μ=μ, U=0, bathspecs=[(ω, α)])
-	g_ed = gτ_ed(H, a, adag, 0:δτ:β, β)
-
-	bath = fermionicbath(DiracDelta(ω=ω, α=α), β=β)
-	model = ToulouseIM(ϵ_d=μ)
-	lat = GrassmannLattice(N=N, δτ=δτ, contour=:imag)
-	corr = correlationfunction(bath, lat)
-	alg = ExactTTIIF(alg_mult=SVDCompression(trunc=trunc), verbosity=0)
-
-	mpsK = sysdynamics(lat, model, trunc=trunc)
-	mpsK = boundarycondition!(mpsK, lat)
-	mpsK = hybriddynamics!(mpsK, lat, corr, alg)
-	g = gτ_series(lat, mpsK)
-	# TTI accuracy limited by the short-time Prony fit of the in-flight
-	# vertex-shifted redesign (~5%), TODO(Prony): tighten back to 1e-2
-	@test relerr(g, g_ed) < 1.0e-1
-
-	# agrees with the standard separate-construction workflow
-	mpsI = hybriddynamics(lat, corr, alg)
-	mpsK0 = sysdynamics(lat, model, trunc=trunc)
-	mpsK0 = boundarycondition!(mpsK0, lat)
-	g0 = gτ_series(lat, mpsK0, mpsI)
-	@test relerr(g, g0) < 1.0e-3
-end
-
-@testset "Few-mode bath, imaginary time: time-dependent Hamiltonian" begin
-	# on the imaginary axis only the constant hτ enters; ht/htt are
-	# deliberately very different and must not matter
-	μ0 = 0.7; μ1 = -1.3; A = 5.0; ωt = 1.0
-	ω = 1.0; α = 0.5
-	δτ = 0.1; N = 8; β = N * δτ
-	trunc = truncdimcutoff(D=60, ϵ=1.0e-10)
-
-	H, a, adag, H0 = singlemode_ed(μ=μ0, U=0, bathspecs=[(ω, α)])
-	g_ed = gτ_ed(H, a, adag, 0:δτ:β, β)
-
-	bath = fermionicbath(DiracDelta(ω=ω, α=α), β=β)
-	model = TdImpurityHamiltonian([tunneling(1, 1, coeff=μ0)],
-									[tunneling(1, 1, coeff=μ1)],
-									[TdImpurityOp([tunneling(1, 1)], t -> A * sin(ωt * t))])
-	lat = GrassmannLattice(N=N, δτ=δτ, contour=:imag)
-	corr = correlationfunction(bath, lat)
-	mpsI = hybriddynamics(lat, corr, trunc=trunc)
-	mpsK = sysdynamics(lat, model, trunc=trunc)
-	mpsK = boundarycondition!(mpsK, lat)
-	g = gτ_series(lat, mpsK, mpsI)
-		# same PartialIF O(δτ) discretization constant as the tests above
-@test relerr(g, g_ed) < 2.0e-2
+	kernel = hybridization(lat, bath)
+	K, Is = fermionic_setup(lat, bath, model)
+	Z = integrate(K, Is...)
+	m = [matsubara(lat, model, kernel, Is...; i=i, j=0, Z=Z) for i in 1:lat.k]
+	@test relerr(m, -g_ed[2:end]) < 2e-3
 end

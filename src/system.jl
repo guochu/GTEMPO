@@ -204,7 +204,13 @@ function _system_factor_reference(lattice::AbstractGrassmannLattice, model::Abst
     fqs = fock_charges(spec, bands)
     pairs = [(s, t) for t in 1:dim for s in 1:dim]
     data = nothing
-    prefix = z
+    # prefix = 已折入状态的累积插入荷（U1GTEMPO2 同款）：cut 0 的插入已折 ρ₀
+    # （上行 rho = cutleft(0)·rho·cutright(0)），其荷必须计入初值——否则奇插入
+    # （荷≠0）首张量右键荷不随 ρ₀ 的荷移位 → 块路由错位、链迹归零；逐胞累计
+    # 而非重置（leftlabels[k] 相对全部已过切位）。偶算符 charge=nothing 不进
+    # prefix，occupation/nn 路径不受影响。
+    prefix = foldl((p, ins) -> ins.charge === nothing ? p : qadd(p, ins.charge),
+                   get(cuts, 0, OperatorInsertion[]); init=z)
     labels = Any[]
     charges_per_cell = cell_charges(spec, bands)
     for (k, (b, j)) in enumerate(cells)
@@ -228,7 +234,6 @@ function _system_factor_reference(lattice::AbstractGrassmannLattice, model::Abst
             mats[m+1] .*= (-1)^(oddlater * count_ones(m))
         end
         leftlabels = k == 1 ? [z] : [qsub(qsub(fqs[s], fqs[t]), prefix) for (s, t) in pairs]
-        prefix = z
         for (cut, items) in cuts, ins in items
             cut == k || continue
             ins.charge === nothing || (prefix = qadd(prefix, ins.charge))

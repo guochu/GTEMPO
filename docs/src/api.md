@@ -1,3 +1,11 @@
+> ⚠️ **API 迁移声明（grassmannmps-backend 分支，2026-11-15）**：本分支已换轨
+> GrassmannMPS 后端——Grassmann ordering 家族已删（仅存 Chrono 三序）、
+> `sysdynamics/hybriddynamics/greater/lesser/matsubara` 等签名全部更新
+> （`symmetry` 手选、`coupling_norm` 随 K、插入显式带荷）。本文档与
+> docs/tutorials 下的脚本以旧栈 API 写成，仅作旧接口参考；新 API 逐项
+> 对照见仓库根 [changes.md](../../changes.md)，可运行的新 API 用法见
+> `test/api/`（physics_battery/port_smoke/observables 即用法示例）。
+
 # API Reference
 
 ## Contours and lattices

@@ -1,5 +1,51 @@
 # 接口更改说明
 
+## 奇算符 GF 修复 + 测试套件重建 + BCS/multiorbital 重接批次（2026-11-15，grassmannmps-backend 分支）
+
+上一批次的「已知未决」奇算符 GF 缺陷**全案告破并修复**（对拍 U1GTEMPO2 机器精度），同时完成 Phase 6 测试套件重建与 BCS/多带重接：
+
+- **奇插入 GF 五处口径差**（greater/lesser/matsubara/raw_lead_correlator；上一批次
+  的 ~e-49「port split/pairize 有罪」裁决**撤回**——该结论基于手动复刻 builder，
+  本次实验证明手动版在两栈皆死：①参照手动链（prefix 不含 cut-0 荷）迹恰零；
+  ②补上 cut-0 荷后与参照真身机器精度一致 ⟹ **port 的 split_cell/from_core/
+  pairize/桥层全数无罪**）。真凶与全部口径差（measurement.jl 文件头有完整记录）：
+  ①**builder prefix 未含 cut-0 插入荷**（system.jl：prefix 初值须 = cut-0 插入荷、
+  逐胞累计而非重置——偶算符 charge=nothing 不受影响，故 occupation/nn 全绿而
+  奇 GF 全垃圾）；②荷方向反转（d/ddag 应取算符自荷 −q/+q，此前反向且
+  OperatorInsertion 无荷一致性校验——参照栈有）；③`_normalized_two_point` 忽略
+  调用方显式 order/coupling_norm kwargs（hybridization diagnostics 不登记
+  order → **greater 以 order=1 链对 order=2 的 Z 归一**，恒定复因子 1.07 假象）；
+  ④push 序（cutleft foldr 首 push 最左 = 最后作用）：同切位 0⁺ greater = d·ddag、
+  lesser/电流 = ddag·d；⑤matsubara 缺时序因子 (i≥j ? −1 : +1)。
+  验证：实时 greater/lesser 3 点、虚时 matsubara 4 点、occupation 4 点、
+  lead 关联 6 点（含同切位 a†a 极限）Δ ≤ 5e-15。
+- **BCS 反常 IF 重接**（`influence.jl` bcs_partial_if + bcs_hybriddynamics，
+  D7 仅 :z2；`correlationfunction.jl` 加 BCS 派发）：行/列腿覆盖指数四类单项式
+  (ā↑,a↑)/(ā↓,a↓)/(ā↑,ā↓)/(a↓,a↑)，系数直读 QuAPI BCSCorrelationFunction
+  （有向指数系数 + 实时跨支 Keldysh −1 补偿，旧栈 partialif_hybrid 同款）。
+  验证：Δ=0 退化为两条独立正常带（Z 比值机器精度）；Δ≠0 Z 对 bcs_ed ED
+  机器精度档（**归一化分母 = 配对浴配分**，Δ 项破坏粒子数、自由浴配分不可用）；
+  occ 带 @test_broken（0.55 vs 0.32，反常通道对单粒子观测的路径 bug，
+  分诊路径在 test/bcs/runtests.jl FIXME）。
+- **matsubara 混合轮廓放行**：τ↔τ 插入在 Kadanoff 轮廓合法（虚时支 = 热态腿）。
+- **kernel=nothing 修复**：kernel_order/kernel_coupling_norm 加 ::Nothing 方法
+  （occupation/nn 的显式 order/coupling_norm 路径此前被 kwarg 默认值打断）。
+- **cached_gf 补 cache kwarg**（透传兼容 cached_correlation；D5 精确路径语义不变）。
+- **symmetry lattice accessor + symmetry_spec/var_charge/cell_charges/fock_charges
+  导出**（lattices.jl：export 已声明但 accessor 缺失）。
+- **CUDA ext 删除**（D1 裁决：ext/ 整目录移除、Project.toml weakdeps/ext 条目清理）。
+- **测试套件重建**（Phase 6）：api/ 12 文件新 API 全绿（lattice/bridge/integration/
+  correlation/hybriddynamics/sysdynamics/entropy/observables/quapi_crosscheck/
+  physics_battery/port_smoke）；normalbath fewmodes（imag/real/mixed × 单模/
+  两模/两带 U≠0/quench/Td，ED 锚）+ continuous（Toulouse 解析锚；imag GF 5e-3、
+  实时二次型精确锚）+ BCS（Δ=0 精确退化、反常 ED、D7 守卫）+ multiorbital
+  （Kanamori norb=1，occ/nn 机器精度）。**ED 锚定铁律**：port 虚时 Z = 浴归一化
+  值（ED 须除纯浴配分 Z_B；Δ≠0 时用配对浴配分）+ 行因子化 IF 的一阶 O(δτ)
+  常数（fewmodes ~0.1/δτ、两带 U≠0 ~0.45/δτ，容差按此标定）；实时离散化精确
+  （常数 H 精确指数切片合成），容差 1e-4~1e-5。旧栈 Z2Tensors 测试（grassmannmps/
+  grassmanntensor/mpo/mult/electronphonon）随栈退役删除；toulouse_Gτ 的随机宇称
+  估计器（同参数跨进程整体 ± 翻转）在解析锚处按符号不定分支处理。
+
 本轮重构涉及的接口更改汇总。所有更改均已通过全量测试验证（行为不变或数值等价）。
 
 ## GrassmannMPS 后端换轨：M=2/跨对称性/ExactTTI 修复批次（2026-11-14，grassmannmps-backend 分支）

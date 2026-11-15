@@ -161,6 +161,7 @@ function _cell_var_index(lattice, cell::Tuple{Symbol,Int}, band::Int, conj::Bool
     return block_offset(lattice, cell_block(lattice, cell)) + 2 * (band - 1) + Int(conj)
 end
 
+
 # ---------------------------------------------------------------------------
 # 矩阵铅笔拟合（U1GTEMPO2 fit_exponentials 原样）
 # ---------------------------------------------------------------------------
@@ -587,3 +588,87 @@ end
 "integrate(lattice, x0, x1...) —— Berezin 迹（链 = (K, Is...)，GM 引擎）"
 integrate(lattice::AbstractGrassmannLattice, x0::GM.GMPS, x1::GM.GMPS...) = integrate(x0, x1...)
 integrate_scaled(lattice::AbstractGrassmannLattice, x0::GM.GMPS, x1::GM.GMPS...) = integrate_scaled(x0, x1...)
+
+# ---------------------------------------------------------------------------
+# BCS bath：反常通道 partial IF（D7 裁决：仅 :z2——反常关联破坏粒子数守恒、
+# 宇称恒守恒；旧栈 bcsinfluencefunctional/partialif.jl 的 GM 重写）
+# ---------------------------------------------------------------------------
+
+"BCS 指数的行/列腿（旧 _bcscolumns 同约定）：行 = (band1,ā)/(band2,ā)/(band2,a)，
+列 = (band1,a)/(band2,a)/(band2,ā)，各分支全节点；行同节点列由装配处剔除
+（同变量自配对 ξ² = 0 且系数位不可重复）"
+function _bcs_legs(lattice::AbstractGrassmannLattice, band1::Int, band2::Int)
+    rows = GrassmannContourIndex[]
+    cols = GrassmannContourIndex[]
+    for b in branches(lattice)
+        for j in 1:(b === :τ ? lattice.kτ : lattice.kt)
+            push!(cols, GrassmannContourIndex(Int(j), b, band1, false))
+            push!(cols, GrassmannContourIndex(Int(j), b, band2, false))
+            push!(cols, GrassmannContourIndex(Int(j), b, band2, true))
+        end
+    end
+    for b in branches(lattice)
+        for j in 1:(b === :τ ? lattice.kτ : lattice.kt)
+            push!(rows, GrassmannContourIndex(Int(j), b, band1, true))
+            push!(rows, GrassmannContourIndex(Int(j), b, band2, true))
+            push!(rows, GrassmannContourIndex(Int(j), b, band2, false))
+        end
+    end
+    return rows, cols
+end
+
+"""
+    bcs_partial_if(lattice, corr; band1=1, band2=2, trunc=Truncation(), reports) -> GMPS
+
+BCS 反常 partial IF = Π_row exp(行腿 × Σ 列腿系数) 的逐行因子积（精确）。
+系数直读 QuAPI `BCSCorrelationFunction[row_ix, col_ix]`（有向指数系数语义、
+无 conj 翻转；实时跨支 Keldysh 相对号内嵌于块值，装配处补 −1，与旧栈
+partialif_hybrid 同款）。行/列腿覆盖指数四类单项式
+(ā↑,a↑)/(ā↓,a↓)/(ā↑,ā↓)/(a↓,a↑)——腿的 (band, conj) 标签经 QuAPI getindex
+选择对应 Δ 块。**仅 :z2**（对称性守卫 D7）。
+"""
+function bcs_partial_if(lattice::AbstractGrassmannLattice, corr::QuAPI.BCSCorrelationFunction;
+                        band1::Int=1, band2::Int=2, trunc::Truncation=Truncation(),
+                        reports=CompressionReport[])
+    spec = symmetry_spec(lattice.symmetry)
+    spec isa Z2Spec || throw(ArgumentError(
+        "BCS IF supports only symmetry=:z2 (anomalous pairing breaks particle-number " *
+        "conservation; only parity is conserved), got :$(lattice.symmetry)"))
+    (1 <= band1 < band2 <= lattice.bands) || throw(ArgumentError(
+        "BCS orbital requires 1 ≤ band1 < band2 ≤ bands, got ($band1, $band2)"))
+    keldysh = branches(lattice) == (:+, :-)
+    charges = _site_charges(spec, lattice)
+    rows, cols = _bcs_legs(lattice, band1, band2)
+    col_pos = [lattice[c] for c in cols]
+    out = vacuumstate(lattice)
+    for r in rows
+        anchor = lattice[r]
+        ws = Dict{Int,ComplexF64}()
+        for (c, p) in zip(cols, col_pos)
+            c == r && continue
+            v = corr[r, c] * (keldysh && branch(r) !== branch(c) ? -1 : 1)
+            iszero(v) || (ws[p] = v)
+        end
+        isempty(ws) && continue
+        ps = sort!(collect(keys(ws)))
+        out = multiply(out, partial_row(spec, charges, anchor, ps, [ws[p] for p in ps]); trunc, reports)
+    end
+    out
+end
+
+"""
+    bcs_hybriddynamics(lattice, bath::AbstractBCSBath, alg=PartialIF(); band=1, trunc) -> GMPS
+
+BCS bath 的 IF 链便捷入口（旧 hybriddynamics(::BCSCorrelationFunction) 同位）：
+`band` 选轨道（band1 = 2·band−1、band2 = 2·band），对称性守卫 :z2（D7）。
+"""
+function bcs_hybriddynamics(lattice::AbstractGrassmannLattice, bath::AbstractBCSBath,
+                            alg::InfluenceFunctionalAlgorithm=PartialIF();
+                            band::Int=1, trunc::Truncation=Truncation())
+    alg isa PartialIF || throw(ArgumentError(
+        "BCS IF supports only PartialIF on the GM stack (D7), got $(typeof(alg))"))
+    corr = correlationfunction(bath, lattice)
+    band1 = 2 * band - 1
+    reports = CompressionReport[]
+    return bcs_partial_if(lattice, corr; band1=band1, band2=band1 + 1, trunc=trunc, reports=reports)
+end

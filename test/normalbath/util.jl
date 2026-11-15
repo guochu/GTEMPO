@@ -1,7 +1,7 @@
-# reference-solution helpers shared by the model tests. `μ` is the chemical
-# potential handed to AndersonIM / KanamoriIM (H_imp = μ Σ n_i).
+# reference-solution helpers shared by the model tests. `μ` 是交给模型的化学势
+# 约定（H_imp = μ Σ n_i）。ED 构造器（singlemode_ed 等）在顶层 test/util.jl。
 
-using LinearAlgebra: exp
+using LinearAlgebra: exp, Diagonal
 
 # ED Matsubara Green's function ⟨a(τ) a†⟩ of the full ED Hamiltonian
 gτ_ed(H, a, adag, τs, β) = correlation_2op_1τ(H, a, adag, τs, β=β)
@@ -29,88 +29,24 @@ function greater_lesser_ed_mixed(H, a, adag, ts, β)
 	return gt, lt
 end
 
+"杂质热初态 e^{−βH_imp}/tr（实时轮廓 initial_state；浴侧真空由 IF 承担）"
+thermal_impurity_state(model, β) =
+	Matrix{ComplexF64}(fock_thermalstate(model, β).data)
+
 """
-    fermionic_setup(lattice, bath, model, trunc; β=nothing)
+    fermionic_setup(lattice, bath, model; β=nothing, order=1, coupling_norm=nothing)
 
-Standard Grassmann-path setup for a fermionic bath: build the single-band
-influence functional, replicate it with `fillband`, build the impurity
-dynamics, apply boundary conditions and (optionally) the thermal initial
-state. Returns (mpsK, Is).
+新 API 装配：逐带 PartialIF（带荷/coupling_norm 随带携带）+ K（可带热初态、
+二阶 Weyl 标量）。返回 (K, Is)。
 """
-function fermionic_setup(lattice, bath, model, trunc; β=nothing)
-	corr = correlationfunction(bath, lattice)
-	mpsI1 = hybriddynamics(lattice, corr, band=1, trunc=trunc)
-	Is = [mpsI1]
-	for b in 2:lattice.bands
-		push!(Is, swapband(Is[1], lattice, 1, b, trunc=trunc))
-	end
-	mpsK = sysdynamics(lattice, model, trunc=trunc)
-	for band in 1:lattice.bands
-		mpsK = boundarycondition!(mpsK, lattice, band=band, trunc=trunc)
-	end
-	if !isnothing(β)
-		mpsK = systhermalstate!(mpsK, lattice, model, trunc=trunc, β=β)
-	end
-	return mpsK, Is
+function fermionic_setup(lattice, bath, model; β=nothing, order::Int=1, coupling_norm=nothing)
+	order == 2 && coupling_norm === nothing &&
+		throw(ArgumentError("order=2 requires coupling_norm"))
+	Is = ntuple(b -> hybriddynamics(lattice, bath, PartialIF(); band=b,
+	                                coupling_norm=coupling_norm), lattice.bands)
+	initial = β === nothing ? nothing : thermal_impurity_state(model, β)
+	K = order == 2 ?
+		sysdynamics_weyl2order(lattice, model; coupling_norm=coupling_norm, initial_state=initial) :
+		sysdynamics(lattice, model; initial_state=initial)
+	return K, Is
 end
-
-# ---------------------------------------------------- observable series
-# All series work for any Grassmann ordering. When `cache` is given, the
-# (faster) cached evaluation is used; otherwise the plain functions with an
-# explicit `Z` are used (cached evaluation requires AdjacentConjugation).
-
-# Matsubara Green's function on the imaginary-time lattice
-function gτ_series(lattice, mpsK, Is...; cache=nothing)
-	if isnothing(cache)
-		# plain evaluation accepts a complex Z (e.g. complex BCS gaps)
-		Z = integrate(lattice, mpsK, Is...)
-		b = GrassmannContourIndex(1, conj=true, branch=:τ, band=1)
-		return [gf(lattice, (GrassmannContourIndex(i, conj=false, branch=:τ, band=1), b), mpsK, Is..., Z=Z) for i in 1:lattice.k]
-	end
-	return cached_gf_fast(lattice, mpsK, Is...; c1=false, c2=true, b1=:τ, b2=:τ, cache=cache)
-end
-
-# greater/lesser series on the Keldysh contour
-function gtlt_series(lattice, mpsK, Is...; cache=nothing, band=1)
-	if isnothing(cache)
-		Z = integrate(lattice, mpsK, Is...)
-		gt = [-im * gf(lattice, (GrassmannContourIndex(k, conj=false, branch=:+, band=band), GrassmannContourIndex(1, conj=true, branch=:+, band=band)), mpsK, Is..., Z=Z) for k in 1:lattice.k]
-		lt = [-im * gf(lattice, (GrassmannContourIndex(1, conj=true, branch=:-, band=band), GrassmannContourIndex(k, conj=false, branch=:+, band=band)), mpsK, Is..., Z=Z) for k in 1:lattice.k]
-	else
-		gt = [-im * cached_greater(lattice, k, mpsK, Is..., band=band, cache=cache) for k in 1:lattice.k]
-		lt = [-im * cached_lesser(lattice, k, mpsK, Is..., band=band, cache=cache) for k in 1:lattice.k]
-	end
-	return gt, lt
-end
-
-# greater/lesser/Matsubara series on the Kadanoff contour
-function gtltgτ_series(lattice, mpsK, Is...; cache=nothing, band=1)
-	if isnothing(cache)
-		Z = integrate(lattice, mpsK, Is...)
-		gt = [-im * gf(lattice, (GrassmannContourIndex(k, conj=false, branch=:+, band=band), GrassmannContourIndex(1, conj=true, branch=:+, band=band)), mpsK, Is..., Z=Z) for k in 1:lattice.kt]
-		lt = [im * gf(lattice, (GrassmannContourIndex(1, conj=true, branch=:-, band=band), GrassmannContourIndex(k, conj=false, branch=:+, band=band)), mpsK, Is..., Z=Z) for k in 1:lattice.kt]
-		gτ = [gf(lattice, (GrassmannContourIndex(k, conj=false, branch=:τ, band=band), GrassmannContourIndex(1, conj=true, branch=:τ, band=band)), mpsK, Is..., Z=Z) for k in 1:lattice.kτ]
-	else
-		gt = [-im * cached_greater(lattice, k, mpsK, Is..., cache=cache) for k in 1:lattice.kt]
-		lt = [im * cached_lesser(lattice, k, mpsK, Is..., cache=cache) for k in 1:lattice.kt]
-		gτ = cached_gf_fast(lattice, mpsK, Is...; c1=false, c2=true, b1=:τ, b2=:τ, cache=cache)
-		gτ[end] = 1 - gτ[1]
-	end
-	return gt, lt, gτ
-end
-
-# the four influence-functional construction algorithms (imaginary/real time)
-if_algs(trunc) = [
-	("PartialIF",  PartialIF(trunc=trunc)),
-	("XTRGIF",     XTRGIF(k=3, alg_mult=SVDCompression(trunc=trunc), verbosity=0)),
-	("ExactTTIIF", ExactTTIIF(alg_mult=SVDCompression(trunc=trunc), verbosity=0)),
-	("TDVPIF",     TDVPIF(trunc=trunc, δ=0.1, verbosity=0)),
-]
-
-# analytic independent-bosons reference with the μ convention (ϵ_d = μ)
-independentbosons_Gτ_μ(spec; β, μ, Nτ, U=0, bands=1) =
-	independentbosons_Gτ(spec, β=β, ϵ_d=μ, Nτ=Nτ, U=U, bands=bands)
-independentbosons_greater_μ(spec, t; β, μ, U=0, bands=1) =
-	independentbosons_greater(spec, t, β=β, ϵ_d=μ, U=U, bands=bands)
-independentbosons_lesser_μ(spec, t; β, μ, U=0, bands=1) =
-	independentbosons_lesser(spec, t, β=β, ϵ_d=μ, U=U, bands=bands)

@@ -100,6 +100,8 @@ export sysdynamics, sysdynamics_weyl2order, OperatorInsertion
 
 # IF 构造
 export InfluenceFunctionalAlgorithm, PartialIF, ExactTTI, InfluenceFunctional
+export bcs_hybriddynamics, bcs_partial_if
+export symmetry_spec, var_charge, cell_charges, fock_charges
 export HybridizationKernel, hybridization, influence_functional, hybriddynamics
 
 # 观测量（Phase 5b：inserted-K 边界观测 + 算符缓存原始关联两轨，D5 裁决见 measurement.jl）

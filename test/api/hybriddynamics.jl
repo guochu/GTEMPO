@@ -1,230 +1,48 @@
-@testset "API: hybriddynamics (imaginary time)" begin
-	β = 0.3
-	N = 3
-	trunc = truncdimcutoff(D=30, ϵ=1.0e-10)
-	bath = fermionicbath(DiracDelta(ω=1, α=0.5), β=β)
+β0 = 1.0
+bath0 = discretefermionicbath([1.0], [0.5]; β=β0)
 
-	for ordering in imag_orderings
-		lat = GrassmannLattice(N=N, δτ=β/N, contour=:imag, ordering=ordering)
-		corr = correlationfunction(bath, lat)
-		# default (PartialIF) construction via trunc keyword
-		mpsI = hybriddynamics(lat, corr, trunc=trunc)
-		@test mpsI isa GrassmannMPS
-		@test length(mpsI) == length(lat)
-		# explicit PartialIF
-		mpsI1 = hybriddynamics(lat, corr, PartialIF(trunc=trunc))
-		# naive construction
-		mpsI2 = hybriddynamics_naive(lat, corr, trunc=trunc)
-		# XTRGIF, ExactTTIIF, TDVPIF
-		mpsI3 = hybriddynamics(lat, corr, XTRGIF(k=2, alg_mult=SVDCompression(trunc=trunc), verbosity=0))
-		mpsI4 = hybriddynamics(lat, corr, ExactTTIIF(alg_mult=SVDCompression(trunc=trunc), verbosity=0))
-		mpsI5 = hybriddynamics(lat, corr, TDVPIF(trunc=trunc, δ=0.1, verbosity=0))
-		for mps in (mpsI1, mpsI2, mpsI3, mpsI4, mpsI5)
-			@test norm(mps) > 0
-			@test relerr(mps, mpsI) < 5.0e-2
-		end
-		# in-place variants
-		mpsI6 = hybriddynamics!(vacuumstate(lat), lat, corr, trunc=trunc)
-		@test relerr(mpsI6, mpsI) < 1.0e-6
+@testset "API: hybridization kernel" begin
+	lat = GrassmannLattice(N=4, δt=0.1, contour=:real)
+	kernel = hybridization(lat, bath0; coupling_norm=0.5)
+	@test kernel isa HybridizationKernel
+	for b1 in (:+, :-), b2 in (:+, :-)
+		@test size(kernel.blocks[(b1, b2)]) == (4, 4)
 	end
+	@test kernel.coupling_norm == 0.5
+	@test_throws ArgumentError hybridization(lat, bath0; coupling_norm=-1.0)
+	# 形状守卫：块尺寸须与 lattice 一致
+	lat2 = GrassmannLattice(N=6, δt=0.1, contour=:real)
+	blocks = Dict((b1, b2) => zeros(ComplexF64, 4, 4) for b1 in (:+, :-), b2 in (:+, :-))
+	@test_throws DimensionMismatch HybridizationKernel(lat2, blocks)
 
-	# in-place ExactTTIIF (default ordering): the IF is merged into the state
-	# passed in, e.g. the impurity dynamics obtained from sysdynamics
-	lat = GrassmannLattice(N=N, δτ=β/N, contour=:imag)
-	corr = correlationfunction(bath, lat)
-	alg = ExactTTIIF(alg_mult=SVDCompression(trunc=trunc), verbosity=0)
-	mpsI4 = hybriddynamics(lat, corr, alg)
-	@test relerr(hybriddynamics!(vacuumstate(lat), lat, corr, alg), mpsI4) < 1.0e-12
-	model = ToulouseIM(ϵ_d=0.5)
-	mpsK = sysdynamics(lat, model, trunc=trunc)
-	mpsK = hybriddynamics!(mpsK, lat, corr, alg)
-	mpsK_ref = mult(sysdynamics(lat, model, trunc=trunc), mpsI4, trunc=trunc)[1]
-	@test relerr(mpsK, mpsK_ref) < 1.0e-6
+	# 虚时只有 τ 块
+	latτ = GrassmannLattice(N=4, δτ=0.25, contour=:imag)
+	kernelτ = hybridization(latτ, bath0)
+	@test size(kernelτ.blocks[(:τ, :τ)]) == (4, 4)
 
-	# multi-band: construct on a single-band lattice, then fillband
-	lat = GrassmannLattice(N=N, δτ=β/N, contour=:imag, bands=2)
-	lat1 = similar(lat, bands=1)
-	corr = correlationfunction(bath, lat1)
-	mpsI = hybriddynamics(lat1, corr, trunc=trunc, band=1)
-	mpsI1 = fillband(lat, mpsI, band=1)
-	mpsI2 = fillband(lat, mpsI, band=2)
-	@test length(mpsI1) == length(lat)
-	@test relerr(mpsI2, swapband(mpsI1, lat, 1, 2, trunc=trunc)) < 1.0e-8
-
-	# ExactTTIIF builds its terms on a single-band lattice internally and
-	# expands them to the full lattice via fillband
-	mpsI3 = hybriddynamics(lat, corr, ExactTTIIF(alg_mult=SVDCompression(trunc=trunc), verbosity=0))
-	mpsI3_ref = fillband(lat, hybriddynamics(lat1, corr, ExactTTIIF(alg_mult=SVDCompression(trunc=trunc), verbosity=0)), band=1)
-	@test relerr(mpsI3, mpsI3_ref) < 1.0e-12
-end
-
-@testset "API: hybriddynamics (real time)" begin
-	δt = 0.05
-	N = 3
-	trunc = truncdimcutoff(D=30, ϵ=1.0e-10)
-	bath = fermionicbath(DiracDelta(ω=1, α=0.5), β=1.0)
-
-	for ordering in real_orderings
-		lat = GrassmannLattice(N=N, δt=δt, contour=:real, ordering=ordering)
-		corr = correlationfunction(bath, lat)
-		mpsI = hybriddynamics(lat, corr, trunc=trunc)
-		@test mpsI isa GrassmannMPS
-		@test length(mpsI) == length(lat)
-		mpsI1 = hybriddynamics(lat, corr, PartialIF(trunc=trunc))
-		mpsI2 = hybriddynamics_naive(lat, corr, trunc=trunc)
-		mpsI3 = hybriddynamics(lat, corr, XTRGIF(k=2, alg_mult=SVDCompression(trunc=trunc), verbosity=0))
-		mpsI4 = hybriddynamics(lat, corr, ExactTTIIF(alg_mult=SVDCompression(trunc=trunc), verbosity=0))
-		mpsI5 = hybriddynamics(lat, corr, TDVPIF(trunc=trunc, δ=0.1, verbosity=0))
-		for mps in (mpsI1, mpsI2, mpsI3, mpsI4, mpsI5)
-			@test norm(mps) > 0
-			@test relerr(mps, mpsI) < 5.0e-2
-		end
-	end
-
-	# in-place ExactTTIIF (default ordering): merge the IF into a K obtained
-	# from sysdynamics, on the real-time (Keldysh) contour
-	lat = GrassmannLattice(N=N, δt=δt, contour=:real)
-	corr = correlationfunction(bath, lat)
-	alg = ExactTTIIF(alg_mult=SVDCompression(trunc=trunc), verbosity=0)
-	mpsI4 = hybriddynamics(lat, corr, alg)
-	@test relerr(hybriddynamics!(vacuumstate(lat), lat, corr, alg), mpsI4) < 1.0e-12
-	model = ToulouseIM(ϵ_d=0.5)
-	mpsK = sysdynamics(lat, model, trunc=trunc)
-	mpsK = hybriddynamics!(mpsK, lat, corr, alg)
-	mpsK_ref = mult(sysdynamics(lat, model, trunc=trunc), mpsI4, trunc=trunc)[1]
-	@test relerr(mpsK, mpsK_ref) < 1.0e-3
-end
-
-@testset "API: hybriddynamics (mixed time)" begin
-	β = 0.3
-	trunc = truncdimcutoff(D=30, ϵ=1.0e-10)
-	bath = fermionicbath(DiracDelta(ω=1, α=0.5), β=β)
-
-	for ordering in mixed_orderings
-		lat = GrassmannLattice(Nt=3, δt=0.05, Nτ=3, δτ=0.1, contour=:mixed, ordering=ordering)
-		corr = correlationfunction(bath, lat)
-		mpsI = hybriddynamics(lat, corr, trunc=trunc)
-		@test mpsI isa GrassmannMPS
-		@test length(mpsI) == length(lat)
-		mpsI2 = hybriddynamics_naive(lat, corr, trunc=trunc)
-		@test norm(mpsI) > 0
-		@test relerr(mpsI, mpsI2) < 5.0e-2
-		# per-band construction
-		mpsI3 = hybriddynamics(lat, corr, trunc=trunc, band=1)
-		@test relerr(mpsI3, mpsI) < 1.0e-8
+	# 混合九块
+	latm = GrassmannLattice(Nt=3, δt=0.1, Nτ=4, δτ=0.25, contour=:mixed)
+	kernelm = hybridization(latm, bath0)
+	for b1 in (:+, :-, :τ), b2 in (:+, :-, :τ)
+		@test haskey(kernelm.blocks, (b1, b2))
 	end
 end
 
-@testset "API: influence functional internals" begin
-	trunc = truncdimcutoff(D=50, ϵ=1.0e-10)
-	bath = fermionicbath(DiracDelta(ω=1, α=0.5), β=0.4)
-
-	# algorithm type hierarchy
-	@test PartialIF() isa InfluenceFunctionalAlgorithm
-	@test XTRGIF() isa InfluenceFunctionalAlgorithm
-	@test ExactTTIIF() isa InfluenceFunctionalAlgorithm
-	@test TDVPIF() isa InfluenceFunctionalAlgorithm
-
-	# imaginary time: influenceoperators / influenceoperatorsteppers / influenceoperatorstepper
-	lat = GrassmannLattice(N=3, δτ=0.1, contour=:imag)
-	corr = correlationfunction(bath, lat)
-	ops = influenceoperators(lat, corr)
-	@test length(ops) == 1 && ops[1] isa MPO && length(ops[1]) == length(lat)
-	ops1 = influenceoperatorsteppers(lat, corr, 0.05, WII(tol=1.0e-14, maxiter=100000))
-	@test length(ops1) == 1 && ops1[1] isa MPO
-	ops2 = influenceoperatorsteppers(lat, corr, 0.05, ComplexStepper(WII(tol=1.0e-14, maxiter=100000)))
-	@test length(ops2) == 2 && all(op -> op isa MPO, ops2)
-	mps = influenceoperatorstepper(lat, corr, 0.05, WII(tol=1.0e-14, maxiter=100000), SVDCompression(trunc=trunc))
-	@test mps isa GrassmannMPS && length(mps) == length(lat)
-	@test relerr(mps, ops1[1] * vacuumstate(lat)) < 1.0e-8
-
-	# partialif_hybrid (analytic MPO) vs partialif_hybrid_naive (GTerm exponentials)
-	k = lat.k - 1
-	cols = [GrassmannContourIndex(j, :τ, 1, false) for j in 1:k]
-	mps1 = vacuumstate(lat)
-	for i in 1:k
-		mps1 = mult!(mps1, partialif_hybrid(lat, GrassmannContourIndex(i, :τ, 1, true), cols, corr), trunc=trunc)[1]
+@testset "API: hybriddynamics（IF 链）" begin
+	lat = GrassmannLattice(N=4, δt=0.1, bands=2, contour=:real)
+	for b in 1:2
+		I = hybriddynamics(lat, bath0, PartialIF(); band=b, coupling_norm=1.0)
+		@test I isa GM.GMPS && length(I) == length(lat) ÷ 2
+		@test check_charge(I)
 	end
-	@test relerr(mps1, hybriddynamics(lat, corr, trunc=trunc)) < 1.0e-8
-	a = partialif_hybrid(lat, GrassmannContourIndex(1, :τ, 1, true), cols, corr)
-	b = partialif_hybrid_naive(lat, GrassmannContourIndex(1, :τ, 1, true), cols, corr, trunc=trunc)
-	@test relerr(a, b) < 1.0e-8
-	# hybriddynamics_naive! (in place) agrees with hybriddynamics_naive
-	@test relerr(hybriddynamics_naive!(vacuumstate(lat), lat, corr, trunc=trunc),
-				 hybriddynamics_naive(lat, corr, trunc=trunc)) < 1.0e-12
+	# band 越界显式拒绝
+	@test_throws BoundsError hybriddynamics(lat, bath0, PartialIF(); band=3)
 
-	# real time: stepwise evolution via hybriddynamicsstepper!
-	lat_r = GrassmannLattice(N=3, δt=0.05, contour=:real)
-	corr_r = correlationfunction(bath, lat_r)
-	lattice = similar(lat_r, N=0)
-	mpsI = vacuumstate(lattice)
-	while lattice.N < lat_r.N
-		lattice, mpsI = makestep(lattice, mpsI)
-		mpsI = hybriddynamicsstepper!(mpsI, lattice, corr_r, trunc=trunc)
-	end
-	@test timesteps(mpsI, lattice) == lattice.k
-	# copy and in-place steppers agree
-	@test distance(hybriddynamicsstepper(mpsI, lattice, corr_r, trunc=trunc),
-				   hybriddynamicsstepper!(copy(mpsI), lattice, corr_r, trunc=trunc)) == 0
-	# the stepped IF equals the static construction on the full lattice
-	# (small accumulated truncation differences between the two paths)
-	@test relerr(mpsI, hybriddynamics(lat_r, corr_r, trunc=trunc)) < 1.0e-5
-
-	# retarded interaction (bosonic bath): naive construction, copy vs in-place
-	bblat = GrassmannLattice(N=3, δτ=0.1, contour=:imag)
-	bbath = bosonicbath(DiracDelta(ω=1, α=0.5), β=1.0)
-	bcorr = correlationfunction(bbath, bblat)
-	V1 = retardedinteractdynamics_naive(bblat, bcorr, trunc=trunc)
-	V2 = retardedinteractdynamics_naive!(vacuumstate(bblat), bblat, bcorr, trunc=trunc)
-	@test length(V1) == length(bblat) && norm(V1) > 0
-	@test distance(V1, V2) < 1.0e-10
-end
-
-@testset "API: TTI-IF MPO blocks" begin
-	trunc = truncdimcutoff(D=60, ϵ=1.0e-12)
-	bath = fermionicbath(DiracDelta(ω=1, α=0.5), β=0.4)
-	evo = WII(tol=1.0e-14, maxiter=100000)
-	for ordering in (A1Ā1a1ā1B1B̄1b1b̄1(), A1Ā1B1B̄1a1ā1b1b̄1(), a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2())
-		lat = GrassmannLattice(δt=0.05, N=3, contour=:real, ordering=ordering)
-		corr = correlationfunction(bath, lat)
-		# dt=1 exponentiated the TTI generator of each branch block
-		ops = influenceoperatorsteppers(lat, corr, 1.0, evo,
-										alg_expan=GTEMPO.Defaults.alg_expan(tol=1.0e-14))
-		T = promote_type(scalartype(lat), scalartype(corr))
-		@test length(ops) == 4
-		# each block must equal the naive product of its row exponentials
-		# (window corrections included via `_window_correction`). At this
-		# short chain the Prony expansion of the vertex-shifted bulk
-		# generators is the accuracy bottleneck (the equal-time sum E of the
-		# same-branch blocks is off the smooth decay tail), and on a
-		# time-ascending lattice the 3-site cell is placed in reverse — both
-		# leave a small residual at small N (to be fixed together with the
-		# Prony expansion at short times).
-		tol = ordering isa a1ā1A1Ā1b1b̄1B1B̄1a2ā2A2Ā2b2b̄2B2B̄2 ? 1.0e-2 : 5.0e-3
-		for (n, (b1, b2)) in enumerate(((:+, :+), (:+, :-), (:-, :+), (:-, :-)))
-			mps = ops[n] * vacuumstate(T, lat)
-			for c in GTEMPO._window_correction(lat, corr, 1, b1, b2)
-				mps = mult!(mps, c, trunc=trunc)[1]
-			end
-			ref = vacuumstate(T, lat)
-			cols = [GrassmannContourIndex(j, b2, 1, false) for j in 1:lat.k]
-			for i in 1:lat.k
-				ref = mult(ref, partialif_hybrid(lat, GrassmannContourIndex(i, b1, 1, true), cols, corr), trunc=trunc)[1]
-			end
-			@test relerr(mps, ref) < tol
-		end
-	end
-end
-
-@testset "API: real-time ComplexStepper" begin
-	trunc = truncdimcutoff(D=50, ϵ=1.0e-10)
-	bath = fermionicbath(DiracDelta(ω=1, α=0.5), β=0.4)
-	lat = GrassmannLattice(N=3, δt=0.05, contour=:real)
-	corr = correlationfunction(bath, lat)
-	evo = WII(tol=1.0e-14, maxiter=100000)
-	alg1 = XTRGIF(k=2, alg_evo=evo, alg_mult=SVDCompression(trunc=trunc), verbosity=0)
-	alg2 = XTRGIF(k=2, alg_evo=ComplexStepper(evo), alg_mult=SVDCompression(trunc=trunc), verbosity=0)
-	mps1 = hybriddynamics(lat, corr, alg1)
-	mps2 = hybriddynamics(lat, corr, alg2)
-	@test relerr(mps2, mps1) < 1.0e-5
+	# 虚时：PartialIF 与 ExactTTI 同一泛函的两种物化 → 同 Z
+	latτ = GrassmannLattice(N=4, δτ=0.25, contour=:imag)
+	Iτ = hybriddynamics(latτ, bath0, PartialIF(); band=1)
+	@test length(Iτ) == length(latτ) ÷ 2
+	Ie = hybriddynamics(latτ, bath0, ExactTTI(); band=1)
+	@test length(Ie) == length(latτ) ÷ 2
+	@test integrate(Iτ) ≈ integrate(Ie) rtol = 1.0e-8
 end

@@ -1,159 +1,108 @@
-@testset "Few-mode bath, real time: orderings & algorithms" begin
+@testset "Few-mode bath, real time（ED）" begin
 	μ = 0.7; ω = 1.0; α = 0.5
 	β = 1.0; δt = 0.05; Nt = 8
-	ts = 0:δt:(Nt*δt)
-	trunc = truncdimcutoff(D=60, ϵ=1.0e-10)
+	ts = (1:Nt) .* δt
 
-	# ED reference: one fermionic bath mode, separable thermal initial state
+	# ED 参照：单浴模、可分离热初态
 	H, a, adag, H0 = singlemode_ed(μ=μ, U=0, bathspecs=[(ω, α)])
 	gt_ed, lt_ed = greater_lesser_ed(H, a, adag, H0, ts, β)
 
-	spec = DiracDelta(ω=ω, α=α)
-	bath = fermionicbath(spec, β=β)
+	lat = GrassmannLattice(N=Nt, δt=δt, contour=:real)
+	bath = discretefermionicbath([ω], [α]; β=β)
+	kernel = hybridization(lat, bath)
 	model = ToulouseIM(ϵ_d=μ)
-	for ordering in real_orderings
-		lat = GrassmannLattice(N=Nt, δt=δt, contour=:real, ordering=ordering)
-		corr = correlationfunction(bath, lat)
-		# all algorithms on the default ordering, the default algorithm on all
-		# orderings. XTRGIF/TDVPIF are quarantined on the real-time contour:
-		# the XTRG squaring / TDVP Krylov blow up on the vertex-shifted Prony
-		# channels of the in-flight short-time redesign (NaN/Inf downstream of
-		# finite MPO tensors; the WII exponentiation itself is fine) —
-		# TODO(Prony): restore after the short-time Prony redesign lands
-		algs = (ordering == real_orderings[1]) ? filter(a -> a[1] in ("PartialIF", "ExactTTIIF"), if_algs(trunc)) :
-			   [("PartialIF", PartialIF(trunc=trunc))]
-		for (name, alg) in algs
-			mpsI = hybriddynamics(lat, corr, alg)
-			mpsK = sysdynamics(lat, model, trunc=trunc)
-			mpsK = boundarycondition!(mpsK, lat)
-			mpsK = systhermalstate!(mpsK, lat, model, trunc=trunc, β=β)
-			gt, lt = gtlt_series(lat, mpsK, mpsI)
-			@test relerr(gt, gt_ed) < 3.0e-2
-			@test relerr(lt, lt_ed) < 3.0e-2
+	for order in (1, 2)
+		K, Is = fermionic_setup(lat, bath, model; β=β, order=order, coupling_norm=α)
+		Z = integrate(K, Is...)
+		for i in 1:Nt
+			g = greater(lat, model, kernel, Is...; i=i, j=0, Z=Z, order=order,
+			            coupling_norm=α, initial_state=thermal_impurity_state(model, β))
+			l = lesser(lat, model, kernel, Is...; i=i, j=0, Z=Z, order=order,
+			           coupling_norm=α, initial_state=thermal_impurity_state(model, β))
+			@test g ≈ gt_ed[i] atol = 1e-4
+			@test l ≈ lt_ed[i] atol = 1e-4
 		end
 	end
 end
 
-@testset "Few-mode bath, real time: two bands with U" begin
+@testset "Few-mode bath, real time: 两带 U≠0" begin
 	μ = 0.7; U = 1.0
 	β = 1.0; δt = 0.05; Nt = 10
-	ts = 0:δt:(Nt*δt)
-	trunc = truncdimcutoff(D=80, ϵ=1.0e-10)
+	ts = (1:Nt) .* δt
 	ω, α = 1.0, 0.5
-
-	# two bands with U: ED reference (16-dimensional ED), one bath mode per band
 	H, a, adag, H0 = singlemode_ed(μ=μ, U=U, bathspecs=[(ω, α), (ω, α)])
 	gt_ed, lt_ed = greater_lesser_ed(H, a, adag, H0, ts, β)
+
 	lat = GrassmannLattice(N=Nt, δt=δt, contour=:real, bands=2)
-	bath = fermionicbath(DiracDelta(ω=ω, α=α), β=β)
-	mpsK, Is = fermionic_setup(lat, bath, AndersonIM(U=U, ϵ_d=μ), trunc, β=β)
-	gt, lt = gtlt_series(lat, mpsK, Is...)
-	@test relerr(gt, gt_ed) < 3.0e-2
-	@test relerr(lt, lt_ed) < 3.0e-2
+	bath = discretefermionicbath([ω], [α]; β=β)
+	kernel = hybridization(lat, bath; coupling_norm=α)
+	model = AndersonIM(U=U, ϵ_d=μ)
+	K, Is = fermionic_setup(lat, bath, model; β=β, order=2, coupling_norm=α)
+	Z = integrate(K, Is...)
+	for i in 1:Nt
+		g = greater(lat, model, kernel, Is...; i=i, j=0, Z=Z, order=2,
+		            coupling_norm=α, initial_state=thermal_impurity_state(model, β))
+		@test g ≈ gt_ed[i] atol = 1e-4
+	end
 end
 
 @testset "Few-mode bath, real time: quench Hamiltonian" begin
-	# the impurity is thermalized with the pre-quench h0 (μ0, also used by the
-	# separable thermal initial state) and evolves with h1 (μ1) for t > 0
 	μ0 = 0.7; μ1 = -0.5; ω = 1.0; α = 0.5
 	β = 1.0; δt = 0.05; Nt = 8
-	ts = 0:δt:(Nt*δt)
-	trunc = truncdimcutoff(D=60, ϵ=1.0e-10)
-
-	# ED: separable initial state from the decoupled μ0 Hamiltonian, real-time
-	# evolution under the coupled μ1 Hamiltonian
+	ts = (1:Nt) .* δt
 	_, a, adag, H0 = singlemode_ed(μ=μ0, U=0, bathspecs=[(ω, α)])
 	H, = singlemode_ed(μ=μ1, U=0, bathspecs=[(ω, α)])
 	gt_ed, lt_ed = greater_lesser_ed(H, a, adag, H0, ts, β)
 
-	bath = fermionicbath(DiracDelta(ω=ω, α=α), β=β)
+	bath = discretefermionicbath([ω], [α]; β=β)
 	model = QuenchedImpurityHamiltonian([tunneling(1, 1, coeff=μ0)],
-										[tunneling(1, 1, coeff=μ1)]; bands=1)
+	                                    [tunneling(1, 1, coeff=μ1)]; bands=1)
 	lat = GrassmannLattice(N=Nt, δt=δt, contour=:real)
-	corr = correlationfunction(bath, lat)
-	mpsI = hybriddynamics(lat, corr, trunc=trunc)
-	mpsK = sysdynamics(lat, model, trunc=trunc)
-	mpsK = boundarycondition!(mpsK, lat)
-	mpsK = systhermalstate!(mpsK, lat, model, trunc=trunc, β=β)
-	gt, lt = gtlt_series(lat, mpsK, mpsI)
-	@test relerr(gt, gt_ed) < 3.0e-2
-	@test relerr(lt, lt_ed) < 3.0e-2
+	kernel = hybridization(lat, bath)
+	Is = hybriddynamics(lat, bath, PartialIF(); band=1)
+	K = sysdynamics(lat, model; initial_state=thermal_impurity_state(model, β))
+	Z = integrate(K, Is)
+	for i in 1:Nt
+		g = greater(lat, model, kernel, Is; i=i, j=0, Z=Z, initial_state=thermal_impurity_state(model, β))
+		l = lesser(lat, model, kernel, Is; i=i, j=0, Z=Z, initial_state=thermal_impurity_state(model, β))
+		@test g ≈ gt_ed[i] atol = 1e-4
+		@test l ≈ lt_ed[i] atol = 1e-4
+	end
 end
 
-@testset "Few-mode bath, real time: in-place ExactTTIIF hybriddynamics!" begin
-	# the whole workflow on one state: sysdynamics builds K (with the thermal
-	# initial state), then hybriddynamics! merges the influence functional
-	# into K in place
-	μ = 0.7; ω = 1.0; α = 0.5
-	β = 1.0; δt = 0.05; Nt = 8
-	ts = 0:δt:(Nt*δt)
-	trunc = truncdimcutoff(D=60, ϵ=1.0e-10)
-
-	H, a, adag, H0 = singlemode_ed(μ=μ, U=0, bathspecs=[(ω, α)])
-	gt_ed, lt_ed = greater_lesser_ed(H, a, adag, H0, ts, β)
-
-	bath = fermionicbath(DiracDelta(ω=ω, α=α), β=β)
-	model = ToulouseIM(ϵ_d=μ)
-	lat = GrassmannLattice(N=Nt, δt=δt, contour=:real)
-	corr = correlationfunction(bath, lat)
-	alg = ExactTTIIF(alg_mult=SVDCompression(trunc=trunc), verbosity=0)
-
-	mpsK = sysdynamics(lat, model, trunc=trunc)
-	mpsK = boundarycondition!(mpsK, lat)
-	mpsK = systhermalstate!(mpsK, lat, model, trunc=trunc, β=β)
-	mpsK = hybriddynamics!(mpsK, lat, corr, alg)
-	gt, lt = gtlt_series(lat, mpsK)
-	@test relerr(gt, gt_ed) < 3.0e-2
-	@test relerr(lt, lt_ed) < 3.0e-2
-
-	# agrees with the standard separate-construction workflow
-	mpsI = hybriddynamics(lat, corr, alg)
-	mpsK0 = sysdynamics(lat, model, trunc=trunc)
-	mpsK0 = boundarycondition!(mpsK0, lat)
-	mpsK0 = systhermalstate!(mpsK0, lat, model, trunc=trunc, β=β)
-	gt0, lt0 = gtlt_series(lat, mpsK0, mpsI)
-	@test relerr(gt, gt0) < 1.0e-3
-	@test relerr(lt, lt0) < 1.0e-3
-end
-
-@testset "Few-mode bath, real time: time-dependent Hamiltonian" begin
-	# the impurity level is modulated as μ(t) = μ1 + A·sin(ωt·t): the thermal
-	# initial state is built from hτ (μ0), the real-time branches evolve with
-	# H(t). The ED reference uses the same per-step constant-H discretization
-	# as GTEMPO, so only truncation errors remain
+@testset "Few-mode bath, real time: 时间依赖 Hamiltonian" begin
 	μ0 = 0.7; μ1 = -0.5; A = 0.5; ωt = 1.0
 	ω = 1.0; α = 0.5
 	β = 1.0; δt = 0.05; Nt = 8
-	trunc = truncdimcutoff(D=60, ϵ=1.0e-10)
 
+	# ED 参照：逐步常数 H 离散化（与 GTEMPO 同步长），只有截断误差
 	_, a, adag, H0 = singlemode_ed(μ=μ0, U=0, bathspecs=[(ω, α)])
 	ρ = exp(-β * H0); ρ /= tr(ρ)
-	gt_ed = complex.(zeros(Nt+1))
-	lt_ed = complex.(zeros(Nt+1))
+	gt_ed = complex.(zeros(Nt))
+	lt_ed = complex.(zeros(Nt))
 	U = one(H0)
-	for k in 0:Nt
-		if k > 0
-			Hk, = singlemode_ed(μ=μ1 + A * sin(ωt * (k-1) * δt), U=0, bathspecs=[(ω, α)])
-			U = exp(-im * δt * Hk) * U
-		end
-		# U accumulates the forward evolution e^{-iδtH}; the Heisenberg
-		# operator is a(t) = U' * a * U. G^>(t, 0) = -i⟨a(t) a†⟩,
-		# G^<(t, 0) = i⟨a† a(t)⟩ (the creation operator sits at t = 0)
-		gt_ed[k+1] = -im * tr((U' * a * U) * adag * ρ)
-		lt_ed[k+1] = im * tr(adag * (U' * a * U) * ρ)
+	for k in 1:Nt
+		Hk, = singlemode_ed(μ=μ1 + A * sin(ωt * (k - 1) * δt), U=0, bathspecs=[(ω, α)])
+		U = exp(-im * δt * Hk) * U
+		gt_ed[k] = -im * tr((U' * a * U) * adag * ρ) / tr(ρ)
+		lt_ed[k] = im * tr(adag * (U' * a * U) * ρ) / tr(ρ)
 	end
 
-	bath = fermionicbath(DiracDelta(ω=ω, α=α), β=β)
+	bath = discretefermionicbath([ω], [α]; β=β)
 	model = TdImpurityHamiltonian([tunneling(1, 1, coeff=μ0)],
-									[tunneling(1, 1, coeff=μ1)],
-									[TdImpurityOp([tunneling(1, 1)], t -> A * sin(ωt * t))])
+	                              [tunneling(1, 1, coeff=μ1)],
+	                              [TdImpurityOp([tunneling(1, 1)], t -> A * sin(ωt * t))])
 	lat = GrassmannLattice(N=Nt, δt=δt, contour=:real)
-	corr = correlationfunction(bath, lat)
-	mpsI = hybriddynamics(lat, corr, trunc=trunc)
-	mpsK = sysdynamics(lat, model, trunc=trunc)
-	mpsK = boundarycondition!(mpsK, lat)
-	mpsK = systhermalstate!(mpsK, lat, model, trunc=trunc, β=β)
-	gt, lt = gtlt_series(lat, mpsK, mpsI)
-	@test relerr(gt, gt_ed) < 3.0e-2
-	@test relerr(lt, lt_ed) < 3.0e-2
+	kernel = hybridization(lat, bath)
+	Is = hybriddynamics(lat, bath, PartialIF(); band=1)
+	# 热初态取 hτ（预淬 μ0）
+	ρ0 = Matrix{ComplexF64}(fock_thermalstate(QuenchedImpurityHamiltonian(
+		[tunneling(1, 1, coeff=μ0)], [tunneling(1, 1, coeff=μ1)]; bands=1), β).data)
+	K = sysdynamics(lat, model; initial_state=ρ0)
+	Z = integrate(K, Is)
+	for i in 1:Nt
+		g = greater(lat, model, kernel, Is; i=i, j=0, Z=Z, initial_state=ρ0)
+		# Td 逐步常数 H 合成的 O(δt²) 相位（两侧同离散化、阶累积差异）
+		@test g ≈ gt_ed[i] atol = 1e-3
+	end
 end

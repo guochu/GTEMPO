@@ -1,116 +1,33 @@
-# Cross-check of QuAPI.Dense.GrassmannADT against GTEMPO's untruncated
-# Grassmann-MPS influence functionals: normal fermionic bath on the imaginary,
-# real and mixed contours, plus the BCS bath (two bands). electron-phonon
-# (Fock lattice) is intentionally not covered.
+# kernel 提取 vs QuAPI 直读的交叉核对（T7 退役后唯一保留的 QuAPI 面）
+# （QuAPI 经 @reexport 直接可用）
+@testset "QuAPI 交叉核对：kernel blocks = QuAPI 原块" begin
+	β = 1.0
+	bath = discretefermionicbath([1.0], [0.5]; β=β)
 
-using Test, LinearAlgebra
-using QuAPI.Dense
-using Z2Tensors: fusiontrees, dim, sectors
-using GTEMPO: space_l, space_r
+	# 实时：四块直读（canonical = raw；跨支 Keldysh 号由消费端处理）
+	lat = GrassmannLattice(N=4, δt=0.1, contour=:real)
+	kernel = hybridization(lat, bath)
+	qt = Δt(bath; N=4, t=0.4)
+	for (b1, b2) in ((:+, :+), (:+, :-), (:-, :+), (:-, :-))
+		M = branch(qt; b1=b1, b2=b2)
+		@test kernel.blocks[(b1, b2)] ≈ M[1:4, 1:4] atol = 1e-14
+	end
 
-function _sector_offset(V, c)
-    o = 0
-    for d in sectors(V)
-        d.n < c.n || break
-        o += dim(V, d)
-    end
-    return o
-end
+	# 虚时：Δτ 块
+	latτ = GrassmannLattice(N=4, δτ=0.25, contour=:imag)
+	kernelτ = hybridization(latτ, bath)
+	qτ = Δτ(bath; N=4, δτ=0.25)
+	@test kernelτ.blocks[(:τ, :τ)] ≈ qτ.data[1:4, 1:4] atol = 1e-14
 
-# dense bond matrix of a site tensor for the Grassmann occupation σ ∈ {0,1}
-function _site_matrix(A, σ::Int)
-    Vl, Vr = space_l(A), space_r(A)
-    M = zeros(GTEMPO.scalartype(A), dim(Vl), dim(Vr))
-    for (fl, fr) in fusiontrees(A)
-        sl, sp = fl.uncoupled
-        sp.n == σ || continue
-        fl.coupled.n == fr.coupled.n || continue
-        sr = fr.uncoupled[1]
-        ol, o = _sector_offset(Vl, sl), _sector_offset(Vr, sr)
-        dl, dr = dim(Vl, sl), dim(Vr, sr)
-        M[ol+1:ol+dl, o+1:o+dr] .= reshape(collect(A[fl, fr]), dl, dr)
-    end
-    return M
-end
-
-# dense coefficient tensor of a GrassmannMPS (axis p = lattice site p,
-# index 1 = empty, index 2 = occupied); includes scaling^L
-function _gmps_to_dense(psi)
-    L = length(psi)
-    Ms = [[_site_matrix(psi[p], σ) for σ in 0:1] for p in 1:L]
-    out = zeros(GTEMPO.scalartype(psi), ntuple(_ -> 2, L))
-    for I in CartesianIndices(out)
-        v = Ms[1][I[1]]
-        for p in 2:L
-            v = v * Ms[p][I[p]]
-        end
-        out[I] = v[1, 1]
-    end
-    return out .* (GTEMPO.scaling(psi)^L)
-end
-
-# map GTEMPO's dense coefficient tensor onto QuAPI's leg basis and return the
-# relative maximum deviation from GrassmannIF(corr).
-#
-# QuAPI 的腿序与 GTEMPO 的 site 序可以不同；把同一占据构型搬到 QuAPI 的
-# monomial 基时，需要乘上「按 site 升序重排占据腿」的费米置换宇称。
-function _gt_vs_quapi(dense, lat, corr)
-    qif = GrassmannIF(GrassmannHybridizationMatrix(corr))
-    Lq = length(qif.basis)
-    sites = [lat[GrassmannContourIndex((leg.branch === :τ) ? leg.j + 1 : leg.j,
-                                       leg.branch, leg.band, leg.conj)]
-             for leg in qif.basis]
-    out = zeros(eltype(dense), 1 << Lq)
-    for m in 0:(1 << Lq)-1
-        σ = falses(length(dense))
-        occ = Int[]
-        for q in 1:Lq
-            iszero((m >> (q - 1)) & 1) && continue
-            σ[sites[q]] = true
-            push!(occ, sites[q])
-        end
-        # occ 按 QuAPI 腿序排列；数一下把它按 site 升序排序的逆序数
-        sgn = 1
-        for a in 1:length(occ)-1, b in a+1:length(occ)
-            occ[a] > occ[b] && (sgn = -sgn)
-        end
-        out[m+1] = sgn * dense[ntuple(p -> σ[p] ? 2 : 1, ndims(dense))...]
-    end
-    return maximum(abs.(out - qif.data)) / norm(qif.data)
-end
-
-# Quarantine lifted 2026-11-04: QuAPI.Dense is aligned contour-by-contour with
-# the accessor (mixed raw, τ raw, RT vertex shift for both the single-flavor
-# and the BCS assembly — QuAPI/test/dense/accessor_vs_dense.jl now pins the
-# elementwise equality). The lag-1 contact of the shifted TTI bulk was also
-# repaired (native nearest-neighbour row + exact residual gates), so the
-# real-time normal-bath comparison below holds to float precision again.
-@testset "QuAPI dense IF cross-check" begin
-    μ, ω, α = 0.7, 1.0, 0.5
-    spec = DiracDelta(ω=ω, α=α)
-    β = 0.6
-    bath = fermionicbath(spec, β=β, μ=μ)
-    tol = 1.0e-10
-
-    # ---------------- normal fermionic bath ----------------
-    lat = GrassmannLattice(N=2, δτ=0.3, contour=:imag)
-    corr = correlationfunction(bath, lat)
-    IF = hybriddynamics(lat, corr, trunc=NoTruncation())
-    @test _gt_vs_quapi(_gmps_to_dense(IF), lat, corr) < tol
-
-    latr = GrassmannLattice(N=2, δt=0.1, contour=:real)
-    corrr = correlationfunction(bath, latr)
-    IFr = hybriddynamics(latr, corrr, trunc=NoTruncation())
-    @test _gt_vs_quapi(_gmps_to_dense(IFr), latr, corrr) < tol
-
-    latm = GrassmannLattice(Nt=1, δt=0.1, Nτ=2, δτ=0.3, contour=:mixed)
-    corrm = correlationfunction(bath, latm)
-    IFm = hybriddynamics(latm, corrm, trunc=NoTruncation())
-    @test _gt_vs_quapi(_gmps_to_dense(IFm), latm, corrm) < tol
-
-    # ---------------- BCS bath (two bands) ----------------
-    latb = GrassmannLattice(N=2, δτ=0.3, contour=:imag, bands=2)
-    corrb = correlationfunction(bcsbath(bath, Δ=0.6), latb)
-    IFb = hybriddynamics(latb, corrb, orbital=1, trunc=NoTruncation())
-    @test _gt_vs_quapi(_gmps_to_dense(IFb), latb, corrb) < tol
+	# 混合：九块 + τ↔rt 交叉块内嵌负号预翻（KernelCorrView 语义）
+	latm = GrassmannLattice(Nt=3, δt=0.1, Nτ=4, δτ=0.25, contour=:mixed)
+	kernelm = hybridization(latm, bath)
+	qm = Δm(bath; Nτ=4, t=0.3, Nt=3, δτ=0.25)
+	for b1 in (:+, :-, :τ), b2 in (:+, :-, :τ)
+		M = branch(qm; b1=b1, b2=b2)
+		r1 = b1 === :τ ? (1:4) : (1:3)
+		r2 = b2 === :τ ? (1:4) : (1:3)
+		expect = ((b1 === :τ) !== (b2 === :τ)) ? -M[r1, r2] : M[r1, r2]
+		@test kernelm.blocks[(b1, b2)] ≈ expect atol = 1e-14
+	end
 end

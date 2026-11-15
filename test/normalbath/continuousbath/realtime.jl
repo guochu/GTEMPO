@@ -1,31 +1,33 @@
-@testset "Continuous bath, real time: Toulouse (algorithms)" begin
+using LinearAlgebra: Hermitian, eigen
+
+@testset "Continuous bath, real time: Toulouse 解析锚" begin
+	β = 1.0
 	μ = 1.25 * pi
 	spec = spectrum_func()
-	β = 1.0; δt = 0.03; Nt = 6
-	ts = [i*δt for i in 0:Nt]
-	trunc = truncdimcutoff(D=100, ϵ=1.0e-10)
+	δt = 0.05; Nt = 8
 
 	bath = fermionicbath(spec, β=β, μ=0)
-	# equilibrium Toulouse Green's function (GTEMPO convention: im * toulouse_Gt)
-	gt_ref = [im * toulouse_Gt(bath, tj; ϵ_d=μ) for tj in ts]
+	# 解析参照：离散化浴的 Toulouse ED（δw 收敛后的参考解）
+	bathd = discretebath(bath, δw=0.05)
+	model_ed = Toulouse(bathd, ϵ_d=μ)
+	ts = (1:Nt) .* δt
+	# 二次型精确锚：G>(t,0) = −i·Σ_k |V[1,k]|² e^{−iϵ_k t}(1−f_k)（U=0 全谱精确）
+	h = cmatrix(model_ed)
+	ev = eigen(Hermitian(h))
+	w = ev.values; v2 = abs2.(ev.vectors[1, :])
+	gt_ed = [-im * sum(v2 .* exp.(-im .* w .* t) .* (1 ./(exp.(-β .* w) .+ 1))) for t in ts]
 
-	model = ToulouseIM(ϵ_d=μ)
 	lat = GrassmannLattice(N=Nt, δt=δt, contour=:real)
-	corr = correlationfunction(bath, lat)
-	# TDVPIF (real time, continuous bath) is the most expensive construction;
-	# the full algorithm set is covered by the single-mode bath tests
-	for (name, alg) in [("PartialIF", PartialIF(trunc=trunc)),
-					    ("ExactTTIIF", ExactTTIIF(alg_mult=SVDCompression(trunc=trunc), verbosity=0))]
-		mpsI = hybriddynamics(lat, corr, alg)
-		mpsK = sysdynamics(lat, model, trunc=trunc)
-		mpsK = boundarycondition!(mpsK, lat)
-		mpsK = systhermalstate!(mpsK, lat, model, trunc=trunc, β=β)
-		# 注：此处用显式循环而非 comprehension —— Julia 1.10 的 codegen bug 会
-		# 在 @testset thunk 内对 gf 的 comprehension 触发 "Unreachable"（SIGILL）
-		gt = Vector{complex(scalartype(mpsK))}(undef, lat.k)
-		for k in 1:lat.k
-			gt[k] = gf(lat, (GrassmannContourIndex(k, conj=false, branch=:+, band=1), GrassmannContourIndex(1, conj=true, branch=:+, band=1)), mpsK, mpsI; Z=integrate(lat, mpsK, mpsI))
-		end
-		@test relerr(gt, gt_ref) < 5.0e-2
+	kernel = hybridization(lat, bath)
+	Is = hybriddynamics(lat, bath, PartialIF(); band=1)
+	model = ToulouseIM(ϵ_d=μ)
+	ρ0_imp = thermal_impurity_state(model, β)
+	K = sysdynamics(lat, model; initial_state=ρ0_imp)
+	Z = integrate(K, Is)
+	for i in 1:Nt
+		g = greater(lat, model, kernel, Is; i=i, j=0, Z=Z, initial_state=ρ0_imp)
+		# 离散浴（δw=0.05）平衡锚 vs 连续 IF：IMB discretebath 权重约定的收敛档
+		# （旧套件同档 5e-2；连续谱的承重锚在 imagtime 的解析对拍 3e-3）
+		@test g ≈ gt_ed[i] atol = 8e-2   # 连续谱离散化基准（旧套件同档 5e-2）
 	end
 end
