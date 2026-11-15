@@ -4,15 +4,22 @@
 # 全部经「带插入重建 K → GM 引擎 integrate → /Z」：
 #   occupation(branch j; band)      n̂（逐带或总）在 (branch, j) 边界 :left
 #   nn(i, j; b1, b2, band)          n̂ 双插入密度-密度（ED 验证 ✓）
-#   greater/lesser/matsubara        ⚠️ 未决：奇算符（d/ddag）插入的 K' 链
-#                                   label-flow 有缺陷——不传 charge 时切分产
-#                                   零站（链归零）；传 charge（已改）链可构
-#                                   但迹 ~e^{-155}（reorder 吸收 logscale
-#                                   −114，值仍错）。golden 只锚 occupation
-#                                   （偶算符），greater/lesser 自 Phase 5a
-#                                   起从未被断言。修复方向：奇插入的
-#                                   prefix/荷流推导对照 U1GTEMPO2 solver.jl
-#                                   的 charged-insertion label 记账。
+#   greater/lesser/matsubara        ⚠️ 未决（诊断已收窄）：奇算符（d/ddag）插
+#                                   入的 K' 链迹恒零/垃圾。已排除：①builder——
+#                                   忠实复刻（含 cut-0 折叠 ρ₀ + prefix 机制）
+#                                   逐胞结构与 U1GTEMPO2 参照完全一致
+#                                   （18/144/72/36、prefix ζ1@cut7）；②荷方向
+#                                   （与 U1GTEMPO2 correlation_insertions 一致，
+#                                   且 :z2 宇并下不可区分）；③引擎（引擎与独立
+#                                   dense oracle 双双确认多项式迹精确为零——
+#                                   即多项式本身在 port 约定下迹为零，而参照栈
+#                                   同构胞数据给出正确值 0.66−0.07i）。收窄到
+#                                   pairize 层：:z2 自对偶槽路由（η/η̄ 同扇区
+#                                   ζ1 分槽 1/2）+ 楔积融合的交互——IF 链走同
+#                                   一 pairize 路径但从未同时具备「奇插入内容
+#                                   + 真空界键 + 跨变量电荷流」组合。下一步：
+#                                   GM 侧对 :z2 奇电荷链的 wedge_vertex/
+#                                   _fuse_adjacent 专项电池。
 #   electriccurrent/heatcurrent     公式正确（旧 currents.jl 同式），依赖上
 #                                   述两点 GF 路线——路线修复前勿用。
 # 边界 j ∈ 0..N（0 = ρ₀ 切位）；rt 顶点 branch=:+、τ 顶点 branch=:τ。
