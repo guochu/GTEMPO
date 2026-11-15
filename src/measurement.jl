@@ -7,19 +7,19 @@
 #   greater/lesser/matsubara        ⚠️ 未决（诊断已收窄）：奇算符（d/ddag）插
 #                                   入的 K' 链迹恒零/垃圾。已排除：①builder——
 #                                   忠实复刻（含 cut-0 折叠 ρ₀ + prefix 机制）
-#                                   逐胞结构与 U1GTEMPO2 参照完全一致
-#                                   （18/144/72/36、prefix ζ1@cut7）；②荷方向
-#                                   （与 U1GTEMPO2 correlation_insertions 一致，
-#                                   且 :z2 宇并下不可区分）；③引擎（引擎与独立
-#                                   dense oracle 双双确认多项式迹精确为零——
-#                                   即多项式本身在 port 约定下迹为零，而参照栈
-#                                   同构胞数据给出正确值 0.66−0.07i）。收窄到
-#                                   pairize 层：:z2 自对偶槽路由（η/η̄ 同扇区
-#                                   ζ1 分槽 1/2）+ 楔积融合的交互——IF 链走同
-#                                   一 pairize 路径但从未同时具备「奇插入内容
-#                                   + 真空界键 + 跨变量电荷流」组合。下一步：
-#                                   GM 侧对 :z2 奇电荷链的 wedge_vertex/
-#                                   _fuse_adjacent 专项电池。
+#                                   逐胞结构与 U1GTEMPO2 参照完全一致；②荷方向
+#                                   （与 U1GTEMPO2 correlation_insertions 一致）；
+#                                   ③宇并特异（:u1 整数荷同样失败）；④引擎 vs
+#                                   多项式——独立 dense oracle 与引擎双双确认
+#                                   多项式迹精确为零，而参照栈同构胞数据给出
+#                                   正确值 0.66−0.07i。⇒ 缺陷在 port 下游管线
+#                                   （pairize→engine）且**非槽约定**（:u1 的扇
+#                                   区路由与参照同构仍失败）。候选 = GM 引擎
+#                                   对「奇插入荷流 + 真空界键」链的扫掠语义或
+#                                   pairize 机器符号注入。**决定性实验（下会
+#                                   议首步）**：把 U1GTEMPO2 参照栈 pairize 出
+#                                   的同构 K' 链喂给 GM.Zvalue——右则引擎无罪
+#                                   （port pairize 为凶）、错则引擎为凶。
 #   electriccurrent/heatcurrent     公式正确（旧 currents.jl 同式），依赖上
 #                                   述两点 GF 路线——路线修复前勿用。
 # 边界 j ∈ 0..N（0 = ρ₀ 切位）；rt 顶点 branch=:+、τ 顶点 branch=:τ。
