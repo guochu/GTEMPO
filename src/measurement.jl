@@ -12,14 +12,18 @@
 #                                   ③宇并特异（:u1 整数荷同样失败）；④引擎 vs
 #                                   多项式——独立 dense oracle 与引擎双双确认
 #                                   多项式迹精确为零，而参照栈同构胞数据给出
-#                                   正确值 0.66−0.07i。⇒ 缺陷在 port 下游管线
-#                                   （pairize→engine）且**非槽约定**（:u1 的扇
-#                                   区路由与参照同构仍失败）。候选 = GM 引擎
-#                                   对「奇插入荷流 + 真空界键」链的扫掠语义或
-#                                   pairize 机器符号注入。**决定性实验（下会
-#                                   议首步）**：把 U1GTEMPO2 参照栈 pairize 出
-#                                   的同构 K' 链喂给 GM.Zvalue——右则引擎无罪
-#                                   （port pairize 为凶）、错则引擎为凶。
+#                                   正确值 0.66−0.07i。⇒ **决定性实验已完
+#                                   成（2026-11-15）**：U1GTEMPO2 直接依赖本
+#                                   GM（同 uuid），参照栈 pairize 出的奇插入
+#                                   K' 链喂同一 GM.Zvalue 机器精度正确
+#                                   （0.66081−0.06945i）——**GM 引擎无罪，
+#                                   port 侧 split_cell/from_core/pairize 之一
+#                                   为凶**（逐胞 nnz 结构与参照一致但张量内容
+#                                   层有分歧；:u1 整数荷忠实链同样垃圾，非宇
+#                                   并特异）。**下会议首步**：双栈各 dump cell-1
+#                                   切分出的两个变量张量全块结构（扇区键+值）
+#                                   逐块 diff（:u1 荷标签可直接对应他们的
+#                                   ChargeCharge 首槽）。
 #   electriccurrent/heatcurrent     公式正确（旧 currents.jl 同式），依赖上
 #                                   述两点 GF 路线——路线修复前勿用。
 # 边界 j ∈ 0..N（0 = ρ₀ 切位）；rt 顶点 branch=:+、τ 顶点 branch=:τ。
