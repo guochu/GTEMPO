@@ -24,6 +24,14 @@
 # 边界 j ∈ 0..N（0 = ρ₀ 切位）；rt 顶点 branch=:+、τ 顶点 branch=:τ。
 # τ 链 G(β,0) = +⟨d†d⟩（热环等时同号；j==0 平移路由属 secondorderif M≥2 的
 # Z2 栈绕尾技巧，GM 栈 F≡0 前提下不需要——D5 验收时按 golden 裁决）。
+#
+# 扫描型测量（如 greater(i,0), i = 1..N）走制备对象摊销 automaton 重建：
+#   prep = prepare_system(lattice, model; order, coupling_norm, initial_state)
+#   G = [greater(...; i=i, Z=Z, preparation=prep) for i in 1:Nt]
+# 全部公开函数带 preparation kwarg 透传；给定时 order/coupling_norm/
+# initial_state 以 prep 绑定为准（kwargs 忽略），lattice 必须同一对象。
+# 缓存键完备（F3 函数依赖逐项对映）⟺ 命中返回张量与重算逐位一致——
+# golden 不重锚；无 prep = 现状路径（零行为变化）。
 
 """
     _fock_ops(bands) -> Vector{Matrix{ComplexF64}}
@@ -44,29 +52,45 @@ function _number_op(bands::Int, band::Union{Nothing,Int})
     return d[band]' * d[band]
 end
 
-"插入 K 重建的公共尾程：K′ = sysdynamics(...; insertions) → integrate(K′, Is...) / Z"
+"插入 K 重建的公共尾程：K′ = sysdynamics(...; insertions) → integrate(K′, Is...) / Z。
+`preparation`（SystemFactorPreparation）给定时走制备对象版 sysdynamics（传播子/
+格张量两层缓存）；**order/coupling_norm/initial_state 以制备对象绑定为准、
+kwargs 忽略**（扫描一致性由 prepare_system 时的绑定保证——kernel 元数据未登记
+order，prep-wins 避免误配）；lattice 必须同一对象（传播子键 (branch,j) 依赖
+其 δt/边界）。"
 function _inserted_expectation(lattice, model, Is, Z, insertions; order=1, coupling_norm=0.0,
-                               initial_state=nothing, spec=nothing)
-    K = sysdynamics(lattice, model; order, initial_state, coupling_norm, insertions,
-                    spec=spec === nothing ? TK.sectortype(lattice) : spec)
+                               initial_state=nothing, spec=nothing, preparation=nothing)
+    if preparation === nothing
+        K = sysdynamics(lattice, model; order, initial_state, coupling_norm, insertions,
+                        spec=spec === nothing ? TK.sectortype(lattice) : spec)
+    else
+        preparation.lattice === lattice ||
+            throw(ArgumentError("preparation lattice ≠ call-site lattice（传播子缓存键 (branch,j) 依赖 lattice 的 δt/边界——prepare_system 与测量必须同一 lattice 对象）"))
+        K = sysdynamics(preparation; insertions)
+    end
     num = integrate(K, Is...)
     return num / Z
 end
 
 """
     occupation(lattice, model, kernel, Is...; j, branch, band=nothing,
-               order=1, coupling_norm=0.0, initial_state=nothing, Z) -> Complex
+               order=1, coupling_norm=0.0, initial_state=nothing, Z,
+               preparation=nothing) -> Complex
 
 ⟨n̂(t_j)⟩（`band` 缺省 = 总占据；j ≥ 1 在 (branch, j) 边界，j = 0 折 ρ₀/
-热迹）。`Is` = 各带 IF 链；`Z` = 无插入分母。
+热迹）。`Is` = 各带 IF 链；`Z` = 无插入分母。`preparation` = 扫描型测量的
+制备对象（见 prepare_system；给定时 order/coupling_norm/initial_state 以其
+绑定为准）。
 """
 function occupation(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian,
                     kernel::Union{Nothing,HybridizationKernel}, Is...; j::Integer, branch::Symbol=default_branch(lattice),
                     band::Union{Nothing,Int}=nothing, order::Integer=kernel_order(kernel),
-                    coupling_norm::Real=kernel_coupling_norm(kernel), initial_state=nothing, Z)
+                    coupling_norm::Real=kernel_coupling_norm(kernel), initial_state=nothing, Z,
+                    preparation=nothing)
     ins = [OperatorInsertion(branch, Int(j), _number_op(lattice.bands, band))]
     return _inserted_expectation(lattice, model, Is, Z, ins; order=Int(order),
-                                 coupling_norm=coupling_norm, initial_state=initial_state)
+                                 coupling_norm=coupling_norm, initial_state=initial_state,
+                                 preparation=preparation)
 end
 
 "缺省分支：虚时 :τ、实时/混合 rt 顶点 :+"
@@ -84,7 +108,8 @@ default_branch(lattice::AbstractGrassmannLattice) =
 function raw_correlation(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian,
                          kernel::Union{Nothing,HybridizationKernel}, Is...; i::Integer, j::Integer=0,
                          kind::Symbol=:greater, order::Integer=kernel_order(kernel),
-                         coupling_norm::Real=kernel_coupling_norm(kernel), initial_state=nothing)
+                         coupling_norm::Real=kernel_coupling_norm(kernel), initial_state=nothing,
+                         preparation=nothing)
     (lattice isa AbstractRealGrassmannLattice || lattice isa AbstractMixedGrassmannLattice) ||
         throw(ArgumentError("实时/混合轮廓专用；纯虚时用 matsubara"))
     spec = TK.sectortype(lattice)
@@ -105,7 +130,8 @@ function raw_correlation(lattice::AbstractGrassmannLattice, model::AbstractImpur
         throw(ArgumentError("kind must be :greater or :lesser"))
     end
     return _inserted_expectation(lattice, model, Is, 1.0, ins; order=Int(order),
-                                 coupling_norm=coupling_norm, initial_state=initial_state)
+                                 coupling_norm=coupling_norm, initial_state=initial_state,
+                                 preparation=preparation)
 end
 
 "greater(tᵢ, tⱼ=0) = −i⟨d(tᵢ)ddag(tⱼ)⟩（归一化走 occupation 同款 Z 分母）"
@@ -147,11 +173,12 @@ function _normalized_two_point(lattice, model, kernel, Is, Z, i, j, kind;
     end
     return _inserted_expectation(lattice, model, Is, Z, ins;
                                  order=Int(order), coupling_norm=coupling_norm,
-                                 initial_state=get(kwargs, :initial_state, nothing))
+                                 initial_state=get(kwargs, :initial_state, nothing),
+                                 preparation=get(kwargs, :preparation, nothing))
 end
 
 """
-    matsubara(lattice, model, kernel, Is...; i, j=0, ...) -> Complex
+    matsubara(lattice, model, kernel, Is...; i, j=0, ..., preparation=nothing) -> Complex
 
 虚时格林函数 G(τᵢ − τⱼ)：d@(τ,i)、ddag@(τ,j) 均 :left。τ 链等时
 G(β,0) = +⟨d†d⟩（热环等时同号）。
@@ -159,7 +186,7 @@ G(β,0) = +⟨d†d⟩（热环等时同号）。
 function matsubara(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian,
                    kernel::Union{Nothing,HybridizationKernel}, Is...; i::Integer, j::Integer=0, Z,
                    order::Integer=kernel_order(kernel), coupling_norm::Real=kernel_coupling_norm(kernel),
-                   initial_state=nothing)
+                   initial_state=nothing, preparation=nothing)
     # τ↔τ 插入在混合（Kadanoff）轮廓同样合法（虚时支 = 热态构建腿）
     lattice isa AbstractImagGrassmannLattice || lattice isa AbstractMixedGrassmannLattice ||
         throw(ArgumentError("matsubara 需虚时或混合轮廓"))
@@ -170,12 +197,13 @@ function matsubara(lattice::AbstractGrassmannLattice, model::AbstractImpurityHam
     # Matsubara 时序约定（U1GTEMPO2 matsubara 同款）：G(τᵢ,τⱼ) =
     # (i ≥ j ? −1 : +1)·⟨d(τᵢ) ddag(τⱼ)⟩（τ 有序排列 ⟨T_τ dd†⟩ 的分支号）
     return (i >= j ? -1 : 1) * _inserted_expectation(lattice, model, Is, Z, ins; order=Int(order),
-                                                     coupling_norm=coupling_norm, initial_state=initial_state)
+                                                     coupling_norm=coupling_norm, initial_state=initial_state,
+                                                     preparation=preparation)
 end
 
 """
     nn(lattice, model, kernel, Is...; i, j, b1, b2, band, order, coupling_norm,
-       initial_state, Z) -> Complex
+       initial_state, Z, preparation=nothing) -> Complex
 
 密度-密度关联 ⟨n̂(b1,i; band1) n̂(b2,j; band2)⟩（非连通），inserted-K 双插入
 精确版；同切位同带（n̂² = n̂）退化为单插入。`band` = Int 或 (band1, band2)。
@@ -184,7 +212,8 @@ function nn(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonia
             kernel::Union{Nothing,HybridizationKernel}, Is...; i::Integer, j::Integer,
             b1::Symbol=default_branch(lattice), b2::Symbol=b1,
             band::Union{Int,Tuple{Int,Int}}=(1, 1), order::Integer=kernel_order(kernel),
-            coupling_norm::Real=kernel_coupling_norm(kernel), initial_state=nothing, Z)
+            coupling_norm::Real=kernel_coupling_norm(kernel), initial_state=nothing, Z,
+            preparation=nothing)
     band1, band2 = band isa Int ? (band, band) : band
     if i == j && b1 === b2 && band1 == band2
         ins = [OperatorInsertion(b1, Int(i), _number_op(lattice.bands, band1))]
@@ -193,7 +222,8 @@ function nn(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonia
                OperatorInsertion(b2, Int(j), _number_op(lattice.bands, band2))]
     end
     return _inserted_expectation(lattice, model, Is, Z, ins; order=Int(order),
-                                 coupling_norm=coupling_norm, initial_state=initial_state)
+                                 coupling_norm=coupling_norm, initial_state=initial_state,
+                                 preparation=preparation)
 end
 
 # kernel 元数据便捷（耦合范数/order 随 kernel 携带）；nothing（显式 order/
@@ -208,7 +238,8 @@ kernel_order(::Nothing) = 1
 # ---------------------------------------------------------------------------
 
 """
-    raw_lead_correlator(lattice, model, kernel, Is...; k, j, b2=:+, band=1, ...) -> Complex
+    raw_lead_correlator(lattice, model, kernel, Is...; k, j, b2=:+, band=1, ...,
+                        preparation=nothing) -> Complex
 
 ⟨ā(+,k; band) a(b2,j; band)⟩——current 公式的原始 GF（带荷双插入，约定与
 golden 验证过的 greater/lesser 同款：charge=nothing、:left 乘）。
@@ -216,7 +247,8 @@ golden 验证过的 greater/lesser 同款：charge=nothing、:left 乘）。
 function raw_lead_correlator(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian,
                              kernel::Union{Nothing,HybridizationKernel}, Is...; k::Integer, j::Integer,
                              b2::Symbol=:+, band::Int=1, order::Integer=kernel_order(kernel),
-                             coupling_norm::Real=kernel_coupling_norm(kernel), initial_state=nothing, Z)
+                             coupling_norm::Real=kernel_coupling_norm(kernel), initial_state=nothing, Z,
+                             preparation=nothing)
     qc = var_charge(TK.sectortype(lattice), band, lattice.bands)
     d = _fock_ops(lattice.bands)[band]
     ddag = d'
@@ -224,31 +256,36 @@ function raw_lead_correlator(lattice::AbstractGrassmannLattice, model::AbstractI
     ins = [OperatorInsertion(:+, Int(k), ddag; charge=qc),
            OperatorInsertion(b2, Int(j), d; charge=qneg(qc))]
     return _inserted_expectation(lattice, model, Is, Z, ins; order=Int(order),
-                                 coupling_norm=coupling_norm, initial_state=initial_state)
+                                 coupling_norm=coupling_norm, initial_state=initial_state,
+                                 preparation=preparation)
 end
 
 """
-    electriccurrent(lattice, model, kernel, Is...; k, band=1, Z, ...) -> Complex
+    electriccurrent(lattice, model, kernel, Is...; k, band=1, Z, ...,
+                    preparation=nothing) -> Complex
 
 边界 t_k 的电流（GF 求和精确版）：`(2/δt)·Σ_{j<k}[η⁺⁺[k,j]·⟨ā(+,k)a(+,j)⟩ +
 η⁺⁻[k,j]·⟨ā(+,k)a(−,j)⟩]`，η⁺⁺ = kernel.blocks[(:+,:+)]（raw）、η⁺⁻ =
 −blocks[(:+,:−)]。⚠️ η 块禁走顶点移位 accessor（旧栈 ED 电流对比 4/8 vs 8/8
-教训在案，旧 currents.jl 注释原文）。
+教训在案，旧 currents.jl 注释原文）。k 固定、j 变化的求和形态正是制备缓存的
+摊销区——扫描/多 k 求值务必带 `preparation`。
 """
 function electriccurrent(lattice::AbstractRealGrassmannLattice, model::AbstractImpurityHamiltonian,
                          kernel::Union{Nothing,HybridizationKernel}, Is...; k::Integer, band::Int=1, Z,
                          order::Integer=kernel_order(kernel), coupling_norm::Real=kernel_coupling_norm(kernel),
-                         initial_state=nothing)
+                         initial_state=nothing, preparation=nothing)
     ηpp = Matrix(kernel.blocks[(:+, :+)])       # 循环底板一次性物化（惰性视图 → 稠密）
     ηpm = -Matrix(kernel.blocks[(:+, :-)])
     curr = 0.0im
     for j in 1:k-1
         curr += ηpp[k, j] * raw_lead_correlator(lattice, model, kernel, Is...; k=k, j=j, b2=:+,
                                                 band=band, Z=Z, order=Int(order),
-                                                coupling_norm=coupling_norm, initial_state=initial_state)
+                                                coupling_norm=coupling_norm, initial_state=initial_state,
+                                                preparation=preparation)
         curr += ηpm[k, j] * raw_lead_correlator(lattice, model, kernel, Is...; k=k, j=j, b2=:-,
                                                 band=band, Z=Z, order=Int(order),
-                                                coupling_norm=coupling_norm, initial_state=initial_state)
+                                                coupling_norm=coupling_norm, initial_state=initial_state,
+                                                preparation=preparation)
     end
     return 2 * curr / lattice.δt
 end
@@ -264,14 +301,15 @@ end
 
 """
     heatcurrent(lattice, model, bath, Is...; k, band=1, Z, order, coupling_norm,
-                initial_state) -> Complex
+                initial_state, preparation=nothing) -> Complex
 
 热流 = ω 加权谱的电流（heatcorrelationfunction 同语义：J(ω) → ωJ(ω)）。
 η 系数取自加权核；关联函数按调用方原 K 的 order/coupling_norm 重建。
 """
 function heatcurrent(lattice::AbstractRealGrassmannLattice, model::AbstractImpurityHamiltonian,
                      bath::AbstractNormalBath, Is...; k::Integer, band::Int=1, Z,
-                     order::Integer=1, coupling_norm::Real=0.0, initial_state=nothing)
+                     order::Integer=1, coupling_norm::Real=0.0, initial_state=nothing,
+                     preparation=nothing)
     kernel_η = hybridization(lattice, _weighted_bath(bath))
     ηpp = Matrix(kernel_η.blocks[(:+, :+)])     # 循环底板一次性物化（惰性视图 → 稠密）
     ηpm = -Matrix(kernel_η.blocks[(:+, :-)])
@@ -279,10 +317,12 @@ function heatcurrent(lattice::AbstractRealGrassmannLattice, model::AbstractImpur
     for j in 1:k-1
         curr += ηpp[k, j] * raw_lead_correlator(lattice, model, nothing, Is...; k=k, j=j, b2=:+,
                                                 band=band, Z=Z, order=Int(order),
-                                                coupling_norm=coupling_norm, initial_state=initial_state)
+                                                coupling_norm=coupling_norm, initial_state=initial_state,
+                                                preparation=preparation)
         curr += ηpm[k, j] * raw_lead_correlator(lattice, model, nothing, Is...; k=k, j=j, b2=:-,
                                                 band=band, Z=Z, order=Int(order),
-                                                coupling_norm=coupling_norm, initial_state=initial_state)
+                                                coupling_norm=coupling_norm, initial_state=initial_state,
+                                                preparation=preparation)
     end
     return 2 * curr / lattice.δt
 end

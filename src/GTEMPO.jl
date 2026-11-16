@@ -99,6 +99,7 @@ export correlationfunction, coupling_norm
 
 # K 构造
 export sysdynamics, sysdynamics_weyl2order, OperatorInsertion
+export prepare_system, SystemFactorPreparation, clear_cache!
 
 # IF 构造
 export InfluenceFunctionalAlgorithm, PartialIF, ExactTTI, InfluenceFunctional

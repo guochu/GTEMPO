@@ -129,6 +129,113 @@ struct OperatorInsertion
     end
 end
 
+# 结构化相等/hash（制备对象格张量缓存键的先决；用户每次测量调用新构造插入
+# 对象，=== 不成立）。字段逐项 + 矩阵元素相等（dim ≤ 16，成本可忽略）；
+# 矩阵 hash 按列主序线性迭代，与 == 的元素序一致。charge 用 isequal 保持
+# hash/== 一致（nothing / Sector 值类型）。
+function Base.:(==)(a::OperatorInsertion, b::OperatorInsertion)
+    a.branch === b.branch && a.boundary == b.boundary && a.side === b.side &&
+        isequal(a.charge, b.charge) && a.matrix == b.matrix
+end
+
+function Base.hash(x::OperatorInsertion, h::UInt)
+    h = hash(x.branch, h)
+    h = hash(x.boundary, h)
+    h = hash(x.side, h)
+    h = hash(x.charge, h)
+    for v in x.matrix
+        h = hash(v, h)
+    end
+    return h
+end
+
+# ---------------------------------------------------------------------------
+# 制备对象（传播子 + 格张量两层缓存；plan/measurement_cache_refactor_plan §4）
+# ---------------------------------------------------------------------------
+
+"""
+    SystemFactorPreparation(lattice, model; order=1, initial_state=nothing,
+                            coupling_norm=0.0)
+
+杂质系统因子制备对象（命名对齐 U1GTEMPO2 `prepare_system`/`SystemPreparation`；
+两层缓存为 GTEMPO **新建**、非移植——U1GTEMPO2 `:reference` 路径零缓存）。
+spec 由 `sectortype(lattice)` 派生、绑定制备对象不进键。构造时一次性预计算
+单元表/局部权重/fock 荷/胞荷表，并携带：
+
+- **传播子缓存**：`(branch, j) → S`（dt/t 由 (lattice, branch, j) 派生、模型
+  与 order 绑定，不进键）；
+- **格张量缓存**：键 = F3 函数依赖逐项对映
+  `(branch, j, Ol组, Or组, oddlater, prefix荷, first, last, cut0组)`，值 =
+  split_cell 张量列（Ol组/Or组/cut0组 = 切位 `OperatorInsertion` 元组，经
+  结构化 `==`/`hash` 进键；prefix荷 = 切位 < k 的累计插入荷——
+  leftlabels 的自由度，rightlabels 由 (prefix, Ol∪Or 荷) 唯一决定）。
+
+扫描型测量（如 greater(i,0)，i = 1..N）的 automaton 成本从 O(N·L) 摊销到
+O(L + N·切位邻域)。所有权约定（scaling.jl 老原则）：缓存严格归属本对象，
+永不做进程级全局；不可变字段一经构造不变，无失效问题——输入变了就新建
+对象。`initial_state`（FockMatrix/矩阵）仅实时轮廓生效（缺省 = 真空投影）；
+不抄 U1GTEMPO2 的 `thermal_model` 字段（GTEMPO 的 τ 支热迹走 ρ₀ = I，模型
+单一）。无淘汰——distinct 格数被扫描形态天然有界（≈ 2L + N）。
+"""
+struct SystemFactorPreparation{G<:Sector}
+    lattice::AbstractGrassmannLattice
+    model::AbstractImpurityHamiltonian
+    order::Int
+    coupling_norm::Float64
+    initial_state::Any
+    cells::Vector{Tuple{Symbol,Int}}
+    weights::Vector{Matrix{ComplexF64}}
+    fqs::Vector{G}
+    charges_per_cell::Vector{G}
+    dim::Int
+    propagators::Dict{Tuple{Symbol,Int},Matrix{ComplexF64}}
+    cell_tensors::Dict{Tuple,Vector}
+    function SystemFactorPreparation(lattice, model, order, coupling_norm, initial_state,
+                                     cells, weights, fqs::Vector{G}, charges_per_cell::Vector{G},
+                                     dim) where {G<:Sector}
+        new{G}(lattice, model, order, coupling_norm, initial_state, cells, weights,
+               fqs, charges_per_cell, dim,
+               Dict{Tuple{Symbol,Int},Matrix{ComplexF64}}(), Dict{Tuple,Vector}())
+    end
+end
+
+"""
+    prepare_system(lattice, model; order=1, initial_state=nothing,
+                   coupling_norm=0.0) -> SystemFactorPreparation
+
+制备 `SystemFactorPreparation`（校验与 `sysdynamics` 同口径：order ∈ {1,2}、
+order=2 要求 coupling_norm ≥ 0、模型带数 = lattice 带数）。扫描用法：
+
+```julia
+prep = prepare_system(lattice, model; order=2, coupling_norm=cn)
+G = [greater(lattice, model, kernel, Is...; i=i, Z=Z, preparation=prep) for i in 1:Nt]
+```
+"""
+function prepare_system(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian;
+                        order::Integer=1, initial_state=nothing, coupling_norm::Real=0.0)
+    order in (1, 2) || throw(ArgumentError("order must be 1 or 2"))
+    order == 2 && !(coupling_norm >= 0) &&
+        throw(ArgumentError("order=2 requires coupling_norm ≥ 0 (total Σ_b α_b)"))
+    bands = lattice.bands
+    spec = TK.sectortype(lattice)
+    bands_guard(spec, bands)
+    num_bands(model) == bands ||
+        throw(ArgumentError("model bands $(num_bands(model)) ≠ lattice bands $bands"))
+    cells = chronological_cells(lattice)
+    length(cells) > 0 || throw(ArgumentError("empty lattice"))
+    # cell_charges 固定返回抽象 Vector{Sector}（bridge 多处消费）——制备对象
+    # 字段收窄到 fqs 的具体扇区类型（热循环 fqs[s] 索引免抽象分派）
+    fqs = fock_charges(spec, bands)
+    charges = convert(Vector{eltype(fqs)}, cell_charges(spec, bands))
+    return SystemFactorPreparation(lattice, model, Int(order), Float64(coupling_norm),
+                                   initial_state, cells, local_weights(spec, bands, Int(order)),
+                                   fqs, charges, 2^bands)
+end
+
+"清空两层缓存（预计算字段保留；distinct 格数被扫描形态天然有界，一般无需调用）"
+clear_cache!(prep::SystemFactorPreparation) =
+    (empty!(prep.propagators); empty!(prep.cell_tensors); prep)
+
 # ---------------------------------------------------------------------------
 # 参考装配（dense core + split_cell；golden 锚定路径）
 # ---------------------------------------------------------------------------
@@ -139,37 +246,33 @@ function _cell_tensors(spec, core, leftlabels, rightlabels, charges)
 end
 
 """
-    _system_factor_reference(lattice, model; order=1, initial_state=nothing,
-                             coupling_norm=0.0, insertions=OperatorInsertion[],
-                             trunc=nothing, truncerrs=nothing, spec=TK.Z2Irrep) -> GMPS
+    _system_factor_reference(prep::SystemFactorPreparation; insertions=OperatorInsertion[],
+                             trunc=nothing, truncerrs=nothing) -> GMPS
 
-时序 ring automaton（U1GTEMPO2 system_factor_reference 同型）：每格
-(b,j) 的 core 经 split_cell 切成变量粒度张量列，全部格拼接后 pairize，
-再 reorder! 到 lattice 存储序。ρ₀ = `initial_state`（FockMatrix 或
-2^bands×2^bands 矩阵；实时缺省 = 真空投影 δ₀₀、τ/混合 = 热迹 I）折进单元 1；
-迹闭合折进末单元。
+制备对象版时序 ring automaton（U1GTEMPO2 system_factor_reference 同型）：
+逐格 (b,j) 的 core 经 split_cell 切成变量粒度张量列，全部格拼接后 pairize，
+再 reorder! 到 lattice 存储序。ρ₀ = `prep.initial_state` 折进单元 1；迹闭合
+折进末单元。传播子经 `prep.propagators`、格张量列经 `prep.cell_tensors`
+两层缓存——键完备（F3 函数依赖逐项对映）⟺ 命中返回张量与重算逐位一致。
+格张量键的 `prefix` 取 leftlabels 口径（cut-k 更新前）；rightlabels 由
+(prefix, Ol∪Or 荷) 唯一决定，键完整。
 """
-function _system_factor_reference(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian;
-                                  order::Int=1, initial_state=nothing, coupling_norm::Real=0.0,
-                                  insertions=OperatorInsertion[], trunc=nothing,
-                                  truncerrs=nothing, spec::Type{<:Sector}=TK.Z2Irrep)
-    order in (1, 2) || throw(ArgumentError("order must be 1 or 2"))
-    order == 2 && !(coupling_norm >= 0) && throw(ArgumentError("order=2 requires coupling_norm ≥ 0 (total Σ_b α_b)"))
+function _system_factor_reference(prep::SystemFactorPreparation; insertions=OperatorInsertion[],
+                                  trunc=nothing, truncerrs=nothing)
+    lattice, model, order = prep.lattice, prep.model, prep.order
+    G = TK.sectortype(lattice)
     bands = lattice.bands
-    bands_guard(spec, bands)
-    num_bands(model) == bands || throw(ArgumentError("model bands $(num_bands(model)) ≠ lattice bands $bands"))
-    dim = 2^bands
-    z = one(spec)
-    cells = chronological_cells(lattice)
+    dim = prep.dim
+    z = one(G)
+    cells = prep.cells
     L = length(cells)
-    L > 0 || throw(ArgumentError("empty lattice"))
     # ρ₀：实时 = initial_state（缺省 = 真空投影 δ₀₀，旧 GTEMPO 真空初态语义）；
     # τ/混合 = 热迹 I（τ 段自身建热态，initial_state 忽略）
     rho = Matrix{ComplexF64}(I, dim, dim)
     if lattice isa AbstractRealGrassmannLattice
         rho = Matrix{ComplexF64}(Diagonal(vcat([1.0], zeros(dim - 1))))
-        initial_state === nothing || (rho = initial_state isa FockMatrix ?
-            Matrix{ComplexF64}(initial_state.data) : Matrix{ComplexF64}(initial_state))
+        prep.initial_state === nothing || (rho = prep.initial_state isa FockMatrix ?
+            Matrix{ComplexF64}(prep.initial_state.data) : Matrix{ComplexF64}(prep.initial_state))
     end
     # 插入切位（时序格序索引；cut 0 = ρ₀ 边界）
     cuts = Dict{Int,Vector{OperatorInsertion}}()
@@ -190,10 +293,12 @@ function _system_factor_reference(lattice::AbstractGrassmannLattice, model::Abst
                         init=Matrix{ComplexF64}(I, dim, dim))
     # ρ₀ 切位（cut 0）：left = O·ρ、right = ρ·O
     rho = cutleft(0) * rho * cutright(0)
-    weights = local_weights(spec, bands, order)
-    fqs = fock_charges(spec, bands)
+    cut0 = Tuple(get(cuts, 0, OperatorInsertion[]))   # 缓存键尾项：rho 折叠先决（统一进键最稳）
+    weights = prep.weights
+    fqs = prep.fqs
     pairs = [(s, t) for t in 1:dim for s in 1:dim]
     data = nothing
+    charges_per_cell = prep.charges_per_cell
     # prefix = 已折入状态的累积插入荷（U1GTEMPO2 同款）：cut 0 的插入已折 ρ₀
     # （上行 rho = cutleft(0)·rho·cutright(0)），其荷必须计入初值——否则奇插入
     # （荷≠0）首张量右键荷不随 ρ₀ 的荷移位 → 块路由错位、链迹归零；逐胞累计
@@ -201,18 +306,10 @@ function _system_factor_reference(lattice::AbstractGrassmannLattice, model::Abst
     # prefix，occupation/nn 路径不受影响。
     prefix = foldl((p, ins) -> ins.charge === nothing ? p : qadd(p, ins.charge),
                    get(cuts, 0, OperatorInsertion[]); init=z)
-    labels = Any[]
-    charges_per_cell = cell_charges(spec, bands)
     for (k, (b, j)) in enumerate(cells)
-        # 传播子：一阶全步 / 二阶半步；Td 模型带区间左端点 t
-        dt = b === :τ ? lattice.δτ : lattice.δt
-        t = b === :+ ? (j - 1) * dt : (b === :- ? (lattice.Nt - j) * dt : nothing)
-        Shalf = order == 2
-        S = _model_propagator(model, b, Shalf ? dt / 2 : dt, t)
-        mats = order == 2 ? [S * M * S for M in weights] :
-               b === :- ? [M * S for M in weights] : [S * M for M in weights]
+        first_cell = k == 1
+        last_cell = k == L
         Ol = cutleft(k); Or = cutright(k)
-        mats = [Ol * M * Or for M in mats]
         # 奇插入穿越全部更早 Grassmann 系数的 Koszul 符号
         oddlater = 0
         for (cut, items) in cuts, ins in items
@@ -220,41 +317,58 @@ function _system_factor_reference(lattice::AbstractGrassmannLattice, model::Abst
             q = ins.charge === nothing ? z : ins.charge
             oddlater += GM.fermionparity(q) ? 1 : 0
         end
-        for m in 0:dim^2-1
-            mats[m+1] .*= (-1)^(oddlater * count_ones(m))
-        end
-        leftlabels = k == 1 ? [z] : [qsub(qsub(fqs[s], fqs[t]), prefix) for (s, t) in pairs]
+        leftlabels = first_cell ? [z] : [qsub(qsub(fqs[s], fqs[t]), prefix) for (s, t) in pairs]
+        prefix_left = prefix   # 键口径 = leftlabels 口径（cut-k 更新前；rightlabels 由 (prefix, Ol∪Or) 唯一决定）
         for (cut, items) in cuts, ins in items
             cut == k || continue
             ins.charge === nothing || (prefix = qadd(prefix, ins.charge))
         end
-        rightlabels = k == L ? [z] : [qsub(qsub(fqs[s], fqs[t]), prefix) for (s, t) in pairs]
-        core = zeros(ComplexF64, length(leftlabels), dim^2, length(rightlabels))
-        for m in 0:dim^2-1
-            M = mats[m+1]
-            if L == 1
-                core[1, m+1, 1] = tr(M * rho)
-            elseif k == 1
-                for (r, (s, t)) in enumerate(pairs)
-                    core[1, m+1, r] = (M * rho)[s, t]
-                end
-            elseif k == L
-                for (l, (s, t)) in enumerate(pairs)
-                    core[l, m+1, 1] = M[t, s]
-                end
-            else
-                for (l, (s, t)) in enumerate(pairs), (r, (v, w)) in enumerate(pairs)
-                    t == w && (core[l, m+1, r] = M[v, s])
+        rightlabels = last_cell ? [z] : [qsub(qsub(fqs[s], fqs[t]), prefix) for (s, t) in pairs]
+        key = (b, j, Tuple(Ol), Tuple(Or), oddlater, prefix_left, first_cell, last_cell, cut0)
+        column = get!(prep.cell_tensors, key) do
+            # 传播子：一阶全步 / 二阶半步；Td 模型带区间左端点 t
+            S = get!(prep.propagators, (b, j)) do
+                dt = b === :τ ? lattice.δτ : lattice.δt
+                t = b === :+ ? (j - 1) * dt : (b === :- ? (lattice.Nt - j) * dt : nothing)
+                _model_propagator(model, b, order == 2 ? dt / 2 : dt, t)
+            end
+            mats = order == 2 ? [S * M * S for M in weights] :
+                   b === :- ? [M * S for M in weights] : [S * M for M in weights]
+            mats = [Ol * M * Or for M in mats]
+            for m in 0:dim^2-1
+                mats[m+1] .*= (-1)^(oddlater * count_ones(m))
+            end
+            core = zeros(ComplexF64, length(leftlabels), dim^2, length(rightlabels))
+            for m in 0:dim^2-1
+                M = mats[m+1]
+                if L == 1
+                    core[1, m+1, 1] = tr(M * rho)
+                elseif first_cell
+                    for (r, (s, t)) in enumerate(pairs)
+                        core[1, m+1, r] = (M * rho)[s, t]
+                    end
+                elseif last_cell
+                    for (l, (s, t)) in enumerate(pairs)
+                        core[l, m+1, 1] = M[t, s]
+                    end
+                else
+                    for (l, (s, t)) in enumerate(pairs), (r, (v, w)) in enumerate(pairs)
+                        t == w && (core[l, m+1, r] = M[v, s])
+                    end
                 end
             end
+            # split_cell 对全零 core 会 throw（"zero cell"）——哨兵空列交调用方
+            # 走整链零返回（与参考实现同语义）；缓存哨兵避免重复装配
+            all(iszero, core) && return Vector{Any}()
+            return _cell_tensors(G, core, leftlabels, rightlabels, charges_per_cell)
         end
-        all(iszero, core) && return monomial(spec, repeat(charges_per_cell, L); coeff=0)
-        ts = _cell_tensors(spec, core, leftlabels, rightlabels, charges_per_cell)
-        data === nothing ? (data = ts) : append!(data, ts)
-        append!(labels, [(b, j, v) for v in 1:2bands])
+        isempty(column) && return monomial(G, repeat(charges_per_cell, L); coeff=0)
+        # data = column 必须 copy：column 即 Dict 存储的列对象，直接别名后
+        # append! 会把后续列污染进该缓存条目（下次命中产出超长链）
+        data === nothing ? (data = copy(column)) : append!(data, column)
     end
-    lscale = order == 2 ? real(coupling_norm / 4 * sum(_cell_step2(lattice, b) for (b, _) in cells)) : 0.0
-    out = pairize(spec, data)
+    lscale = order == 2 ? real(prep.coupling_norm / 4 * sum(_cell_step2(lattice, b) for (b, _) in cells)) : 0.0
+    out = pairize(G, data)
     GM.setlogscale!(out, lscale)
     # 时序构造 → 存储序：每格 bands 站成块移动（站粒度置换——GM.reorder! 的
     # perm 语义 = 新链第 k 站 = 原链第 perm[k] 站；上游 GM.swap! 的费米换序号
@@ -271,6 +385,26 @@ function _system_factor_reference(lattice::AbstractGrassmannLattice, model::Abst
         truncerrs === nothing || push!(truncerrs, err)
     end
     return out
+end
+
+"""
+    _system_factor_reference(lattice, model; order=1, initial_state=nothing,
+                             coupling_norm=0.0, insertions=OperatorInsertion[],
+                             trunc=nothing, truncerrs=nothing, spec=TK.Z2Irrep) -> GMPS
+
+便利路径：一次性 `prepare_system` 后走制备对象版（缓存随用即抛）。
+`spec` 必须与 `sectortype(lattice)` 一致（站点空间由 symmetry 派生，不一致
+的 spec 本就无法构造合法链——原实现会静默产出错块路由链，现显式拒绝）。
+"""
+function _system_factor_reference(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian;
+                                  order::Int=1, initial_state=nothing, coupling_norm::Real=0.0,
+                                  insertions=OperatorInsertion[], trunc=nothing,
+                                  truncerrs=nothing, spec::Type{<:Sector}=TK.Z2Irrep)
+    order in (1, 2) || throw(ArgumentError("order must be 1 or 2"))
+    spec === TK.sectortype(lattice) ||
+        throw(ArgumentError("spec $spec ≠ sectortype(lattice) $(TK.sectortype(lattice))"))
+    prep = prepare_system(lattice, model; order, initial_state, coupling_norm)
+    return _system_factor_reference(prep; insertions, trunc, truncerrs)
 end
 
 "实时格 Δt²、τ 格 δτ²（Weyl 标量的 Σ step²）"
@@ -343,6 +477,21 @@ function sysdynamics(lattice::AbstractGrassmannLattice, model::AbstractImpurityH
 end
 
 """
+    sysdynamics(prep::SystemFactorPreparation; insertions=OperatorInsertion[],
+                trunc=nothing, truncerrs=nothing) -> GMPS
+
+制备对象版 K：传播子/格张量经 `prep` 两层缓存（键完备 ⟺ 命中返回张量与
+重算逐位一致——golden 无需重锚）；`insertions` 每次调用新构造的对象经
+结构化 `==`/`hash` 进键。扫描型测量（`prepare_system` + 测量层
+`preparation=prep` 透传）的 automaton 成本从 O(N·L) 摊销到
+O(L + N·切位邻域)。原签名保持为便利包装（一次性 prepare_system 即抛）。
+"""
+function sysdynamics(prep::SystemFactorPreparation; insertions=OperatorInsertion[],
+                     trunc=nothing, truncerrs=nothing)
+    return _system_factor_reference(prep; insertions, trunc, truncerrs)
+end
+
+"""
     sysdynamics_weyl2order(lattice, model; coupling_norm, kwargs...) -> GMPS
 
 Weyl 二阶 K（order=2：q=1/2 对称半步 S·M·S + Weyl 标量
@@ -353,4 +502,17 @@ function sysdynamics_weyl2order(lattice::AbstractGrassmannLattice, model::Abstra
                                 coupling_norm::Real, kwargs...)
     return _system_factor_reference(lattice, model; order=2, coupling_norm=coupling_norm,
                                     spec=TK.sectortype(lattice), kwargs...)
+end
+
+"""
+    sysdynamics_weyl2order(prep::SystemFactorPreparation; kwargs...) -> GMPS
+
+制备对象版 Weyl 二阶 K：`coupling_norm` 以 `prep` 绑定为准（Weyl 标量用），
+不接受逐调用覆盖——order=2 的制备必须走 `prepare_system(...; order=2,
+coupling_norm=...)`。
+"""
+function sysdynamics_weyl2order(prep::SystemFactorPreparation; kwargs...)
+    prep.order == 2 ||
+        throw(ArgumentError("sysdynamics_weyl2order requires an order=2 preparation (prepare_system(...; order=2, coupling_norm=...))"))
+    return _system_factor_reference(prep; kwargs...)
 end
