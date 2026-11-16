@@ -1,5 +1,16 @@
 # GTEMPO 测量层重构计划：measurements/ 拆分 + inserted-K 路线缓存
 
+> **✅ 已实施（2026-11-16）**：Phase A = a94c65b2（三文件纯移动）；Phase B = 31911dd7
+> （SystemFactorPreparation 两层缓存，43 testset 全绿、golden 原锚维持、逐位性/键欠定义
+> 回归新增于 test/api/preparation.jl）。基准（performance/measurement_scan_benchmark.jl，
+> 本地不入库）：Nt=32 greater 全点 17.8s/19.0GiB → 15.2s/13.3GiB（1.2×/1.4×）——F2 的
+> "~88%" 为小链口径，Nt=32 的地板是 integrate 收缩（0.34 s/点 > 全量重建 0.21 s/点），
+> 热缓存残余 0.12 s/点 = pairize+reorder! 的 O(L) 装配（§4.4 口径达成）；pair 级缓存
+> 为潜在后续（canonicalize! 原地改站张量 → 需 copy-on-reuse）。实施坑：缓存列别名污染
+> （首格列 `data = column` 必须 copy，否则 append! 把整链写回缓存条目）；cell_charges
+> 抽象 Vector{Sector} 在 prepare_system 收窄到 fqs 具体扇区型；便利路径 spec ≠
+> sectortype(lattice) 由静默错链改为显式拒绝。
+
 - 日期：2026-11-16
 - 基线：GTEMPO HEAD `c01f446c` + 工作区（行号以当前布局为准，Phase A 拆分后引用以新文件为准）
 - 设计先例：U1GTEMPO2 `SystemPreparation.local_maps`（cell_maps 键结构，prepared_system.jl:39-41）——注意其 `:reference` 路径（所有实时/混合默认路径）零缓存、传播子无独立缓存（2026-11-16 已核实），本计划的两层缓存均为 **GTEMPO 新建**，非移植
