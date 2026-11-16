@@ -50,7 +50,7 @@ const Δ_bcs = 0.6      # BCS 实能隙
 hybriddynamics(orbital=1)（单一 IF 携带反常通道）+ 精确系统传播子 +
 boundarycondition + 热态初态；误差对全模型 ED 参考（bcs_ed）。
 """
-function realtime_gf(Nt::Int; trunc::TruncationScheme)
+function realtime_gf(Nt::Int; trunc::Truncation)
     δt = MODEL_T / Nt
     ts = collect(0:δt:MODEL_T)
     lat = GrassmannLattice(N=Nt, δt=δt, contour=:Keldysh, bands=2)

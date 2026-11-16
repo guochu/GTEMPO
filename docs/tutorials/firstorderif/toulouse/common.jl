@@ -12,7 +12,7 @@
 # =============================================================================
 using LinearAlgebra, Printf
 using GTEMPO
-using Z2Tensors: TruncationScheme
+using GTEMPO: Truncation
 using ImpurityModelBase
 # test/util.jl 的 ordering 表引用了两个未导出的 ordering 结构体
 using GTEMPO: A1B1B̄1Ā1, A1B1ā1b̄1Ā1B̄1a1b1
@@ -109,7 +109,7 @@ end
 """
 function scaling_main(runner; Ns, dtof, nlabel="N", csvfile, pngfile, title,
                       xlabel, ylabel, D=200, ϵ=1.0e-12)
-    trunc = truncdimcutoff(D=D, ϵ=ϵ)
+    trunc = Truncation(D=D, rtol=ϵ)
     hs = -log2.(collect(Ns))
     names = String[]
     errs = Vector{Vector{Float64}}()   # errs[j][i]：第 j 条序列在 Ns[i] 的误差

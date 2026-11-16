@@ -24,7 +24,7 @@ const MODEL_T = 0.2    # 实时段总时长（τ 腿长度 = β）
 标准 GTEMPO 一阶 IF 管线的混合 Kadanoff 轮廓：粗格点 + 双带 fillband 复制
 IF + 精确系统传播子 + boundarycondition；误差对全模型 ED 参考。
 """
-function mixed_gf(N::Int; trunc::TruncationScheme)
+function mixed_gf(N::Int; trunc::Truncation)
     δt, δτ = MODEL_T / N, β / N
     ts = collect(0:δt:MODEL_T)
     τs = collect(0:δτ:β)

@@ -22,7 +22,7 @@ include(joinpath(@__DIR__, "common.jl"))
 标准 GTEMPO 一阶 IF 管线的虚时 τ 环：粗格点 + hybriddynamics + 精确系统
 传播子 + boundarycondition；误差对单模 ED 参考。
 """
-function imagtime_gf(Nτ::Int; trunc::TruncationScheme)
+function imagtime_gf(Nτ::Int; trunc::Truncation)
     δτ = β / Nτ
     τs = collect(0:δτ:β)
     lat = GrassmannLattice(N=Nτ, δτ=δτ, contour=:imag)

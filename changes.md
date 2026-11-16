@@ -1,5 +1,42 @@
 # 接口更改说明
 
+## 桥层接口简化批次：spec = TK 扇区类型 + 截断走 GM 标准通道（2026-11-16，plan/bridge_interface_simplification_plan.md A1–A4 三阶段）
+
+Breaking 变更清单（A2 接受的返回类型变更 + 退役面）：
+
+- **spec：单例 → 扇区类型本身**。`symmetry_spec(:sym)` 现返回 `Type{<:Sector}`
+  （`:z2→Z2Irrep`、`:z2z2→Z2Z2`、`:u1→U1Irrep`、`:u1u1→ChargeCharge`）；
+  `AbstractGrassmannSymmetry`/`Z2Symmetry`/`Z2Z2Symmetry`/`U1Symmetry`/
+  `U1U1Symmetry`/`symmetry_symbol`/`sector_type`/`sector_spec`/`chain_spec` 删除。
+- **荷标签 = TK 扇区**：`var_charge`/`cell_charges`/`fock_charges` 返回值从
+  Int/NTuple/Z2Label 改为 TK 扇区；`charge_dimensions` 的 Dict 键从标签改扇区；
+  `OperatorInsertion(; charge=…)` 接受扇区。Z2Label 与 sector/charge_label
+  双向转换层删除；荷代数 = `qadd`/`qsub`/`qneg`/`zero_charge`（扇区泛型，
+  语义不变）。
+- **截断：`Truncation` 升级为 `MAK.TruncationStrategy`**。构造 kwarg
+  `maxdim` → **`D`**（`Truncation(D=128, rtol=1e-12)`）；**`cutoff` 字段删除**
+  （全库无调用方；无状态实现无法复现 logscale 漂移补偿，保留即无声错误——
+  `PartialIF(; cutoff=…)` 同步删字段）。
+- **`multiply`/`compress!`/`CompressionReport`/`LegacyTruncation` 删除**：
+  压缩乘法 = **`GM.mult`**（已 export）、正则化压缩 = **`GM.truncate!`**
+  （新增 export）；误差唯一出口 = 两者返回的 truncerr 标量（逐键相对截断
+  误差之和）。`partial_if`/`bcs_partial_if` 的 `reports` kwarg →
+  `truncerrs::Vector{Float64}`；`InfluenceFunctional.reports::Vector{Float64}`
+  （逐步 truncerr，逐键分解/saturated/_logabs 记账不再输出）；
+  `_system_factor_reference(reports=…)` → `truncerrs=…`；ExactTTI diagnostics
+  键 `:factor_cleanup_reports` → `:factor_cleanup_truncerrs`。
+- **`BoundedCache` 删除**（GTEMPO 全树零调用点）。
+- ** tutorials（firstorderif 家族 14 文件）截断面机械迁移**：
+  `Z2Tensors.TruncationScheme` 注解 → `Truncation`，`truncdimcutoff(D, ϵ)` →
+  `Truncation(D, rtol)`（文件其余部分仍为换轨前 stale API，不在本批范围）。
+
+语义保持：荷标签排序走 `sortkey` 复现旧序（键扇区插入布局逐位不变，golden
+四对称形 43 项 vs 退役前逐位一致）；截断原理 = LegacyTruncation 去 cutoff 去
+记账（top-D 全局预算 ∧ 相对尾能量 rtol² 判据，rtol 是相对 L2 能量判据、与
+GM TruncateDimCutoff.ϵ 的逐值噪声地板无换算关系）。验收：全套 38 testset 绿；
+longchain n=8/16 新旧对拍最差 7.2e-15、n=32 全工况有限无溢出；零链回归
+（coeff=0 单项式 truncate!/mult 迹归零、键维不塌 0）。
+
 ## D1 修订批次：多轨道对称性支持（2026-11-16，进行中）
 
 - **bands_guard 语义修订（D1 修订，用户裁决）**：旧「:z2z2/:u1u1 要求 bands≤2」

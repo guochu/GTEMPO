@@ -24,7 +24,7 @@ const MODEL_T = 0.5    # 实时演化总时长
 标准 GTEMPO 一阶 IF 管线的实时 Keldysh 演化：粗格点 + 双带 fillband 复制
 IF + 精确系统传播子 + boundarycondition + 热态初态；误差对全模型 ED 参考。
 """
-function realtime_gf(Nt::Int; trunc::TruncationScheme)
+function realtime_gf(Nt::Int; trunc::Truncation)
     δt = MODEL_T / Nt
     ts = collect(0:δt:MODEL_T)
     lat = GrassmannLattice(N=Nt, δt=δt, contour=:real, bands=2)

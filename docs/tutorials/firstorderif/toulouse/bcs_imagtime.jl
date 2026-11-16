@@ -42,7 +42,7 @@ const Δ_bcs = 0.6      # BCS 实能隙
 （单一 IF 携带反常通道）+ 精确系统传播子 + boundarycondition；误差对
 bcs_ed 的 ED 参考。
 """
-function imagtime_gf(Nτ::Int; trunc::TruncationScheme)
+function imagtime_gf(Nτ::Int; trunc::Truncation)
     δτ = β / Nτ
     τs = collect(0:δτ:β)
     lat = GrassmannLattice(N=Nτ, δτ=δτ, contour=:imag, bands=2)

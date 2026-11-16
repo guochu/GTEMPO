@@ -41,7 +41,7 @@ const Δ_bcs = 0.6      # BCS 实能隙
 (orbital=1)（单一 IF 携带反常通道）+ 精确系统传播子 + boundarycondition；
 误差对全模型 bcs_ed ED 参考。
 """
-function mixed_gf(N::Int; trunc::TruncationScheme)
+function mixed_gf(N::Int; trunc::Truncation)
     δt, δτ = MODEL_T / N, β / N
     ts = collect(0:δt:MODEL_T)
     τs = collect(0:δτ:β)
