@@ -351,8 +351,8 @@ function electriccurrent(lattice::AbstractRealGrassmannLattice, model::AbstractI
                          kernel::Union{Nothing,HybridizationKernel}, Is...; k::Integer, band::Int=1, Z,
                          order::Integer=kernel_order(kernel), coupling_norm::Real=kernel_coupling_norm(kernel),
                          initial_state=nothing)
-    ηpp = kernel.blocks[(:+, :+)]
-    ηpm = -kernel.blocks[(:+, :-)]
+    ηpp = Matrix(kernel.blocks[(:+, :+)])       # 循环底板一次性物化（惰性视图 → 稠密）
+    ηpm = -Matrix(kernel.blocks[(:+, :-)])
     curr = 0.0im
     for j in 1:k-1
         curr += ηpp[k, j] * raw_lead_correlator(lattice, model, kernel, Is...; k=k, j=j, b2=:+,
@@ -385,8 +385,8 @@ function heatcurrent(lattice::AbstractRealGrassmannLattice, model::AbstractImpur
                      bath::AbstractNormalBath, Is...; k::Integer, band::Int=1, Z,
                      order::Integer=1, coupling_norm::Real=0.0, initial_state=nothing)
     kernel_η = hybridization(lattice, _weighted_bath(bath))
-    ηpp = kernel_η.blocks[(:+, :+)]
-    ηpm = -kernel_η.blocks[(:+, :-)]
+    ηpp = Matrix(kernel_η.blocks[(:+, :+)])     # 循环底板一次性物化（惰性视图 → 稠密）
+    ηpm = -Matrix(kernel_η.blocks[(:+, :-)])
     curr = 0.0im
     for j in 1:k-1
         curr += ηpp[k, j] * raw_lead_correlator(lattice, model, nothing, Is...; k=k, j=j, b2=:+,

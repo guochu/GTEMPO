@@ -20,29 +20,70 @@
 单元级杂化核（canonical 约定）：`blocks[(b1,b2)][i,j]` = IF 指数系数
 ā_i^{b1} Δ a_j^{b2}（i, j = 单元下标 1..N）。`coupling_norm` = 全带总耦合
 Σ_b α_b（Weyl 标量补偿用；order=2 必需）。
+存储 = QuAPI 关联函数本体（Toeplitz 向量 O(N)，平移不变/Keldysh 约定由
+QuAPI 构造器校验）；`blocks` 是惰性 branch 视图容器——首次访问按窗口
+构建并缓存（CorrelationMatrix 的 getindex 是 |i−j| 查表，值与稠密装配
+逐位一致），视图首建时做窗口形状/有限性校验。
 """
-struct HybridizationKernel{L}
+struct HybridizationKernel{L,C}
     lattice::L
-    blocks::Dict{Tuple{Symbol,Symbol},Matrix{ComplexF64}}
+    corr::C                                   # QuAPI Imag/Real/MixedCorrelationFunction（O(N) 向量存储）
     coupling_norm::Union{Nothing,Float64}
     diagnostics::Dict{Symbol,Any}
+    blocks_cache::Dict{Tuple{Symbol,Symbol},AbstractMatrix{ComplexF64}}
+    function HybridizationKernel(lattice, corr; coupling_norm=nothing, diagnostics=Dict{Symbol,Any}())
+        coupling_norm === nothing || (isfinite(coupling_norm) && coupling_norm >= 0) ||
+            throw(ArgumentError("invalid coupling norm"))
+        new{typeof(lattice),typeof(corr)}(lattice, corr,
+            coupling_norm === nothing ? nothing : Float64(coupling_norm),
+            Dict{Symbol,Any}(diagnostics), Dict{Tuple{Symbol,Symbol},AbstractMatrix{ComplexF64}}())
+    end
 end
 
-function HybridizationKernel(lattice, blocks; coupling_norm=nothing, diagnostics=Dict{Symbol,Any}())
-    out = Dict{Tuple{Symbol,Symbol},Matrix{ComplexF64}}()
-    for a in branches(lattice), b in branches(lattice)
-        haskey(blocks, (a, b)) || throw(ArgumentError("missing kernel block $a/$b"))
-        m = blocks[(a, b)]
-        na = a === :τ ? lattice.kτ : (lattice isa AbstractRealGrassmannLattice ? lattice.k : lattice.Nt)
-        nb = b === :τ ? lattice.kτ : (lattice isa AbstractRealGrassmannLattice ? lattice.k : lattice.Nt)
-        size(m) == (na, nb) || throw(DimensionMismatch("kernel shape $a/$b: $(size(m)) ≠ ($na,$nb)"))
-        all(isfinite, m) || throw(ArgumentError("nonfinite kernel block $a/$b"))
-        out[(a, b)] = ComplexF64.(m)
+"kernel.blocks 惰性首建：窗口化 branch 视图，校验后缓存（每对一次构建）"
+function Base.getproperty(k::HybridizationKernel, s::Symbol)
+    if s === :blocks
+        cache = getfield(k, :blocks_cache)
+        isempty(cache) && _fill_blocks!(cache, getfield(k, :lattice), getfield(k, :corr))
+        return cache
     end
-    coupling_norm === nothing || (isfinite(coupling_norm) && coupling_norm >= 0) ||
-        throw(ArgumentError("invalid coupling norm"))
-    HybridizationKernel(lattice, out, coupling_norm === nothing ? nothing : Float64(coupling_norm),
-                        Dict{Symbol,Any}(diagnostics))
+    return getfield(k, s)
+end
+
+"消费端净读数负号（Δm 的 τ↔rt 交叉块 GTEMPO 侧约定）的惰性包装：O(1) 查表"
+struct _NegView{P<:AbstractMatrix{ComplexF64}} <: AbstractMatrix{ComplexF64}
+    parent::P
+end
+Base.size(v::_NegView) = size(v.parent)
+Base.getindex(v::_NegView, i::Int, j::Int) = -v.parent[i, j]
+
+"窗口化 branch 视图 + 形状/有限性校验（等价旧构造端逐块校验）"
+function _kernel_block_view(corr, na::Int, nb::Int, b1::Symbol, b2::Symbol,
+                            rows::AbstractUnitRange, cols::AbstractUnitRange, neg::Bool)
+    B = branch(corr; b1, b2)
+    (size(B, 1) >= na && size(B, 2) >= nb) || throw(DimensionMismatch(
+        "kernel shape $b1/$b2: corr window $(size(B)) too small for lattice block ($na,$nb)"))
+    M = view(B, rows, cols)
+    all(isfinite, M) || throw(ArgumentError("nonfinite kernel block $b1/$b2"))
+    return neg ? _NegView(M) : M
+end
+
+function _fill_blocks!(cache, lattice::AbstractImagGrassmannLattice, corr)
+    N = lattice.kτ
+    (size(corr.data, 1) >= N && size(corr.data, 2) >= N) || throw(DimensionMismatch(
+        "kernel shape τ/τ: corr window $(size(corr.data)) too small for lattice block ($N,$N)"))
+    M = view(corr.data, 1:N, 1:N)
+    all(isfinite, M) || throw(ArgumentError("nonfinite kernel block τ/τ"))
+    cache[(:τ, :τ)] = M
+end
+
+function _fill_blocks!(cache, lattice, corr)
+    kr(b) = b === :τ ? lattice.kτ : (lattice isa AbstractRealGrassmannLattice ? lattice.k : lattice.Nt)
+    mixed = lattice isa AbstractMixedGrassmannLattice
+    for b1 in branches(lattice), b2 in branches(lattice)
+        neg = mixed && ((b1 === :τ) !== (b2 === :τ))
+        cache[(b1, b2)] = _kernel_block_view(corr, kr(b1), kr(b2), b1, b2, 1:kr(b1), 1:kr(b2), neg)
+    end
 end
 
 """
@@ -60,27 +101,14 @@ secondorderif kernels.jl 同款三路径（ED 验证过）：
 （`coupling_norm` 助手，见 correlationfunction.jl），多带 = `sum(coupling_norm, baths)`。
 """
 function hybridization(lattice::AbstractGrassmannLattice, bath::AbstractBath; coupling_norm=nothing)
-    blocks = Dict{Tuple{Symbol,Symbol},Matrix{ComplexF64}}()
-    if lattice isa AbstractImagGrassmannLattice
-        corr = QuAPI.Δτ(bath; N=lattice.Nτ, δτ=lattice.δτ)
-        blocks[(:τ, :τ)] = Matrix{ComplexF64}(corr.data[1:lattice.Nτ, 1:lattice.Nτ])
+    corr = if lattice isa AbstractImagGrassmannLattice
+        QuAPI.Δτ(bath; N=lattice.Nτ, δτ=lattice.δτ)
     elseif lattice isa AbstractRealGrassmannLattice
-        qt = QuAPI.Δt(bath; N=lattice.Nt, t=lattice.Nt * lattice.δt)
-        for (b1, b2) in ((:+, :+), (:+, :-), (:-, :+), (:-, :-))
-            Mq = QuAPI.branch(qt; b1=b1, b2=b2)
-            blocks[(b1, b2)] = Matrix{ComplexF64}(Mq[1:lattice.Nt, 1:lattice.Nt])
-        end
+        QuAPI.Δt(bath; N=lattice.Nt, t=lattice.Nt * lattice.δt)
     else
-        qm = QuAPI.Δm(bath; Nτ=lattice.Nτ, t=lattice.Nt * lattice.δt, Nt=lattice.Nt, δτ=lattice.δτ)
-        ri(c2) = c2 === :τ ? (1:lattice.Nτ) : (1:lattice.Nt)
-        for b1 in (:+, :-, :τ), b2 in (:+, :-, :τ)
-            Mq = QuAPI.branch(qm; b1=b1, b2=b2)
-            M = Matrix{ComplexF64}(Mq[ri(b1), ri(b2)])
-            (b1 === :τ) !== (b2 === :τ) && (M = -M)   # Δm τ↔rt 交叉块内嵌负号
-            blocks[(b1, b2)] = M
-        end
+        QuAPI.Δm(bath; Nτ=lattice.Nτ, t=lattice.Nt * lattice.δt, Nt=lattice.Nt, δτ=lattice.δτ)
     end
-    return HybridizationKernel(lattice, blocks; coupling_norm)
+    return HybridizationKernel(lattice, corr; coupling_norm)
 end
 
 function hybridization(lattice::AbstractGrassmannLattice, corr; coupling_norm=nothing)
@@ -268,12 +296,9 @@ function embed_cells(spec, lattice, localdata, memorycharges, cellvars; band=1)
     out = pairize(spec, data); check_charge(out); out
 end
 
-validate_tti(M::AbstractMatrix; tol) = _validate_tti_matrix(M, tol)
-function _validate_tti_matrix(M, tol)
-    n = size(M, 1); size(M, 2) == n || throw(DimensionMismatch())
-    err = maximum((abs(M[i, j] - M[i >= j ? i - j + 1 : 1, i >= j ? 1 : j - i + 1]) for i in 1:n, j in 1:n); init=0.0)
-    err <= tol * max(norm(M), eps()) || throw(ArgumentError("kernel is not TTI: residual $err")); err
-end
+# validate_tti 已删（2026-11-16 kernel.blocks 物化退役）：blocks 是 QuAPI corr
+# 的惰性 branch 视图，Toeplitz 平移不变是 CorrelationMatrix 存储的结构性保证
+# （统一约定/Keldysh 恒等式由 QuAPI 构造器校验）——旧校验退化为恒真。
 
 "A whole segment's equal-cell exponential is a product of fixed-size local cells."
 function contact_factor(spec, lattice, band, bs, D)
@@ -335,7 +360,6 @@ function real_factors(emit, spec, lattice, k::HybridizationKernel, band, alg, di
     n = lattice.k
     blocks = k.blocks
     residuals = Float64[]; nfactors = 0
-    for a in (:+, :-), b in (:+, :-); validate_tti(blocks[(a, b)]; tol=alg.rtol); end
     g = ComplexF64[blocks[(:+, :+)][i + 1, 1] for i in 1:n-1]
     l = ComplexF64[blocks[(:+, :-)][i + 1, 1] for i in 1:n-1]
     # Keldysh tails audit（structured Lag 块近似：直读 kernel 的 Toeplitz 性）
@@ -382,7 +406,7 @@ function imag_factors(emit, spec, lattice, k::HybridizationKernel, band, alg, di
     lattice isa Union{AbstractImagGrassmannLattice,AbstractMixedGrassmannLattice} || return nothing
     z = one(spec)
     n = lattice.kτ
-    M = k.blocks[(:τ, :τ)]; validate_tti(M; tol=alg.rtol)
+    M = k.blocks[(:τ, :τ)]   # Toeplitz 平移不变由 corr 存储结构性保证（QuAPI 构造器校验）
     lower = ComplexF64[M[j+1, 1] for j in 1:n-1]; upper = ComplexF64[M[1, j+1] for j in 1:n-1]
     thermal = norm(upper + reverse(lower)) / max(norm(lower), eps())
     thermal <= max(alg.rtol, 1e-12) || throw(ArgumentError("imaginary kernel violates thermal pairing"))

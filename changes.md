@@ -1,5 +1,25 @@
 # 接口更改说明
 
+## kernel.blocks 物化退役批次（2026-11-16，plan/kernel_and_fit_simplification_plan.md Part 1）
+
+- **`HybridizationKernel` 存储改 = QuAPI 关联函数本体**（`Imag/Real/MixedCorrelationFunction`，
+  Toeplitz 向量 O(N)）；`blocks` 字段退役，改为 `Base.getproperty` 惰性 branch 视图容器
+  ——`kernel.blocks[(b1,b2)][i,j]` 语法与数值**逐位不变**（CorrelationMatrix 查表 +
+  窗口视图；Δm 的 τ↔rt 交叉块净读数负号走 O(1) 惰性 `_NegView` 包装），视图首建时
+  做窗口形状/有限性校验并缓存（每对一次）。
+- **内存/构造**：实轴 4×O(N²) 稠密 → O(N) 向量（N=2048 驻留 256 MiB → 129 KiB），
+  构造端零物化复制（视图按需首建）；性能基准脚本 performance/kernel_memory_benchmark.jl
+  （gitignore 区，磁盘交付）。
+- **`validate_tti` 删除**：Toeplitz 平移不变是 CorrelationMatrix 存储的结构性保证
+  （统一约定/Keldysh 恒等式由 QuAPI 构造器校验），旧校验退化为恒真；ExactTTI 入口
+  留注释。BCS 路线不经过 kernel，不受影响。
+- currents 两处（electriccurrent/heatcurrent）循环底板一次性物化
+  `Matrix(kernel.blocks[...])`（与旧稠密循环同性能）。
+- fit_exponentials（Part 2）按裁定维持原样不动（案 B 已在 ExpExp 侧另行立项）。
+- 注意：对拍测试的 Δm/Δt 装配参数须与 hybridization 同源（如 `t = Nt*δt`——
+  3*0.1 ≠ 0.3 的浮点位型差会让两次独立 quadgk 装配差 ~1e-17）；quapi_crosscheck
+  已升级为逐位 `==` 硬闸门。
+
 ## 对称性单例化批次（2026-11-16，Breaking）
 
 - **Symbol 字符串手选退役，改为对称性单例类型**：`abstract type GrassmannSymmetry`
