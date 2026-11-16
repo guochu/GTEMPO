@@ -9,7 +9,7 @@ using TensorKit: scalartype
 	@test lat.β ≈ 0.6 && lat.bands == 1
 	@test length(lat) == 2 * lat.bands * lat.k
 	@test branches(lat) == (:τ,)
-	@test symmetry(lat) === Z2()
+	@test symmetry(lat) === Z2Symmetry()
 	@test scalartype(lat) == ComplexF64
 	lat2 = similar(lat, bands=2)
 	@test lat2.bands == 2 && lat2.δτ == lat.δτ && lat2.N == lat.N
@@ -29,32 +29,32 @@ using TensorKit: scalartype
 	@test lat.kt == lat.Nt == 3 && lat.kτ == lat.Nτ == 4 && lat.β ≈ 1.0
 
 	# 对称性手选（D1，2026-11-16 单例化）：四形 + 荷分辨 bands 守卫
-	for (sym, G) in ((Z2(), GTEMPO.TK.Z2Irrep), (U1(), GTEMPO.TK.U1Irrep),
-	                 (U1U1(), GTEMPO.ChargeCharge), (Z2Z2(), GM.Z2Z2))
+	for (sym, G) in ((Z2Symmetry(), GTEMPO.TK.Z2Irrep), (U1Symmetry(), GTEMPO.TK.U1Irrep),
+	                 (U1U1Symmetry(), GTEMPO.ChargeCharge), (Z2Z2Symmetry(), GM.Z2Z2))
 		l = GrassmannLattice(N=4, δt=0.1, bands=2, contour=:real, symmetry=sym)
 		@test symmetry(l) === sym
 		@test GTEMPO.sectortype(sym) === G
 	end
 	@test_throws TypeError GrassmannLattice(N=4, δt=0.1, contour=:real, symmetry=:z2)   # Symbol 手选已退役（kwarg 类型拒绝）
 	# 荷分辨形要求偶数带（轨道交错：奇带 up / 偶带 down；多轨道 bands = 2·轨道数）
-	@test_throws ArgumentError GrassmannLattice(N=4, δt=0.1, bands=3, contour=:real, symmetry=U1U1())
-	@test_throws ArgumentError GrassmannLattice(N=4, δt=0.1, bands=3, contour=:real, symmetry=Z2Z2())
+	@test_throws ArgumentError GrassmannLattice(N=4, δt=0.1, bands=3, contour=:real, symmetry=U1U1Symmetry())
+	@test_throws ArgumentError GrassmannLattice(N=4, δt=0.1, bands=3, contour=:real, symmetry=Z2Z2Symmetry())
 	# 多轨道（bands=4 = 2 轨道）合法构造（D1 修订）
-	for sym in (U1U1(), Z2Z2())
+	for sym in (U1U1Symmetry(), Z2Z2Symmetry())
 		l4 = GrassmannLattice(N=4, δt=0.1, bands=4, contour=:real, symmetry=sym)
 		@test l4.bands == 4 && length(l4) == 4 * 4 * l4.k   # 实时 = 2k 块 × 2M 位
 	end
 	# BCS 守卫（D7）：仅 Z2
-	for sym in (U1(), U1U1(), Z2Z2())
+	for sym in (U1Symmetry(), U1U1Symmetry(), Z2Z2Symmetry())
 		@test_throws ArgumentError GTEMPO.bcs_symmetry_guard(sym)
 	end
-	@test GTEMPO.bcs_symmetry_guard(Z2()) === Z2()
+	@test GTEMPO.bcs_symmetry_guard(Z2Symmetry()) === Z2Symmetry()
 
 	# 站空间序列与变量荷
-	l = GrassmannLattice(N=4, δt=0.1, bands=2, contour=:real, symmetry=U1U1())
-	ss = site_spaces(GTEMPO.sectortype(U1U1()), 4, 2)
+	l = GrassmannLattice(N=4, δt=0.1, bands=2, contour=:real, symmetry=U1U1Symmetry())
+	ss = site_spaces(GTEMPO.sectortype(U1U1Symmetry()), 4, 2)
 	@test length(ss) == 4 && ss[1] != ss[2]   # up/down 交替站形
-	cc = GTEMPO.cell_charges(GTEMPO.sectortype(U1U1()), 2)
+	cc = GTEMPO.cell_charges(GTEMPO.sectortype(U1U1Symmetry()), 2)
 	@test [(c[1].charge, c[2].charge) for c in cc] == [(1, 0), (-1, 0), (0, 1), (0, -1)]
 	# 时序格序 / 存储格序 / 切位索引
 	l = GrassmannLattice(N=4, δt=0.1, contour=:real)

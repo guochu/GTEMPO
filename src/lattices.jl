@@ -7,7 +7,8 @@
 #   虚时：[格 Nτ][…][格 1]（格 i ⟷ 块 k−i+1）。
 # 格点计数语义（与旧 lattice 的 k=步数+1 不同——Chrono 无额外端点格点）：
 #   N/Nt/Nτ kwarg = 物理步数（= 单元数）；k/kt/kτ = 对应分支的格点数。
-# lattice 按对称性单例类型参数化（2026-11-16：Symobl 字符串手选退役）——
+# lattice 按对称性单例类型参数化（2026-11-16：Symbol 字符串手选退役，单例名带
+# Symmetry 后缀避免与 GM 扇区类型撞名）——
 # `symmetry::Sym` 字段携带 bridge 的 GrassmannSymmetry 单例（Z2/Z2Z2/U1/U1U1），
 # `TK.sectortype(lattice)` 编译期即得扇区类型（spec），下游免重复输入扇区
 # 信息。ordering 管链排布、symmetry 管扇区标记，两者正交（§3.4）。
@@ -55,12 +56,12 @@ struct ImagGrassmannLattice{Sym} <: AbstractImagGrassmannLattice{Sym}
     end
 end
 
-function ImagGrassmannLattice(; δτ::Real, N::Int, bands::Int=1, symmetry::GrassmannSymmetry=Z2())
+function ImagGrassmannLattice(; δτ::Real, N::Int, bands::Int=1, symmetry::GrassmannSymmetry=Z2Symmetry())
     ImagGrassmannLattice(δτ, bands, N, symmetry)
 end
 Base.similar(x::ImagGrassmannLattice; δτ::Real=x.δτ, bands::Int=x.bands, N::Int=x.N,
-             symmetry::Union{Nothing,GrassmannSymmetry}=nothing) =
-    ImagGrassmannLattice(δτ, bands, N, symmetry === nothing ? x.symmetry : symmetry)
+             symmetry::GrassmannSymmetry=x.symmetry) =
+    ImagGrassmannLattice(δτ, bands, N, symmetry)
 
 function Base.getproperty(x::ImagGrassmannLattice, s::Symbol)
     if (s == :k) || (s == :kτ)
@@ -108,11 +109,11 @@ struct RealGrassmannLattice{Sym} <: AbstractRealGrassmannLattice{Sym}
     end
 end
 
-RealGrassmannLattice(; δt::Real, N::Int, bands::Int=1, symmetry::GrassmannSymmetry=Z2()) =
+RealGrassmannLattice(; δt::Real, N::Int, bands::Int=1, symmetry::GrassmannSymmetry=Z2Symmetry()) =
     RealGrassmannLattice(δt, bands, N, symmetry)
 Base.similar(x::RealGrassmannLattice; δt::Real=x.δt, bands::Int=x.bands, N::Int=x.N,
-             symmetry::Union{Nothing,GrassmannSymmetry}=nothing) =
-    RealGrassmannLattice(δt, bands, N, symmetry === nothing ? x.symmetry : symmetry)
+             symmetry::GrassmannSymmetry=x.symmetry) =
+    RealGrassmannLattice(δt, bands, N, symmetry)
 
 function Base.getproperty(x::RealGrassmannLattice, s::Symbol)
     if (s == :k) || (s == :kt) || (s == :Nt)
@@ -157,12 +158,12 @@ struct MixedGrassmannLattice{Sym} <: AbstractMixedGrassmannLattice{Sym}
     end
 end
 
-function MixedGrassmannLattice(; δt::Real, Nt::Int, δτ::Real, Nτ::Int, bands::Int=1, symmetry::GrassmannSymmetry=Z2())
+function MixedGrassmannLattice(; δt::Real, Nt::Int, δτ::Real, Nτ::Int, bands::Int=1, symmetry::GrassmannSymmetry=Z2Symmetry())
     MixedGrassmannLattice(δt, Nt, δτ, Nτ, bands, symmetry)
 end
 Base.similar(x::MixedGrassmannLattice; δt::Real=x.δt, Nt::Int=x.Nt, δτ::Real=x.δτ, Nτ::Int=x.Nτ,
-             bands::Int=x.bands, symmetry::Union{Nothing,GrassmannSymmetry}=nothing) =
-    MixedGrassmannLattice(δt, Nt, δτ, Nτ, bands, symmetry === nothing ? x.symmetry : symmetry)
+             bands::Int=x.bands, symmetry::GrassmannSymmetry=x.symmetry) =
+    MixedGrassmannLattice(δt, Nt, δτ, Nτ, bands, symmetry)
 
 function Base.getproperty(x::MixedGrassmannLattice, s::Symbol)
     if s == :t

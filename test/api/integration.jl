@@ -1,7 +1,7 @@
 @testset "API: integrate / integrate_scaled / ScaledScalar" begin
 	# 多链 Berezin 迹：非交换链序只允许 (x, Is...) 形制；标度比值工具
 	lat = GrassmannLattice(N=2, δτ=0.1, bands=1, contour=:imag)
-	spec = GTEMPO.sectortype(Z2())
+	spec = GTEMPO.sectortype(Z2Symmetry())
 	Is = hybriddynamics(lat, discretefermionicbath([1.0], [0.5]; β=lat.β), PartialIF(); band=1)
 	K = sysdynamics(lat, ToulouseIM(ϵ_d=0.3))
 	z = integrate_scaled(K, Is)
@@ -15,7 +15,7 @@ end
 
 @testset "API: mult / truncate! / truncerr 标准通道" begin
 	lat = GrassmannLattice(N=2, δτ=0.1, bands=1, contour=:imag)
-	spec = GTEMPO.sectortype(Z2())
+	spec = GTEMPO.sectortype(Z2Symmetry())
 	spaces = site_spaces(spec, length(lat) ÷ 2, 1)
 	x = randomgmps(ComplexF64, spaces; D=4)
 	y = randomgmps(ComplexF64, spaces; D=4)

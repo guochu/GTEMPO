@@ -7,10 +7,10 @@ import GrassmannMPS as GM
 using LinearAlgebra: Diagonal, I, tr, norm
 μ = 0.7; β = 1.0
 bath = discretefermionicbath([1.0], [0.5]; β=β)
-lat = GrassmannLattice(N=4, δt=0.15, bands=2, contour=:real, symmetry=U1())
+lat = GrassmannLattice(N=4, δt=0.15, bands=2, contour=:real, symmetry=U1Symmetry())
 q = exp(-β * μ)
 ρ0 = Diagonal(ComplexF64[1.0, q, q, q * q]); ρ0 /= tr(ρ0)
-spec = GTEMPO.sectortype(U1())
+spec = GTEMPO.sectortype(U1Symmetry())
 qc = GTEMPO.var_charge(spec, 1, 2)
 d = GTEMPO._fock_ops(2)[1]; ddag = d'
 weights = GTEMPO.local_weights(spec, 2, 2)

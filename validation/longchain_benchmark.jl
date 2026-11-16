@@ -26,10 +26,10 @@ function bench_case(kind, order, n, reps)
     q = exp(-β0 * μ)
     rows = Tuple{String,Int,Int,Int,String,Float64,UInt}[]
     if kind === :real
-        lat = GrassmannLattice(N=n, δt=DT, bands=BANDS, contour=:real, symmetry=U1())
+        lat = GrassmannLattice(N=n, δt=DT, bands=BANDS, contour=:real, symmetry=U1Symmetry())
         ρ0 = Diagonal(ComplexF64[1.0, q, q, q * q]); ρ0 /= tr(ρ0)
     else
-        lat = GrassmannLattice(N=n, δτ=DTAU, bands=BANDS, contour=:imag, symmetry=U1())
+        lat = GrassmannLattice(N=n, δτ=DTAU, bands=BANDS, contour=:imag, symmetry=U1Symmetry())
         ρ0 = nothing
     end
     model = AndersonIM(U=0.0, ϵ_d=μ)

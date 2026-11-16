@@ -32,7 +32,7 @@ import GrassmannMPS as GM
 import GrassmannMPS: vacuumstate, expectation,   # 扩展目标（lattice / solution 方法）
     coefficient_scaled                           # 桥层扩展目标（同函数新方法）
 using GrassmannMPS: GMPS, SparseGMPS, ScaledScalar, ExpectationCache,
-    ChargeCharge, grassmannspace, grassmann_basis, wedge_vertex,
+    ChargeCharge, Z2Z2, grassmannspace, grassmann_basis, wedge_vertex,
     canonical_grassmann_spaces,
     environments, Zvalue, value, truncrelerr, truncdimcutoff, truncate!,
     leftorth!, rightorth!, swap!, reorder!, randomgmps,
@@ -84,7 +84,7 @@ export AbstractGrassmannLattice, AbstractImagGrassmannLattice, AbstractRealGrass
 export ImagGrassmannLattice, RealGrassmannLattice, MixedGrassmannLattice, GrassmannLattice
 export branches, indexmappings, vacuumstate
 export symmetry, site_spaces
-export GrassmannSymmetry, Z2, Z2Z2, U1, U1U1
+export GrassmannSymmetry, Z2Symmetry, Z2Z2Symmetry, U1Symmetry, U1U1Symmetry
 
 # 对称性 / 桥层（构造 + 引擎接线）
 export Truncation

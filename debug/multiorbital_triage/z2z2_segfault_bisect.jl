@@ -6,7 +6,7 @@ using LinearAlgebra
 N = parse(Int, get(ENV, "NN", "6"))
 μ = 0.5
 println("== stage 1: lattice =="); flush(stdout)
-lat = GrassmannLattice(N=N, δτ=0.8/N, bands=4, contour=:imag, symmetry=Z2Z2())
+lat = GrassmannLattice(N=N, δτ=0.8/N, bands=4, contour=:imag, symmetry=Z2Z2Symmetry())
 println("   ok; k=", lat.k, " len=", length(lat)); flush(stdout)
 println("== stage 2: vacuumstate =="); flush(stdout)
 v = vacuumstate(lat)

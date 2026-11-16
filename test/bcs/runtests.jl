@@ -3,7 +3,7 @@ println("========== Part 3: BCS (Z2 only) ==========")
 @testset "BCS: Δ=0 退化为两条独立正常带" begin
 	U = 0.0; ϵ_d = 0.8; ω = 1.0; α = 0.5
 	β = 1.0; Nτ = 16; δτ = β / Nτ
-	lat = GrassmannLattice(N=Nτ, δτ=δτ, bands=2, contour=:imag, symmetry=Z2())
+	lat = GrassmannLattice(N=Nτ, δτ=δτ, bands=2, contour=:imag, symmetry=Z2Symmetry())
 	model = AndersonIM(U=U, ϵ_d=-ϵ_d)
 	bathn = fermionicbath(DiracDelta(ω=ω, α=α), β=β)
 	bath0 = bcsbath(fermionicbath(DiracDelta(ω=ω, α=α), β=β), Δ=0)
@@ -26,7 +26,7 @@ end
 		# Z/occ/奇 matsubara 全部 ED 吻合）
 		H, Ab, Bb, H0 = bcs_ed(U, ϵ_ed; ω₀=ω, α=α, Δ=Δ)
 
-		lat = GrassmannLattice(N=Nτ, δτ=δτ, bands=2, contour=:imag, symmetry=Z2())
+		lat = GrassmannLattice(N=Nτ, δτ=δτ, bands=2, contour=:imag, symmetry=Z2Symmetry())
 		model = AndersonIM(U=U, ϵ_d=-ϵ_ed)
 		bath = bcsbath(fermionicbath(DiracDelta(ω=ω, α=α), β=β), Δ=Δ)
 		Is = bcs_hybriddynamics(lat, bath)
@@ -51,10 +51,10 @@ end
 end
 
 @testset "BCS: 对称性守卫（D7 仅 :z2）" begin
-	for sym in (U1(), U1U1(), Z2Z2())
+	for sym in (U1Symmetry(), U1U1Symmetry(), Z2Z2Symmetry())
 		@test_throws ArgumentError GTEMPO.bcs_symmetry_guard(sym)
 	end
-	lat = GrassmannLattice(N=4, δτ=0.25, bands=2, contour=:imag, symmetry=U1())
+	lat = GrassmannLattice(N=4, δτ=0.25, bands=2, contour=:imag, symmetry=U1Symmetry())
 	bath = bcsbath(fermionicbath(DiracDelta(ω=1.0, α=0.5), β=1.0), Δ=0.6)
 	@test_throws ArgumentError bcs_hybriddynamics(lat, bath)
 end

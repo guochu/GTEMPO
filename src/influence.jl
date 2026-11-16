@@ -635,7 +635,7 @@ function bcs_partial_if(lattice::AbstractGrassmannLattice, corr::QuAPI.BCSCorrel
                         truncerrs::Vector{Float64}=Float64[])
     spec = TK.sectortype(lattice)
     spec === TK.Z2Irrep || throw(ArgumentError(
-        "BCS IF supports only symmetry=$Z2 (anomalous pairing breaks particle-number " *
+        "BCS IF supports only symmetry=$Z2Symmetry (anomalous pairing breaks particle-number " *
         "conservation; only parity is conserved), got $(symmetry(lattice))"))
     (1 <= band1 < band2 <= lattice.bands) || throw(ArgumentError(
         "BCS orbital requires 1 ≤ band1 < band2 ≤ bands, got ($band1, $band2)"))

@@ -3,19 +3,21 @@
 ## 对称性单例化批次（2026-11-16，Breaking）
 
 - **Symbol 字符串手选退役，改为对称性单例类型**：`abstract type GrassmannSymmetry`
-  + 四单例 **`Z2`/`Z2Z2`/`U1`/`U1U1`**（export），`sectortype` 按类型/实例分派
-  （`sectortype(U1U1()) === ChargeCharge`，扩展自 TK.sectortype）。
+  + 四单例 **`Z2Symmetry`/`Z2Z2Symmetry`/`U1Symmetry`/`U1U1Symmetry`**（export，
+  Symmetry 后缀避免与 GM 扇区类型撞名；GM 扇区 alias `Z2Z2` 的 re-import 因此恢复），
+  `sectortype` 按类型/实例分派（`sectortype(U1U1Symmetry()) === ChargeCharge`，
+  扩展自 TK.sectortype）。
 - **`symmetry_spec(::Symbol)` 与 SYMMETRY_SPECS 注册表删除**（export 撤销）；
-  `bcs_symmetry_guard` 改收单例（`bcs_symmetry_guard(Z2())`）。
+  `bcs_symmetry_guard` 改收单例（`bcs_symmetry_guard(Z2Symmetry())`）。
 - **lattice 按单例类型参数化**：`AbstractGrassmannLattice{Sym <: GrassmannSymmetry}`，
-  `symmetry::Sym` 字段携带单例；构造器 kwarg `symmetry::GrassmannSymmetry = Z2()`
-  （Symbol 输入在 kwarg 类型层即 TypeError）；`similar` 缺省保持自身单例；
-  **`TK.sectortype(lattice)` 编译期即得扇区类型**，下游（hybriddynamics/
-  sysdynamics/measurement 等）不再重复传 spec——`sectortype(lattice)` 一查即得。
+  `symmetry::Sym` 字段携带单例；构造器 kwarg
+  `symmetry::GrassmannSymmetry = Z2Symmetry()`（Symbol 输入在 kwarg 类型层即
+  TypeError）；`similar` 缺省 `symmetry::GrassmannSymmetry = x.symmetry`（保持
+  自身单例）；**`TK.sectortype(lattice)` 编译期即得扇区类型**，下游
+  （hybriddynamics/sysdynamics/measurement 等）不再重复传 spec——
+  `sectortype(lattice)` 一查即得。
 - 桥层荷代数/装配函数（var_charge/qspace/pairize/monomial/…）签名不变，
   仍按 TK 扇区类型分派（`sectortype(对称性单例)` 的产物）。
-- 注意命名：单例 `Z2Z2` 与 GM 扇区 alias `Z2Z2` 同名——GTEMPO 不再 re-import
-  GM 的 alias，包内扇区类型用 `GM.Z2Z2` 限定（`ChargeCharge` 导入不变）。
 
 ## convenience 清理 + src 布局重排批次（2026-11-16）
 

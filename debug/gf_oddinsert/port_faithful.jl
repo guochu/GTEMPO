@@ -10,7 +10,7 @@ bath = discretefermionicbath([1.0], [0.5]; β=β)
 lat = GrassmannLattice(N=4, δt=0.15, bands=2, contour=:real)
 q = exp(-β * μ)
 ρ0 = Diagonal(ComplexF64[1.0, q, q, q * q]); ρ0 /= tr(ρ0)
-spec = sectortype(Z2())
+spec = sectortype(Z2Symmetry())
 qc = GTEMPO.var_charge(spec, 1, 2)
 d = GTEMPO._fock_ops(2)[1]; ddag = d'
 weights = GTEMPO.local_weights(spec, 2, 2)

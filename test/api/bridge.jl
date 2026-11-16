@@ -1,8 +1,8 @@
 # bridge 层（GMPS 皮）结构查询与算术面：旧 grassmannmps/grassmanntensor/mpo/mult
 # 四文件的 Z2Tensors 栈测试已随栈退役；GM 引擎面由 GrassmannMPS 自有套件覆盖。
 @testset "API: bridge 结构查询与算术" begin
-	lat = GrassmannLattice(N=3, δτ=0.1, bands=2, contour=:imag, symmetry=U1U1())
-	spec = GTEMPO.sectortype(U1U1())
+	lat = GrassmannLattice(N=3, δτ=0.1, bands=2, contour=:imag, symmetry=U1U1Symmetry())
+	spec = GTEMPO.sectortype(U1U1Symmetry())
 	spaces = site_spaces(spec, length(lat) ÷ 2, 2)
 	x = randomgmps(ComplexF64, spaces; D=4)
 	@test check_charge(x)

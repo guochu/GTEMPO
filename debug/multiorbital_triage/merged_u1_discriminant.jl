@@ -15,7 +15,7 @@ for b in 1:nimp
 end
 Zed = real(tr(exp(-β * H))) / (1 + exp(-β * ω))^nimp
 
-lat = GrassmannLattice(N=Nτ, δτ=δτ, bands=4, contour=:imag, symmetry=U1())
+lat = GrassmannLattice(N=Nτ, δτ=δτ, bands=4, contour=:imag, symmetry=U1Symmetry())
 # Σ 核 = 4×(α/4)g = α·g：每带恰见自身通道强度（对角混杂）
 bath = discretefermionicbath(fill(ω, nimp), fill(α / nimp, nimp); β=β)
 model = ImpurityHamiltonian([tunneling(b, b, coeff=μ) for b in 1:4]; bands=4)
