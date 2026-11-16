@@ -9,7 +9,7 @@
 
 - **A1** 荷标签排序口径 = **选项 A（零扰动）**：标签全改 TK 扇区类型，但 qspace/split_cell 等所有 `sort` 走 `sortkey` 复现现序（Int 升序 / 元组字典序 / Z2Label 按 n）——键扇区插入序逐位不变，golden todense 与标量锚原样通过。
 - **A2** 导出 API 返回类型变更**接受**：`var_charge`/`cell_charges`/`fock_charges`/`charge_dimensions` 返回值从 Int/NTuple/Z2Label 变为 TK 扇区；`symmetry_spec` 返回 `Type{<:Sector}` 而非单例。
-- **A3** 删除 `Truncation`、`CompressionReport`、`LegacyTruncation`（bridge.jl 自造截断机器整体退役）；`compress!(x; trunc)` 调用点 → GM `truncate!`；`multiply` 调用点 → GM `mult`。
+- **A3** `Truncation` **保留**并升级为 `MAK.TruncationStrategy`：`MAK.findtruncated_svd` 直接对它重载（无状态、sortkey 序、截断原理与现 LegacyTruncation 一致），误差只走标准通道（`truncate!`/`mult` 返回的 truncerr），`CompressionReport` 的众多记账全部不再输出、`LegacyTruncation` 删除；`compress!(x; trunc)` 调用点 → GM `truncate!`；`multiply` 调用点 → GM `mult`。（2026-11-16 第二轮修订：不走「删 Truncation + GM 交集组合」路线，GM 零改动）
 - **A4** 删除 `BoundedCache`（GTEMPO 内零调用点，非导出，删除零影响）。
 
 ## 1. 目标
@@ -27,18 +27,14 @@
 **F2【TK 扇区 isless 与现标签序不同——必须 sortkey（A1 的依据）】**
 `U1Irrep.isless` 按 |charge| 再符号（序为 0,1,−1,2,…，u1irrep.jl:46）；`ProductSector.isless` 按 findindex 距离和再字典序（product.jl:228）——都不是现在的 Int 升序/元组字典序。直接 `sort(sector)` 会改变 qspace/split_cell 的扇区插入序 → 张量块布局重排 → todense 数组级 golden 破。故所有排序走 `sortkey`（§4.1）复现现序。`ZNIrrep.isless` 按 `.n`（znirrep.jl:97）与 Z2Label 同序，但统一走 sortkey 不例外。
 
-**F3【MAK 策略组合不支持 SectorVector——交集求值须由 GM 补一个方法】**
-MAK 的 `TruncationIntersection`（`&`，truncation.jl:205）泛型实现返回**扁平索引**，而 TensorKit 的 svd_trunc 消费端要求 sector-aware inds（`SectorDict{Sector,UnitRange}`，TensorKit factorizations/truncation.jl:100-125 注释明言）——这正是 GM 与 bridge 各自定义 `findtruncated_svd(::SectorVector, …)` 的原因。`SectorVector <: AbstractVector`（sectorvector.jl:9），在 GM 补一个 SectorVector 交集方法（~8 行）后，`truncdimcutoff(D, 0) & truncrelerr(rtol)` 即可在 GTEMPO 直接用，GTEMPO 侧零自造策略。
+**F3【MAK 组合策略不支持 SectorVector——故不走 & 组合，Truncation 自身实现 findtruncated_svd】**
+MAK 的 `TruncationIntersection`（`&`，truncation.jl:205）泛型实现返回**扁平索引**，而 TensorKit 的 svd_trunc 消费端要求 sector-aware inds（`SectorDict{Sector,UnitRange}`，TensorKit factorizations/truncation.jl:100-125 注释明言）——这正是 GM 与 bridge 各自定义 `findtruncated_svd(::SectorVector, …)` 的原因。因此组合策略路线（`truncdimcutoff(D,0) & truncrelerr(rtol)`）需要先给 GM 补 SectorVector 交集方法，得不偿失；改为让 `Truncation` 自身 `<: MAK.TruncationStrategy` 并直接重载 `findtruncated_svd`（`SectorVector <: AbstractVector`，sectorvector.jl:9，扩展模式与现 bridge.jl:221 相同）——GTEMPO 自含、GM 零改动、截断原理逐位保留。
 
 **F4【GM truncate!/mult 语义与返回值】**
 `GM.truncate!(x; trunc)` = `canonicalize!` = `leftorth!`（QR 前扫 + 入口 `_rescale_sites!`）+ `rightorth!`（SVD 回扫按 trunc 截断、Σs² 归一吸收 logscale），返回 `(x, truncerr)`，truncerr = 逐键相对截断误差之和（canonical.jl:128-139）。`GM.mult(x, y; trunc, verbosity)` = 逐站楔积 + truncate! + logscale(y) 吸收，返回 `(x, truncerr)`（mult.jl:34-45）。
 
-**F5【截断参数映射——cutoff 无调用方，随退役删除】**
-`Truncation(maxdim, rtol, cutoff)` 三条件合取：top-maxdim 全局预算 ∧ 相对尾容差（tails ≤ rtol²·total 断）∧ 绝对阈值（带 logscale 漂移补偿）。全库扫描 `cutoff=` 非零调用方**零个**（默认 0，PartialIF.cutoff=0.0）→ cutoff 旋钮随 LegacyTruncation 删除。映射：
-- `Truncation(maxdim=D, rtol=r)` → `truncdimcutoff(D, 0.0) & truncrelerr(r)`；
-  - `TruncateDimCutoff(D, 0)`：严格 top-D（v=0 条目与旧 cutoff_eff=0 同断）；
-  - `TruncateRelError(r)`：从最小端丢弃至相对尾能 > r²·total——与 LegacyTruncation 的 tails 前缀判据逐条等价（单条目谱保 1 条、全零谱两侧都趋空，见 R2）；
-- `Truncation(maxdim=typemax(Int), rtol=r)`（cleanup 路径）→ `truncrelerr(r)`。
+**F5【cutoff 无调用方，随无状态化删除字段】**
+`Truncation(maxdim, rtol, cutoff)` 三条件合取：top-maxdim 全局预算 ∧ 相对尾容差（tails ≤ rtol²·total 断）∧ 绝对阈值（带 logscale 漂移补偿）。全库扫描 `cutoff=` 非零调用方**零个**（默认 0，PartialIF.cutoff=0.0）。漂移补偿依赖扫掠累积状态（LegacyTruncation.spectral_norms），无状态重载无法复现——保留字段即无声错误，故 `cutoff` 字段随 LegacyTruncation 一并删除。保留语义 = LegacyTruncation 在 cutoff=0 下的行为（即全部现存调用点的行为）：top-D（maxdim 更名 D，§3.3）∧ 相对尾容差，排序键 = sortkey（A1）。
 
 **F6【reports 无 src 消费方——降为标量记账零风险】**
 `CompressionReport`（discarded_norms/relative_errors/bond_dimensions/saturated/discarded_logabs）在 src 内**没有任何读取方**（grep 空）；唯一读者是 test/api/integration.jl 的记账断言。`InfluenceFunctional.reports::Vector{CompressionReport}`（influence.jl:533）字段改 `Vector{Float64}`（逐步 truncerr）。丢失逐键分解/saturated 旗/_logabs 记账，换得 GM 原生标量误差。
@@ -105,34 +101,63 @@ sortkey(s::GM.ChargeCharge) = (Int(s[1].charge), Int(s[2].charge))
 - system.jl `parity_label`（103-106）按扇区重签（4 个一行方法）；备选：给 GM grassmannspaces.jl 补 `fermionparity(::Z2Irrep) = isodd(s.n)`（注册表收尾一行）后系统层直用 `GM.fermionparity`——**主路线选 parity_label 重签**（不动 GM，零耦合），GM 补法记为后续可选。
 - `var_charge`/`cell_charges`/`fock_charges`/`station_flavor` 重签为扇区返回值（逻辑逐行不变，`:z2z2` 的 `q[2].n` 拆分照旧）。
 
-### 3.3 截断：LegacyTruncation 退役 → GM 策略 + GM 交集（A3）
+### 3.3 截断：Truncation 保留升级、LegacyTruncation 退役（A3）
 
-**GM 侧（前置小改，~8 行）**：truncation.jl 补 sector-aware 交集求值：
+**Truncation 保留并重定义**（bridge.jl:179-188 改造）：
 
 ```julia
-function MAK.findtruncated_svd(values::SectorVector, s::TruncationIntersection)
-    keep = MAK.findtruncated_svd(values, first(s.components))
-    for t in Base.tail(s.components)
-        other = MAK.findtruncated_svd(values, t)
-        keep = SectorDict(c => (1:min(length(get(keep, c, 1:0)), length(get(other, c, 1:0))))
-                          for c in keys(values))
+struct Truncation <: MAK.TruncationStrategy
+    D::Int                                # maxdim → D（对齐 GM TruncateDimCutoff.D / MAK truncrank(D) 惯例）
+    rtol::Float64
+    function Truncation(; D::Integer=128, rtol::Real=1e-12)
+        D > 0 && isfinite(rtol) && 0 <= rtol < 1 ||
+            throw(ArgumentError("invalid truncation"))
+        new(D, rtol)
     end
-    keep
 end
 ```
 
-（组件均返回 SectorDict 前缀区间，交集 = 逐扇区 min 长度；更具体的 SectorVector 方法覆盖 MAK 泛型无歧义。）
+（`cutoff` 字段删除——F5：全库无调用方，且无状态实现无法复现漂移补偿。）
 
-**GTEMPO 侧**：
-- 删除 bridge.jl:179-319（Truncation、CompressionReport、LegacyTruncation、compress! 全段）与 multiply（325-332）。
-- bridge 层保留一个默认策略常量：`const DEFAULT_TRUNC = truncdimcutoff(128) & truncrelerr(1e-12)`（= 旧 `Truncation()` 默认）。
-- `_trunc(alg::PartialIF)` → `truncdimcutoff(alg.maxdim) & truncrelerr(alg.rtol)`（alg.cutoff 字段删除——F5 无调用方；PartialIF 结构体删 cutoff 字段）。
-- 调用点替换（签名 `trunc::Truncation=Truncation()` → `trunc=DEFAULT_TRUNC`，类型放宽为 `MAK.TruncationStrategy`）：
-  - influence.jl:148/559/654 `out = multiply(...)` → `out, err = mult(out, …; trunc)` + `push!(truncerrs, err)`；
-  - influence.jl:557 cleanup `compress!(f; trunc=Truncation(maxdim=typemax(Int), rtol=…))` → `truncate!(f; trunc=truncrelerr(…))`（取 err 忽略态或记账）；
-  - system.jl:276 `r = compress!(out; trunc)` → `_, err = truncate!(out; trunc)`，`push!(truncerrs, err)`；
-  - reports 传参全线改 `truncerrs::Vector{Float64} = Float64[]`；`InfluenceFunctional.reports::Vector{Float64}`（F6）。
-- GTEMPO.jl：import 撤 `compress!`（:33）、增 `truncate!`、`TruncateDimCutoff`、`TruncateRelError`；export 删 `Truncation/CompressionReport/LegacyTruncation/multiply/compress!`，增 `truncate!`、`TruncateDimCutoff`、`TruncateRelError`（truncdimcutoff/truncrelerr/NoTruncation 已在 :70）。`import MatrixAlgebraKit as MAK` 保留（策略类型标注用）。
+**无状态 findtruncated_svd 重载**（替换 LegacyTruncation + 其 findtruncated_svd 共 ~45 行；扩展模式与 bridge.jl:221 相同）：
+
+```julia
+"top-D 全局预算 ∧ 相对尾容差（= LegacyTruncation 去 cutoff 去记账；maxdim 更名 D，
+对齐 GM TruncateDimCutoff.D / MAK truncrank(D) 惯例）；
+排序键 = sortkey（A1：复现旧标签序——(-|v|, sortkey, j) ≡ 旧 (-v, charge_label, j)）"
+function MAK.findtruncated_svd(values::TK.SectorVector, s::Truncation)
+    entries = sort!(collect((abs(v), q, j) for (q, vs) in pairs(values)
+                            for (j, v) in enumerate(vs)); by = e -> (-e[1], sortkey(e[2]), e[3]))
+    tails = zeros(length(entries) + 1)
+    for i in length(entries):-1:1
+        tails[i] = tails[i+1] + abs2(entries[i][1])
+    end
+    k = 0
+    for (v, _, _) in entries
+        k >= s.D && break
+        k > 0 && tails[k+1] <= s.rtol^2 * tails[1] && break
+        k += 1
+    end
+    keep = Dict{keytype(values),Int}()
+    for (_, q, j) in entries[1:k]
+        keep[q] = max(get(keep, q, 0), j)
+    end
+    return TK.SectorDict(q => (1:get(keep, q, 0)) for q in keys(values))
+end
+```
+
+与 LegacyTruncation 的逐条等价核对：
+- 排序键 (-\|v\|, sortkey, j) ≡ 旧 (-v, charge_label, j)（A1）；
+- 保留判据 `k < D ∧ tails[k+1] > rtol²·tails[1]` ≡ 旧判据去掉 `v <= cutoff_eff`（cutoff=0 下该条件只在零值条目处触发，而降序到达零值时 tails[k+1]=0，tail 判据同点同断——两侧等价，含 rtol=0 与全零谱：均为每键保 1 条）；
+- 删除的记账：`dims`/`discarded`/`relative`/`saturated`/`spectral_norms`/`l0` 漂移——`CompressionReport` 通道整体退役（F6），误差唯一出口 = `truncate!`/`mult` 返回的 truncerr 标量。
+
+**调用点替换**（`trunc::Truncation=Truncation()` 签名面零改动，只换函数与返回值处理）：
+- influence.jl:148/559/654 `out = multiply(…; trunc, reports)` → `out, err = mult(out, …; trunc)` + `push!(truncerrs, err)`；
+- influence.jl:557 cleanup `compress!(f; trunc=Truncation(…))` → `truncate!(f; trunc=Truncation(…))`；
+- system.jl:276 `r = compress!(out; trunc)` → `_, err = truncate!(out; trunc)` + 记账；
+- `reports` 传参全线改 `truncerrs::Vector{Float64} = Float64[]`；`InfluenceFunctional.reports::Vector{Float64}`（F6）。
+
+**GTEMPO.jl**：import 撤 `compress!`（:33）、增 `truncate!`；export 删 `CompressionReport/LegacyTruncation/multiply/compress!`（`Truncation` 在 :89 原样保留），增 `truncate!`。`import MatrixAlgebraKit as MAK` 保留（策略超类型 + 扩展点）。**GM 零改动**。
 
 ### 3.4 BoundedCache 删除（A4）
 
@@ -140,6 +165,7 @@ scaling.jl:10-43 整段删除；文件头注释删「与有界缓存」。无其
 
 ### 3.5 机械跟随面
 
+- influence.jl:495-501：`PartialIF` 结构体删 `cutoff` 字段（F5），`_trunc(alg)` → `Truncation(D=alg.maxdim, rtol=alg.rtol)`（PartialIF.maxdim 字段名不动，仅映射处用新关键字 D）。
 - system.jl：`spec=Z2Symmetry()` 默认 → `spec=TK.Z2Irrep`（150/161 两处）；`bands_guard(symmetry_symbol(spec), bands)` → `bands_guard(spec, bands)`（165）；`parity_label`（103-106）；`fock_charges`/`local_weights` 重签随标签类型。
 - influence.jl / measurement.jl / lattices.jl 的 `symmetry_spec(lattice.symmetry)` 调用：调用形不变，返回类型变 Type——下游签名（`spec::AbstractGrassmannSymmetry` → `spec::Type{<:Sector}`）机械重签。
 - 测试：test/api/bridge.jl:28-32（multiply+Truncation → mult+策略）、test/api/integration.jl:16-35（“multiply / compress! / 截断记账” testset 重写为 truncate!/mult + truncerr 断言，报告类型断言删除）、sysdynamics.jl:28（var_charge 返回值断言随扇区）、lattice.jl / port_smoke.jl / entropy.jl 涉 spec/标签处机械跟随。
@@ -150,21 +176,21 @@ scaling.jl:10-43 整段删除；文件头注释删「与有界缓存」。无其
 | # | 变化 | 性质 | 处置 |
 |---|---|---|---|
 | S1 | 截断 tie-break：LegacyTruncation 按 (−v, charge_label, j)，GM 策略按 (−\|v\|, 扇区规范序, j) | 仅跨扇区 \|v\| **精确相等**时选择不同（浮点测度零）；逐扇区前缀语义使非 ties 完全一致 | 记录即可；golden 回归确认 |
-| S2 | 绝对 cutoff（logscale 漂移补偿版）能力消失 | 全库无调用方（F5） | 随退役删除；未来需要时在 GM 加 TruncationByValue 的 SectorVector 方法 |
+| S2 | 绝对 cutoff（logscale 漂移补偿版）能力消失，`Truncation`/`PartialIF` 的 cutoff 字段删除 | 全库无调用方（F5）；无状态重载无法复现漂移补偿，保留字段即无声错误 | 随退役删除；未来需要绝对阈值时再给 GM 加 TruncationByValue 的 SectorVector 方法 |
 | S3 | reports（逐键分解/saturated/_logabs）→ 标量 truncerr | src 无消费方（F6） | 字段改 `Vector{Float64}`；测试断言改写 |
 | S4 | compress! 逐步 rescale（QR 每步重归一）→ GM leftorth! 入口一次性 `_rescale_sites!` | 每步 QR 的 carry r 为 O(1)（上一步张量已被入口归一），幅值不级联——入口一次 + 每步 O(1) 增量在效果上等价；且新路径下每次 multiply 都过 truncate!，站点幅值常态有界 | longchain_benchmark 对照确认无溢出/精度回归（R1） |
-| S5 | 全零链：旧 compress! 有零链早退（保键维填零）；GM truncate! 对零谱可能缩到 0 维键 | partial_row/cell_maps 的 coeff=0 零链是真实可达路径 | R2：Phase 2 加零链回归测试；若 GM 行为破坏后续楔积，在 3 个调用点加 `iszero(norm)` 跳过守卫 |
+| S5 | 全零链：旧 compress! 有零链早退（保键维填零）；GM truncate! 对零谱可能缩到 0 维键 | partial_row/cell_maps 的 coeff=0 零链是真实可达路径。新策略本身与 LegacyTruncation 在全零谱同断点（k=1，`0 ≤ 0` 同触发，每键保 1 条）——策略侧等价；残余差异仅在 GM truncate! 扫掠对零链的处理 | R2：Phase 2 加零链回归测试；若 GM 行为破坏后续楔积，在 3 个调用点加 `iszero(norm)` 跳过守卫 |
 | S6 | 导出 API 返回类型（A2 已接受） | symmetry_spec→Type、var_charge/cell_charges/fock_charges/charge_dimensions→扇区、multiply/compress!/Truncation/CompressionReport/LegacyTruncation export 撤销 | changes.md 记录 breaking 变更清单 |
 
 ## 5. 实施阶段与验收闸门
 
 - **Phase 1（spec/标签）**：§3.1 + §3.2 + §3.5 的 spec/标签跟随（不含截断）。验收：全测试套件绿；golden（:z2 通道 todense 逐位 + 标量机器精度）原样通过——布局逐位不变是本阶段断言（A1）。
-- **Phase 2（截断/乘法退役）**：GM 交集方法（§3.3 前置，GM 独立提交 + GM 自身测试绿）→ GTEMPO 截断机器删除 + 调用点替换 + reports 降标量 + 测试重写。验收：全测试绿；golden 通过（截断参数不变时 truncation 决策应与 S1 之外逐位一致）；longchain_benchmark 对照无回归（R1）；零链回归（R2）。
+- **Phase 2（截断/乘法退役）**：Truncation 升级 + 无状态 findtruncated_svd（§3.3）+ LegacyTruncation/CompressionReport/compress!/multiply 删除 + 调用点替换 + reports 降标量 + 测试重写。GM 零改动。验收：全测试绿；golden 通过（截断原理逐位一致，仅剩 S1 tie-break）；longchain_benchmark 对照无回归（R1）；零链回归（R2）。
 - **Phase 3（清尾）**：BoundedCache 删除 + docs/tutorials 迁移 + changes.md breaking 清单。
 - 每阶段独立提交，U1GTEMPO2 / backup / extensions/exactif 全程零改动。
 
 ## 6. 净效果估计
 
-- bridge.jl：523 行 → 约 360–380 行（spec/label 段 ~120 行压到 ~40，截断段 ~140 行整体撤）；
-- GTEMPO 自造截断/缓存机器归零：截断 = GM 策略组合，乘法 = GM.mult，正则化 = GM.truncate!；
+- bridge.jl：523 行 → 约 370–390 行（spec/label 段 ~120 行压到 ~40；截断段 ~140 行收敛为一个 Truncation 结构 + ~17 行无状态 findtruncated_svd 重载）；
+- GTEMPO 自造截断/缓存机器归零：截断 = Truncation 策略（无状态、走 MAK/GM 标准通道），乘法 = GM.mult，正则化 = GM.truncate!；**GM 零改动**；
 - 保留不动：var_charge 交错约定、bands_guard、bcs_symmetry_guard、cell_charges/station_of/site_spaces/pspace、pairize/_convert_site/_fuse_adjacent、from_core/split_cell/monomial、_occupation_index、integrate_scaled/EnvironmentCache、缩放标量（GM.ScaledScalar 皮肤）。

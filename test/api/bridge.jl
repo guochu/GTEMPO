@@ -7,9 +7,9 @@
 	x = randomgmps(ComplexF64, spaces; D=4)
 	@test check_charge(x)
 	@test length(bonddims(x)) == length(x) - 1
-	# 荷维度：键荷标签 = U1U1 元组
+	# 荷维度：键荷 = U1U1 扇区（TK ProductSector）
 	cd = charge_dimensions(x)
-	@test all(d -> all(k -> k isa Tuple{Int,Int}, keys(d)), cd)
+	@test all(d -> all(k -> k isa GM.ChargeCharge, keys(d)), cd)
 
 	# 缩放：logscale/setlogscale!（GM 直用；scaling/setscaling! 皮肤已删）
 	setlogscale!(x, log(2.5))

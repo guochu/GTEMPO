@@ -51,7 +51,7 @@ M≥2 的带间 graded⊗ 符号因子经 `graded_sign_factor` 注入（R2 标�
 graded_sign_factor(bands::Int) = 1   # 默认 OFF（golden 通道裁决：对 :z2 结果不敏感）
 measure_mode() = :gaussian           # W4 = qI+n（gaussian）/ I（bare）——R2 标定点
 
-function local_weights(spec::AbstractGrassmannSymmetry, bands::Int, order::Int)
+function local_weights(::Type{<:Sector}, bands::Int, order::Int)
     order in (1, 2) || throw(ArgumentError("order must be 1 or 2"))
     d = _fock_annihilators(bands)
     dim = 2^bands
@@ -84,26 +84,26 @@ function local_weights(spec::AbstractGrassmannSymmetry, bands::Int, order::Int)
     return weights
 end
 
-"Fock 基态（0..dim−1）的荷标签：占据带的 var_charge 之和"
-function fock_charges(spec::AbstractGrassmannSymmetry, bands::Int)
+"Fock 基态（0..dim−1）的荷：占据带的 var_charge 之和"
+function fock_charges(::Type{G}, bands::Int) where {G<:Sector}
     dim = 2^bands
-    z = zero_charge(spec)
+    z = zero_charge(G)
     out = Vector{typeof(z)}(undef, dim)
     for st in 0:dim-1
         q = z
         for b in 1:bands
-            ((st >> (bands - b)) & 1) == 1 && (q = qadd(q, var_charge(spec, b, bands)))
+            ((st >> (bands - b)) & 1) == 1 && (q = qadd(q, var_charge(G, b, bands)))
         end
         out[st + 1] = q
     end
     return out
 end
 
-"荷标签宇称（oddlater Koszul 符号用）"
-parity_label(q::Int) = isodd(q)
-parity_label(q::Z2Label) = isodd(q.n)
-parity_label(q::NTuple{2,Int}) = isodd(q[1] + q[2])
-parity_label(q::NTuple{2,Z2Label}) = isodd(q[1].n + q[2].n)
+"荷宇称（oddlater Koszul 符号用；标签 = TK 扇区）"
+parity_label(s::TK.Z2Irrep) = isodd(s.n)
+parity_label(s::TK.U1Irrep) = isodd(s.charge)
+parity_label(s::Z2Z2) = isodd(s[1].n + s[2].n)
+parity_label(s::ChargeCharge) = isodd(s[1].charge + s[2].charge)
 
 # ---------------------------------------------------------------------------
 # 插入算符（测量与 ρ₀；Phase 5 消费）
@@ -147,7 +147,7 @@ end
 """
     _system_factor_reference(lattice, model; order=1, initial_state=nothing,
                              coupling_norm=0.0, insertions=OperatorInsertion[],
-                             trunc=nothing, reports=nothing, spec=Z2Symmetry()) -> GMPS
+                             trunc=nothing, reports=nothing, spec=TK.Z2Irrep) -> GMPS
 
 时序 ring automaton（U1GTEMPO2 system_factor_reference 同型）：每格
 (b,j) 的 core 经 split_cell 切成变量粒度张量列，全部格拼接后 pairize，
@@ -158,11 +158,11 @@ end
 function _system_factor_reference(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian;
                                   order::Int=1, initial_state=nothing, coupling_norm::Real=0.0,
                                   insertions=OperatorInsertion[], trunc=nothing,
-                                  reports=nothing, spec=Z2Symmetry())
+                                  reports=nothing, spec::Type{<:Sector}=TK.Z2Irrep)
     order in (1, 2) || throw(ArgumentError("order must be 1 or 2"))
     order == 2 && !(coupling_norm >= 0) && throw(ArgumentError("order=2 requires coupling_norm ≥ 0 (total Σ_b α_b)"))
     bands = lattice.bands
-    bands_guard(symmetry_symbol(spec), bands)
+    bands_guard(spec, bands)
     num_bands(model) == bands || throw(ArgumentError("model bands $(num_bands(model)) ≠ lattice bands $bands"))
     dim = 2^bands
     z = zero_charge(spec)

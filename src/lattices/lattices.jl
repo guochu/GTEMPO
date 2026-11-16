@@ -44,8 +44,7 @@ struct ImagGrassmannLattice <: AbstractImagGrassmannLattice
     N::Int              # τ 步数 = 格点数
     symmetry::Symbol
     function ImagGrassmannLattice(δτ::Real, bands::Int, N::Int, symmetry::Symbol)
-        symmetry_spec(symmetry)     # 未知 Symbol 显式拒绝（D1）
-        bands_guard(symmetry, bands)   # 荷分辨形要求偶数带（轨道交错）
+        bands_guard(symmetry_spec(symmetry), bands)   # 未知 Symbol 拒绝（D1）+ 荷分辨形要求偶数带（轨道交错）
         N >= 1 || throw(ArgumentError("N ≥ 1 required"))
         new(convert(Float64, δτ), bands, N, symmetry)
     end
@@ -97,8 +96,7 @@ struct RealGrassmannLattice <: AbstractRealGrassmannLattice
     N::Int              # 实时步数 = 格点数（Chrono 无边界格点：ρ₀ 折进 (+,1)、闭合折进 (−,1)）
     symmetry::Symbol
     function RealGrassmannLattice(δt::Real, bands::Int, N::Int, symmetry::Symbol)
-        symmetry_spec(symmetry)
-        bands_guard(symmetry, bands)
+        bands_guard(symmetry_spec(symmetry), bands)
         N >= 1 || throw(ArgumentError("N ≥ 1 required"))
         new(convert(Float64, δt), bands, N, symmetry)
     end
@@ -146,8 +144,7 @@ struct MixedGrassmannLattice <: AbstractMixedGrassmannLattice
     bands::Int
     symmetry::Symbol
     function MixedGrassmannLattice(δt::Real, Nt::Int, δτ::Real, Nτ::Int, bands::Int, symmetry::Symbol)
-        symmetry_spec(symmetry)
-        bands_guard(symmetry, bands)
+        bands_guard(symmetry_spec(symmetry), bands)
         (Nt >= 1 && Nτ >= 1) || throw(ArgumentError("Nt, Nτ ≥ 1 required"))
         new(convert(Float64, δt), Nt, convert(Float64, δτ), Nτ, bands, symmetry)
     end

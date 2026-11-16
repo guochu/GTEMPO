@@ -96,33 +96,33 @@ end
 第 anchor 行的偏 IF 因子 exp(ā_anchor Σ_j Δ_j a_j) 的链表示
 （U1GTEMPO2 partial_row 的对称性泛型版）。
 """
-function partial_row(spec::AbstractGrassmannSymmetry, charges, anchor, columns, values)
-    qbar = charges[anchor]; q = qneg(qbar); z = zero_charge(spec)
+function partial_row(::Type{G}, charges, anchor, columns, values) where {G<:Sector}
+    qbar = charges[anchor]; q = qneg(qbar); z = zero_charge(G)
     ws = Dict(zip(columns, values))
     data = map(eachindex(charges)) do i
         ls = i == 1 ? [z] : [z, i <= anchor ? q : qbar]
         rs = i == length(charges) ? [z] : [z, i < anchor ? q : qbar]
-        t = TK.zeros(ComplexF64, qspace(spec, ls) ⊗ pspace(spec, charges[i]) ← qspace(spec, rs))
-        t[(sector(spec, z), sector(spec, z), sector(spec, z))] .= 1
+        t = TK.zeros(ComplexF64, qspace(G, ls) ⊗ pspace(G, charges[i]) ← qspace(G, rs))
+        t[(z, z, z)] .= 1
         if i == anchor
-            q in ls && (t[(sector(spec, q), sector(spec, qbar), sector(spec, z))] .= 1)
-            qbar in rs && (t[(sector(spec, z), sector(spec, qbar), TK.dual(sector(spec, qbar)))] .= 1)
+            q in ls && (t[(q, qbar, z)] .= 1)
+            qbar in rs && (t[(z, qbar, TK.dual(qbar))] .= 1)
         else
             pending = i < anchor ? q : qbar
             pending in ls && pending in rs &&
-                (t[(sector(spec, pending), sector(spec, z), TK.dual(sector(spec, pending)))] .= 1)
+                (t[(pending, z, TK.dual(pending))] .= 1)
             c = get(ws, i, 0im)
             if !iszero(c)
                 if i < anchor
-                    t[(sector(spec, z), sector(spec, q), TK.dual(sector(spec, q)))] .= -c
+                    t[(z, q, TK.dual(q))] .= -c
                 else
-                    t[(sector(spec, qbar), sector(spec, q), sector(spec, z))] .= c
+                    t[(qbar, q, z)] .= c
                 end
             end
         end
         t
     end
-    pairize(spec, data)
+    pairize(G, data)
 end
 
 """
@@ -151,8 +151,8 @@ function partial_if(lattice::AbstractGrassmannLattice, kernel::HybridizationKern
 end
 
 "IF 变量荷序列（全链 = nblocks 格 × 每格 2·bands 变量，存储序）"
-function _site_charges(spec::AbstractGrassmannSymmetry, lattice)
-    per_cell = cell_charges(spec, lattice.bands)
+function _site_charges(::Type{G}, lattice) where {G<:Sector}
+    per_cell = cell_charges(G, lattice.bands)
     return repeat(per_cell, nblocks(lattice))
 end
 
@@ -631,7 +631,7 @@ function bcs_partial_if(lattice::AbstractGrassmannLattice, corr::QuAPI.BCSCorrel
                         band1::Int=1, band2::Int=2, trunc::Truncation=Truncation(),
                         reports=CompressionReport[])
     spec = symmetry_spec(lattice.symmetry)
-    spec isa Z2Symmetry || throw(ArgumentError(
+    spec === TK.Z2Irrep || throw(ArgumentError(
         "BCS IF supports only symmetry=:z2 (anomalous pairing breaks particle-number " *
         "conservation; only parity is conserved), got :$(lattice.symmetry)"))
     (1 <= band1 < band2 <= lattice.bands) || throw(ArgumentError(

@@ -196,7 +196,6 @@ kernel_order(::Nothing) = 1
 function lattice_monomial(lattice::AbstractGrassmannLattice, indices::NTuple{N,GrassmannContourIndex};
                           coeff::Number=1) where {N}
     spec = symmetry_spec(lattice.symmetry)
-    G = sector_type(spec)
     positions = [lattice[ix] for ix in indices]   # 变量位（给定序）
     inv = 0
     for i in eachindex(positions), j in (i + 1):length(positions)
@@ -213,13 +212,13 @@ function lattice_monomial(lattice::AbstractGrassmannLattice, indices::NTuple{N,G
         o1 = (2s - 1) in positions; o2 = (2s) in positions
         E = spaces[s]
         T = TK.zeros(ComplexF64, qspace(spec, [q]) ⊗ E ← qspace(spec, [q]))
-        T[(sector(spec, q), sector(spec, z), TK.dual(sector(spec, q)))][:, 1, :] .= 1
+        T[(q, z, TK.dual(q))][:, 1, :] .= 1
         if o1 || o2
             basis = GM.grassmann_basis(E)
             tag = o1 ? (o2 ? basis.pair : basis.eta) : basis.etabar
             qout = qadd(qadd(q, o1 ? charges[2s - 1] : z), o2 ? charges[2s] : z)
             T = TK.zeros(ComplexF64, qspace(spec, [q]) ⊗ E ← qspace(spec, [qout]))
-            T[(sector(spec, q), tag.sector, TK.dual(sector(spec, qout)))][:, tag.slot, :] .=
+            T[(q, tag.sector, TK.dual(qout))][:, tag.slot, :] .=
                 s == first_s ? c0 : 1
             q = qout
         end

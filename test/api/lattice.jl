@@ -28,12 +28,12 @@ using TensorKit: scalartype
 	@test lat isa MixedGrassmannLattice
 	@test lat.kt == lat.Nt == 3 && lat.kτ == lat.Nτ == 4 && lat.β ≈ 1.0
 
-	# 对称性手选（D1）：四形 + 荷分辨 bands 守卫
-	for (sym, G) in ((:z2, GTEMPO.Z2Symmetry()), (:u1, GTEMPO.U1Symmetry()),
-	                 (:u1u1, GTEMPO.U1U1Symmetry()), (:z2z2, GTEMPO.Z2Z2Symmetry()))
+	# 对称性手选（D1）：四形 + 荷分辨 bands 守卫（spec = TK 扇区类型）
+	for (sym, G) in ((:z2, GTEMPO.TK.Z2Irrep), (:u1, GTEMPO.TK.U1Irrep),
+	                 (:u1u1, GTEMPO.ChargeCharge), (:z2z2, GTEMPO.Z2Z2))
 		l = GrassmannLattice(N=4, δt=0.1, bands=2, contour=:real, symmetry=sym)
 		@test symmetry(l) === sym
-		@test GTEMPO.symmetry_spec(sym) isa typeof(G)
+		@test GTEMPO.symmetry_spec(sym) === G
 	end
 	@test_throws ArgumentError GTEMPO.symmetry_spec(:u1x)
 	# 荷分辨形要求偶数带（轨道交错：奇带 up / 偶带 down；多轨道 bands = 2·轨道数）
@@ -55,7 +55,7 @@ using TensorKit: scalartype
 	ss = site_spaces(GTEMPO.symmetry_spec(:u1u1), 4, 2)
 	@test length(ss) == 4 && ss[1] != ss[2]   # up/down 交替站形
 	cc = GTEMPO.cell_charges(GTEMPO.symmetry_spec(:u1u1), 2)
-	@test cc == [(1, 0), (-1, 0), (0, 1), (0, -1)]
+	@test [(c[1].charge, c[2].charge) for c in cc] == [(1, 0), (-1, 0), (0, 1), (0, -1)]
 	# 时序格序 / 存储格序 / 切位索引
 	l = GrassmannLattice(N=4, δt=0.1, contour=:real)
 	cells = GTEMPO.chronological_cells(l)
