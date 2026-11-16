@@ -1,27 +1,19 @@
-# chrono_lattices.jl：Chrono 排布 lattice 层（功能调整 #1 落地）
-#
-# GrassmannOrdering 家族（12 序 + trait 三件 + changeordering）删除；唯一保留
-# 的排布 = extensions/secondorderif 的 Chrono 家族（INTEGRATION.md §4.5）：
-#   实时：ChronoKeldyshOrdering——块序 [(+,1)…(+,Nt)][(−,Nt)…(−,1)]，
-#         K 时序链本征序直铺零 permute!；每格 2M 位、(a,ā) 奇偶相邻 ⟹ AC 积分。
-#   混合：ChronoMixedOrdering——[闲置 2 块][τ 1..Nτ][+ 1..Nt][− Nt…1]。
-#   虚时：ChronoImagOrdering（旧 A1Ā1B1B̄1 内联收编）——[格 Nτ][…][格 1]
-#         （格 i ⟷ 块 k−i+1；旧 A1Ā1B1B̄1 的 t=0 闲置边界块由 GM 真空穿透
-#         吸收，不再保留物理位）。
+# lattice 层：排布固定 Chrono（功能调整 #1；2026-11-16 起 ordering 类型层
+# AbstractChronoOrdering 及其三个单例亦删除——排布是格点几何本身，不再是
+# 可插拔策略，lattice 构造无 ordering 输入）。唯一排布的块序：
+#   实时：[(+,1)…(+,Nt)][(−,Nt)…(−,1)]，K 时序链本征序直铺零 permute!；
+#         每格 2M 位、(a,ā) 奇偶相邻 ⟹ AC 积分。
+#   混合：[闲置 2 块][τ 1..Nτ][+ 1..Nt][− Nt…1]（闲置头块由真空穿透吸收）。
+#   虚时：[格 Nτ][…][格 1]（格 i ⟷ 块 k−i+1）。
 # 格点计数语义（与旧 lattice 的 k=步数+1 不同——Chrono 无额外端点格点）：
 #   N/Nt/Nτ kwarg = 物理步数（= 单元数）；k/kt/kτ = 对应分支的格点数。
 # symmetry::Symbol 随 lattice 携带（D1 裁决）：ordering 管链排布、symmetry
 # 管扇区标记，两者正交（§3.4）。
 
-abstract type AbstractChronoOrdering end
-struct ChronoImagOrdering <: AbstractChronoOrdering end
-struct ChronoKeldyshOrdering <: AbstractChronoOrdering end
-struct ChronoMixedOrdering <: AbstractChronoOrdering end
-
-abstract type AbstractGrassmannLattice{O<:AbstractChronoOrdering} end
-abstract type AbstractImagGrassmannLattice{O<:AbstractChronoOrdering} <: AbstractGrassmannLattice{O} end
-abstract type AbstractRealGrassmannLattice{O<:AbstractChronoOrdering} <: AbstractGrassmannLattice{O} end
-abstract type AbstractMixedGrassmannLattice{O<:AbstractChronoOrdering} <: AbstractGrassmannLattice{O} end
+abstract type AbstractGrassmannLattice end
+abstract type AbstractImagGrassmannLattice <: AbstractGrassmannLattice end
+abstract type AbstractRealGrassmannLattice <: AbstractGrassmannLattice end
+abstract type AbstractMixedGrassmannLattice <: AbstractGrassmannLattice end
 
 branches(::Type{<:AbstractImagGrassmannLattice})  = (:τ,)
 branches(::Type{<:AbstractRealGrassmannLattice})  = (:+, :-)
@@ -46,7 +38,7 @@ end
 # 虚时
 # ---------------------------------------------------------------------------
 
-struct ImagGrassmannLattice{O<:AbstractChronoOrdering} <: AbstractImagGrassmannLattice{O}
+struct ImagGrassmannLattice <: AbstractImagGrassmannLattice
     δτ::Float64
     bands::Int
     N::Int              # τ 步数 = 格点数
@@ -55,7 +47,7 @@ struct ImagGrassmannLattice{O<:AbstractChronoOrdering} <: AbstractImagGrassmannL
         symmetry_spec(symmetry)     # 未知 Symbol 显式拒绝（D1）
         bands_guard(symmetry, bands)   # 荷分辨形 bands≤2（D1）
         N >= 1 || throw(ArgumentError("N ≥ 1 required"))
-        new{ChronoImagOrdering}(convert(Float64, δτ), bands, N, symmetry)
+        new(convert(Float64, δτ), bands, N, symmetry)
     end
 end
 
@@ -85,7 +77,7 @@ Base.length(x::AbstractImagGrassmannLattice) = 2 * x.bands * x.k   # 每格 (a,�
 
 "虚时 Chrono _index：格 i（1..kτ）⟷ 链块 k−i+1（格 Nτ = 块 1）；
 块内 (band 1: a,ā), …, (band M: a,ā)"
-function _index(x::AbstractImagGrassmannLattice{ChronoImagOrdering}, i::Int; conj::Bool, band::Int=1, branch::Symbol=:τ)
+function _index(x::AbstractImagGrassmannLattice, i::Int; conj::Bool, band::Int=1, branch::Symbol=:τ)
     @boundscheck begin
         (branch === :τ) || throw(ArgumentError("branch must be :τ"))
         (1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
@@ -99,7 +91,7 @@ end
 # 实时（Keldysh）
 # ---------------------------------------------------------------------------
 
-struct RealGrassmannLattice{O<:AbstractChronoOrdering} <: AbstractRealGrassmannLattice{O}
+struct RealGrassmannLattice <: AbstractRealGrassmannLattice
     δt::Float64
     bands::Int
     N::Int              # 实时步数 = 格点数（Chrono 无边界格点：ρ₀ 折进 (+,1)、闭合折进 (−,1)）
@@ -108,7 +100,7 @@ struct RealGrassmannLattice{O<:AbstractChronoOrdering} <: AbstractRealGrassmannL
         symmetry_spec(symmetry)
         bands_guard(symmetry, bands)
         N >= 1 || throw(ArgumentError("N ≥ 1 required"))
-        new{ChronoKeldyshOrdering}(convert(Float64, δt), bands, N, symmetry)
+        new(convert(Float64, δt), bands, N, symmetry)
     end
 end
 
@@ -132,7 +124,7 @@ TK.scalartype(::Type{<:AbstractRealGrassmannLattice}) = ComplexF64
 Base.length(x::AbstractRealGrassmannLattice) = 4 * x.bands * x.k   # 2k 块 × 2M 位
 
 "实时 Chrono _index：块 = (+,i) → i；(−,i) → 2k−i+1；块内 2M 位"
-function _index(x::AbstractRealGrassmannLattice{ChronoKeldyshOrdering}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function _index(x::AbstractRealGrassmannLattice, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
     @boundscheck begin
         (1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
         (1 <= i <= x.k) || throw(BoundsError(1:x.k, i))
@@ -146,7 +138,7 @@ end
 # 混合（Kadanoff–Baym）
 # ---------------------------------------------------------------------------
 
-struct MixedGrassmannLattice{O<:AbstractChronoOrdering} <: AbstractMixedGrassmannLattice{O}
+struct MixedGrassmannLattice <: AbstractMixedGrassmannLattice
     δt::Float64
     Nt::Int
     δτ::Float64
@@ -157,7 +149,7 @@ struct MixedGrassmannLattice{O<:AbstractChronoOrdering} <: AbstractMixedGrassman
         symmetry_spec(symmetry)
         bands_guard(symmetry, bands)
         (Nt >= 1 && Nτ >= 1) || throw(ArgumentError("Nt, Nτ ≥ 1 required"))
-        new{ChronoMixedOrdering}(convert(Float64, δt), Nt, convert(Float64, δτ), Nτ, bands, symmetry)
+        new(convert(Float64, δt), Nt, convert(Float64, δτ), Nτ, bands, symmetry)
     end
 end
 
@@ -192,7 +184,7 @@ Base.length(x::AbstractMixedGrassmannLattice) = 2 * x.bands * (x.Nτ + 2x.Nt)   
 
 "混合 Chrono _index（闲置头块已由真空穿透吸收、块号重排）：τ 格 j → 块 j；
 + 格 j → 块 Nτ+j；− 格 j → 块 Nτ+Nt+(Nt−j+1)"
-function _index(x::AbstractMixedGrassmannLattice{ChronoMixedOrdering}, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
+function _index(x::AbstractMixedGrassmannLattice, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
     @boundscheck begin
         (1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
         if branch === :τ
@@ -217,7 +209,7 @@ end
 
 contour = :real/:Keldysh → RealGrassmannLattice；:imag → ImagGrassmannLattice；
 :mixed/:Kadanoff → MixedGrassmannLattice。kwargs 透传（δt/Nt/δτ/Nτ/bands/
-symmetry；ordering kwarg 已随 GrassmannOrdering 家族删除，排布固定 Chrono）。
+symmetry；无 ordering 输入——排布固定 Chrono，是格点几何本身）。
 """
 function GrassmannLattice(; contour::Symbol, kwargs...)
     (contour in (:real, :imag, :Keldysh, :mixed, :Kadanoff)) ||

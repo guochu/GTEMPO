@@ -8,7 +8,8 @@ module GTEMPO
 # （模型 / lattice / IF / observables 公开函数名）保持不变。
 #
 # 功能调整（§0）：
-#   #1 GrassmannOrdering 家族删除，只保留 Chrono 排布（port/chrono_lattices.jl）；
+#   #1 GrassmannOrdering 家族与 Chrono ordering 类型层删除（排布固定 Chrono，
+#       lattice 无 ordering 输入——2026-11-16）；
 #   #2 electronphonon 暂停（整目录移除，恢复路径见 changes.md）；
 #   #3 sysdynamics_weyl2order 新增（port/sysdynamics.jl，K 链局部 Weyl 二阶）；
 #   #4 对称性用户手选 :z2/:z2z2/:u1/:u1u1（port/bridge.jl，D1 裁决）；
@@ -82,7 +83,6 @@ export bonddims, bondspaces, physpace, physpaces, logscale, setlogscale!
 export AbstractGrassmannLattice, AbstractImagGrassmannLattice, AbstractRealGrassmannLattice,
        AbstractMixedGrassmannLattice
 export ImagGrassmannLattice, RealGrassmannLattice, MixedGrassmannLattice, GrassmannLattice
-export ChronoImagOrdering, ChronoKeldyshOrdering, ChronoMixedOrdering
 export branches, indexmappings, vacuumstate
 export symmetry, site_spaces
 

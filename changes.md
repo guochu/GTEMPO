@@ -1,5 +1,15 @@
 # 接口更改说明
 
+## ordering 类型层删除批次（2026-11-16）
+
+- **AbstractChronoOrdering 及三个单例（ChronoImagOrdering/ChronoKeldyshOrdering/
+  ChronoMixedOrdering）删除**：三个 lattice 结构体去 ordering 类型参数
+  （`ImagGrassmannLattice{O}` → `ImagGrassmannLattice` 等），构造/similar/
+  _index 派发签名同步去参；GTEMPO.jl 撤销三导出。**lattice 构造无 ordering
+  输入**——排布固定 Chrono，是格点几何本身而非可插拔策略（GrassmannOrdering
+  家族删除的余步）。块序描述保留为注释文档。代码触点仅 export 一行 +
+  lattices.jl（外部零依赖），全套测试通过。
+
 ## 接口收敛批次：imports 集中主文件 + ScaledComplex → GM.ScaledScalar（2026-11-16）
 
 - **using/import 全部集中主文件**（GM 包同款纪律）：bridge.jl / system.jl 头部
