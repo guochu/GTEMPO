@@ -32,5 +32,7 @@ Is = ntuple(b -> hybriddynamics(lat, bath, PartialIF(); band=b), 2norb)
 K = sysdynamics(lat, model)
 Z = integrate(K, Is...)
 occ = occupation(lat, model, nothing, Is...; j=1, branch=:τ, band=1, Z=Z)
-println("norb=2 :u1u1 对角耦合: Z/bathZ = ", real(Z)/bathZ, "  ED/bathZ = ", Zed/bathZ,
+# ⚠️ 口径：integrate 返回浴归一化配分（= ED_abs/Z_B）——正确对照 = raw Z vs ED_abs/Z_B
+println("norb=2 :u1u1 对角耦合: Z(raw,浴归一化) = ", real(Z), "  ED_abs/Z_B = ", Zed / bathZ,
+        "  比值 = ", real(Z) / (Zed / bathZ),
         "  occ = ", real(occ), "  ED = ", n1)

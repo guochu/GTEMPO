@@ -49,16 +49,20 @@ longchain n=8/16 新旧对拍最差 7.2e-15、n=32 全工况有限无溢出；�
 - **多轨道端到端验证状态（norb=2 KanamoriIM, bands=4, 对角 1:1 混杂，ED =
   kanamori_ed 原生对角约定）**：①裸 K 链迹 = 原子极限 ED 机器精度
   （:z2/:u1/:u1u1 三形 4e-14）；②occupation(band1) vs kanamori_ed =
-  **1.7e-4** ✓（δτ=β/6；Nτ=12 时 5.5e-5 收敛 ✓）；③**绝对 Z 带乘性抑制：
-  Z_port/Z_ED 随格数累积衰减（Nτ=6 → 45%，Nτ=12 → 22%，每格 ~e^{−0.13}，
-  occ 比值完全免疫）**——呈多链虚时收缩的逐格 logscale/浴配分记账缺陷特征
-  （norb=1 三链无此现象；:u1 合并 2 链与 :u1u1 五链同样出现 ⟹ 非链数、
-  非 U、非 ED 约定；Δτ 多峰求和已单独验证正确）。嫌疑 = GM 引擎多链虚时
-  迹的每步归一化通道——需 GM 包上游会话专项。④**:z2z2 bands=4 K 构造
-  segfault**（复现：`GrassmannLattice(N=6, δτ=β/6, bands=4, contour=:imag,
-  symmetry=:z2z2)` + sysdynamics + integrate；日志 `unknown function
-  (ip: nil)`）——:z2/:u1/:u1u1 同构造无恙。③④ = 待专项；本批次的守卫
-  放宽/var_charge 修正/链上限由 ①② 与既有电池背书。
+  **1.7e-4** ✓（δτ=β/6；Nτ=12 时 5.5e-5 收敛 ✓）；③绝对 Z（正确口径
+  raw Z vs ED_abs/Z_B）= **0.935（Nτ=6）→ 0.966（Nτ=12）一阶收敛 ✓，
+  与 bands=2 套件同行为——无缺陷**。**勘误（2026-11-16 上游复核，
+  GrassmannMPS/bugreports/2026-11-16-upstream-verdict-multiband-z.md）**：
+  此前报告的「绝对 Z 乘性抑制 ~4.7×」为对拍口径不一致的假阳性——port 的
+  `integrate` 约定返回浴归一化配分（Z_full/Z_B，由本套件 bands=2 测试
+  raw Z vs ED/Z_B 通过钉死），而探针脚本对 port 侧又除了一次 Z_B（双除）
+  ⟹ 0.2116 假象；正确口径数字在原复现脚本第二组打印中本已给出
+  （Z_port×Z_B vs ED_abs = 0.934）。「:u1 合并形 5.58×」同为配置错误
+  （partial_if(band=1) 在 bands=4 格只覆盖 band-1 变量槽 = 另一模型；
+  多带正确用法 = 逐带建 IF）。④**:z2z2 bands=4 间歇 segfault 未确认、
+  暂不可修**（单跑不复现 + 崩溃时本机并行 Julia 负载强混杂；需
+  ASAN/valgrind + 无并行负载复现后另行立案）。本批次的守卫放宽/
+  var_charge 修正/链上限由 ①② 与既有电池背书，不受勘误影响。
 
 ## 命名收敛批次（2026-11-16）
 
