@@ -7,7 +7,7 @@
 	z = integrate_scaled(K, Is)
 	@test z isa ScaledScalar
 	@test value(z) ≈ integrate(K, Is) atol = 1.0e-12
-	@test scaled_ratio(z, z) ≈ 1.0 atol = 1.0e-12
+	@test value(z / z) ≈ 1.0 atol = 1.0e-12
 	# integrate(c::EnvironmentCache) 同值
 	cache = environments_cache(K, Is)
 	@test value(GM.Zvalue(cache)) ≈ integrate(K, Is) atol = 1.0e-12
@@ -23,11 +23,11 @@ end
 	exact = x * y
 	out, err = mult(x, y; trunc=Truncation(D=typemax(Int), rtol=1e-14))
 	@test length(out) == length(x)
-	@test scaled_ratio(integrate_scaled(out), integrate_scaled(exact)) ≈ 1.0 atol = 1.0e-10
+	@test value(integrate_scaled(out) / integrate_scaled(exact)) ≈ 1.0 atol = 1.0e-10
 	@test err isa Float64 && err >= 0
 	# truncate! 原地 + 精确（大 D）→ 值不变；小 D → 键维受限
 	c, err = truncate!(copy(exact); trunc=Truncation(D=typemax(Int), rtol=1e-14))
-	@test scaled_ratio(integrate_scaled(c), integrate_scaled(exact)) ≈ 1.0 atol = 1.0e-10
+	@test value(integrate_scaled(c) / integrate_scaled(exact)) ≈ 1.0 atol = 1.0e-10
 	_, err2 = truncate!(c; trunc=Truncation(D=2, rtol=1e-14))
 	@test all(≤(2), bonddims(c))
 	@test err2 isa Float64 && err2 >= 0

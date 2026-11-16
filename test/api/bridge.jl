@@ -18,17 +18,17 @@
 	# reorder! 恒等置换 = 值不变（截断关闭）
 	y = deepcopy(x)
 	reorder!(y, collect(1:length(y)))
-	@test scaled_ratio(integrate_scaled(y), integrate_scaled(x)) ≈ 1.0 atol = 1e-12
+	@test value(integrate_scaled(y) / integrate_scaled(x)) ≈ 1.0 atol = 1e-12
 
 	# swap! 相邻两站（费米换序号保真：值以链级标度不变量对拍）
 	z = deepcopy(x)
 	swap!(z, 2)
-	@test scaled_ratio(integrate_scaled(z), integrate_scaled(x)) ≈ 1.0 atol = 1e-10
+	@test value(integrate_scaled(z) / integrate_scaled(x)) ≈ 1.0 atol = 1e-10
 
 	# mult（带截断）与朴素楔积一致到截断水平
 	w = randomgmps(ComplexF64, spaces; D=2)
 	exact = x * w
 	truncd, err = mult(x, w; trunc=Truncation(D=16, rtol=1e-12))
-	@test scaled_ratio(integrate_scaled(truncd), integrate_scaled(exact)) ≈ 1.0 atol = 1e-9
+	@test value(integrate_scaled(truncd) / integrate_scaled(exact)) ≈ 1.0 atol = 1e-9
 	@test err isa Float64 && err >= 0
 end

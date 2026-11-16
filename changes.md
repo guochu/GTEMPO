@@ -3,7 +3,10 @@
 ## convenience 清理 + src 布局重排批次（2026-11-16）
 
 - **`unscale` 删除**（导出 API 移除）：取值直用 **`value`**（GM 原名，本包新增
-  export；`GM.ScaledScalar` 的标准取值口）。`scaled_ratio` 不变。
+  export；`GM.ScaledScalar` 的标准取值口）。
+- **`scaled_ratio` 删除**（导出 API 移除；src 零调用点）：比值物化直用
+  `value(a / b)`（GM.ScaledScalar 的 scaled 除法原生支持）。`scaling.jl`
+  整文件删除（ScaledScalar/value 透传移入主文件 using+export）。
 - **`zero_charge` 删除**（非导出内部助手）：荷单位直用 `one(G)`（扇区类型上
   语义恒等）。
 - **src 布局重排**（公开 API 零变化，git mv 保历史）：`lattices/lattices.jl` →
@@ -75,6 +78,10 @@ longchain n=8/16 新旧对拍最差 7.2e-15、n=32 全工况有限无溢出；�
   暂不可修**（单跑不复现 + 崩溃时本机并行 Julia 负载强混杂；需
   ASAN/valgrind + 无并行负载复现后另行立案）。本批次的守卫放宽/
   var_charge 修正/链上限由 ①② 与既有电池背书，不受勘误影响。
+  **测试侧勘误收尾（2026-11-16）**：test/multiorbital/runtests.jl 同源
+  假阳性 FIXME（「J≠0 缺 54%、疑 J 四算符槽分解标定」= port 侧双除 Z_B：
+  Z_port/Z_B = 1.43 误配 ED/Z_B = 3.08）已改为正确口径叙事，断言原样
+  （实测比值 0.974（Nτ=8）→ 0.987（Nτ=16）一阶收敛 ✓）。
 
 ## 命名收敛批次（2026-11-16）
 

@@ -15,10 +15,14 @@ println("========== Part 4: multi-orbital (≤2 bands) ==========")
 	Is = ntuple(b -> hybriddynamics(lat, bath, PartialIF(); band=b), 2)
 	K = sysdynamics(lat, model)
 	Z = integrate(K, Is...)
-	# FIXME(Kanamori Z 归一化, 2026-11-15)：J≠0 时 port Z/bathZ = 1.43 vs ED 3.08
-	#（54%，δτ 减半不收敛）；AndersonIM U≠0 同路径仅 6% 一阶常数。occ/nn 比值观
-	# 测机器精度 ✓（物理正确），绝对常数疑在 J 四算符项的槽分解标定（T1–T7 族）。
-	# port 虚时 Z = 浴归一化值（对 ED 需除纯浴配分；O(δτ) 行因子化常数在内）
+	# port 虚时 Z = 浴归一化配分（Z_full/Z_B——Z_B 已在归一化关联函数处除掉），
+	# ED 对比口径 = ED_abs/Z_B（(1+e^{-βω})² = 双带纯浴配分）。实测比值
+	# 0.974（Nτ=8）→ 0.987（Nτ=16）一阶收敛 ✓。
+	# 勘误（2026-11-16 上游裁决，GrassmannMPS/bugreports/
+	# 2026-11-16-upstream-verdict-multiband-z.md）：本文件 2026-11-15 的
+	# 「J≠0 缺 54%、疑 J 四算符槽分解标定」记录 = 对 port 侧重复除 Z_B 的双除
+	# 伪象（Z_port/Z_B = 1.43 误配 ED/Z_B = 3.08）——occ/nn 机器精度与 J 槽
+	# 分解标定本就无缺陷，与撤回的 bands=4 绝对 Z 报告同一类口径错。
 	@test real(Z) ≈ real(tr(exp(-β * H))) / (1 + exp(-β * ω))^2 rtol = 4e-2
 	for band in 1:2
 		occ = occupation(lat, model, kernel, Is...; j=1, branch=:τ, band=band, Z=Z)

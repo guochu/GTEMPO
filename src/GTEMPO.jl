@@ -44,7 +44,6 @@ using GrassmannMPS: GMPS, SparseGMPS, ScaledScalar, ExpectationCache,
 # ---------------------------------------------------------------------
 # 后端适配层（GrassmannMPS 桥 + Chrono lattice + 缩放）+ 相关函数层
 # ---------------------------------------------------------------------
-include("scaling.jl")
 include("bridge.jl")
 include("lattices.jl")
 
@@ -92,7 +91,7 @@ export pairize, monomial, truncate!
 export charge_dimensions, check_charge
 export coefficient, coefficient_scaled, integrate, integrate_scaled
 export EnvironmentCache
-export ScaledScalar, value, scaled_ratio
+export ScaledScalar, value
 
 # correlation functions
 export correlationfunction
