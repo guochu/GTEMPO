@@ -1,5 +1,20 @@
 # 接口更改说明
 
+## 命名收敛批次（2026-11-16）
+
+- **对称性类型重命名**：`AbstractSymmetrySpec` → **`AbstractGrassmannSymmetry`**、
+  `Z2Spec` → **`Z2Symmetry`**、`Z2Z2Spec` → **`Z2Z2Symmetry`**、
+  `U1Spec` → **`U1Symmetry`**、`U1U1Spec` → **`U1U1Symmetry`**（src + tests；
+  `symmetry_spec(::Symbol)`/`sector_spec` 等函数名不变）。
+- **`_spec_symbol` → `symmetry_symbol`**：移到 bridge.jl（与对称性类型定义同址）、
+  **export**（bands_guard 与 chain_spec 的 :z2/:z2z2/:u1/:u1u1 反查）。
+- **convenience 函数删除**：`bond_dimensions`（= GM.bonddims，内部 CompressionReport
+  调用点直换）、`scaling`/`setscaling!`（= exp/logscale 换算皮肤）——消费方
+  （含测试）改用已导出的 GM 名 `bonddims`/`logscale`/`setlogscale!`。CompressionReport
+  的 `bond_dimensions` 数据字段名保留（描述性字段，非函数）。
+- 旧 Phase-0 fixtures（check_golden.jl/dump_golden.jl，引用已删 scaling 且全
+  旧 API）退役删除；live 的 check_golden_exactttiif/weyl + golden_json.jl 保留。
+
 ## ordering 类型层删除批次（2026-11-16）
 
 - **AbstractChronoOrdering 及三个单例（ChronoImagOrdering/ChronoKeldyshOrdering/

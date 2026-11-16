@@ -31,5 +31,5 @@ end
 	r = compress!(c; trunc=Truncation(maxdim=typemax(Int), rtol=1e-14))
 	@test scaled_ratio(integrate_scaled(c), integrate_scaled(exact)) ≈ 1.0 atol = 1.0e-10
 	r2 = compress!(c; trunc=Truncation(maxdim=2, rtol=1e-14))
-	@test all(≤(2), bond_dimensions(c))
+	@test all(≤(2), bonddims(c))
 end

@@ -48,6 +48,6 @@ end
 	@test length(K) == length(lat) ÷ 2 && norm(K) > 0
 	# Weyl 标量 = exp(cn/4·Σ step²)：order=1 链 × e^{−Nt·dt²/4·...} 平移不改变迹，
 	# 这里只验证量级与键维有限
-	@test all(>(0), bond_dimensions(K))
+	@test all(>(0), bonddims(K))
 	# K(weyl, order=2) ∧ 自身 = K₂₂ 因子化检验（U=0 精确路径在 ED 电池覆盖）
 end

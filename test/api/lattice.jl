@@ -29,8 +29,8 @@ using TensorKit: scalartype
 	@test lat.kt == lat.Nt == 3 && lat.kτ == lat.Nτ == 4 && lat.β ≈ 1.0
 
 	# 对称性手选（D1）：四形 + 荷分辨 bands 守卫
-	for (sym, G) in ((:z2, GTEMPO.Z2Spec()), (:u1, GTEMPO.U1Spec()),
-	                 (:u1u1, GTEMPO.U1U1Spec()), (:z2z2, GTEMPO.Z2Z2Spec()))
+	for (sym, G) in ((:z2, GTEMPO.Z2Symmetry()), (:u1, GTEMPO.U1Symmetry()),
+	                 (:u1u1, GTEMPO.U1U1Symmetry()), (:z2z2, GTEMPO.Z2Z2Symmetry()))
 		l = GrassmannLattice(N=4, δt=0.1, bands=2, contour=:real, symmetry=sym)
 		@test symmetry(l) === sym
 		@test GTEMPO.symmetry_spec(sym) isa typeof(G)

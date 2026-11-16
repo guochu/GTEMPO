@@ -76,7 +76,6 @@ export mult, mult!, apply!, DMRG2, SVDCompression
 export leftorth!, rightorth!, canonicalize!, iscanonical
 export swap!, reorder!
 export entanglement_entropy, entanglement_spectrum, schmidt_values
-export scaling, setscaling!
 export bonddims, bondspaces, physpace, physpaces, logscale, setlogscale!
 
 # lattice（Chrono 排布 + 对称性选择器）
@@ -89,7 +88,7 @@ export symmetry, site_spaces
 # 对称性 / 桥层（构造 + 引擎接线）
 export Truncation, CompressionReport, LegacyTruncation
 export pairize, monomial, multiply, compress!
-export bond_dimensions, charge_dimensions, check_charge
+export charge_dimensions, check_charge
 export coefficient, coefficient_scaled, integrate, integrate_scaled
 export EnvironmentCache
 export ScaledScalar, unscale, scaled_ratio
@@ -103,7 +102,7 @@ export sysdynamics, sysdynamics_weyl2order, OperatorInsertion
 # IF 构造
 export InfluenceFunctionalAlgorithm, PartialIF, ExactTTI, InfluenceFunctional
 export bcs_hybriddynamics, bcs_partial_if
-export symmetry_spec, var_charge, cell_charges, fock_charges
+export symmetry_spec, symmetry_symbol, var_charge, cell_charges, fock_charges
 export HybridizationKernel, hybridization, influence_functional, hybriddynamics
 
 # 观测量（Phase 5b：inserted-K 边界观测 + 算符缓存原始关联两轨，D5 裁决见 measurement.jl）

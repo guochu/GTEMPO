@@ -96,7 +96,7 @@ end
 第 anchor 行的偏 IF 因子 exp(ā_anchor Σ_j Δ_j a_j) 的链表示
 （U1GTEMPO2 partial_row 的对称性泛型版）。
 """
-function partial_row(spec::AbstractSymmetrySpec, charges, anchor, columns, values)
+function partial_row(spec::AbstractGrassmannSymmetry, charges, anchor, columns, values)
     qbar = charges[anchor]; q = qneg(qbar); z = zero_charge(spec)
     ws = Dict(zip(columns, values))
     data = map(eachindex(charges)) do i
@@ -151,7 +151,7 @@ function partial_if(lattice::AbstractGrassmannLattice, kernel::HybridizationKern
 end
 
 "IF 变量荷序列（全链 = nblocks 格 × 每格 2·bands 变量，存储序）"
-function _site_charges(spec::AbstractSymmetrySpec, lattice)
+function _site_charges(spec::AbstractGrassmannSymmetry, lattice)
     per_cell = cell_charges(spec, lattice.bands)
     return repeat(per_cell, nblocks(lattice))
 end
@@ -631,7 +631,7 @@ function bcs_partial_if(lattice::AbstractGrassmannLattice, corr::QuAPI.BCSCorrel
                         band1::Int=1, band2::Int=2, trunc::Truncation=Truncation(),
                         reports=CompressionReport[])
     spec = symmetry_spec(lattice.symmetry)
-    spec isa Z2Spec || throw(ArgumentError(
+    spec isa Z2Symmetry || throw(ArgumentError(
         "BCS IF supports only symmetry=:z2 (anomalous pairing breaks particle-number " *
         "conservation; only parity is conserved), got :$(lattice.symmetry)"))
     (1 <= band1 < band2 <= lattice.bands) || throw(ArgumentError(

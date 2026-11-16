@@ -20,14 +20,20 @@
 # 与 GM/grassmannspaces.jl 的注册表对表）
 # ---------------------------------------------------------------------------
 
-abstract type AbstractSymmetrySpec end
-struct Z2Spec <: AbstractSymmetrySpec end       # :z2   全带合并宇并（旧语义）
-struct Z2Z2Spec <: AbstractSymmetrySpec end     # :z2z2 band1/2 各占宇并槽（≤2 带）
-struct U1Spec <: AbstractSymmetrySpec end       # :u1   全带合并总荷
-struct U1U1Spec <: AbstractSymmetrySpec end     # :u1u1 band1→槽1 band2→槽2（≤2 带）
+abstract type AbstractGrassmannSymmetry end
+struct Z2Symmetry <: AbstractGrassmannSymmetry end       # :z2   全带合并宇并（旧语义）
+struct Z2Z2Symmetry <: AbstractGrassmannSymmetry end     # :z2z2 band1/2 各占宇并槽（≤2 带）
+struct U1Symmetry <: AbstractGrassmannSymmetry end       # :u1   全带合并总荷
+struct U1U1Symmetry <: AbstractGrassmannSymmetry end     # :u1u1 band1→槽1 band2→槽2（≤2 带）
 
-const SYMMETRY_SPECS = IdDict{Symbol,AbstractSymmetrySpec}(
-    :z2 => Z2Spec(), :z2z2 => Z2Z2Spec(), :u1 => U1Spec(), :u1u1 => U1U1Spec())
+"symmetry type → its Symbol (:z2/:z2z2/:u1/:u1u1; used by bands_guard and chain_spec)"
+symmetry_symbol(::Z2Symmetry) = :z2
+symmetry_symbol(::Z2Z2Symmetry) = :z2z2
+symmetry_symbol(::U1Symmetry) = :u1
+symmetry_symbol(::U1U1Symmetry) = :u1u1
+
+const SYMMETRY_SPECS = IdDict{Symbol,AbstractGrassmannSymmetry}(
+    :z2 => Z2Symmetry(), :z2z2 => Z2Z2Symmetry(), :u1 => U1Symmetry(), :u1u1 => U1U1Symmetry())
 
 "Symbol → spec（未知 Symbol 显式拒绝，禁静默降级——D1 裁决）"
 symmetry_spec(s::Symbol) = get(SYMMETRY_SPECS, s, nothing) === nothing ?
@@ -61,34 +67,34 @@ Base.show(io::IO, a::Z2Label) = print(io, "ζ", a.n)
 @inline qsub(a::NTuple{2,Z2Label}, b::NTuple{2,Z2Label}) = (qadd(a[1], b[1]), qadd(a[2], b[2]))
 @inline qneg(a::NTuple{2,Z2Label}) = a
 
-@inline zero_charge(::Z2Spec) = Z2Label(0)
-@inline zero_charge(::U1Spec) = 0
-@inline zero_charge(::Z2Z2Spec) = (Z2Label(0), Z2Label(0))
-@inline zero_charge(::U1U1Spec) = (0, 0)
+@inline zero_charge(::Z2Symmetry) = Z2Label(0)
+@inline zero_charge(::U1Symmetry) = 0
+@inline zero_charge(::Z2Z2Symmetry) = (Z2Label(0), Z2Label(0))
+@inline zero_charge(::U1U1Symmetry) = (0, 0)
 
 "荷标签 → bosonic 扇区（费米符号在 backend 符号层）"
-sector(::Z2Spec, q::Z2Label) = TK.Z2Irrep(q.n)
-sector(::U1Spec, q::Int) = TK.U1Irrep(q)
-sector(::Z2Z2Spec, q::NTuple{2,Z2Label}) = Z2Z2((TK.Z2Irrep(q[1].n), TK.Z2Irrep(q[2].n)))
-sector(::U1U1Spec, q::NTuple{2,Int}) = ChargeCharge(TK.U1Irrep(q[1]), TK.U1Irrep(q[2]))
+sector(::Z2Symmetry, q::Z2Label) = TK.Z2Irrep(q.n)
+sector(::U1Symmetry, q::Int) = TK.U1Irrep(q)
+sector(::Z2Z2Symmetry, q::NTuple{2,Z2Label}) = Z2Z2((TK.Z2Irrep(q[1].n), TK.Z2Irrep(q[2].n)))
+sector(::U1U1Symmetry, q::NTuple{2,Int}) = ChargeCharge(TK.U1Irrep(q[1]), TK.U1Irrep(q[2]))
 
 "bosonic 扇区 → 荷标签（LegacyTruncation 排序与 _convert_site 用）"
-charge_label(::Z2Spec, s::TK.Z2Irrep) = Z2Label(Int(s.n))
-charge_label(::U1Spec, s::TK.U1Irrep) = Int(s.charge)
-charge_label(::Z2Z2Spec, s::Z2Z2) = (Z2Label(Int(s[1].n)), Z2Label(Int(s[2].n)))
-charge_label(::U1U1Spec, s::ChargeCharge) = (Int(s[1].charge), Int(s[2].charge))
+charge_label(::Z2Symmetry, s::TK.Z2Irrep) = Z2Label(Int(s.n))
+charge_label(::U1Symmetry, s::TK.U1Irrep) = Int(s.charge)
+charge_label(::Z2Z2Symmetry, s::Z2Z2) = (Z2Label(Int(s[1].n)), Z2Label(Int(s[2].n)))
+charge_label(::U1U1Symmetry, s::ChargeCharge) = (Int(s[1].charge), Int(s[2].charge))
 
 "扇区类型（qspace 构造用）"
-sector_type(::Z2Spec) = TK.Z2Irrep
-sector_type(::Z2Z2Spec) = Z2Z2
-sector_type(::U1Spec) = TK.U1Irrep
-sector_type(::U1U1Spec) = ChargeCharge
+sector_type(::Z2Symmetry) = TK.Z2Irrep
+sector_type(::Z2Z2Symmetry) = Z2Z2
+sector_type(::U1Symmetry) = TK.U1Irrep
+sector_type(::U1U1Symmetry) = ChargeCharge
 
 "扇区类型 → spec 反查（链的键扇区类型即定 spec；链上操作无需显式传 spec）"
-sector_spec(::Type{TK.Z2Irrep}) = Z2Spec()
-sector_spec(::Type{TK.U1Irrep}) = U1Spec()
-sector_spec(::Type{ChargeCharge}) = U1U1Spec()
-sector_spec(::Type{Z2Z2}) = Z2Z2Spec()
+sector_spec(::Type{TK.Z2Irrep}) = Z2Symmetry()
+sector_spec(::Type{TK.U1Irrep}) = U1Symmetry()
+sector_spec(::Type{ChargeCharge}) = U1U1Symmetry()
+sector_spec(::Type{Z2Z2}) = Z2Z2Symmetry()
 chain_spec(x::GM.GMPS) = sector_spec(TK.sectortype(x[1]))
 
 "荷分辨形 bands 守卫（:z2z2/:u1u1 每带分辨要求 bands≤2，超限显式拒绝——D1）"
@@ -103,35 +109,35 @@ end
 "变量荷：band b 上 η 生成元的荷标签（η̄ = qneg）
 ——宇并形算术 mod 2 后 η̄ ≡ η（同一标签），带内 (a,ā) 区分在站形槽位，
 不在荷上；荷分辨形 band→槽位映射照旧。"
-var_charge(::Z2Spec, band::Int, bands::Int) = Z2Label(1)
-var_charge(::U1Spec, band::Int, bands::Int) = 1
-var_charge(::Z2Z2Spec, band::Int, bands::Int) = band == 1 ? (Z2Label(1), Z2Label(0)) : (Z2Label(0), Z2Label(1))
-var_charge(::U1U1Spec, band::Int, bands::Int) = band == 1 ? (1, 0) : (0, 1)
+var_charge(::Z2Symmetry, band::Int, bands::Int) = Z2Label(1)
+var_charge(::U1Symmetry, band::Int, bands::Int) = 1
+var_charge(::Z2Z2Symmetry, band::Int, bands::Int) = band == 1 ? (Z2Label(1), Z2Label(0)) : (Z2Label(0), Z2Label(1))
+var_charge(::U1U1Symmetry, band::Int, bands::Int) = band == 1 ? (1, 0) : (0, 1)
 
 "站形：band b 的物理站空间（单荷形全站同形；双荷形按带奇偶交替朝向——
 :u1u1 = U1GTEMPO2 同款 up/down 交替站形）"
-station_space(::Z2Spec, band::Int) = GM.grassmannspace(TK.Z2Irrep)
-station_space(::U1Spec, band::Int) = GM.grassmannspace(TK.U1Irrep)
-station_space(::Z2Z2Spec, band::Int) = GM.grassmannspace(Z2Z2, isodd(band) ? :up : :down)
-station_space(::U1U1Spec, band::Int) = GM.grassmannspace(ChargeCharge, isodd(band) ? :up : :down)
+station_space(::Z2Symmetry, band::Int) = GM.grassmannspace(TK.Z2Irrep)
+station_space(::U1Symmetry, band::Int) = GM.grassmannspace(TK.U1Irrep)
+station_space(::Z2Z2Symmetry, band::Int) = GM.grassmannspace(Z2Z2, isodd(band) ? :up : :down)
+station_space(::U1U1Symmetry, band::Int) = GM.grassmannspace(ChargeCharge, isodd(band) ? :up : :down)
 
 "变量荷 → 站朝向（_convert_site 用；单荷形无朝向 → 返回 nothing 由调用方取全站同形）"
-station_flavor(::Union{Z2Spec,U1Spec}, q) = :up   # 单荷形 spin 被忽略，恒 :up 合法
-station_flavor(::Z2Z2Spec, q) = iszero(q[2].n) ? :up : :down   # Z2Label 须拆 .n 比较（== Int 恒 false）
-station_flavor(::U1U1Spec, q) = q[2] == 0 ? :up : :down
+station_flavor(::Union{Z2Symmetry,U1Symmetry}, q) = :up   # 单荷形 spin 被忽略，恒 :up 合法
+station_flavor(::Z2Z2Symmetry, q) = iszero(q[2].n) ? :up : :down   # Z2Label 须拆 .n 比较（== Int 恒 false）
+station_flavor(::U1U1Symmetry, q) = q[2] == 0 ? :up : :down
 
 "键标签序列 → 分级空间（标签计数聚合；排序 = 标签升序保证扇区插入序确定）"
-function qspace(spec::AbstractSymmetrySpec, labels::AbstractVector)
+function qspace(spec::AbstractGrassmannSymmetry, labels::AbstractVector)
     G = sector_type(spec)
     TK.Vect[G](sector(spec, q) => count(==(q), labels) for q in sort(unique(labels)))
 end
 "2 维物理腿空间：vacuum ⊕ generator q"
-pspace(spec::AbstractSymmetrySpec, q) = qspace(spec, [zero_charge(spec), q])
+pspace(spec::AbstractGrassmannSymmetry, q) = qspace(spec, [zero_charge(spec), q])
 "物理腿的非平凡扇区（2 维腿只有一个生成元扇区）"
 occupied(p) = only(filter(!=(one(TK.sectortype(p))), collect(TK.sectors(p))))
 
 "每胞变量荷序列（Chrono 排布每格 = [(band b: a, ā)] 逐带）"
-function cell_charges(spec::AbstractSymmetrySpec, bands::Int)
+function cell_charges(spec::AbstractGrassmannSymmetry, bands::Int)
     out = Any[]
     for b in 1:bands
         qc = var_charge(spec, b, bands)
@@ -151,7 +157,7 @@ bcs_symmetry_guard(sym::Symbol) =
 # ---------------------------------------------------------------------------
 
 "链站空间序列：站 s 的 band = mod1(s, bands)"
-function site_spaces(spec::AbstractSymmetrySpec, nstations::Int, bands::Int)
+function site_spaces(spec::AbstractGrassmannSymmetry, nstations::Int, bands::Int)
     [station_space(spec, mod1(s, bands)) for s in 1:nstations]
 end
 
@@ -190,7 +196,7 @@ cutoff），并在调用序（键 L−1..1）里记账。荷排序键 = 荷标�
 （Int / NTuple{2,Int} 皆可比较，跨荷预算语义不变）。
 """
 mutable struct LegacyTruncation{L} <: MAK.TruncationStrategy
-    spec::AbstractSymmetrySpec
+    spec::AbstractGrassmannSymmetry
     maxdim::Int
     rtol::Float64
     cutoff::Float64
@@ -201,7 +207,7 @@ mutable struct LegacyTruncation{L} <: MAK.TruncationStrategy
     saturated::Vector{Bool}
     spectral_norms::Vector{Float64}   # 每键 sqrt(Σ|s|²)（rightorth! 吸收进 logscale 的量）
 end
-LegacyTruncation(spec::AbstractSymmetrySpec, ::Type{L}, trunc::Truncation, l0::Float64) where L =
+LegacyTruncation(spec::AbstractGrassmannSymmetry, ::Type{L}, trunc::Truncation, l0::Float64) where L =
     LegacyTruncation{L}(spec, trunc.maxdim, trunc.rtol, iszero(trunc.cutoff) ? 0.0 : trunc.cutoff, l0,
                         Dict{L,Int}[], Float64[], Float64[], Bool[], Float64[])
 
@@ -276,7 +282,7 @@ function compress!(x::GM.GMPS; trunc::Truncation=Truncation())
         for i in eachindex(x.data)
             x.data[i] = TK.zeros(TK.scalartype(x[i]), TK.codomain(x[i]) ← TK.domain(x[i]))
         end
-        return CompressionReport(zeros(length(x) - 1), zeros(length(x) - 1), bond_dimensions(x), false)
+        return CompressionReport(zeros(length(x) - 1), zeros(length(x) - 1), GM.bonddims(x), false)
     end
     # 键谱 = 满尺度值（rightorth! 在 svd_trunc 之后才吸收 Σs²）；cutoff 相对
     # 原链尺度 = 旧 cutoff_log 逻辑（漂移 = QR 扫掠后的 logscale 增量）
@@ -302,7 +308,7 @@ function compress!(x::GM.GMPS; trunc::Truncation=Truncation())
         iszero(strategy.spectral_norms[m]) || (run += log(strategy.spectral_norms[m]))
     end
     absolute = [v == -Inf ? 0.0 : v > log(floatmax(Float64)) ? Inf : exp(v) for v in logs]
-    CompressionReport(absolute, re, bond_dimensions(x), any(strategy.saturated), logs)
+    CompressionReport(absolute, re, GM.bonddims(x), any(strategy.saturated), logs)
 end
 
 # ---------------------------------------------------------------------------
@@ -323,7 +329,7 @@ end
 # ---------------------------------------------------------------------------
 
 "站形（flavor）：物理生成元荷 → 站朝向（单荷形恒 :up）"
-_station_space(spec::AbstractSymmetrySpec, q) = station_space(spec, station_flavor(spec, q) === :up ? 1 : 2)
+_station_space(spec::AbstractGrassmannSymmetry, q) = station_space(spec, station_flavor(spec, q) === :up ? 1 : 2)
 
 "变量粒度站张量（cod=(键出,物理 2 维), dom=(键入)）→ pair 布局 4 维站张量：
 **键腿恒等**（荷标签扇区原样保留——荷分辨对称性的效率即在于此，键两端恒等
@@ -332,7 +338,7 @@ grassmann_basis.eta 标签、η̄ 变量 → grassmann_basis.etabar 标签（异
 扇区分辨、自对偶形 = 同扇区分槽——U1GTEMPO2 原版只支持异扇区，自对偶槽位
 是本泛化版的关键补丁），pair 槽留空（逐对 _fuse_adjacent 楔积时填充）。
 `conj` = 变量的共轭旗（pairize 内奇位 = a/η、偶位 = ā/η̄）。"
-function _convert_site(spec::AbstractSymmetrySpec, t, conj::Bool)
+function _convert_site(spec::AbstractGrassmannSymmetry, t, conj::Bool)
     q = charge_label(spec, occupied(GM.space(t, 2)))
     E = _station_space(spec, q)
     basis = GM.grassmann_basis(E)
@@ -367,7 +373,7 @@ end
 变量粒度裸张量链（偶数长）→ pair 布局 GMPS：逐对 (θ站, θ̄站) 嵌入后相邻融合
 （中间键收缩 + 楔积）。链长减半、物理维 2×4。
 """
-function pairize(spec::AbstractSymmetrySpec, tensors::AbstractVector)
+function pairize(spec::AbstractGrassmannSymmetry, tensors::AbstractVector)
     iseven(length(tensors)) || error("pairize requires an even variable count (θ/θ̄ paired): got $(length(tensors))")
     interp = [_convert_site(spec, t, iseven(i)) for (i, t) in enumerate(tensors)]
     data = [_fuse_adjacent(interp[2j-1], interp[2j]) for j in 1:(length(tensors) ÷ 2)]
@@ -379,7 +385,7 @@ end
 # 张量——pairize 后才进 GrassmannMPS。U1GTEMPO2 同名函数的对称性泛型版）
 # ---------------------------------------------------------------------------
 
-function from_core(spec::AbstractSymmetrySpec, data, leftlabels, rightlabels, c)
+function from_core(spec::AbstractGrassmannSymmetry, data, leftlabels, rightlabels, c)
     t = TK.zeros(ComplexF64, qspace(spec, leftlabels) ⊗ pspace(spec, c) ← qspace(spec, rightlabels))
     z = zero_charge(spec)
     for q in unique(leftlabels), (si, s) in ((1, z), (2, c))
@@ -392,7 +398,7 @@ function from_core(spec::AbstractSymmetrySpec, data, leftlabels, rightlabels, c)
 end
 
 # Split only fixed-size unit cells, never the full temporal polynomial.
-function split_cell(spec::AbstractSymmetrySpec, data::AbstractArray{ComplexF64,3}, leftlabels, rightlabels, charges)
+function split_cell(spec::AbstractGrassmannSymmetry, data::AbstractArray{ComplexF64,3}, leftlabels, rightlabels, charges)
     work = Array(data); labels = leftlabels
     z = zero_charge(spec)
     T0 = typeof(TK.zeros(ComplexF64, qspace(spec, [z]) ⊗ pspace(spec, charges[1]) ← qspace(spec, [z])))
@@ -427,7 +433,7 @@ end
 单项式链：`positions` 上的变量带各自生成元荷、其余真空；逆序号吸收进 coeff。
 空 charges 抛错（零时刻轮廓走 solve 的零时路径）。
 """
-function monomial(spec::AbstractSymmetrySpec, charges::AbstractVector, positions::AbstractVector{<:Integer}=Int[]; coeff::Number=1)
+function monomial(spec::AbstractGrassmannSymmetry, charges::AbstractVector, positions::AbstractVector{<:Integer}=Int[]; coeff::Number=1)
     isempty(charges) && throw(ArgumentError("use the zero-time path for empty contours"))
     all(i -> 1 <= i <= length(charges), positions) || throw(BoundsError(charges, positions))
     length(unique(positions)) == length(positions) || throw(ArgumentError("repeated Grassmann variable"))
@@ -472,14 +478,8 @@ end
 # 结构查询（旧导出 API 保名）
 # ---------------------------------------------------------------------------
 
-bond_dimensions(x::GM.GMPS) = GM.bonddims(x)
 charge_dimensions(x::GM.GMPS) = [Dict(charge_label(chain_spec(x), q) => TK.dim(s, q) for q in TK.sectors(s)) for s in GM.bondspaces(x)]
 check_charge(x::GM.GMPS) = _check_structure(x)
-
-# 旧缩放字段皮肤：scaling = exp(logscale)（旧 dense = 张量×scaling^L ≡ GM 系数
-# = exp(logscale)×张量积）；setscaling! 对应换算
-scaling(x::GM.GMPS) = exp(GM.logscale(x))
-setscaling!(x::GM.GMPS, s::Number) = GM.setlogscale!(x, log(s))
 
 # ---------------------------------------------------------------------------
 # 收缩引擎接线（U1GTEMPO2 §2.5：integrate_scaled→Zvalue、EnvironmentCache→

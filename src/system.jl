@@ -51,7 +51,7 @@ M≥2 的带间 graded⊗ 符号因子经 `graded_sign_factor` 注入（R2 标�
 graded_sign_factor(bands::Int) = 1   # 默认 OFF（golden 通道裁决：对 :z2 结果不敏感）
 measure_mode() = :gaussian           # W4 = qI+n（gaussian）/ I（bare）——R2 标定点
 
-function local_weights(spec::AbstractSymmetrySpec, bands::Int, order::Int)
+function local_weights(spec::AbstractGrassmannSymmetry, bands::Int, order::Int)
     order in (1, 2) || throw(ArgumentError("order must be 1 or 2"))
     d = _fock_annihilators(bands)
     dim = 2^bands
@@ -85,7 +85,7 @@ function local_weights(spec::AbstractSymmetrySpec, bands::Int, order::Int)
 end
 
 "Fock 基态（0..dim−1）的荷标签：占据带的 var_charge 之和"
-function fock_charges(spec::AbstractSymmetrySpec, bands::Int)
+function fock_charges(spec::AbstractGrassmannSymmetry, bands::Int)
     dim = 2^bands
     z = zero_charge(spec)
     out = Vector{typeof(z)}(undef, dim)
@@ -147,7 +147,7 @@ end
 """
     _system_factor_reference(lattice, model; order=1, initial_state=nothing,
                              coupling_norm=0.0, insertions=OperatorInsertion[],
-                             trunc=nothing, reports=nothing, spec=Z2Spec()) -> GMPS
+                             trunc=nothing, reports=nothing, spec=Z2Symmetry()) -> GMPS
 
 时序 ring automaton（U1GTEMPO2 system_factor_reference 同型）：每格
 (b,j) 的 core 经 split_cell 切成变量粒度张量列，全部格拼接后 pairize，
@@ -158,11 +158,11 @@ end
 function _system_factor_reference(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian;
                                   order::Int=1, initial_state=nothing, coupling_norm::Real=0.0,
                                   insertions=OperatorInsertion[], trunc=nothing,
-                                  reports=nothing, spec=Z2Spec())
+                                  reports=nothing, spec=Z2Symmetry())
     order in (1, 2) || throw(ArgumentError("order must be 1 or 2"))
     order == 2 && !(coupling_norm >= 0) && throw(ArgumentError("order=2 requires coupling_norm ≥ 0 (total Σ_b α_b)"))
     bands = lattice.bands
-    bands_guard(_spec_symbol(spec), bands)
+    bands_guard(symmetry_symbol(spec), bands)
     num_bands(model) == bands || throw(ArgumentError("model bands $(num_bands(model)) ≠ lattice bands $bands"))
     dim = 2^bands
     z = zero_charge(spec)
@@ -328,10 +328,6 @@ function _storage_cells(lattice::AbstractGrassmannLattice)
 end
 
 # spec symbol 反查（守卫报错信息用）
-_spec_symbol(::Z2Spec) = :z2
-_spec_symbol(::Z2Z2Spec) = :z2z2
-_spec_symbol(::U1Spec) = :u1
-_spec_symbol(::U1U1Spec) = :u1u1
 
 # ---------------------------------------------------------------------------
 # 公开皮肤（旧 API 名保持；plan §3.3）

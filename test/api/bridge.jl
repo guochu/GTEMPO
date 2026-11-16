@@ -6,14 +6,14 @@
 	spaces = site_spaces(spec, length(lat) ÷ 2, 2)
 	x = randomgmps(ComplexF64, spaces; D=4)
 	@test check_charge(x)
-	@test length(bond_dimensions(x)) == length(x) - 1
+	@test length(bonddims(x)) == length(x) - 1
 	# 荷维度：键荷标签 = U1U1 元组
 	cd = charge_dimensions(x)
 	@test all(d -> all(k -> k isa Tuple{Int,Int}, keys(d)), cd)
 
-	# scaling 皮肤：scaling = exp(logscale)
-	setscaling!(x, 2.5)
-	@test scaling(x) ≈ 2.5 atol = 1e-12
+	# 缩放：logscale/setlogscale!（GM 直用；scaling/setscaling! 皮肤已删）
+	setlogscale!(x, log(2.5))
+	@test exp(logscale(x)) ≈ 2.5 atol = 1e-12
 
 	# reorder! 恒等置换 = 值不变（截断关闭）
 	y = deepcopy(x)
