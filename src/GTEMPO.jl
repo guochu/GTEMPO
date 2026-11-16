@@ -59,8 +59,8 @@ include("sysdynamics.jl")
 # IF 构造（PartialIF / ExactTTI 首批，D3）
 include("influence.jl")
 
-# 积分与观测量（GM 引擎接线 + inserted-K 路线）
-include("measurement.jl")
+# 积分与观测量（GM 引擎接线 + inserted-K/算符两轨，D5）
+include("measurements/measurements.jl")
 
 # ---------------------------------------------------------------------
 # export 皮肤
@@ -106,7 +106,7 @@ export bcs_hybriddynamics, bcs_partial_if
 export var_charge, cell_charges, fock_charges
 export HybridizationKernel, hybridization, influence_functional, hybriddynamics
 
-# 观测量（Phase 5b：inserted-K 边界观测 + 算符缓存原始关联两轨，D5 裁决见 measurement.jl）
+# 观测量（Phase 5b：inserted-K 边界观测 + 算符缓存原始关联两轨，D5 裁决见 measurements/）
 export occupation, greater, lesser, matsubara, default_branch, nn
 export lattice_monomial, environments_cache, cached_Z, cached_gf, cached_correlation
 
