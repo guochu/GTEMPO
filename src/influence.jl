@@ -135,7 +135,7 @@ GM truncerr 记账（标量通道）。
 """
 function partial_if(lattice::AbstractGrassmannLattice, kernel::HybridizationKernel;
                     band::Int=1, trunc::Truncation=Truncation(), truncerrs::Vector{Float64}=Float64[])
-    spec = symmetry_spec(lattice.symmetry)
+    spec = TK.sectortype(lattice)
     out = vacuumstate(lattice)
     charges = _site_charges(spec, lattice)
     cells = _storage_cells(lattice)              # 存储格序
@@ -546,7 +546,7 @@ function influence_functional(lattice::AbstractGrassmannLattice, kernel::Hybridi
     truncerrs = Float64[]
     diag = copy(kernel.diagnostics)
     diag[:algorithm] = alg; diag[:truncation] = trunc
-    spec = symmetry_spec(lattice.symmetry)
+    spec = TK.sectortype(lattice)
     if alg isa PartialIF
         state = partial_if(lattice, kernel; band, trunc=_trunc(alg), truncerrs)
     elseif alg isa ExactTTI
@@ -633,10 +633,10 @@ partialif_hybrid 同款）。行/列腿覆盖指数四类单项式
 function bcs_partial_if(lattice::AbstractGrassmannLattice, corr::QuAPI.BCSCorrelationFunction;
                         band1::Int=1, band2::Int=2, trunc::Truncation=Truncation(),
                         truncerrs::Vector{Float64}=Float64[])
-    spec = symmetry_spec(lattice.symmetry)
+    spec = TK.sectortype(lattice)
     spec === TK.Z2Irrep || throw(ArgumentError(
-        "BCS IF supports only symmetry=:z2 (anomalous pairing breaks particle-number " *
-        "conservation; only parity is conserved), got :$(lattice.symmetry)"))
+        "BCS IF supports only symmetry=$Z2 (anomalous pairing breaks particle-number " *
+        "conservation; only parity is conserved), got $(symmetry(lattice))"))
     (1 <= band1 < band2 <= lattice.bands) || throw(ArgumentError(
         "BCS orbital requires 1 ≤ band1 < band2 ≤ bands, got ($band1, $band2)"))
     keldysh = branches(lattice) == (:+, :-)

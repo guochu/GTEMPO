@@ -8,7 +8,7 @@ println("========== Part 4: multi-orbital (≤2 bands) ==========")
 	cs = fermion_annihilators(4)
 	d1, d2 = cs[1], cs[2]
 
-	lat = GrassmannLattice(N=Nτ, δτ=δτ, bands=2, contour=:imag, symmetry=:z2)
+	lat = GrassmannLattice(N=Nτ, δτ=δτ, bands=2, contour=:imag, symmetry=Z2())
 	bath = discretefermionicbath([ω], [α]; β=β)
 	kernel = hybridization(lat, bath)
 	model = KanamoriIM(U=U, J=J, norb=1, μ=μ)

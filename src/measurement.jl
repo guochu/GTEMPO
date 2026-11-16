@@ -48,7 +48,7 @@ end
 function _inserted_expectation(lattice, model, Is, Z, insertions; order=1, coupling_norm=0.0,
                                initial_state=nothing, spec=nothing)
     K = sysdynamics(lattice, model; order, initial_state, coupling_norm, insertions,
-                    spec=spec === nothing ? symmetry_spec(lattice.symmetry) : spec)
+                    spec=spec === nothing ? TK.sectortype(lattice) : spec)
     num = integrate(K, Is...)
     return num / Z
 end
@@ -87,7 +87,7 @@ function raw_correlation(lattice::AbstractGrassmannLattice, model::AbstractImpur
                          coupling_norm::Real=kernel_coupling_norm(kernel), initial_state=nothing)
     (lattice isa AbstractRealGrassmannLattice || lattice isa AbstractMixedGrassmannLattice) ||
         throw(ArgumentError("实时/混合轮廓专用；纯虚时用 matsubara"))
-    spec = symmetry_spec(lattice.symmetry)
+    spec = TK.sectortype(lattice)
     qc = var_charge(spec, 1, lattice.bands)
     d = _fock_ops(lattice.bands)[1]; ddag = d'
     ins = OperatorInsertion[]
@@ -132,7 +132,7 @@ end
 function _normalized_two_point(lattice, model, kernel, Is, Z, i, j, kind;
                                order::Integer=kernel_order(kernel),
                                coupling_norm::Real=kernel_coupling_norm(kernel), kwargs...)
-    spec = symmetry_spec(lattice.symmetry)
+    spec = TK.sectortype(lattice)
     qc = var_charge(spec, 1, lattice.bands)
     d = _fock_ops(lattice.bands)[1]; ddag = d'
     ins = OperatorInsertion[]
@@ -164,7 +164,7 @@ function matsubara(lattice::AbstractGrassmannLattice, model::AbstractImpurityHam
     lattice isa AbstractImagGrassmannLattice || lattice isa AbstractMixedGrassmannLattice ||
         throw(ArgumentError("matsubara 需虚时或混合轮廓"))
     d = _fock_ops(lattice.bands)[1]; ddag = d'
-    qc = var_charge(symmetry_spec(lattice.symmetry), 1, lattice.bands)
+    qc = var_charge(TK.sectortype(lattice), 1, lattice.bands)
     ins = [OperatorInsertion(:τ, Int(i), d; charge=qneg(qc)),
            OperatorInsertion(:τ, Int(j), ddag; charge=qc)]
     # Matsubara 时序约定（U1GTEMPO2 matsubara 同款）：G(τᵢ,τⱼ) =
@@ -195,7 +195,7 @@ kernel_order(::Nothing) = 1
 """
 function lattice_monomial(lattice::AbstractGrassmannLattice, indices::NTuple{N,GrassmannContourIndex};
                           coeff::Number=1) where {N}
-    spec = symmetry_spec(lattice.symmetry)
+    spec = TK.sectortype(lattice)
     positions = [lattice[ix] for ix in indices]   # 变量位（给定序）
     inv = 0
     for i in eachindex(positions), j in (i + 1):length(positions)
@@ -329,7 +329,7 @@ function raw_lead_correlator(lattice::AbstractGrassmannLattice, model::AbstractI
                              kernel::Union{Nothing,HybridizationKernel}, Is...; k::Integer, j::Integer,
                              b2::Symbol=:+, band::Int=1, order::Integer=kernel_order(kernel),
                              coupling_norm::Real=kernel_coupling_norm(kernel), initial_state=nothing, Z)
-    qc = var_charge(symmetry_spec(lattice.symmetry), band, lattice.bands)
+    qc = var_charge(TK.sectortype(lattice), band, lattice.bands)
     d = _fock_ops(lattice.bands)[band]
     ddag = d'
     # push 序 = 左乘序：同切位 (k == j) 电流取 a†a 0⁺ 极限 ⟹ ddag 先 push

@@ -339,7 +339,7 @@ function sysdynamics(lattice::AbstractGrassmannLattice, model::AbstractImpurityH
                      order::Integer=1, kwargs...)
     order in (1, 2) || throw(ArgumentError("order must be 1 or 2"))
     return _system_factor_reference(lattice, model; order=Int(order),
-                                    spec=symmetry_spec(lattice.symmetry), kwargs...)
+                                    spec=TK.sectortype(lattice), kwargs...)
 end
 
 """
@@ -352,5 +352,5 @@ IF 与收缩零改动（INTEGRATION.md §2 F1）。
 function sysdynamics_weyl2order(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian;
                                 coupling_norm::Real, kwargs...)
     return _system_factor_reference(lattice, model; order=2, coupling_norm=coupling_norm,
-                                    spec=symmetry_spec(lattice.symmetry), kwargs...)
+                                    spec=TK.sectortype(lattice), kwargs...)
 end

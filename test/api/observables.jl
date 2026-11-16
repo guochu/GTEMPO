@@ -5,7 +5,7 @@ using LinearAlgebra: Diagonal, eigen
 @testset "golden: greater/lesser vs U1GTEMPO2（机器精度锚）" begin
 	μ = 0.7; β = 1.0
 	bath = discretefermionicbath([1.0], [0.5]; β=β)
-	lat = GrassmannLattice(N=4, δt=0.15, bands=2, contour=:real, symmetry=:u1)
+	lat = GrassmannLattice(N=4, δt=0.15, bands=2, contour=:real, symmetry=U1())
 	q = exp(-β * μ)
 	ρ0 = Diagonal(ComplexF64[1.0, q, q, q * q]); ρ0 /= tr(ρ0)
 	model = AndersonIM(U=0.0, ϵ_d=μ)
@@ -39,7 +39,7 @@ end
 @testset "golden: matsubara vs U1GTEMPO2（虚时）" begin
 	μ = 0.7; β = 1.0
 	bath = discretefermionicbath([1.0], [0.5]; β=β)
-	lat = GrassmannLattice(N=4, δτ=0.25, bands=2, contour=:imag, symmetry=:u1)
+	lat = GrassmannLattice(N=4, δτ=0.25, bands=2, contour=:imag, symmetry=U1())
 	model = AndersonIM(U=0.0, ϵ_d=μ)
 	kernel = hybridization(lat, bath)
 	Is = ntuple(b -> hybriddynamics(lat, bath, PartialIF(); band=b), 2)
@@ -183,7 +183,7 @@ end
 @testset "电流：raw_lead_correlator / electriccurrent / heatcurrent" begin
 	μ = 0.7; β = 1.0
 	bath = discretefermionicbath([1.0], [0.5]; β=β)
-	lat = GrassmannLattice(N=4, δt=0.15, bands=2, contour=:real, symmetry=:u1)
+	lat = GrassmannLattice(N=4, δt=0.15, bands=2, contour=:real, symmetry=U1())
 	q = exp(-β * μ)
 	ρ0 = Diagonal(ComplexF64[1.0, q, q, q * q]); ρ0 /= tr(ρ0)
 	model = AndersonIM(U=0.0, ϵ_d=μ)

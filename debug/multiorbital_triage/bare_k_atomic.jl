@@ -5,7 +5,7 @@ using LinearAlgebra
 # 原子极限 ED（α=0）：能级 μ=+0.5，4 带
 Z_atomic = (1 + exp(-β * μ))^4
 println("原子极限 Z（4 带）= ", Z_atomic)
-for sym in (:z2, :u1, :u1u1, :z2z2)
+for sym in (Z2(), U1(), U1U1(), Z2Z2())
     lat = GrassmannLattice(N=Nτ, δτ=δτ, bands=4, contour=:imag, symmetry=sym)
     K = sysdynamics(lat, KanamoriIM(U=0.0, J=0.0, norb=2, μ=μ))
     zk = integrate(K)

@@ -7,13 +7,18 @@
 #   虚时：[格 Nτ][…][格 1]（格 i ⟷ 块 k−i+1）。
 # 格点计数语义（与旧 lattice 的 k=步数+1 不同——Chrono 无额外端点格点）：
 #   N/Nt/Nτ kwarg = 物理步数（= 单元数）；k/kt/kτ = 对应分支的格点数。
-# symmetry::Symbol 随 lattice 携带（D1 裁决）：ordering 管链排布、symmetry
-# 管扇区标记，两者正交（§3.4）。
+# lattice 按对称性单例类型参数化（2026-11-16：Symobl 字符串手选退役）——
+# `symmetry::Sym` 字段携带 bridge 的 GrassmannSymmetry 单例（Z2/Z2Z2/U1/U1U1），
+# `TK.sectortype(lattice)` 编译期即得扇区类型（spec），下游免重复输入扇区
+# 信息。ordering 管链排布、symmetry 管扇区标记，两者正交（§3.4）。
 
-abstract type AbstractGrassmannLattice end
-abstract type AbstractImagGrassmannLattice <: AbstractGrassmannLattice end
-abstract type AbstractRealGrassmannLattice <: AbstractGrassmannLattice end
-abstract type AbstractMixedGrassmannLattice <: AbstractGrassmannLattice end
+abstract type AbstractGrassmannLattice{Sym<:GrassmannSymmetry} end
+abstract type AbstractImagGrassmannLattice{Sym} <: AbstractGrassmannLattice{Sym} end
+abstract type AbstractRealGrassmannLattice{Sym} <: AbstractGrassmannLattice{Sym} end
+abstract type AbstractMixedGrassmannLattice{Sym} <: AbstractGrassmannLattice{Sym} end
+
+TK.sectortype(::Type{<:AbstractGrassmannLattice{Sym}}) where {Sym<:GrassmannSymmetry} = TK.sectortype(Sym)
+TK.sectortype(lattice::AbstractGrassmannLattice) = TK.sectortype(lattice.symmetry)
 
 branches(::Type{<:AbstractImagGrassmannLattice})  = (:τ,)
 branches(::Type{<:AbstractRealGrassmannLattice})  = (:+, :-)
@@ -38,23 +43,24 @@ end
 # 虚时
 # ---------------------------------------------------------------------------
 
-struct ImagGrassmannLattice <: AbstractImagGrassmannLattice
+struct ImagGrassmannLattice{Sym} <: AbstractImagGrassmannLattice{Sym}
     δτ::Float64
     bands::Int
     N::Int              # τ 步数 = 格点数
-    symmetry::Symbol
-    function ImagGrassmannLattice(δτ::Real, bands::Int, N::Int, symmetry::Symbol)
-        bands_guard(symmetry_spec(symmetry), bands)   # 未知 Symbol 拒绝（D1）+ 荷分辨形要求偶数带（轨道交错）
+    symmetry::Sym       # 对称性单例（Z2/Z2Z2/U1/U1U1）
+    function ImagGrassmannLattice(δτ::Real, bands::Int, N::Int, symmetry::GrassmannSymmetry)
+        bands_guard(TK.sectortype(symmetry), bands)   # 荷分辨形要求偶数带（轨道交错）
         N >= 1 || throw(ArgumentError("N ≥ 1 required"))
-        new(convert(Float64, δτ), bands, N, symmetry)
+        new{typeof(symmetry)}(convert(Float64, δτ), bands, N, symmetry)
     end
 end
 
-function ImagGrassmannLattice(; δτ::Real, N::Int, bands::Int=1, symmetry::Symbol=:z2)
+function ImagGrassmannLattice(; δτ::Real, N::Int, bands::Int=1, symmetry::GrassmannSymmetry=Z2())
     ImagGrassmannLattice(δτ, bands, N, symmetry)
 end
 Base.similar(x::ImagGrassmannLattice; δτ::Real=x.δτ, bands::Int=x.bands, N::Int=x.N,
-             symmetry::Symbol=x.symmetry) = ImagGrassmannLattice(δτ, bands, N, symmetry)
+             symmetry::Union{Nothing,GrassmannSymmetry}=nothing) =
+    ImagGrassmannLattice(δτ, bands, N, symmetry === nothing ? x.symmetry : symmetry)
 
 function Base.getproperty(x::ImagGrassmannLattice, s::Symbol)
     if (s == :k) || (s == :kτ)
@@ -90,22 +96,23 @@ end
 # 实时（Keldysh）
 # ---------------------------------------------------------------------------
 
-struct RealGrassmannLattice <: AbstractRealGrassmannLattice
+struct RealGrassmannLattice{Sym} <: AbstractRealGrassmannLattice{Sym}
     δt::Float64
     bands::Int
     N::Int              # 实时步数 = 格点数（Chrono 无边界格点：ρ₀ 折进 (+,1)、闭合折进 (−,1)）
-    symmetry::Symbol
-    function RealGrassmannLattice(δt::Real, bands::Int, N::Int, symmetry::Symbol)
-        bands_guard(symmetry_spec(symmetry), bands)
+    symmetry::Sym       # 对称性单例
+    function RealGrassmannLattice(δt::Real, bands::Int, N::Int, symmetry::GrassmannSymmetry)
+        bands_guard(TK.sectortype(symmetry), bands)
         N >= 1 || throw(ArgumentError("N ≥ 1 required"))
-        new(convert(Float64, δt), bands, N, symmetry)
+        new{typeof(symmetry)}(convert(Float64, δt), bands, N, symmetry)
     end
 end
 
-RealGrassmannLattice(; δt::Real, N::Int, bands::Int=1, symmetry::Symbol=:z2) =
+RealGrassmannLattice(; δt::Real, N::Int, bands::Int=1, symmetry::GrassmannSymmetry=Z2()) =
     RealGrassmannLattice(δt, bands, N, symmetry)
 Base.similar(x::RealGrassmannLattice; δt::Real=x.δt, bands::Int=x.bands, N::Int=x.N,
-             symmetry::Symbol=x.symmetry) = RealGrassmannLattice(δt, bands, N, symmetry)
+             symmetry::Union{Nothing,GrassmannSymmetry}=nothing) =
+    RealGrassmannLattice(δt, bands, N, symmetry === nothing ? x.symmetry : symmetry)
 
 function Base.getproperty(x::RealGrassmannLattice, s::Symbol)
     if (s == :k) || (s == :kt) || (s == :Nt)
@@ -136,26 +143,26 @@ end
 # 混合（Kadanoff–Baym）
 # ---------------------------------------------------------------------------
 
-struct MixedGrassmannLattice <: AbstractMixedGrassmannLattice
+struct MixedGrassmannLattice{Sym} <: AbstractMixedGrassmannLattice{Sym}
     δt::Float64
     Nt::Int
     δτ::Float64
     Nτ::Int
     bands::Int
-    symmetry::Symbol
-    function MixedGrassmannLattice(δt::Real, Nt::Int, δτ::Real, Nτ::Int, bands::Int, symmetry::Symbol)
-        bands_guard(symmetry_spec(symmetry), bands)
+    symmetry::Sym       # 对称性单例
+    function MixedGrassmannLattice(δt::Real, Nt::Int, δτ::Real, Nτ::Int, bands::Int, symmetry::GrassmannSymmetry)
+        bands_guard(TK.sectortype(symmetry), bands)
         (Nt >= 1 && Nτ >= 1) || throw(ArgumentError("Nt, Nτ ≥ 1 required"))
-        new(convert(Float64, δt), Nt, convert(Float64, δτ), Nτ, bands, symmetry)
+        new{typeof(symmetry)}(convert(Float64, δt), Nt, convert(Float64, δτ), Nτ, bands, symmetry)
     end
 end
 
-function MixedGrassmannLattice(; δt::Real, Nt::Int, δτ::Real, Nτ::Int, bands::Int=1, symmetry::Symbol=:z2)
+function MixedGrassmannLattice(; δt::Real, Nt::Int, δτ::Real, Nτ::Int, bands::Int=1, symmetry::GrassmannSymmetry=Z2())
     MixedGrassmannLattice(δt, Nt, δτ, Nτ, bands, symmetry)
 end
 Base.similar(x::MixedGrassmannLattice; δt::Real=x.δt, Nt::Int=x.Nt, δτ::Real=x.δτ, Nτ::Int=x.Nτ,
-             bands::Int=x.bands, symmetry::Symbol=x.symmetry) =
-    MixedGrassmannLattice(δt, Nt, δτ, Nτ, bands, symmetry)
+             bands::Int=x.bands, symmetry::Union{Nothing,GrassmannSymmetry}=nothing) =
+    MixedGrassmannLattice(δt, Nt, δτ, Nτ, bands, symmetry === nothing ? x.symmetry : symmetry)
 
 function Base.getproperty(x::MixedGrassmannLattice, s::Symbol)
     if s == :t
@@ -265,7 +272,7 @@ block_offset(lattice::AbstractGrassmannLattice, block::Int) = (block - 1) * 2 * 
 mod1(s, bands)）——bridge 的 vacuumstate/pairize/引擎共用此视图。
 """
 function site_spaces(lattice::AbstractGrassmannLattice)
-    spec = symmetry_spec(lattice.symmetry)
+    spec = TK.sectortype(lattice)
     nstations = length(lattice) ÷ 2
     return [station_space(spec, mod1(s, lattice.bands)) for s in 1:nstations]
 end
@@ -273,5 +280,5 @@ end
 "真空链（GM 真空：左边界真空、键恒等穿透）"
 vacuumstate(lattice::AbstractGrassmannLattice) = GM.vacuumstate(ComplexF64, site_spaces(lattice))
 
-"lattice 携带的对称性 Symbol（D1；export 已声明）"
+"lattice 携带的对称性单例（Z2/Z2Z2/U1/U1U1；export 已声明）"
 symmetry(l::AbstractGrassmannLattice) = l.symmetry

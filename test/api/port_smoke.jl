@@ -6,7 +6,7 @@
 #   ⑤ vacuumstate/coefficient_scaled 往返
 using Test, Random
 using GTEMPO
-using GTEMPO: branches, symmetry_spec, cell_charges, monomial, coefficient
+using GTEMPO: branches, sectortype, cell_charges, monomial, coefficient
 import TensorKit as TK
 import GrassmannMPS as GM
 
@@ -15,7 +15,7 @@ Random.seed!(12354)
 @testset "Phase 1 smoke: lattices × 4 symmetries" begin
     # ②③ 真空/随机 + 拒绝路径
     # 单荷形任意带数（bands=1）；荷分辨形偶数带（轨道交错）
-    for (sym, bands) in ((:z2, 1), (:u1, 1), (:z2z2, 2), (:u1u1, 2))
+    for (sym, bands) in ((Z2(), 1), (U1(), 1), (Z2Z2(), 2), (U1U1(), 2))
         lat = GrassmannLattice(N=3, δτ=0.1, bands=bands, contour=:imag, symmetry=sym)
         v = vacuumstate(lat)
         @test length(v) == length(lat) ÷ 2
@@ -24,14 +24,14 @@ Random.seed!(12354)
         @test length(r) == length(v)
     end
     # :z2/:u1 bands=3 合法（荷合并）
-    for sym in (:z2, :u1)
+    for sym in (Z2(), U1())
         lat = GrassmannLattice(N=2, δτ=0.1, bands=3, contour=:imag, symmetry=sym)
         @test length(vacuumstate(lat)) == 3 * lat.kτ   # 站数 = 变量数/2
     end
-    # ③ 拒绝路径
-    @test_throws ArgumentError GrassmannLattice(N=2, δτ=0.1, contour=:imag, symmetry=:su2)
-    @test_throws ArgumentError GrassmannLattice(N=2, δτ=0.1, bands=3, contour=:imag, symmetry=:z2z2)
-    @test_throws ArgumentError GrassmannLattice(N=2, δτ=0.1, bands=3, contour=:imag, symmetry=:u1u1)
+    # ③ 拒绝路径（Symbol 手选已退役：非法输入在 kwarg 类型层即拒）
+    @test_throws TypeError GrassmannLattice(N=2, δτ=0.1, contour=:imag, symmetry=:su2)
+    @test_throws ArgumentError GrassmannLattice(N=2, δτ=0.1, bands=3, contour=:imag, symmetry=Z2Z2())
+    @test_throws ArgumentError GrassmannLattice(N=2, δτ=0.1, bands=3, contour=:imag, symmetry=U1U1())
 end
 
 @testset "Phase 1 smoke: lattice _index 位置映射" begin
@@ -62,7 +62,7 @@ end
 end
 
 @testset "Phase 1 smoke: vacuumstate/coefficient_scaled 往返" begin
-    for sym in (:z2, :u1)
+    for sym in (Z2(), U1())
         lat = GrassmannLattice(N=3, δτ=0.1, bands=1, contour=:imag, symmetry=sym)
         v = vacuumstate(lat)
         # 全空占据的系数 = 1（站级 digit 全 0 = vac；恒等真空链）
@@ -70,12 +70,12 @@ end
         @test abs(value(z) - 1.0) < 1e-14
     end
     # U1U1 交替站形真空往返
-    lat = GrassmannLattice(N=2, δτ=0.1, bands=2, contour=:imag, symmetry=:u1u1)
+    lat = GrassmannLattice(N=2, δτ=0.1, bands=2, contour=:imag, symmetry=U1U1())
     v = vacuumstate(lat)
     z = coefficient_scaled(v, zeros(Int, length(v)))
     @test abs(value(z) - 1.0) < 1e-14
     # 单项式系数：monomial(带荷 positions) 的对应组态 = coeff
-    spec = symmetry_spec(:z2)
+    spec = GTEMPO.sectortype(Z2())
     charges = cell_charges(spec, 2)  # bands=2
     mono = monomial(spec, repeat(charges, 3), [1, 6]; coeff=1.0)
     occ = zeros(Int, length(mono))

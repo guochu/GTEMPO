@@ -17,7 +17,7 @@ function probe(nbands_bath, α, tag)
     cs = fermion_annihilators(nm)
     n_ed = real(tr(cs[1]'cs[1]*exp(-β*H)))/real(tr(exp(-β*H)))
     Zed = real(tr(exp(-β*H))) / (1 + exp(-β*ω))^nbands_bath
-    lat = GrassmannLattice(N=Nτ, δτ=δτ, bands=1, contour=:imag, symmetry=:z2)
+    lat = GrassmannLattice(N=Nτ, δτ=δτ, bands=1, contour=:imag, symmetry=Z2())
     bath = discretefermionicbath(fill(ω, nbands_bath), fill(α, nbands_bath); β=β)
     Is = (hybriddynamics(lat, bath, PartialIF(); band=1),)
     K = sysdynamics(lat, ToulouseIM(ϵ_d=μ))

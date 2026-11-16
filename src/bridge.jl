@@ -6,28 +6,34 @@
 #   （每胞 2 站：up 形/down 形 grassmannspace，4 维站）后进入 GrassmannMPS。
 #
 # 对称性用户手选（2026-11-13 D1 裁决，§3.4；2026-11-16 A1/A2 裁决：spec =
-# TK 扇区类型本身、荷标签 = TK 扇区——Julia 类型即标签惯用法）。荷标签
-# （构造层纯数据）类型随 spec：
-#   Z2Irrep      :z2   各带宇并合并——旧 GTEMPO 语义；sector = mod 2
-#   Z2Z2         :z2z2 每自旋宇并：奇带 = 各轨道 up、偶带 = down，偶数带
-#   U1Irrep      :u1   各带总粒子数合并；sector = 原值
-#   ChargeCharge :u1u1 每自旋粒子数：奇带 = up、偶带 = down，偶数带；U1GTEMPO2 同款
+# TK 扇区类型本身、荷标签 = TK 扇区；2026-11-16 单例化：Symobl 字符串选择
+# 退役，改为四个对称性单例类型 Z2/Z2Z2/U1/U1U1，sectortype 按类型分派）。
+# 荷标签（构造层纯数据）类型随对称性：
+#   Z2   → Z2Irrep      各带宇并合并——旧 GTEMPO 语义；sector = mod 2
+#   Z2Z2 → Z2Z2         每自旋宇并：奇带 = 各轨道 up、偶带 = down，偶数带
+#   U1   → U1Irrep      各带总粒子数合并；sector = 原值
+#   U1U1 → ChargeCharge 每自旋粒子数：奇带 = up、偶带 = down，偶数带；U1GTEMPO2 同款
 # 费米符号不在标签里——由 GM.GrassmannBackend 显式注入（@grassmann 宏）。
 # 参考实现 = U1GTEMPO2 bridge.jl（ChargeCharge 通道机器精度验证过）；
 # 其余三通道靠 GM abelian 电池 + 本包跨对称性一致电池 + ED 三层兜底（R9）。
 
 # ---------------------------------------------------------------------------
-# 对称性 spec（扇区类型注册面：本文件是唯一允许按对称性分支的位置之一，
-# 与 GM/grassmannspaces.jl 的注册表对表）
+# 对称性单例（用户手选面：lattice 构造的 symmetry 输入；本文件是唯一允许
+# 按对称性分支的位置之一，与 GM/grassmannspaces.jl 的注册表对表）
 # ---------------------------------------------------------------------------
 
-const SYMMETRY_SPECS = IdDict{Symbol,Type}(
-    :z2 => TK.Z2Irrep, :z2z2 => Z2Z2, :u1 => TK.U1Irrep, :u1u1 => ChargeCharge)
+abstract type GrassmannSymmetry end
+struct Z2 <: GrassmannSymmetry end       # 各带宇并合并（旧语义）
+struct Z2Z2 <: GrassmannSymmetry end     # 每自旋宇并（奇带 up / 偶带 down，偶数带）
+struct U1 <: GrassmannSymmetry end       # 各带总粒子数合并
+struct U1U1 <: GrassmannSymmetry end     # 每自旋粒子数（奇带 up / 偶带 down，偶数带）
 
-"Symbol → spec（扇区类型；未知 Symbol 显式拒绝，禁静默降级——D1 裁决）"
-symmetry_spec(s::Symbol)::Type{<:Sector} = get(SYMMETRY_SPECS, s, nothing) === nothing ?
-    throw(ArgumentError("unknown symmetry :$s (allowed: :z2, :z2z2, :u1, :u1u1)")) :
-    SYMMETRY_SPECS[s]
+"对称性单例类型 → TK 扇区类型（spec）"
+TK.sectortype(::Type{Z2}) = TK.Z2Irrep
+TK.sectortype(::Type{Z2Z2}) = GM.Z2Z2
+TK.sectortype(::Type{U1}) = TK.U1Irrep
+TK.sectortype(::Type{U1U1}) = ChargeCharge
+TK.sectortype(sym::GrassmannSymmetry) = TK.sectortype(typeof(sym))
 
 # 荷标签代数（TK 扇区直用）：融合 = first(⊗)（GM 自身惯用法）、负 = dual、
 # 减 = 加负。宇并形 mod 2 语义由扇区融合自然承载（+1 与 −1 同扇区不压重）。
@@ -40,15 +46,15 @@ symmetry_spec(s::Symbol)::Type{<:Sector} = get(SYMMETRY_SPECS, s, nothing) === n
 是 |q| 序，直接 sort 会重排键扇区布局破 golden，故所有排序走 sortkey）"
 sortkey(s::TK.Z2Irrep) = Int(s.n)
 sortkey(s::TK.U1Irrep) = Int(s.charge)
-sortkey(s::Z2Z2) = (Int(s[1].n), Int(s[2].n))
+sortkey(s::GM.Z2Z2) = (Int(s[1].n), Int(s[2].n))
 sortkey(s::ChargeCharge) = (Int(s[1].charge), Int(s[2].charge))
 
-"荷分辨形 bands 守卫（:z2z2/:u1u1）：多轨道完全支持——轨道交错约定
+"荷分辨形 bands 守卫（Z2Z2/U1U1）：多轨道完全支持——轨道交错约定
 （奇带 = 各轨道 up、偶带 = down；bands = 2·轨道数），唯一结构要求 = bands
 为偶数；语义要求（杂质 Hamiltonian 与 IF 确实携带该对称性，如 KanamoriIM）
-由模型/调用方保证。单荷形 :z2/:u1 无要求。"
+由模型/调用方保证。单荷形 Z2/U1 无要求。"
 function bands_guard(::Type{G}, bands::Int) where {G<:Sector}
-    if (G === Z2Z2 || G === ChargeCharge) && isodd(bands)
+    if (G === GM.Z2Z2 || G === ChargeCharge) && isodd(bands)
         throw(ArgumentError(
             "symmetry $G resolves per-spin flavor and requires an even number of bands " *
             "(orbital interleaving: odd bands = up, even bands = down), got bands = $bands"))
@@ -64,8 +70,8 @@ var_charge(::Type{TK.U1Irrep}, band::Int, bands::Int) = TK.U1Irrep(1)
 # 轨道交错：奇带 = 各轨道 up（第一味）、偶带 = down（第二味）——多轨道
 # （bands = 2·轨道数）与双带同式；旧「band == 1 ? up : down」写法在 bands ≥ 3
 # 时把轨道 2 的 up 错标成 down（2026-11-16 修正，随 bands_guard 放宽）
-var_charge(::Type{Z2Z2}, band::Int, bands::Int) =
-    isodd(band) ? Z2Z2((TK.Z2Irrep(1), TK.Z2Irrep(0))) : Z2Z2((TK.Z2Irrep(0), TK.Z2Irrep(1)))
+var_charge(::Type{GM.Z2Z2}, band::Int, bands::Int) =
+    isodd(band) ? GM.Z2Z2((TK.Z2Irrep(1), TK.Z2Irrep(0))) : GM.Z2Z2((TK.Z2Irrep(0), TK.Z2Irrep(1)))
 var_charge(::Type{ChargeCharge}, band::Int, bands::Int) =
     isodd(band) ? ChargeCharge(TK.U1Irrep(1), TK.U1Irrep(0)) : ChargeCharge(TK.U1Irrep(0), TK.U1Irrep(1))
 
@@ -80,7 +86,7 @@ end
 "变量荷 → 站朝向（_convert_site 用；单荷形无朝向 → 恒 :up 合法）"
 station_flavor(::Type{TK.Z2Irrep}, q) = :up
 station_flavor(::Type{TK.U1Irrep}, q) = :up
-station_flavor(::Type{Z2Z2}, q) = iszero(q[2].n) ? :up : :down
+station_flavor(::Type{GM.Z2Z2}, q) = iszero(q[2].n) ? :up : :down
 station_flavor(::Type{ChargeCharge}, q) = iszero(q[2].charge) ? :up : :down
 
 "键荷序列 → 分级空间（荷计数聚合；排序 = sortkey 复现旧标签升序保证扇区
@@ -103,11 +109,13 @@ function cell_charges(::Type{G}, bands::Int) where {G<:Sector}
     return out
 end
 
-"BCS 守卫（D7 裁决）：BCS 反常关联破坏粒子数守恒、宇称恒守恒 → 仅 :z2"
-bcs_symmetry_guard(sym::Symbol) =
-    sym === :z2 || throw(ArgumentError(
-        "BCS bath supports only symmetry=:z2 (anomalous pairing breaks particle-number " *
-        "conservation; only parity is conserved), got :$sym"))
+"BCS 守卫（D7 裁决）：BCS 反常关联破坏粒子数守恒、宇称恒守恒 → 仅 Z2"
+function bcs_symmetry_guard(sym::GrassmannSymmetry)
+    sym isa Z2 || throw(ArgumentError(
+        "BCS bath supports only symmetry=$Z2 (anomalous pairing breaks particle-number " *
+        "conservation; only parity is conserved), got $sym"))
+    return sym
+end
 
 # ---------------------------------------------------------------------------
 # 链几何：变量 ↔ 站映射（Chrono 排布每格 2·bands 变量 = bands 站）

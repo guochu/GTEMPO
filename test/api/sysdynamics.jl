@@ -18,14 +18,14 @@ using LinearAlgebra: Diagonal, norm
 	@test length(Kr) == length(latr) ÷ 2 && norm(Kr) > 0
 
 	# 偶算符插入（charge=nothing）合法
-	spec = symmetry_spec(:z2)
+	spec = GTEMPO.sectortype(Z2())
 	d = GTEMPO._fock_ops(2)[1]
 	ins_even = [OperatorInsertion(:+, 1, d)]
 	K2 = sysdynamics(latr, model; insertions=ins_even, initial_state=ρ0)
 	@test length(K2) == length(latr) ÷ 2
 	# 单奇插入净荷非零 → 显式拒绝；奇配对（ddag@0 + d@1）合法
-	latu1 = GrassmannLattice(N=4, δt=0.05, bands=2, contour=:real, symmetry=:u1)
-	qc = GTEMPO.var_charge(symmetry_spec(:u1), 1, 2)
+	latu1 = GrassmannLattice(N=4, δt=0.05, bands=2, contour=:real, symmetry=U1())
+	qc = GTEMPO.var_charge(GTEMPO.sectortype(U1()), 1, 2)
 	ins_odd = [OperatorInsertion(:+, 1, d; charge=GTEMPO.qneg(qc))]
 	@test_throws ArgumentError sysdynamics(latu1, model; insertions=ins_odd, initial_state=ρ0)
 	ddag = d'

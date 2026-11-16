@@ -85,7 +85,7 @@ end
         @test last_err < 4e-4                    # δτ=0.125 收敛锚
         # ---------- 跨对称性一致（:z2 基准 vs 其余三形逐位相等）----------
         N = 4
-        lat0 = GrassmannLattice(N=N, δτ=0.25, bands=2, contour=:imag, symmetry=:z2)
+        lat0 = GrassmannLattice(N=N, δτ=0.25, bands=2, contour=:imag, symmetry=Z2())
         cn = α * 2
         IF0 = hybriddynamics(lat0, bath, PartialIF(); band=1, coupling_norm=cn)
         vac0 = vacuumstate(lat0)
@@ -94,7 +94,7 @@ end
         ref_Z = exp(zs0.logabs) * zs0.phase
         ref_occ = occupation(lat0, AndersonIM(U=U, ϵ_d=μ), nothing, IF0, vac0; j=2, branch=:τ,
                              band=1, order=2, coupling_norm=cn, Z=ref_Z)
-        for sym in (:u1, :z2z2, :u1u1)
+        for sym in (U1(), Z2Z2(), U1U1())
             lat = GrassmannLattice(N=N, δτ=0.25, bands=2, contour=:imag, symmetry=sym)
             IF1 = hybriddynamics(lat, bath, PartialIF(); band=1, coupling_norm=cn)
             vac = vacuumstate(lat)

@@ -1,5 +1,5 @@
 @testset "API: entanglement entropy（GM 引擎面）" begin
-	spec = symmetry_spec(:z2)
+	spec = GTEMPO.sectortype(Z2())
 	spaces = site_spaces(spec, 8, 1)
 	x = randomgmps(ComplexF64, spaces; D=8)
 	canonicalize!(x)

@@ -32,7 +32,7 @@ import GrassmannMPS as GM
 import GrassmannMPS: vacuumstate, expectation,   # 扩展目标（lattice / solution 方法）
     coefficient_scaled                           # 桥层扩展目标（同函数新方法）
 using GrassmannMPS: GMPS, SparseGMPS, ScaledScalar, ExpectationCache,
-    ChargeCharge, Z2Z2, grassmannspace, grassmann_basis, wedge_vertex,
+    ChargeCharge, grassmannspace, grassmann_basis, wedge_vertex,
     canonical_grassmann_spaces,
     environments, Zvalue, value, truncrelerr, truncdimcutoff, truncate!,
     leftorth!, rightorth!, swap!, reorder!, randomgmps,
@@ -84,6 +84,7 @@ export AbstractGrassmannLattice, AbstractImagGrassmannLattice, AbstractRealGrass
 export ImagGrassmannLattice, RealGrassmannLattice, MixedGrassmannLattice, GrassmannLattice
 export branches, indexmappings, vacuumstate
 export symmetry, site_spaces
+export GrassmannSymmetry, Z2, Z2Z2, U1, U1U1
 
 # 对称性 / 桥层（构造 + 引擎接线）
 export Truncation
@@ -102,7 +103,7 @@ export sysdynamics, sysdynamics_weyl2order, OperatorInsertion
 # IF 构造
 export InfluenceFunctionalAlgorithm, PartialIF, ExactTTI, InfluenceFunctional
 export bcs_hybriddynamics, bcs_partial_if
-export symmetry_spec, var_charge, cell_charges, fock_charges
+export var_charge, cell_charges, fock_charges
 export HybridizationKernel, hybridization, influence_functional, hybriddynamics
 
 # 观测量（Phase 5b：inserted-K 边界观测 + 算符缓存原始关联两轨，D5 裁决见 measurement.jl）

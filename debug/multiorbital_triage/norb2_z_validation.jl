@@ -24,7 +24,7 @@ Zed = real(tr(exp(-β * H)))
 bathZ = (1 + exp(-β * ω))^nimp
 n1 = real(tr(cs[1]'cs[1]*exp(-β*H)))/Zed
 
-lat = GrassmannLattice(N=Nτ, δτ=δτ, bands=2norb, contour=:imag, symmetry=:u1u1)
+lat = GrassmannLattice(N=Nτ, δτ=δτ, bands=2norb, contour=:imag, symmetry=U1U1())
 # Σ 核 = Σ_m (α/4) g = α·g：每带恰见自身通道强度（对角混杂 ⟹ 乘积 IF 精确）
 bath = discretefermionicbath(fill(ω, nimp), fill(α / nimp, nimp); β=β)
 model = KanamoriIM(U=U, J=J, norb=norb, μ=μ)
