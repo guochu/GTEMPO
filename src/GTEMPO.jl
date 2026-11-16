@@ -30,11 +30,11 @@ using TensorKit: ⊗, ⊠, ←, Vect, Z2Irrep, U1Irrep, Sector,
 # LinearAlgebra 的重载关系按 GM 模块约定处理；R8：私有原语只 import 不扩方法）
 import GrassmannMPS as GM
 import GrassmannMPS: vacuumstate, expectation,   # 扩展目标（lattice / solution 方法）
-    coefficient_scaled, compress!                # 桥层扩展目标（同函数新方法）
+    coefficient_scaled                           # 桥层扩展目标（同函数新方法）
 using GrassmannMPS: GMPS, SparseGMPS, ScaledScalar, ExpectationCache,
     ChargeCharge, Z2Z2, grassmannspace, grassmann_basis, wedge_vertex,
     canonical_grassmann_spaces,
-    environments, Zvalue, value, truncrelerr, truncdimcutoff,
+    environments, Zvalue, value, truncrelerr, truncdimcutoff, truncate!,
     leftorth!, rightorth!, swap!, reorder!, randomgmps,
     mult, mult!, apply!, DMRG2, SVDCompression,
     canonicalize!, iscanonical, entanglement_entropy, entanglement_spectrum,
@@ -87,8 +87,8 @@ export branches, indexmappings, vacuumstate
 export symmetry, site_spaces
 
 # 对称性 / 桥层（构造 + 引擎接线）
-export Truncation, CompressionReport, LegacyTruncation
-export pairize, monomial, multiply, compress!
+export Truncation
+export pairize, monomial, truncate!
 export charge_dimensions, check_charge
 export coefficient, coefficient_scaled, integrate, integrate_scaled
 export EnvironmentCache

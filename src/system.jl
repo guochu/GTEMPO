@@ -147,7 +147,7 @@ end
 """
     _system_factor_reference(lattice, model; order=1, initial_state=nothing,
                              coupling_norm=0.0, insertions=OperatorInsertion[],
-                             trunc=nothing, reports=nothing, spec=TK.Z2Irrep) -> GMPS
+                             trunc=nothing, truncerrs=nothing, spec=TK.Z2Irrep) -> GMPS
 
 时序 ring automaton（U1GTEMPO2 system_factor_reference 同型）：每格
 (b,j) 的 core 经 split_cell 切成变量粒度张量列，全部格拼接后 pairize，
@@ -158,7 +158,7 @@ end
 function _system_factor_reference(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian;
                                   order::Int=1, initial_state=nothing, coupling_norm::Real=0.0,
                                   insertions=OperatorInsertion[], trunc=nothing,
-                                  reports=nothing, spec::Type{<:Sector}=TK.Z2Irrep)
+                                  truncerrs=nothing, spec::Type{<:Sector}=TK.Z2Irrep)
     order in (1, 2) || throw(ArgumentError("order must be 1 or 2"))
     order == 2 && !(coupling_norm >= 0) && throw(ArgumentError("order=2 requires coupling_norm ≥ 0 (total Σ_b α_b)"))
     bands = lattice.bands
@@ -273,8 +273,8 @@ function _system_factor_reference(lattice::AbstractGrassmannLattice, model::Abst
     end
     GM.reorder!(out, perm; trunc=GM.truncrelerr(1e-14))
     if trunc !== nothing
-        r = compress!(out; trunc)
-        reports === nothing || push!(reports, r)
+        _, err = GM.truncate!(out; trunc)
+        truncerrs === nothing || push!(truncerrs, err)
     end
     return out
 end

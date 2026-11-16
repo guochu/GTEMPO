@@ -13,23 +13,31 @@
 	@test unscale(GM.Zvalue(cache)) ≈ integrate(K, Is) atol = 1.0e-12
 end
 
-@testset "API: multiply / compress! / 截断记账" begin
+@testset "API: mult / truncate! / truncerr 标准通道" begin
 	lat = GrassmannLattice(N=2, δτ=0.1, bands=1, contour=:imag)
 	spec = symmetry_spec(:z2)
 	spaces = site_spaces(spec, length(lat) ÷ 2, 1)
 	x = randomgmps(ComplexF64, spaces; D=4)
 	y = randomgmps(ComplexF64, spaces; D=4)
-	# 朴素楔积（无截断）与 multiply(trunc=Truncation(...)) 一致到截断水平
+	# 朴素楔积（无截断）与 mult(trunc=Truncation(...)) 一致到截断水平
 	exact = x * y
-	reports = CompressionReport[]
-	out = multiply(x, y; trunc=Truncation(maxdim=typemax(Int), rtol=1e-14), reports=reports)
+	out, err = mult(x, y; trunc=Truncation(D=typemax(Int), rtol=1e-14))
 	@test length(out) == length(x)
 	@test scaled_ratio(integrate_scaled(out), integrate_scaled(exact)) ≈ 1.0 atol = 1.0e-10
-	@test length(reports) == 1 && reports[1] isa CompressionReport
-	# compress! 原地 + 精确（大 D）→ 值不变；小 D → 键维受限
-	c = copy(exact)
-	r = compress!(c; trunc=Truncation(maxdim=typemax(Int), rtol=1e-14))
+	@test err isa Float64 && err >= 0
+	# truncate! 原地 + 精确（大 D）→ 值不变；小 D → 键维受限
+	c, err = truncate!(copy(exact); trunc=Truncation(D=typemax(Int), rtol=1e-14))
 	@test scaled_ratio(integrate_scaled(c), integrate_scaled(exact)) ≈ 1.0 atol = 1.0e-10
-	r2 = compress!(c; trunc=Truncation(maxdim=2, rtol=1e-14))
+	_, err2 = truncate!(c; trunc=Truncation(D=2, rtol=1e-14))
 	@test all(≤(2), bonddims(c))
+	@test err2 isa Float64 && err2 >= 0
+	# 零链回归（R2）：coeff=0 单项式（system 零核路径）经 truncate!/mult
+	# 不破形——迹归零、键维不塌 0（新策略全零谱每扇区保 1 条）
+	charges = cell_charges(spec, 1)
+	z0 = monomial(spec, repeat(charges, 2); coeff=0)
+	zt, _ = truncate!(z0; trunc=Truncation(D=8, rtol=1e-12))
+	@test unscale(integrate_scaled(zt)) == 0.0
+	zz, _ = mult(zt, x; trunc=Truncation(D=8, rtol=1e-12))
+	@test unscale(integrate_scaled(zz)) == 0.0
+	@test all(>(0), bonddims(zz))
 end

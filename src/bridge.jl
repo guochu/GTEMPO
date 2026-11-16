@@ -123,77 +123,44 @@ end
 @inline station_of(varpos::Int) = (varpos + 1) ÷ 2
 
 # ---------------------------------------------------------------------------
-# 截断（U1GTEMPO2 D1/D2 裁决移植：有状态 TruncationStrategy 逐位复刻旧
-# select_dimensions + CompressionReport 记账；荷排序键 = sortkey，跨荷全局预算）
+# 截断（A3 裁决 2026-11-16：Truncation = MAK.TruncationStrategy，无状态
+# findtruncated_svd 重载——top-D 全局预算 ∧ 相对尾容差；误差只走 GM
+# truncate!/mult 返回的 truncerr 标准通道。荷排序键 = sortkey，跨荷全局预算）
 # ---------------------------------------------------------------------------
 
-struct Truncation
-    maxdim::Int
+struct Truncation <: MAK.TruncationStrategy
+    D::Int                                # maxdim → D（对齐 GM TruncateDimCutoff.D / MAK truncrank(D) 惯例）
     rtol::Float64
-    cutoff::Float64
-    function Truncation(; maxdim::Integer=128, rtol::Real=1e-12, cutoff::Real=0)
-        maxdim > 0 && isfinite(rtol) && 0 <= rtol < 1 && isfinite(cutoff) && cutoff >= 0 ||
+    function Truncation(; D::Integer=128, rtol::Real=1e-12)
+        D > 0 && isfinite(rtol) && 0 <= rtol < 1 ||
             throw(ArgumentError("invalid truncation"))
-        new(maxdim, rtol, cutoff)
+        new(D, rtol)
     end
 end
 
-struct CompressionReport
-    discarded_norms::Vector{Float64}
-    relative_errors::Vector{Float64}
-    bond_dimensions::Vector{Int}
-    saturated::Bool
-    discarded_logabs::Vector{Float64}
-end
-CompressionReport(d, r, b, s) = CompressionReport(d, r, b, s, log.(d))
-
-"""
-compress! 内部的有状态截断策略：`svd_trunc` 逐键调用 `findtruncated_svd`，
-选择语义逐位复刻旧 `select_dimensions`（跨荷全局预算 + 相对尾容差 + 绝对
-cutoff），并在调用序（键 L−1..1）里记账。荷排序键 = sortkey（A1：复现旧
-标签升序，跨荷预算语义不变）。
-"""
-mutable struct LegacyTruncation{G} <: MAK.TruncationStrategy
-    maxdim::Int
-    rtol::Float64
-    cutoff::Float64
-    l0::Float64                       # 扫掠起点 logscale（QR 归一之后）
-    dims::Vector{Dict{G,Int}}
-    discarded::Vector{Float64}
-    relative::Vector{Float64}
-    saturated::Vector{Bool}
-    spectral_norms::Vector{Float64}   # 每键 sqrt(Σ|s|²)（rightorth! 吸收进 logscale 的量）
-end
-LegacyTruncation(::Type{G}, trunc::Truncation, l0::Float64) where {G<:Sector} =
-    LegacyTruncation{G}(trunc.maxdim, trunc.rtol, iszero(trunc.cutoff) ? 0.0 : trunc.cutoff, l0,
-                        Dict{G,Int}[], Float64[], Float64[], Bool[], Float64[])
-
-function MAK.findtruncated_svd(values::TK.SectorVector, s::LegacyTruncation{G}) where {G}
-    entries = sort!([(v, q, j) for (q, vs) in pairs(values) for (j, v) in enumerate(vs)];
-                    by = x -> (-x[1], sortkey(x[2]), x[3]))
+"Truncation 的 svd_trunc 扩展（= 旧 LegacyTruncation 去 cutoff 去记账）：排序
+键 (-|v|, sortkey, j) ≡ 旧 (-v, 标签, j)；保留判据 top-D ∧ 相对尾能量
+tails[k+1] > rtol²·total（rtol 是丢弃尾巴的相对 L2 能量判据，与 GM
+TruncateDimCutoff.ϵ 的逐值噪声地板无换算关系；rtol=0 与全零谱每键保 1 条）"
+function MAK.findtruncated_svd(values::TK.SectorVector, s::Truncation)
+    entries = sort!(collect((abs(v), q, j) for (q, vs) in pairs(values)
+                            for (j, v) in enumerate(vs));
+                    by = e -> (-e[1], sortkey(e[2]), e[3]))
     tails = zeros(length(entries) + 1)
     for i in length(entries):-1:1
         tails[i] = tails[i+1] + abs2(entries[i][1])
     end
-    nrm = sqrt(tails[1])
-    # 谱归一漂移逐键累积：本次调用时链相对扫掠起点的 logscale 增量 = Σ_{j<本次} log nrm_j
-    drift = sum(log(nz) for nz in s.spectral_norms if !iszero(nz); init=0.0)
-    cutoff_eff = iszero(s.cutoff) ? 0.0 : s.cutoff * exp(-drift)
     k = 0
-    for (v, _, _) in entries
-        k >= s.maxdim && break
-        k > 0 && (tails[k+1] <= s.rtol^2 * tails[1] || v <= cutoff_eff) && break
+    for (_, _, _) in entries
+        k >= s.D && break
+        k > 0 && tails[k+1] <= s.rtol^2 * tails[1] && break
         k += 1
     end
-    dims = Dict{G,Int}()
+    keep = Dict{keytype(values),Int}()
     for (_, q, j) in entries[1:k]
-        dims[q] = max(get(dims, q, 0), j)
+        keep[q] = max(get(keep, q, 0), j)
     end
-    push!(s.dims, dims); push!(s.discarded, sqrt(tails[k+1]))
-    push!(s.relative, iszero(tails[1]) ? 0.0 : sqrt(tails[k+1] / tails[1]))
-    push!(s.saturated, k >= s.maxdim)
-    push!(s.spectral_norms, nrm)
-    return TK.SectorDict(q => (1:get(dims, q, 0)) for q in keys(values))
+    return TK.SectorDict(q => (1:get(keep, q, 0)) for q in keys(values))
 end
 
 "结构完整性检查（旧 check_charge 语义）：非空、logscale 有限、左边界真空、
@@ -209,77 +176,9 @@ function _check_structure(x::GM.GMPS)
     true
 end
 
-"""
-    compress!(x::GMPS; trunc=Truncation()) -> CompressionReport
-
-QR 前扫（GM.leftorth!）+ SVD 回扫（GM.rightorth! 携带 LegacyTruncation）；
-cutoff 相对原系数链尺度换算（logscale 漂移），报告的 discarded_logabs = 键
-丢弃范数 + 扫掠后 logscale（旧实现逐位语义）。零链早退保持。
-"""
-function compress!(x::GM.GMPS; trunc::Truncation=Truncation())
-    _check_structure(x)
-    original_logscale = GM.logscale(x)
-    # QR 前扫带逐步 rescale（旧 compress! 语义：乘积链站点幅值可跨越 1e100，
-    # 必须在每步吸收防溢出级联——GM.leftorth! 只做入口一次性 rescale，不够）
-    GM._rescale_sites!(x)
-    for i in 1:length(x)-1
-        n = norm(x[i])
-        if !iszero(n) && (n > 1e100 || n < 1e-100)
-            x.data[i] = x[i] / n
-            GM.setlogscale!(x, GM.logscale(x) + log(n))
-        end
-        GM._left_step!(x, i)
-    end
-    n = norm(x[end])
-    if !iszero(n) && (n > 1e100 || n < 1e-100)
-        x.data[end] = x[end] / n
-        GM.setlogscale!(x, GM.logscale(x) + log(n))
-    end
-    if iszero(norm(x[end]))
-        for i in eachindex(x.data)
-            x.data[i] = TK.zeros(TK.scalartype(x[i]), TK.codomain(x[i]) ← TK.domain(x[i]))
-        end
-        return CompressionReport(zeros(length(x) - 1), zeros(length(x) - 1), GM.bonddims(x), false)
-    end
-    # 键谱 = 满尺度值（rightorth! 在 svd_trunc 之后才吸收 Σs²）；cutoff 相对
-    # 原链尺度 = 旧 cutoff_log 逻辑（漂移 = QR 扫掠后的 logscale 增量）
-    cutoff_log = iszero(trunc.cutoff) ? -Inf : log(trunc.cutoff) - (GM.logscale(x) - original_logscale)
-    cutoff = cutoff_log == -Inf ? 0.0 :
-             cutoff_log > log(floatmax(Float64)) ? floatmax(Float64) : exp(cutoff_log)
-    strategy = LegacyTruncation(TK.sectortype(x[1]),
-                                Truncation(maxdim=trunc.maxdim, rtol=trunc.rtol, cutoff=cutoff), GM.logscale(x))
-    GM.rightorth!(x; trunc=strategy)
-    L = length(x)
-    dn = zeros(L - 1); re = similar(dn)
-    for (m, record) in enumerate(strategy.discarded)
-        dn[L-m] = record; re[L-m] = strategy.relative[m]
-    end
-    # Δpoly（多项式尺度）= dn_m·exp(截断时刻 logscale)：bond m 丢弃尾巴的时刻，
-    # 多项式 = exp(L_m)·C(tensors)，故换算 = log dn_m + L_m（逐键漂移累积；
-    # L₀ 已在构造时传入 strategy——rightorth! 末站归一发生在丢弃之后，不进 L_m）
-    run = strategy.l0
-    logs = similar(dn)
-    for m in 1:L-1
-        bond = L - m
-        logs[bond] = log(dn[bond]) + run
-        iszero(strategy.spectral_norms[m]) || (run += log(strategy.spectral_norms[m]))
-    end
-    absolute = [v == -Inf ? 0.0 : v > log(floatmax(Float64)) ? Inf : exp(v) for v in logs]
-    CompressionReport(absolute, re, GM.bonddims(x), any(strategy.saturated), logs)
-end
-
-# ---------------------------------------------------------------------------
-# 乘法（GrassmannMPS 朴素外积 + compress!；old multiply 逐位语义）
-# ---------------------------------------------------------------------------
-
-function multiply(x::GM.GMPS, y::GM.GMPS; trunc::Union{Nothing,Truncation}=Truncation(), reports=nothing)
-    out = x * y
-    if trunc !== nothing
-        r = compress!(out; trunc)
-        reports === nothing || push!(reports, r)
-    end
-    out
-end
+# 截断/乘法退役（A3）：正则化压缩 = GM.truncate!、压缩乘法 = GM.mult——
+# 误差走两者返回的 truncerr 标量（逐键相对截断误差之和），本层不再自造
+# compress!/multiply 机器。
 
 # ---------------------------------------------------------------------------
 # pairize：变量粒度裸张量链 → pair 布局 GMPS（对称性泛型版）

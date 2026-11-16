@@ -25,9 +25,10 @@
 	swap!(z, 2)
 	@test scaled_ratio(integrate_scaled(z), integrate_scaled(x)) ≈ 1.0 atol = 1e-10
 
-	# multiply（带截断）与朴素楔积一致到截断水平
+	# mult（带截断）与朴素楔积一致到截断水平
 	w = randomgmps(ComplexF64, spaces; D=2)
 	exact = x * w
-	truncd = multiply(x, w; trunc=Truncation(maxdim=16, rtol=1e-12))
+	truncd, err = mult(x, w; trunc=Truncation(D=16, rtol=1e-12))
 	@test scaled_ratio(integrate_scaled(truncd), integrate_scaled(exact)) ≈ 1.0 atol = 1e-9
+	@test err isa Float64 && err >= 0
 end

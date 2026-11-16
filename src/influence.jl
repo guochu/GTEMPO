@@ -126,14 +126,15 @@ function partial_row(::Type{G}, charges, anchor, columns, values) where {G<:Sect
 end
 
 """
-    partial_if(lattice, kernel; band=1, trunc=Truncation(), reports) -> GMPS
+    partial_if(lattice, kernel; band=1, trunc=Truncation(), truncerrs) -> GMPS
 
 PartialIF：IF = Π_row exp(ā_row Σ_j Δ_row,j a_j) 的逐行因子积（精确）。
 `band` 选择 IF 所在带（生成元荷/站位随带）。行/列序 = 链存储格序
-（_storage_cells），values 与 cols 逐位对齐。
+（_storage_cells），values 与 cols 逐位对齐。`truncerrs` = 逐行乘法压缩的
+GM truncerr 记账（标量通道）。
 """
 function partial_if(lattice::AbstractGrassmannLattice, kernel::HybridizationKernel;
-                    band::Int=1, trunc::Truncation=Truncation(), reports=CompressionReport[])
+                    band::Int=1, trunc::Truncation=Truncation(), truncerrs::Vector{Float64}=Float64[])
     spec = symmetry_spec(lattice.symmetry)
     out = vacuumstate(lattice)
     charges = _site_charges(spec, lattice)
@@ -145,7 +146,8 @@ function partial_if(lattice::AbstractGrassmannLattice, kernel::HybridizationKern
         values = [kernel.blocks[(b, cell[1])][j, cell[2]] for cell in cells]
         all(iszero, values) && continue
         anchor = _cell_var_index(lattice, (b, j), band, true)   # ā 变量位
-        out = multiply(out, partial_row(spec, charges, anchor, cols, values); trunc, reports)
+        out, err = GM.mult(out, partial_row(spec, charges, anchor, cols, values); trunc)
+        push!(truncerrs, err)
     end
     out
 end
@@ -491,16 +493,15 @@ end
 abstract type InfluenceFunctionalAlgorithm end
 
 """
-    PartialIF(; maxdim=128, rtol=1e-12, cutoff=0)
+    PartialIF(; maxdim=128, rtol=1e-12)
 
 逐行秩一因子积 IF（精确行指数 + 乘间压缩；SciPost Phys. Core 7, 063 (2024)）。
 """
 Base.@kwdef struct PartialIF <: InfluenceFunctionalAlgorithm
     maxdim::Int = 128
     rtol::Float64 = 1e-12
-    cutoff::Float64 = 0.0
 end
-_trunc(alg::PartialIF) = Truncation(maxdim=alg.maxdim, rtol=alg.rtol, cutoff=alg.cutoff)
+_trunc(alg::PartialIF) = Truncation(D=alg.maxdim, rtol=alg.rtol)
 
 """
     ExactTTI(; rtol=1e-10, maxterms=40, cross_rtol=rtol, factor_rtol=nothing)
@@ -530,7 +531,7 @@ struct InfluenceFunctional{K,S}
     state::S
     band::Int
     diagnostics::Dict{Symbol,Any}
-    reports::Vector{CompressionReport}
+    reports::Vector{Float64}              # 逐步乘法压缩的 GM truncerr（标准标量通道）
 end
 
 """
@@ -542,28 +543,30 @@ function influence_functional(lattice::AbstractGrassmannLattice, kernel::Hybridi
                               alg::InfluenceFunctionalAlgorithm=PartialIF(), band::Int=1,
                               trunc::Truncation=Truncation())
     1 <= band <= lattice.bands || throw(BoundsError(1:lattice.bands, band))
-    reports = CompressionReport[]
+    truncerrs = Float64[]
     diag = copy(kernel.diagnostics)
     diag[:algorithm] = alg; diag[:truncation] = trunc
     spec = symmetry_spec(lattice.symmetry)
     if alg isa PartialIF
-        state = partial_if(lattice, kernel; band, trunc=_trunc(alg), reports)
+        state = partial_if(lattice, kernel; band, trunc=_trunc(alg), truncerrs)
     elseif alg isa ExactTTI
         state = vacuumstate(lattice)
-        cleanup_reports = CompressionReport[]
+        cleanup_truncerrs = Float64[]
         for builder in (real_factors, imag_factors, cross_factors)
             builder(function (f)
                         if alg.factor_rtol !== nothing
-                            push!(cleanup_reports, compress!(f; trunc=Truncation(maxdim=typemax(Int), rtol=alg.factor_rtol)))
+                            _, err = GM.truncate!(f; trunc=Truncation(D=typemax(Int), rtol=alg.factor_rtol))
+                            push!(cleanup_truncerrs, err)
                         end
-                        state = multiply(state, f; trunc, reports)
+                        state, err = GM.mult(state, f; trunc)
+                        push!(truncerrs, err)
                     end, spec, lattice, kernel, band, alg, diag)
         end
-        diag[:factor_cleanup_reports] = cleanup_reports
+        diag[:factor_cleanup_truncerrs] = cleanup_truncerrs
     else
         throw(ArgumentError("unsupported IF algorithm $(typeof(alg))"))
     end
-    InfluenceFunctional(kernel, state, band, diag, reports)
+    InfluenceFunctional(kernel, state, band, diag, truncerrs)
 end
 
 # ---------------------------------------------------------------------------
@@ -618,7 +621,7 @@ function _bcs_legs(lattice::AbstractGrassmannLattice, band1::Int, band2::Int)
 end
 
 """
-    bcs_partial_if(lattice, corr; band1=1, band2=2, trunc=Truncation(), reports) -> GMPS
+    bcs_partial_if(lattice, corr; band1=1, band2=2, trunc=Truncation(), truncerrs) -> GMPS
 
 BCS 反常 partial IF = Π_row exp(行腿 × Σ 列腿系数) 的逐行因子积（精确）。
 系数直读 QuAPI `BCSCorrelationFunction[row_ix, col_ix]`（有向指数系数语义、
@@ -629,7 +632,7 @@ partialif_hybrid 同款）。行/列腿覆盖指数四类单项式
 """
 function bcs_partial_if(lattice::AbstractGrassmannLattice, corr::QuAPI.BCSCorrelationFunction;
                         band1::Int=1, band2::Int=2, trunc::Truncation=Truncation(),
-                        reports=CompressionReport[])
+                        truncerrs::Vector{Float64}=Float64[])
     spec = symmetry_spec(lattice.symmetry)
     spec === TK.Z2Irrep || throw(ArgumentError(
         "BCS IF supports only symmetry=:z2 (anomalous pairing breaks particle-number " *
@@ -651,7 +654,8 @@ function bcs_partial_if(lattice::AbstractGrassmannLattice, corr::QuAPI.BCSCorrel
         end
         isempty(ws) && continue
         ps = sort!(collect(keys(ws)))
-        out = multiply(out, partial_row(spec, charges, anchor, ps, [ws[p] for p in ps]); trunc, reports)
+        out, err = GM.mult(out, partial_row(spec, charges, anchor, ps, [ws[p] for p in ps]); trunc)
+        push!(truncerrs, err)
     end
     out
 end
@@ -669,6 +673,6 @@ function bcs_hybriddynamics(lattice::AbstractGrassmannLattice, bath::AbstractBCS
         "BCS IF supports only PartialIF on the GM stack (D7), got $(typeof(alg))"))
     corr = correlationfunction(bath, lattice)
     band1 = 2 * band - 1
-    reports = CompressionReport[]
-    return bcs_partial_if(lattice, corr; band1=band1, band2=band1 + 1, trunc=trunc, reports=reports)
+    truncerrs = Float64[]
+    return bcs_partial_if(lattice, corr; band1=band1, band2=band1 + 1, trunc=trunc, truncerrs=truncerrs)
 end
