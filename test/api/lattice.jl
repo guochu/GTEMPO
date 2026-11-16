@@ -36,8 +36,14 @@ using TensorKit: scalartype
 		@test GTEMPO.symmetry_spec(sym) isa typeof(G)
 	end
 	@test_throws ArgumentError GTEMPO.symmetry_spec(:u1x)
+	# 荷分辨形要求偶数带（轨道交错：奇带 up / 偶带 down；多轨道 bands = 2·轨道数）
 	@test_throws ArgumentError GrassmannLattice(N=4, δt=0.1, bands=3, contour=:real, symmetry=:u1u1)
 	@test_throws ArgumentError GrassmannLattice(N=4, δt=0.1, bands=3, contour=:real, symmetry=:z2z2)
+	# 多轨道（bands=4 = 2 轨道）合法构造（D1 修订）
+	for sym in (:u1u1, :z2z2)
+		l4 = GrassmannLattice(N=4, δt=0.1, bands=4, contour=:real, symmetry=sym)
+		@test l4.bands == 4 && length(l4) == 4 * 4 * l4.k   # 实时 = 2k 块 × 2M 位
+	end
 	# BCS 守卫（D7）：仅 :z2
 	for sym in (:u1, :u1u1, :z2z2)
 		@test_throws ArgumentError GTEMPO.bcs_symmetry_guard(sym)

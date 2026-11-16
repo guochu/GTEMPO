@@ -9,16 +9,19 @@
   改 `isodd(band)`。
 - **integrate 链上限 3 → 5**（GM 引擎均匀循环真实上限 K≤5；norb=2 = K+4IF
   满员；norb≥3 走合并形 :z2/:u1）。
-- **多轨道端到端验证状态（norb=2 KanamoriIM, bands=4, 对角 1:1 混杂）**：
-  ①裸 K 链迹 = 原子极限 ED 机器精度（:z2/:u1/:u1u1 三形 4e-14）；②
-  occupation(band1) vs kanamori_ed = 1.7e-4（δτ 档）✓；③**Z 结构性偏差
-  ~4.7×（δτ 减半不收敛）**：port 四带 Z = (自身单带因子)^4 的因子化在
-  收缩中丢失（per-band port 因子 1.2177 vs port 自身单带 1.7650——同核同
-  强度）；④**:z2z2 bands=4 K 构造 segfault**（复现：
-  `GrassmannLattice(N=6, δτ=0.133, bands=4, contour=:imag, symmetry=:z2z2)` +
-  sysdynamics + integrate；日志 `unknown function (ip: nil)`）。
-  ③④ = 下一步分诊（③嫌疑 = 多 IF 链收缩的引擎侧带间记账；④ = :z2z2
-  4 带的 split_cell/扇区路由内存错误）。
+- **多轨道端到端验证状态（norb=2 KanamoriIM, bands=4, 对角 1:1 混杂，ED =
+  kanamori_ed 原生对角约定）**：①裸 K 链迹 = 原子极限 ED 机器精度
+  （:z2/:u1/:u1u1 三形 4e-14）；②occupation(band1) vs kanamori_ed =
+  **1.7e-4** ✓（δτ=β/6；Nτ=12 时 5.5e-5 收敛 ✓）；③**绝对 Z 带乘性抑制：
+  Z_port/Z_ED 随格数累积衰减（Nτ=6 → 45%，Nτ=12 → 22%，每格 ~e^{−0.13}，
+  occ 比值完全免疫）**——呈多链虚时收缩的逐格 logscale/浴配分记账缺陷特征
+  （norb=1 三链无此现象；:u1 合并 2 链与 :u1u1 五链同样出现 ⟹ 非链数、
+  非 U、非 ED 约定；Δτ 多峰求和已单独验证正确）。嫌疑 = GM 引擎多链虚时
+  迹的每步归一化通道——需 GM 包上游会话专项。④**:z2z2 bands=4 K 构造
+  segfault**（复现：`GrassmannLattice(N=6, δτ=β/6, bands=4, contour=:imag,
+  symmetry=:z2z2)` + sysdynamics + integrate；日志 `unknown function
+  (ip: nil)`）——:z2/:u1/:u1u1 同构造无恙。③④ = 待专项；本批次的守卫
+  放宽/var_charge 修正/链上限由 ①② 与既有电池背书。
 
 ## 命名收敛批次（2026-11-16）
 

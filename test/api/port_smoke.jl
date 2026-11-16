@@ -14,19 +14,14 @@ Random.seed!(12354)
 
 @testset "Phase 1 smoke: lattices × 4 symmetries" begin
     # ②③ 真空/随机 + 拒绝路径
-    for sym in (:z2, :z2z2, :u1, :u1u1)
-        lat = GrassmannLattice(N=3, δτ=0.1, bands=1, contour=:imag, symmetry=sym)
+    # 单荷形任意带数（bands=1）；荷分辨形偶数带（轨道交错）
+    for (sym, bands) in ((:z2, 1), (:u1, 1), (:z2z2, 2), (:u1u1, 2))
+        lat = GrassmannLattice(N=3, δτ=0.1, bands=bands, contour=:imag, symmetry=sym)
         v = vacuumstate(lat)
         @test length(v) == length(lat) ÷ 2
         @test GM.grassmann_basis(GM.physpace(v, 1)) !== nothing
         r = randomgmps(Float64, site_spaces(lat), fill(2, length(v) - 1))
         @test length(r) == length(v)
-    end
-    # 双荷形 bands=2 合法
-    for sym in (:z2z2, :u1u1)
-        lat = GrassmannLattice(N=2, δτ=0.1, bands=2, contour=:imag, symmetry=sym)
-        v = vacuumstate(lat)
-        @test length(v) == length(lat) ÷ 2
     end
     # :z2/:u1 bands=3 合法（荷合并）
     for sym in (:z2, :u1)
