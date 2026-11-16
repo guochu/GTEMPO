@@ -290,6 +290,36 @@ function electriccurrent(lattice::AbstractRealGrassmannLattice, model::AbstractI
     return 2 * curr / lattice.δt
 end
 
+"""
+    electriccurrent_fast(lattice, model, kernel, Is...; k, band=1, Z, ...,
+                         preparation=nothing) -> Complex
+
+electriccurrent 的流算符 GMPS 快速版（备份 electriccurrent_fast 同型）：流算符
+本身构造成 GMPS（current_operator，胞坐标 0⁺ 单项式直和），`J_k ∧ K′` 一次
+分子收缩 + 单发 integrate 替代逐 (k,j) 的 K′ 重建 + 积分。⚠️ 算符 = 胞坐标
+0⁺ 语义（备份 build_current_mpo 同款），与边界插入的 electriccurrent 差
+O(胞内接触项)——边界语义锚定路径仍是 electriccurrent；两轨快速版
+（cached_electriccurrent_fast，同一算符走快照缓存）值等价。
+`preparation` 透传 K 构建（语义见 _inserted_expectation）。
+"""
+function electriccurrent_fast(lattice::AbstractRealGrassmannLattice, model::AbstractImpurityHamiltonian,
+                              kernel::Union{Nothing,HybridizationKernel}, Is...; k::Integer, band::Int=1, Z,
+                              order::Integer=kernel_order(kernel), coupling_norm::Real=kernel_coupling_norm(kernel),
+                              initial_state=nothing, preparation=nothing)
+    Int(k) == 1 && return 0.0im
+    op = current_operator(lattice, kernel, Int(k); band)
+    if preparation === nothing
+        K = sysdynamics(lattice, model; order=Int(order), initial_state, coupling_norm)
+    else
+        preparation.lattice === lattice ||
+            throw(ArgumentError("preparation lattice ≠ call-site lattice（传播子缓存键 (branch,j) 依赖 lattice 的 δt/边界——prepare_system 与测量必须同一 lattice 对象）"))
+        K = sysdynamics(preparation)
+    end
+    W = op * K
+    num = integrate(W, Is...)
+    return 2 * num / (Z * lattice.δt)
+end
+
 "浴谱 J(ω) → ωJ(ω)（热流权重；DiracDelta = α→ωα，一般有界谱经 similar 加权）"
 function _weighted_bath(bath)
     spec = bath.spectrum

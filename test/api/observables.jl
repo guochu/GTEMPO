@@ -209,3 +209,52 @@ end
 	                order=2, coupling_norm=1.0, initial_state=ρ0)
 	@test isfinite(real(Q)) && abs(Q) < 5e-2
 end
+
+@testset "电流快速版：流算符 GMPS（两轨，备份 electriccurrent_fast 同型）" begin
+	μ = 0.7; β = 1.0
+	bath = discretefermionicbath([1.0], [0.5]; β=β)
+	lat = GrassmannLattice(N=4, δt=0.15, bands=2, contour=:real, symmetry=U1Symmetry())
+	q = exp(-β * μ)
+	ρ0 = Diagonal(ComplexF64[1.0, q, q, q * q]); ρ0 /= tr(ρ0)
+	model = AndersonIM(U=0.0, ϵ_d=μ)
+	kernel = hybridization(lat, bath; coupling_norm=1.0)
+	Is = ntuple(b -> hybriddynamics(lat, bath, PartialIF(); band=b, coupling_norm=1.0), 2)
+	K = sysdynamics_weyl2order(lat, model; coupling_norm=1.0, initial_state=ρ0)
+	zs = integrate_scaled(K, Is...)
+	Z = exp(zs.logabs) * zs.phase
+	cache = environments_cache(K, Is...)
+	ηpp = Matrix(kernel.blocks[(:+, :+)])
+	ηpm = -Matrix(kernel.blocks[(:+, :-)])
+	# ① 机器精度：两轨快速版（快照扫掠 / J∧K 单发积分）== 逐项 cached_gf
+	#   线性和（cached_gf = 原始收缩，除 Z 后同口径——SparseGMPS 直和的线性）
+	for k in 2:4, band in (1, 2)
+		term = 0.0im
+		row = GrassmannContourIndex(Int(k), :+, band, true)
+		for j in 1:k-1, (b2, η) in ((:+, ηpp), (:-, ηpm))
+			term += η[k, j] * cached_gf(lat, (row, GrassmannContourIndex(Int(j), b2, band, false)), K, Is...)
+		end
+		linear = 2 * term / (Z * lat.δt)
+		fast_c = cached_electriccurrent_fast(lat, kernel, K, Is...; k=k, band=band, cache=cache)
+		fast_d = electriccurrent_fast(lat, model, kernel, Is...; k=k, band=band, Z=Z,
+		                              order=2, coupling_norm=1.0, initial_state=ρ0)
+		@test fast_c ≈ linear atol = 1e-12
+		@test fast_d ≈ linear atol = 1e-12
+	end
+	# ② preparation 透传（制备缓存 K）与逐点重建值相等
+	prep = prepare_system(lat, model; order=2, coupling_norm=1.0, initial_state=ρ0)
+	@test electriccurrent_fast(lat, model, kernel, Is...; k=3, band=1, Z=Z, preparation=prep) ==
+	      electriccurrent_fast(lat, model, kernel, Is...; k=3, band=1, Z=Z,
+	                           order=2, coupling_norm=1.0, initial_state=ρ0)
+	# ③ k = 1（空和）短路零电流
+	@test cached_electriccurrent_fast(lat, kernel, K, Is...; k=1) == 0.0im
+	@test electriccurrent_fast(lat, model, kernel, Is...; k=1, Z=Z) == 0.0im
+	# ④ D5 跨语义：快速版 = 胞坐标流算符（备份 fast 同款），与边界插入 slow 差
+	#   O(胞内接触项)，经 2/δt·Σ|η| 放大 —— 实测 δt=0.15 时 |Δ| ≈ 0.054·k/2 档，
+	#   容差按此标定（0.08k）；边界语义锚定路径仍是 electriccurrent
+	for k in 2:4
+		slow = electriccurrent(lat, model, kernel, Is...; k=k, band=1, Z=Z,
+		                       order=2, coupling_norm=1.0, initial_state=ρ0)
+		fast = cached_electriccurrent_fast(lat, kernel, K, Is...; k=k, band=1, cache=cache)
+		@test abs(fast - slow) < 0.08 * k
+	end
+end

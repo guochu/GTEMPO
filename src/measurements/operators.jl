@@ -65,7 +65,9 @@ cached_Z(cache::GM.ExpectationCache) = value(GM.Zvalue(cache))
 """
     cached_gf(lattice, indices, K, Is...) -> Complex
 
-轮廓格点单项式的原始 Grassmann 关联函数 ⟨Π g⟩（已归一化）。
+轮廓格点单项式的原始 Grassmann 关联函数 ⟨Π g⟩——**原始收缩值（含 Z 因子，
+未除分母）**；归一化值请除以 `cached_Z(environments_cache(K, Is...))`（或
+走 inserted-K 路线的归一化观测量）。
 
 实现 = `op ∧ K` 稀疏楔积（只触碰算符支撑站）+ 引擎单发全迹
 （`GM.Zvalue`，O(L) 左扫、无右扫补偿通道）——相对 `raw_correlation`
@@ -113,4 +115,63 @@ function cached_correlation(lattice::AbstractGrassmannLattice, K::GM.GMPS, Is::G
         throw(ArgumentError("kind must be :greater, :lesser or :matsubara"))
     end
     return cached_gf(lattice, idx, K, Is...; cache=cache)
+end
+
+# ---------------------------------------------------------------------------
+# Currents（流算符 GMPS 快速版；备份 currents.jl/cached_currents.jl 同公式族）
+# ---------------------------------------------------------------------------
+
+"""
+    current_operator(lattice, kernel, k; band=1) -> GM.SparseGMPS
+
+流算符本身构造成 GMPS（备份 `build_current_mpo` 的变量基移植物；两轨
+electriccurrent_fast 共用）：
+
+    J_k = Σ_{j<k} [η⁺⁺[k,j]·(ā(+,k;band) a(+,j;band)) + η⁺⁻[k,j]·(ā(+,k;band) a(−,j;band))]
+
+逐项 `lattice_monomial`（⟨ā a⟩ 项序与 cached_correlation lesser 同款：ā 在前；
+逆序符号随给定序吸收）后 `SparseGMPS` 直和嵌入（键 = 项分支，不压缩——旧栈
+bond-2 压缩分支是 JW 物理基的产物，变量基中直和键的收缩仍是一次扫掠）。
+η 取 raw 块（electriccurrent 同款：⚠️ 禁走顶点移位 accessor）。k = 1（空和）
+非法，由调用方短路返回零电流。
+
+⚠️ D5 胞坐标语义（与备份 fast 函数同款）：列算符 = 胞变量位
+`GrassmannContourIndex(j, b2, band, false)`——与边界插入的 electriccurrent
+（raw_lead_correlator 的 (branch, j) 边界矩阵切位）差 O(胞内接触项)，经
+2/δt·Σ|η| 放大后与 slow 的偏差为 O(k·接触项)（备份新栈同此形态：旧栈的
+slow/gf 路线同为单项式故 fast == slow，新栈 slow 是边界插入锚定路线）。
+每项的 ⟨ā a⟩ 值与 `cached_gf`（同元组）逐位一致。
+"""
+function current_operator(lattice::AbstractGrassmannLattice, kernel::HybridizationKernel, k::Integer;
+                          band::Int=1)
+    ηpp = Matrix(kernel.blocks[(:+, :+)])       # raw（顶点移位 accessor 禁令，见 electriccurrent）
+    ηpm = -Matrix(kernel.blocks[(:+, :-)])
+    op = nothing
+    row = GrassmannContourIndex(Int(k), :+, band, true)
+    for j in 1:Int(k)-1, (b2, η) in ((:+, ηpp), (:-, ηpm))
+        c = η[Int(k), j]
+        iszero(c) && continue
+        m = lattice_monomial(lattice, (row, GrassmannContourIndex(Int(j), b2, band, false)); coeff=c)
+        op = op === nothing ? m : op + m
+    end
+    op === nothing && throw(ArgumentError("empty current operator (k = 1 has no lead cells)"))
+    return op
+end
+
+"""
+    cached_electriccurrent_fast(lattice, kernel, K, Is...; k, band=1, cache) -> Complex
+
+流算符 GMPS 快速版电流（备份 cached_electriccurrent_fast 同型）：一次
+`expectation(J_k, env)` 快照扫掠（只扫算符支撑、前/后缀环境复用）替代逐
+(k,j) 两点查询；`cache` 缺省 = 现建（k 扫描请显式传同一 cache 摊销）。
+胞坐标 0⁺ 语义（cached_gf 的 D5 注同款）——与边界插入的 electriccurrent 差
+O(胞内接触项)，边界语义锚定路径仍是 electriccurrent。
+"""
+function cached_electriccurrent_fast(lattice::AbstractGrassmannLattice, kernel::HybridizationKernel,
+                                     K::GM.GMPS, Is::GM.GMPS...; k::Integer, band::Int=1,
+                                     cache::Union{Nothing,GM.ExpectationCache}=nothing)
+    Int(k) == 1 && return 0.0im
+    env = cache === nothing ? environments_cache(K, Is...) : cache
+    op = current_operator(lattice, kernel, Int(k); band)
+    return 2 * value(GM.expectationvalue(op, env)) / lattice.δt
 end

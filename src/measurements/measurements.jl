@@ -18,3 +18,4 @@ include("operators.jl")
 # 公开皮肤
 export occupation, greater, lesser, matsubara, default_branch, nn,
        raw_lead_correlator, electriccurrent, heatcurrent
+export electriccurrent_fast, cached_electriccurrent_fast
