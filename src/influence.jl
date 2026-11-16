@@ -21,33 +21,23 @@
 ā_i^{b1} Δ a_j^{b2}（i, j = 单元下标 1..N）。`coupling_norm` = 全带总耦合
 Σ_b α_b（Weyl 标量补偿用；order=2 必需）。
 存储 = QuAPI 关联函数本体（Toeplitz 向量 O(N)，平移不变/Keldysh 约定由
-QuAPI 构造器校验）；`blocks` 是惰性 branch 视图容器——首次访问按窗口
-构建并缓存（CorrelationMatrix 的 getindex 是 |i−j| 查表，值与稠密装配
-逐位一致），视图首建时做窗口形状/有限性校验。
+QuAPI 构造器校验）；`blocks` = 窗口化 branch 视图（构造端一次建齐，
+CorrelationMatrix 的 getindex 是 |i−j| 查表——值与稠密装配逐位一致，
+建视图成本 O(N)/块、数据不物化），构造时做逐块形状/有限性校验。
 """
 struct HybridizationKernel{L,C}
     lattice::L
     corr::C                                   # QuAPI Imag/Real/MixedCorrelationFunction（O(N) 向量存储）
+    blocks::Dict{Tuple{Symbol,Symbol},AbstractMatrix{ComplexF64}}
     coupling_norm::Union{Nothing,Float64}
     diagnostics::Dict{Symbol,Any}
-    blocks_cache::Dict{Tuple{Symbol,Symbol},AbstractMatrix{ComplexF64}}
     function HybridizationKernel(lattice, corr; coupling_norm=nothing, diagnostics=Dict{Symbol,Any}())
         coupling_norm === nothing || (isfinite(coupling_norm) && coupling_norm >= 0) ||
             throw(ArgumentError("invalid coupling norm"))
-        new{typeof(lattice),typeof(corr)}(lattice, corr,
+        new{typeof(lattice),typeof(corr)}(lattice, corr, _kernel_blocks(lattice, corr),
             coupling_norm === nothing ? nothing : Float64(coupling_norm),
-            Dict{Symbol,Any}(diagnostics), Dict{Tuple{Symbol,Symbol},AbstractMatrix{ComplexF64}}())
+            Dict{Symbol,Any}(diagnostics))
     end
-end
-
-"kernel.blocks 惰性首建：窗口化 branch 视图，校验后缓存（每对一次构建）"
-function Base.getproperty(k::HybridizationKernel, s::Symbol)
-    if s === :blocks
-        cache = getfield(k, :blocks_cache)
-        isempty(cache) && _fill_blocks!(cache, getfield(k, :lattice), getfield(k, :corr))
-        return cache
-    end
-    return getfield(k, s)
 end
 
 "消费端净读数负号（Δm 的 τ↔rt 交叉块 GTEMPO 侧约定）的惰性包装：O(1) 查表"
@@ -68,22 +58,24 @@ function _kernel_block_view(corr, na::Int, nb::Int, b1::Symbol, b2::Symbol,
     return neg ? _NegView(M) : M
 end
 
-function _fill_blocks!(cache, lattice::AbstractImagGrassmannLattice, corr)
+function _kernel_blocks(lattice::AbstractImagGrassmannLattice, corr)
     N = lattice.kτ
     (size(corr.data, 1) >= N && size(corr.data, 2) >= N) || throw(DimensionMismatch(
         "kernel shape τ/τ: corr window $(size(corr.data)) too small for lattice block ($N,$N)"))
     M = view(corr.data, 1:N, 1:N)
     all(isfinite, M) || throw(ArgumentError("nonfinite kernel block τ/τ"))
-    cache[(:τ, :τ)] = M
+    return Dict{Tuple{Symbol,Symbol},AbstractMatrix{ComplexF64}}((:τ, :τ) => M)
 end
 
-function _fill_blocks!(cache, lattice, corr)
+function _kernel_blocks(lattice, corr)
     kr(b) = b === :τ ? lattice.kτ : (lattice isa AbstractRealGrassmannLattice ? lattice.k : lattice.Nt)
     mixed = lattice isa AbstractMixedGrassmannLattice
+    out = Dict{Tuple{Symbol,Symbol},AbstractMatrix{ComplexF64}}()
     for b1 in branches(lattice), b2 in branches(lattice)
         neg = mixed && ((b1 === :τ) !== (b2 === :τ))
-        cache[(b1, b2)] = _kernel_block_view(corr, kr(b1), kr(b2), b1, b2, 1:kr(b1), 1:kr(b2), neg)
+        out[(b1, b2)] = _kernel_block_view(corr, kr(b1), kr(b2), b1, b2, 1:kr(b1), 1:kr(b2), neg)
     end
+    return out
 end
 
 """

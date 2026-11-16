@@ -10,11 +10,10 @@ bath0 = discretefermionicbath([1.0], [0.5]; β=β0)
 	end
 	@test kernel.coupling_norm == 0.5
 	@test_throws ArgumentError hybridization(lat, bath0; coupling_norm=-1.0)
-	# 形状守卫（惰性视图首建）：corr 窗口尺寸须覆盖 lattice 网格
+	# 形状守卫（构造端预建校验）：corr 窗口尺寸须覆盖 lattice 网格
 	lat2 = GrassmannLattice(N=6, δt=0.1, contour=:real)
 	corr4 = QuAPI.Δt(bath0; N=4, t=0.4)
-	ksmall = HybridizationKernel(lat2, corr4)
-	@test_throws DimensionMismatch ksmall.blocks[(:+, :+)]
+	@test_throws DimensionMismatch HybridizationKernel(lat2, corr4)
 
 	# 虚时只有 τ 块
 	latτ = GrassmannLattice(N=4, δτ=0.25, contour=:imag)

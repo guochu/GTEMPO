@@ -3,10 +3,10 @@
 ## kernel.blocks 物化退役批次（2026-11-16，plan/kernel_and_fit_simplification_plan.md Part 1）
 
 - **`HybridizationKernel` 存储改 = QuAPI 关联函数本体**（`Imag/Real/MixedCorrelationFunction`，
-  Toeplitz 向量 O(N)）；`blocks` 字段退役，改为 `Base.getproperty` 惰性 branch 视图容器
-  ——`kernel.blocks[(b1,b2)][i,j]` 语法与数值**逐位不变**（CorrelationMatrix 查表 +
-  窗口视图；Δm 的 τ↔rt 交叉块净读数负号走 O(1) 惰性 `_NegView` 包装），视图首建时
-  做窗口形状/有限性校验并缓存（每对一次）。
+  Toeplitz 向量 O(N)）；`blocks` 稠密物化退役，改为**构造端一次建齐的窗口化 branch
+  视图**（普通不可变字段）——`kernel.blocks[(b1,b2)][i,j]` 语法与数值**逐位不变**
+  （CorrelationMatrix 查表 + 窗口视图；Δm 的 τ↔rt 交叉块净读数负号走 O(1) 惰性
+  `_NegView` 包装），构造时做逐块形状/有限性校验（corr 与 lattice 不匹配即抛）。
 - **内存/构造**：实轴 4×O(N²) 稠密 → O(N) 向量（N=2048 驻留 256 MiB → 129 KiB），
   构造端零物化复制（视图按需首建）；性能基准脚本 performance/kernel_memory_benchmark.jl
   （gitignore 区，磁盘交付）。
