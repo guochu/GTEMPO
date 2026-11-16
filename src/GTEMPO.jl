@@ -19,10 +19,12 @@ using Base: @boundscheck, @propagate_inbounds
 using Reexport
 @reexport using ImpurityModelBase, QuAPI
 import QuAPI: branch
-using LinearAlgebra: LinearAlgebra, eigen, Diagonal, I
+using LinearAlgebra: LinearAlgebra, eigen, Diagonal, I, tr, norm, diag
 import TensorKit as TK
+import MatrixAlgebraKit as MAK
 using TensorKit: ⊗, ⊠, ←, Vect, Z2Irrep, U1Irrep, Sector,
-                 sectors, sectortype, dim, fusiontrees, SpaceMismatch
+                 sectors, sectortype, dim, fusiontrees, SpaceMismatch,
+                 SectorVector, SectorDict
 # GrassmannMPS 后端（R7：选择性 import，勿整包 using——norm/dot/lmul! 与
 # LinearAlgebra 的重载关系按 GM 模块约定处理；R8：私有原语只 import 不扩方法）
 import GrassmannMPS as GM
@@ -30,7 +32,7 @@ import GrassmannMPS: vacuumstate, expectation,   # 扩展目标（lattice / solu
     coefficient_scaled, compress!                # 桥层扩展目标（同函数新方法）
 using GrassmannMPS: GMPS, SparseGMPS, ScaledScalar, ExpectationCache,
     ChargeCharge, Z2Z2, grassmannspace, grassmann_basis, wedge_vertex,
-    environments, Zvalue, truncrelerr, truncdimcutoff,
+    environments, Zvalue, value, truncrelerr, truncdimcutoff,
     leftorth!, rightorth!, swap!, reorder!, randomgmps,
     mult, mult!, apply!, DMRG2, SVDCompression,
     canonicalize!, iscanonical, entanglement_entropy, entanglement_spectrum,
@@ -90,7 +92,7 @@ export pairize, monomial, multiply, compress!
 export bond_dimensions, charge_dimensions, check_charge
 export coefficient, coefficient_scaled, integrate, integrate_scaled
 export EnvironmentCache
-export ScaledComplex, unscale, scaled_ratio
+export ScaledScalar, unscale, scaled_ratio
 
 # correlation functions
 export correlationfunction

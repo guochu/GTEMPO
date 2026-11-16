@@ -15,12 +15,6 @@
 # 参考实现 = U1GTEMPO2 bridge.jl（ChargeCharge 通道机器精度验证过）；
 # 其余三通道靠 GM abelian 电池 + 本包跨对称性一致电池 + ED 三层兜底（R9）。
 
-import GrassmannMPS as GM
-import TensorKit as TK
-using TensorKit: ⊗, ⊠, ←, SectorVector, SectorDict
-import MatrixAlgebraKit as MAK
-using LinearAlgebra: Diagonal, I, norm, diag
-
 # ---------------------------------------------------------------------------
 # 对称性 spec（扇区类型注册面：本文件是唯一允许按对称性分支的位置之一，
 # 与 GM/grassmannspaces.jl 的注册表对表）
@@ -471,7 +465,7 @@ function _var_coefficient_scaled(x::GM.GMPS, occupations)
     all(s -> s in (0, 1), occupations) || throw(ArgumentError("binary occupations required"))
     occ = [_occupation_index(GM.physpace(x, k), occupations[2k-1], occupations[2k]) for k in 1:L]
     z = GM.coefficient_scaled(x, occ)
-    ScaledComplex(z.logabs, ComplexF64(z.phase))
+    z
 end
 
 # ---------------------------------------------------------------------------
@@ -495,7 +489,7 @@ setscaling!(x::GM.GMPS, s::Number) = GM.setlogscale!(x, log(s))
 function integrate_scaled(states::GM.GMPS...)
     1 <= length(states) <= 3 || throw(ArgumentError("integrate supports one to three independent factors"))
     z = GM.Zvalue(collect(states))
-    ScaledComplex(z.logabs, ComplexF64(z.phase))
+    z
 end
 integrate(states::GM.GMPS...) = unscale(integrate_scaled(states...))
 

@@ -18,10 +18,6 @@
 # 费米符号：构造张量扇区全 bosonic，机器符号由 GM.@grassmann/GrassmannBackend
 # 注入；oddlater Koszul 符号显式携带（同 U1GTEMPO2）。
 
-import TensorKit as TK
-using TensorKit: ⊗, ←
-using LinearAlgebra: Diagonal, I, tr
-
 # ---------------------------------------------------------------------------
 # Fock 空间算符（band 1 = 最高有效位，FockMatrix 约定；JW 穿越更低索引带）
 # ---------------------------------------------------------------------------

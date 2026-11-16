@@ -1,5 +1,20 @@
 # 接口更改说明
 
+## 接口收敛批次：imports 集中主文件 + ScaledComplex → GM.ScaledScalar（2026-11-16）
+
+- **using/import 全部集中主文件**（GM 包同款纪律）：bridge.jl / system.jl 头部
+  的重复 import 段删除；主文件补 `LinearAlgebra: tr/norm/diag`、
+  `TensorKit: SectorVector/SectorDict`、`import MatrixAlgebraKit as MAK`。
+- **ScaledComplex 退役，公共 API 改为直接透传后端 `GM.ScaledScalar`**：
+  GM.ScaledScalar 是旧包装的严格超集（参数化实/复相位——实链结果保持实型、
+  同构造归一化、`value` ≡ 旧 unscale（同 OverflowError 守卫）、完整 scaled
+  算术 log 域精确）。公共 API 变化：`ScaledComplex` → **`ScaledScalar`**（构造
+  签名不变：`ScaledScalar(logabs, phase)` / `ScaledScalar(z)`）；`unscale`
+  保留（= `GM.value` 历史名别名）、`scaled_ratio(a, b) = value(a/b)` 保留
+  （零分母同抛 ArgumentError）。measurement.jl 的 `_scaled` 换皮删除、
+  bridge.jl 的两处 ScaledScalar→ScaledComplex 转换直取。行为等价，全套测试
+  通过。
+
 ## BCS occ 平反 + 性能基线 + alignment sweep 批次（2026-11-16，grassmannmps-backend 分支）
 
 - **BCS「occ 0.55 vs 0.32」假 bug 平反**：上一批次 @test_broken 的分诊定位到

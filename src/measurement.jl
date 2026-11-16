@@ -237,11 +237,8 @@ cached_* 观测量共用，构建一次 O(L)，快照不可变、无限复用。
 """
 environments_cache(K::GM.GMPS, Is::GM.GMPS...) = GM.environments(K, Is...)
 
-"GM ScaledScalar → 包皮肤 ScaledComplex"
-_scaled(v::GM.ScaledScalar) = ScaledComplex(v.logabs, ComplexF64(v.phase))
-
 "缓存 Z（无插入分母；与 integrate(K, Is...) 同值、读左端 O(1)）"
-cached_Z(cache::GM.ExpectationCache) = unscale(_scaled(GM.Zvalue(cache)))
+cached_Z(cache::GM.ExpectationCache) = unscale(GM.Zvalue(cache))
 
 """
     cached_gf(lattice, indices, K, Is...) -> Complex
@@ -268,7 +265,7 @@ function cached_gf(lattice::AbstractGrassmannLattice, indices::NTuple{N,Grassman
     # op∧K + 单发 Zvalue 精确路径，不用右扫快照——缺口见文件头 D5 注）
     op = lattice_monomial(lattice, indices)
     W = op * K
-    return unscale(_scaled(GM.Zvalue([W, Is...])))
+    return unscale(GM.Zvalue([W, Is...]))
 end
 
 """

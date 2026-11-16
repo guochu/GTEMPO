@@ -1,33 +1,12 @@
-# scaling.jl：缩放标量与有界缓存（U1GTEMPO2 scaling.jl 原样移植）
-
-"A complex scalar represented by log(abs(value)) and a unit complex phase."
-struct ScaledComplex
-    logabs::Float64
-    phase::ComplexF64
-    function ScaledComplex(logabs::Real, phase::Number)
-        (isfinite(logabs) || logabs == -Inf) && isfinite(phase) || throw(ArgumentError("nonfinite scaled scalar"))
-        if iszero(phase) || logabs == -Inf
-            new(-Inf, 0im)
-        else
-            new(Float64(logabs) + log(abs(phase)), ComplexF64(phase / abs(phase)))
-        end
-    end
-end
-ScaledComplex(z::Number) = ScaledComplex(0.0, z)
-# 公共 API 返回 ScaledComplex；内部与 GrassmannMPS ScaledScalar 双向互转
-ScaledComplex(z::GM.ScaledScalar) = ScaledComplex(z.logabs, ComplexF64(z.phase))
-Base.iszero(z::ScaledComplex) = z.logabs == -Inf
-function unscale(z::ScaledComplex)
-    iszero(z) && return 0.0 + 0im
-    log(nextfloat(0.0)) <= z.logabs <= log(floatmax(Float64)) ||
-        throw(OverflowError("complex scalar outside Float64 range; use the scaled_* channels"))
-    z.phase * exp(z.logabs)
-end
-function scaled_ratio(a::ScaledComplex, b::ScaledComplex)
-    iszero(b) && throw(ArgumentError("zero denominator"))
-    iszero(a) && return 0.0 + 0im
-    unscale(ScaledComplex(a.logabs - b.logabs, a.phase / b.phase))
-end
+# scaling.jl：缩放标量（后端直用）与有界缓存。
+#
+# 缩放标量 = **GrassmannMPS.ScaledScalar 直接使用**（2026-11-16：旧 ScaledComplex
+# 包装退役——GM.ScaledScalar 为其严格超集：参数化实/复相位（实链结果保持实型）、
+# 同构造归一化、value ≡ 旧 unscale（同 OverflowError 守卫）、完整 scaled 算术
+# （×/÷/+/−/conj/abs，log 域精确）。公共 API：ScaledScalar/value 由主文件
+# using+export 透传；unscale = value 的历史名别名；scaled_ratio = 精确比值物化。
+const unscale = GM.value
+scaled_ratio(a::GM.ScaledScalar, b::GM.ScaledScalar) = GM.value(a / b)
 
 "Bounded FIFO cache owned by one preparation or solution, never process-global."
 mutable struct BoundedCache

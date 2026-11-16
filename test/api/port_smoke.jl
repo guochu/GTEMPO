@@ -72,13 +72,13 @@ end
         v = vacuumstate(lat)
         # 全空占据的系数 = 1（站级 digit 全 0 = vac；恒等真空链）
         z = coefficient_scaled(v, zeros(Int, length(v)))
-        @test abs(unscale(ScaledComplex(z)) - 1.0) < 1e-14
+        @test abs(unscale(z) - 1.0) < 1e-14
     end
     # U1U1 交替站形真空往返
     lat = GrassmannLattice(N=2, δτ=0.1, bands=2, contour=:imag, symmetry=:u1u1)
     v = vacuumstate(lat)
     z = coefficient_scaled(v, zeros(Int, length(v)))
-    @test abs(unscale(ScaledComplex(z)) - 1.0) < 1e-14
+    @test abs(unscale(z) - 1.0) < 1e-14
     # 单项式系数：monomial(带荷 positions) 的对应组态 = coeff
     spec = symmetry_spec(:z2)
     charges = cell_charges(spec, 2)  # bands=2
