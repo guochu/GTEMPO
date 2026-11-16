@@ -1,8 +1,8 @@
-# sysdynamics：杂质模型层入口
+# impuritymodels：杂质模型层入口
 #
 # 保留（零改动）：predefined 模型（AndersonIM/ToulouseIM/IRLM/KanamoriIM）与
 # generalimpurity 的 Fock 空间纯数值接口（fockmatrix/fock_propagator/
-# fock_thermalstate——cell automaton K 构造的数据源，src/port/system.jl 消费）。
+# fock_thermalstate——cell automaton K 构造的数据源，src/sysdynamics.jl 消费）。
 # 旧装配路径（_propagator_sparsegmps 窗口 mult!、sysdynamics_fast、bare 族、
 # 8 个 *_deprecated、termdynamics、fermionoperator）已随 D2 裁决删除；
 # K 构造统一走 cell automaton（Phase 2 接线）。

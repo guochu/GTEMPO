@@ -97,7 +97,7 @@ end
 （U1GTEMPO2 partial_row 的对称性泛型版）。
 """
 function partial_row(::Type{G}, charges, anchor, columns, values) where {G<:Sector}
-    qbar = charges[anchor]; q = qneg(qbar); z = zero_charge(G)
+    qbar = charges[anchor]; q = qneg(qbar); z = one(G)
     ws = Dict(zip(columns, values))
     data = map(eachindex(charges)) do i
         ls = i == 1 ? [z] : [z, i <= anchor ? q : qbar]
@@ -245,7 +245,7 @@ function embed_cells(spec, lattice, localdata, memorycharges, cellvars; band=1)
     L = 2 * nblocks(lattice) * lattice.bands
     data = Vector{Any}(undef, L)
     labels = [reduce(qadd, (memorycharges[a] for a in eachindex(memorycharges) if mask & (1 << (a - 1)) != 0);
-                      init=zero_charge(spec)) for mask in 0:(1 << length(memorycharges))-1]
+                      init=one(spec)) for mask in 0:(1 << length(memorycharges))-1]
     for (k, vars) in enumerate(cellvars)
         left = k == 1 ? [1] : collect(eachindex(labels)); right = k == length(cellvars) ? [1] : collect(eachindex(labels))
         ts = split_cell(spec, localdata[left, :, right], labels[left], labels[right], charges[vars])
@@ -255,7 +255,7 @@ function embed_cells(spec, lattice, localdata, memorycharges, cellvars; band=1)
     active = Set(v for vars in cellvars for v in vars)
     for i in 1:L
         i in active && continue
-        v = i == 1 ? qspace(spec, [zero_charge(spec)]) : TK.domain(data[i-1])[1]
+        v = i == 1 ? qspace(spec, [one(spec)]) : TK.domain(data[i-1])[1]
         t = TK.zeros(ComplexF64, v ⊗ pspace(spec, charges[i]) ← v)
         G = TK.sectortype(t)
         for q in TK.sectors(v)
@@ -379,7 +379,7 @@ end
 
 function imag_factors(emit, spec, lattice, k::HybridizationKernel, band, alg, diagnostics)
     lattice isa Union{AbstractImagGrassmannLattice,AbstractMixedGrassmannLattice} || return nothing
-    z = zero_charge(spec)
+    z = one(spec)
     n = lattice.kτ
     M = k.blocks[(:τ, :τ)]; validate_tti(M; tol=alg.rtol)
     lower = ComplexF64[M[j+1, 1] for j in 1:n-1]; upper = ComplexF64[M[1, j+1] for j in 1:n-1]
@@ -450,7 +450,7 @@ end
 
 "General interleaved rank-one exponential 1 + A*B, four automaton states."
 function rankone_factor(spec, charges, a, b)
-    z = zero_charge(spec)
+    z = one(spec)
     qa = only(unique(charges[findall(!iszero, a)]))
     qb = qneg(qa)
     all(i -> charges[i] == qb, findall(!iszero, b)) || throw(ArgumentError("rank-one charges differ"))

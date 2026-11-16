@@ -35,7 +35,6 @@ symmetry_spec(s::Symbol)::Type{<:Sector} = get(SYMMETRY_SPECS, s, nothing) === n
 @inline qadd(a::Sector, b::Sector) = first(⊗(a, b))
 @inline qneg(a::Sector) = TK.dual(a)
 @inline qsub(a::Sector, b::Sector) = qadd(a, TK.dual(b))
-@inline zero_charge(::Type{G}) where {G<:Sector} = one(G)
 
 "荷排序键（A1 裁决：复现旧标签序——Int 升序 / 元组字典序。TK 扇区 isless
 是 |q| 序，直接 sort 会重排键扇区布局破 golden，故所有排序走 sortkey）"
@@ -90,7 +89,7 @@ function qspace(::Type{G}, labels::AbstractVector) where {G<:Sector}
     TK.Vect[G](q => count(==(q), labels) for q in sort(unique(labels); by = sortkey))
 end
 "2 维物理腿空间：vacuum ⊕ generator q"
-pspace(::Type{G}, q::Sector) where {G<:Sector} = qspace(G, [zero_charge(G), q])
+pspace(::Type{G}, q::Sector) where {G<:Sector} = qspace(G, [one(G), q])
 "物理腿的非平凡扇区（2 维腿只有一个生成元扇区）"
 occupied(p) = only(filter(!=(one(TK.sectortype(p))), collect(TK.sectors(p))))
 
@@ -244,7 +243,7 @@ end
 
 function from_core(::Type{G}, data, leftlabels, rightlabels, c) where {G<:Sector}
     t = TK.zeros(ComplexF64, qspace(G, leftlabels) ⊗ pspace(G, c) ← qspace(G, rightlabels))
-    z = zero_charge(G)
+    z = one(G)
     for q in unique(leftlabels), (si, s) in ((1, z), (2, c))
         r = qadd(q, s)
         r in rightlabels || continue
@@ -257,7 +256,7 @@ end
 # Split only fixed-size unit cells, never the full temporal polynomial.
 function split_cell(::Type{G}, data::AbstractArray{ComplexF64,3}, leftlabels, rightlabels, charges) where {G<:Sector}
     work = Array(data); labels = leftlabels
-    z = zero_charge(G)
+    z = one(G)
     T0 = typeof(TK.zeros(ComplexF64, qspace(G, [z]) ⊗ pspace(G, charges[1]) ← qspace(G, [z])))
     tensors = T0[]
     for c in charges[1:end-1]
@@ -296,7 +295,7 @@ function monomial(::Type{G}, charges::AbstractVector, positions::AbstractVector{
     length(unique(positions)) == length(positions) || throw(ArgumentError("repeated Grassmann variable"))
     all(isfinite, (coeff,)) || throw(ArgumentError("nonfinite coefficient"))
     inv = sum(positions[i] > positions[j] for i in eachindex(positions) for j in i+1:length(positions); init=0)
-    z = zero_charge(G)
+    z = one(G)
     q = z
     data = map(eachindex(charges)) do i
         s = i in positions ? charges[i] : z; r = qadd(q, s)
@@ -350,7 +349,7 @@ function integrate_scaled(states::GM.GMPS...)
     z = GM.Zvalue(collect(states))
     z
 end
-integrate(states::GM.GMPS...) = unscale(integrate_scaled(states...))
+integrate(states::GM.GMPS...) = value(integrate_scaled(states...))
 
 """
 快照 + GrassmannMPS ExpectationCache 包装 + 中切口分母条件数（旧 middle-cut
@@ -369,4 +368,4 @@ function EnvironmentCache(states::Tuple)
     EnvironmentCache(cache, min(cond, cache.denominator_condition))
 end
 integrate_scaled(c::EnvironmentCache) = integrate_scaled(c.cache.states...)
-integrate(c::EnvironmentCache) = unscale(integrate_scaled(c))
+integrate(c::EnvironmentCache) = value(integrate_scaled(c))

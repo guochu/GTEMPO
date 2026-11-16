@@ -46,16 +46,16 @@ using GrassmannMPS: GMPS, SparseGMPS, ScaledScalar, ExpectationCache,
 # ---------------------------------------------------------------------
 include("scaling.jl")
 include("bridge.jl")
-include("lattices/lattices.jl")
+include("lattices.jl")
 
 # correlation functions（QuAPI 薄壳，零逻辑改动）
 include("correlationfunction.jl")
 
 # 杂质模型（fock_propagator/fock_thermalstate 纯数值接口）
-include("sysdynamics/sysdynamics.jl")
+include("impuritymodels/impuritymodels.jl")
 
 # K 构造（cell automaton；sysdynamics / sysdynamics_weyl2order）
-include("system.jl")
+include("sysdynamics.jl")
 
 # IF 构造（PartialIF / ExactTTI 首批，D3）
 include("influence.jl")
@@ -92,7 +92,7 @@ export pairize, monomial, truncate!
 export charge_dimensions, check_charge
 export coefficient, coefficient_scaled, integrate, integrate_scaled
 export EnvironmentCache
-export ScaledScalar, unscale, scaled_ratio
+export ScaledScalar, value, scaled_ratio
 
 # correlation functions
 export correlationfunction

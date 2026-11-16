@@ -55,13 +55,13 @@ function bench_case(kind, order, n, reps)
         # 观测量（插入重建）：occupation + greater
         t0 = time(); alloc0 = Base.gc_bytes()
         ov = occupation(lat, model, nothing, Is...; j=1, branch=kind === :real ? :+ : :τ,
-                        Z=unscale(zs), order=order, coupling_norm=cn, initial_state=ρ0)
+                        Z=value(zs), order=order, coupling_norm=cn, initial_state=ρ0)
         tO = time() - t0; allocO = Base.gc_bytes() - alloc0
         push!(rows, (string(kind), order, n, rep, "occupation", tO, allocO))
         if kind === :real
             kernel = hybridization(lat, bath; coupling_norm=cn)
             t0 = time(); alloc0 = Base.gc_bytes()
-            gv = greater(lat, model, kernel, Is...; i=2, j=0, Z=unscale(zs), order=order,
+            gv = greater(lat, model, kernel, Is...; i=2, j=0, Z=value(zs), order=order,
                          coupling_norm=cn, initial_state=ρ0)
             tG = time() - t0; allocG = Base.gc_bytes() - alloc0
             push!(rows, (string(kind), order, n, rep, "greater", tG, allocG))

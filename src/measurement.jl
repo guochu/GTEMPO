@@ -6,7 +6,7 @@
 #   nn(i, j; b1, b2, band)          n̂ 双插入密度-密度（ED 验证 ✓）
 #   greater/lesser/matsubara        ✓ 已修复并对拍 U1GTEMPO2 机器精度（2026-11-15）。
 #                                   五处口径差全部定案：①builder prefix 必须以
-#                                   cut-0 插入荷为初值并逐胞累计（system.jl；奇
+#                                   cut-0 插入荷为初值并逐胞累计（sysdynamics.jl；奇
 #                                   插入链迹归零的真凶——偶算符 charge=nothing
 #                                   不受影响）；②荷方向 = 算符自荷（d=−q、
 #                                   ddag=+q，correlation_insertions 同款，此前全
@@ -206,7 +206,7 @@ function lattice_monomial(lattice::AbstractGrassmannLattice, indices::NTuple{N,G
     first_s, last_s = first(touched), last(touched)
     spaces = site_spaces(lattice)
     charges = _site_charges(spec, lattice)
-    z = zero_charge(spec)
+    z = one(spec)
     data = Any[]; q = z   # q = 已吞并变量的累积荷（键穿线；末站须回到平凡）
     for s in first_s:last_s
         o1 = (2s - 1) in positions; o2 = (2s) in positions
@@ -237,7 +237,7 @@ cached_* 观测量共用，构建一次 O(L)，快照不可变、无限复用。
 environments_cache(K::GM.GMPS, Is::GM.GMPS...) = GM.environments(K, Is...)
 
 "缓存 Z（无插入分母；与 integrate(K, Is...) 同值、读左端 O(1)）"
-cached_Z(cache::GM.ExpectationCache) = unscale(GM.Zvalue(cache))
+cached_Z(cache::GM.ExpectationCache) = value(GM.Zvalue(cache))
 
 """
     cached_gf(lattice, indices, K, Is...) -> Complex
@@ -264,7 +264,7 @@ function cached_gf(lattice::AbstractGrassmannLattice, indices::NTuple{N,Grassman
     # op∧K + 单发 Zvalue 精确路径，不用右扫快照——缺口见文件头 D5 注）
     op = lattice_monomial(lattice, indices)
     W = op * K
-    return unscale(GM.Zvalue([W, Is...]))
+    return value(GM.Zvalue([W, Is...]))
 end
 
 """

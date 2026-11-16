@@ -1,4 +1,4 @@
-# system.jl：杂质系统因子 K 的 cell automaton 构造（plan §3.3/D2）
+# sysdynamics.jl：杂质系统因子 K 的 cell automaton 构造（plan §3.3/D2）
 #
 # 移植自 U1GTEMPO2 system.jl/prepared_system.jl（charge 通道机器精度验证），
 # 泛化点（D1 对称性手选）：
@@ -87,7 +87,7 @@ end
 "Fock 基态（0..dim−1）的荷：占据带的 var_charge 之和"
 function fock_charges(::Type{G}, bands::Int) where {G<:Sector}
     dim = 2^bands
-    z = zero_charge(G)
+    z = one(G)
     out = Vector{typeof(z)}(undef, dim)
     for st in 0:dim-1
         q = z
@@ -165,7 +165,7 @@ function _system_factor_reference(lattice::AbstractGrassmannLattice, model::Abst
     bands_guard(spec, bands)
     num_bands(model) == bands || throw(ArgumentError("model bands $(num_bands(model)) ≠ lattice bands $bands"))
     dim = 2^bands
-    z = zero_charge(spec)
+    z = one(spec)
     cells = chronological_cells(lattice)
     L = length(cells)
     L > 0 || throw(ArgumentError("empty lattice"))

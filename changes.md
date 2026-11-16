@@ -1,5 +1,17 @@
 # 接口更改说明
 
+## convenience 清理 + src 布局重排批次（2026-11-16）
+
+- **`unscale` 删除**（导出 API 移除）：取值直用 **`value`**（GM 原名，本包新增
+  export；`GM.ScaledScalar` 的标准取值口）。`scaled_ratio` 不变。
+- **`zero_charge` 删除**（非导出内部助手）：荷单位直用 `one(G)`（扇区类型上
+  语义恒等）。
+- **src 布局重排**（公开 API 零变化，git mv 保历史）：`lattices/lattices.jl` →
+  `lattices.jl`（单文件不设目录）；杂质模型层 `sysdynamics/` →
+  **`impuritymodels/`**（入口文件同步更名 `impuritymodels.jl`——该文件是
+  AbstractImpurityHamiltonian 族，非 K 构造）；K 构造宿主 `system.jl` →
+  **`sysdynamics.jl`**（sysdynamics/sysdynamics_weyl2order 的宿主文件名实对齐）。
+
 ## 桥层接口简化批次：spec = TK 扇区类型 + 截断走 GM 标准通道（2026-11-16，plan/bridge_interface_simplification_plan.md A1–A4 三阶段）
 
 Breaking 变更清单（A2 接受的返回类型变更 + 退役面）：

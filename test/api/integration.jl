@@ -6,11 +6,11 @@
 	K = sysdynamics(lat, ToulouseIM(ϵ_d=0.3))
 	z = integrate_scaled(K, Is)
 	@test z isa ScaledScalar
-	@test unscale(z) ≈ integrate(K, Is) atol = 1.0e-12
+	@test value(z) ≈ integrate(K, Is) atol = 1.0e-12
 	@test scaled_ratio(z, z) ≈ 1.0 atol = 1.0e-12
 	# integrate(c::EnvironmentCache) 同值
 	cache = environments_cache(K, Is)
-	@test unscale(GM.Zvalue(cache)) ≈ integrate(K, Is) atol = 1.0e-12
+	@test value(GM.Zvalue(cache)) ≈ integrate(K, Is) atol = 1.0e-12
 end
 
 @testset "API: mult / truncate! / truncerr 标准通道" begin
@@ -36,8 +36,8 @@ end
 	charges = cell_charges(spec, 1)
 	z0 = monomial(spec, repeat(charges, 2); coeff=0)
 	zt, _ = truncate!(z0; trunc=Truncation(D=8, rtol=1e-12))
-	@test unscale(integrate_scaled(zt)) == 0.0
+	@test value(integrate_scaled(zt)) == 0.0
 	zz, _ = mult(zt, x; trunc=Truncation(D=8, rtol=1e-12))
-	@test unscale(integrate_scaled(zz)) == 0.0
+	@test value(integrate_scaled(zz)) == 0.0
 	@test all(>(0), bonddims(zz))
 end
