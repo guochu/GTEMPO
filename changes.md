@@ -1,5 +1,34 @@
 # 接口更改说明
 
+## BCS occ 平反 + 性能基线 + alignment sweep 批次（2026-11-16，grassmannmps-backend 分支）
+
+- **BCS「occ 0.55 vs 0.32」假 bug 平反**：上一批次 @test_broken 的分诊定位到
+  根因 = **测试的 ED 参照算符约定错配**——bcs_ed 自带独立算符约定
+  （occupied=首基、自带 JW 串），其 H 矩阵配 fermion_annihilators 的位基算符
+  = 不同的物理模型（bcs_ed α→0 收缩给出 n=0.310，同对角的
+  singlemode_ed/正确物理给 0.548，port 给 0.5501=正确值+δτ 修正）。用 bcs_ed
+  自带算符（Ab/Bb，旧套件同款）重锚后：**Z/occupation/奇 matsubara（τ=β=−⟨n⟩
+  恒等式）对 ED 全部 δτ 修正档（~3e-5）吻合**——反常 IF 通道（含奇插入穿过
+  a/ā 混合列）被 ED 完整锚定，GM 引擎对混合型楔号的嫌疑亦被实证否定。
+  @test_broken 全部转正。
+- **matsubara/occupation/nn/greater/lesser/kernel 签名放宽**：
+  `kernel::Union{Nothing,HybridizationKernel}`（BCS 路线无 normal kernel，
+  kernel 仅用于 order/coupling_norm 元数据缺省）。
+- **GM 快照扫掠缺口闭合复验**：`GM.expectation(op, env)` 右扫对数幅值补偿
+  （cprime-logscale 守卫）与本精确路线对拍 **12 位吻合**（GTEMPO measurement.jl
+  的旧「缺口」注释过时，已更新）；精确路径保持缺省，多算符高频查询可换
+  快照路线（值等价）。
+- **性能基线**（plan R6）：`validation/longchain_benchmark.jl` +
+  `validation/records/longchain-20261116/`（CSV+README）。real/imag ×
+  order 1/2 × n∈{8,16,32} × reps=3：IF 构建主导（每胞加倍 ~4.3×，n=32 real
+  o2 ≈ 17.5s）；K/integrate/观测量近线性（n=32 全部亚秒）。与 U1GTEMPO2
+  基线同量级（imag n=16 IF 双栈均 ~1.0s）；stage 语义两栈不同构，本表为
+  本栈纵向回归基线。
+- **alignment sweep**（Phase 6 验收项）：`validation/alignment/`（双栈脚本 +
+  records + REPORT.md）。S1 虚时单带 / S3 双带 U=1：Z 与 occupation 对旧栈
+  **机器精度一致**（1e-15 档）；S2 实时 greater：节点约定差一位（旧 k=N+1
+  含 0 端点 vs 新 k=N）+ 热态构造截断差 2e-3，移位后逐点 1e-5 吻合。
+
 ## 奇算符 GF 修复 + 测试套件重建 + BCS/multiorbital 重接批次（2026-11-15，grassmannmps-backend 分支）
 
 上一批次的「已知未决」奇算符 GF 缺陷**全案告破并修复**（对拍 U1GTEMPO2 机器精度），同时完成 Phase 6 测试套件重建与 BCS/多带重接：

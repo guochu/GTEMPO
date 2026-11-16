@@ -82,7 +82,7 @@ default_branch(lattice::AbstractGrassmannLattice) =
 式的电荷流不可表示 → K' 切分产出零站 → 链归零（偶算符 n̂ 不受影响）。
 """
 function raw_correlation(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian,
-                         kernel::HybridizationKernel, Is...; i::Integer, j::Integer=0,
+                         kernel::Union{Nothing,HybridizationKernel}, Is...; i::Integer, j::Integer=0,
                          kind::Symbol=:greater, order::Integer=kernel_order(kernel),
                          coupling_norm::Real=kernel_coupling_norm(kernel), initial_state=nothing)
     (lattice isa AbstractRealGrassmannLattice || lattice isa AbstractMixedGrassmannLattice) ||
@@ -110,7 +110,7 @@ end
 
 "greater(tᵢ, tⱼ=0) = −i⟨d(tᵢ)ddag(tⱼ)⟩（归一化走 occupation 同款 Z 分母）"
 function greater(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian,
-                 kernel::HybridizationKernel, Is...; i::Integer, j::Integer=0, Z,
+                 kernel::Union{Nothing,HybridizationKernel}, Is...; i::Integer, j::Integer=0, Z,
                  kwargs...)
     (lattice isa AbstractRealGrassmannLattice || lattice isa AbstractMixedGrassmannLattice) ||
         throw(ArgumentError("虚时轮廓用 matsubara"))
@@ -119,7 +119,7 @@ end
 
 "lesser(tᵢ, tⱼ=0) = +i⟨ddag(tⱼ)d(tᵢ)⟩"
 function lesser(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian,
-                kernel::HybridizationKernel, Is...; i::Integer, j::Integer=0, Z,
+                kernel::Union{Nothing,HybridizationKernel}, Is...; i::Integer, j::Integer=0, Z,
                 kwargs...)
     (lattice isa AbstractRealGrassmannLattice || lattice isa AbstractMixedGrassmannLattice) ||
         throw(ArgumentError("虚时轮廓用 matsubara"))
@@ -157,7 +157,7 @@ end
 G(β,0) = +⟨d†d⟩（热环等时同号）。
 """
 function matsubara(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian,
-                   kernel::HybridizationKernel, Is...; i::Integer, j::Integer=0, Z,
+                   kernel::Union{Nothing,HybridizationKernel}, Is...; i::Integer, j::Integer=0, Z,
                    order::Integer=kernel_order(kernel), coupling_norm::Real=kernel_coupling_norm(kernel),
                    initial_state=nothing)
     # τ↔τ 插入在混合（Kadanoff）轮廓同样合法（虚时支 = 热态构建腿）
@@ -257,9 +257,10 @@ cached_Z(cache::GM.ExpectationCache) = unscale(_scaled(GM.Zvalue(cache)))
 `greater`/`lesser` 的边界矩阵插入点差 O(胞内接触项)（δt=0.15 时 ~1e-3 档，
 随 δt 收敛）——边界观测量请用 inserted-K 路线（上方）。
 
-⚠️ 未用 `GM.expectation(op, env)` 快照扫掠：其右扫对数幅值补偿存在缺口
-（实测 ⟨op⟩ 差一个链常数标度 ~1e-5 档，见 GrassmannMPS berezin.jl 右扫
-rightlogscales 记账），修复前本包装走精确路径。
+GM 快照扫掠路线（`GM.expectation(op, env)`，只扫算符支撑）2026-11-16 复验：
+与本精确路径 12 位吻合（cprime-logscale 守卫已闭合旧右扫缺口）——本包装保留
+精确路径为缺省（每次查询 O(L) 且无快照生命周期约束）；多算符高频查询可换
+快照路线，值等价。
 """
 function cached_gf(lattice::AbstractGrassmannLattice, indices::NTuple{N,GrassmannContourIndex},
                    K::GM.GMPS, Is::GM.GMPS...; cache=nothing) where {N}
@@ -351,7 +352,7 @@ end
 教训在案，旧 currents.jl 注释原文）。
 """
 function electriccurrent(lattice::AbstractRealGrassmannLattice, model::AbstractImpurityHamiltonian,
-                         kernel::HybridizationKernel, Is...; k::Integer, band::Int=1, Z,
+                         kernel::Union{Nothing,HybridizationKernel}, Is...; k::Integer, band::Int=1, Z,
                          order::Integer=kernel_order(kernel), coupling_norm::Real=kernel_coupling_norm(kernel),
                          initial_state=nothing)
     ηpp = kernel.blocks[(:+, :+)]

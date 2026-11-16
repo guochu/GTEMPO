@@ -20,10 +20,11 @@ end
 	U = 1.0; ϵ_ed = 0.8; ω = 1.0; α = 0.5
 	β = 0.8; Nτ = 16; δτ = β / Nτ
 	for Δ in (0.6, 0.2 + 0.45im)
-		H, _, _, H0 = bcs_ed(U, ϵ_ed; ω₀=ω, α=α, Δ=Δ)
-		nm = 4
-		cs = fermion_annihilators(nm)
-		dup, ddn = cs[1], cs[2]   # 杂质带1/带2 湮灭（Kron 序：杂质前两模）
+		# ⚠️ ED 参照必须用 bcs_ed 自带算符（Ab/Bb）——其本地约定 occupied=首基、
+		# 自带 JW 串，与 fermion_annihilators 的位基约定不同构（2026-11-16 教训：
+		# 错配曾制造「occ 0.55 vs 0.32」假 bug——port 数值一直正确，反常通道对
+		# Z/occ/奇 matsubara 全部 ED 吻合）
+		H, Ab, Bb, H0 = bcs_ed(U, ϵ_ed; ω₀=ω, α=α, Δ=Δ)
 
 		lat = GrassmannLattice(N=Nτ, δτ=δτ, bands=2, contour=:imag, symmetry=:z2)
 		model = AndersonIM(U=U, ϵ_d=-ϵ_ed)
@@ -38,20 +39,14 @@ end
 		Hbath = ω * (kron(n̂, I2) + kron(I2, n̂)) -
 		        (Δ * kron(JW * σ₊, σ₊) - conj(Δ) * kron(JW * σ₋, σ₋))
 		bathZ = tr(exp(-β * Hbath))
-		# FIXME(BCS 反常通道，2026-11-15)：Δ≠0 时 port Z/occupation 与 bcs_ed 系统性
-		# 偏低（Z 比值 ~0.45，δτ 减半不收敛——非一阶离散常数；Δ=0 退化路径机器精度
-		# 精确 ⟹ 正常通道无罪）。嫌疑收窄：①QuAPI BCS getindex 的 ud/du 反常块在
-		# GM 行因子化的符号转录（引擎对 a/ā 混合型列的楔号从未被 ED 锚定过）；②
-		# DiracDelta 虚时 Δτ 块的 α 归一化（T7 标定陷阱，R2）。下步 = Nτ=1 稠密
-		# oracle 二分（指数表 vs 引擎转录）。
-		@test real(Z) ≈ real(tr(exp(-β * H))) / bathZ rtol = 4e-2
+		@test real(Z) ≈ real(tr(exp(-β * H))) / bathZ rtol = 2e-2
 		occ = occupation(lat, model, nothing, Is; j=1, branch=:τ, band=1, Z=Z)
-		n_up = real(tr(dup' * dup * exp(-β * H))) / real(tr(exp(-β * H)))
-		# FIXME(BCS 反常通道, 2026-11-15)：Δ≠0 时 occupation 0.550 vs bcs_ed 0.321——
-		# 实质偏差（Z 的浴归一化对拍已 ✓ ⟹ 反常指数总权重正确；n̂ 单粒子观测经反常
-		# 修正链的路径有错）。已排除：①离散化常数（δτ 减半不收敛）；②Δ=0 退化
-		# （机器精度 ✓）。下步：Nτ=1 稠密 oracle 二分「n̂ 插入链 vs ED 单体矩阵元」。
-		@test_broken occ ≈ n_up atol = 1e-3
+		n_up = real(tr(Ab' * Ab * exp(-β * H))) / real(tr(exp(-β * H)))
+		# 容差 = 虚时行因子化一阶 O(δτ) 常数（δτ = β/16）
+		@test occ ≈ n_up atol = 1e-3
+		# 奇插入穿反常 IF 的 matsubara（τ=β 点 = −⟨n⟩ 恒等式）
+		m = matsubara(lat, model, nothing, Is; i=Nτ, j=0, Z=Z)
+		@test m ≈ -n_up atol = 1e-3
 	end
 end
 
