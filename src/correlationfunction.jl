@@ -41,3 +41,33 @@ correlationfunction(bath::AbstractBCSBath, lattice::RealGrassmannLattice) =
     bcs_Δt(bath.f; β=bath.β, μ=bath.μ, Δ=bath.Δ, N=lattice.Nt, t=lattice.t)
 correlationfunction(bath::AbstractBCSBath, lattice::MixedGrassmannLattice) =
     bcs_Δm(bath.f; β=bath.β, μ=bath.μ, Δ=bath.Δ, Nτ=lattice.Nτ, t=lattice.t, Nt=lattice.Nt, δτ=lattice.δτ)
+
+# ---------------------------------------------------------------------------
+# coupling_norm：浴谱总强度（HybridizationKernel.coupling_norm 的单浴因子；
+# 多带总量 = Σ_b coupling_norm(bath_b)。μ/β 不进谱权重——它们只进 Δ 装配的
+# 核因子（spectrumshift(f, μ) 等），离散谱求和天然 μ 不变，bath 层直取谱）
+# ---------------------------------------------------------------------------
+
+"""
+    coupling_norm(f) -> Real
+    coupling_norm(bath::AbstractNormalBath) -> Real
+
+浴谱总强度 α（= `hybriddynamics`/`sysdynamics_weyl2order` 的 `coupling_norm`
+kwarg 在单带下的取值；多带总量 = `sum(coupling_norm, baths)`）：
+
+- `DiracDelta`：α；
+- `DiscreteSpectrum`：Σₙ αₙ（fs 为 δ-峰权重，vₙ = √αₙ = `spectrumcouplings`）；
+- 连续 `AbstractBoundedFunction`：∫ f(ε)dε over [lb, ub]（quadgk 数值积分，
+  容差同 IMB QuadGKTolerance）；
+- δ×函数乘积（`DeltaMultF`/`DeltasMultF`，如热流的 ω 加权谱）：走各自
+  quadgkwrapper 求和/取值规则（g ≡ 1）——同为 AbstractBoundedFunction，
+  由 `quadgkwrapper(f)` 一并覆盖；
+- `AbstractNormalBath`：直接取其谱——**与 μ、β 无关**。
+
+扩展点：自定义谱子类实现 `quadgkwrapper` 乘积路径或直接补 `coupling_norm`
+方法。BCS 浴无定义（反常通道谱强度语义未定，不设方法 = 天然拒绝）。
+"""
+coupling_norm(f::DiracDelta) = f.α
+coupling_norm(f::DiscreteSpectrum) = sum(spectrumvalues(f))
+coupling_norm(f::AbstractBoundedFunction) = quadgkwrapper(f)
+coupling_norm(bath::AbstractNormalBath) = coupling_norm(bath.spectrum)

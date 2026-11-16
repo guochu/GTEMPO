@@ -95,7 +95,7 @@ export EnvironmentCache
 export ScaledScalar, value
 
 # correlation functions
-export correlationfunction
+export correlationfunction, coupling_norm
 
 # K 构造
 export sysdynamics, sysdynamics_weyl2order, OperatorInsertion

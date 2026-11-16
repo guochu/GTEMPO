@@ -56,7 +56,8 @@ secondorderif kernels.jl 同款三路径（ED 验证过）：
   在净语义中相消 ⟹ canonical = raw）；
 - 混合：Δm 九块，rt [1:Nt]/τ [1:Nτ]；Δm 的 τ↔rt 交叉块相对物理核差一个
   整体负号（KernelCorrView 预翻 = 净读数）⟹ canonical 取负。
-`coupling_norm` 由调用方传入（全带总耦合 Σ_b α_b）。
+`coupling_norm` 由调用方传入（全带总耦合 Σ_b α_b）：单带可 `coupling_norm(bath)`
+（`coupling_norm` 助手，见 correlationfunction.jl），多带 = `sum(coupling_norm, baths)`。
 """
 function hybridization(lattice::AbstractGrassmannLattice, bath::AbstractBath; coupling_norm=nothing)
     blocks = Dict{Tuple{Symbol,Symbol},Matrix{ComplexF64}}()

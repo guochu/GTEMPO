@@ -12,13 +12,13 @@
 	kernel = hybridization(lat, bath)
 	model = ToulouseIM(ϵ_d=μ)
 	for order in (1, 2)
-		K, Is = fermionic_setup(lat, bath, model; β=β, order=order, coupling_norm=α)
+		K, Is = fermionic_setup(lat, bath, model; β=β, order=order, coupling_norm=coupling_norm(bath))
 		Z = integrate(K, Is...)
 		for i in 1:Nt
 			g = greater(lat, model, kernel, Is...; i=i, j=0, Z=Z, order=order,
-			            coupling_norm=α, initial_state=thermal_impurity_state(model, β))
+			            coupling_norm=coupling_norm(bath), initial_state=thermal_impurity_state(model, β))
 			l = lesser(lat, model, kernel, Is...; i=i, j=0, Z=Z, order=order,
-			           coupling_norm=α, initial_state=thermal_impurity_state(model, β))
+			           coupling_norm=coupling_norm(bath), initial_state=thermal_impurity_state(model, β))
 			@test g ≈ gt_ed[i] atol = 1e-4
 			@test l ≈ lt_ed[i] atol = 1e-4
 		end
@@ -35,13 +35,13 @@ end
 
 	lat = GrassmannLattice(N=Nt, δt=δt, contour=:real, bands=2)
 	bath = discretefermionicbath([ω], [α]; β=β)
-	kernel = hybridization(lat, bath; coupling_norm=α)
+	kernel = hybridization(lat, bath; coupling_norm=coupling_norm(bath))
 	model = AndersonIM(U=U, ϵ_d=μ)
-	K, Is = fermionic_setup(lat, bath, model; β=β, order=2, coupling_norm=α)
+	K, Is = fermionic_setup(lat, bath, model; β=β, order=2, coupling_norm=coupling_norm(bath))
 	Z = integrate(K, Is...)
 	for i in 1:Nt
 		g = greater(lat, model, kernel, Is...; i=i, j=0, Z=Z, order=2,
-		            coupling_norm=α, initial_state=thermal_impurity_state(model, β))
+		            coupling_norm=coupling_norm(bath), initial_state=thermal_impurity_state(model, β))
 		@test g ≈ gt_ed[i] atol = 1e-4
 	end
 end
