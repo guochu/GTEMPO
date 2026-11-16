@@ -3,7 +3,7 @@
 # 移植自 U1GTEMPO2 influence.jl（charge 通道机器精度、与 secondorderif 端到端
 # ≤1.4e-11 验证），泛化点（D1）：
 #   - spin::Symbol(:up/:down) → band::Int（band b 的生成元荷 = var_charge(spec,b)；
-#     双荷形 bands≤2 时 band↔槽位，单荷形全带同荷、带=站位）；
+#     双荷形奇带=up/偶带=down（多轨道轨道交错），单荷形全带同荷、带=站位）；
 #   - kernel blocks 为 canonical Δ[(a,b)][i,j]（IF = exp(Σ ā_i Δ_ij a_j)），
 #     由 hybridization() 从 QuAPI corr 提取（含实时跨支/混合 τ↔rt 符号定标）。
 #

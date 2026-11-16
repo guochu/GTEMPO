@@ -45,7 +45,7 @@ struct ImagGrassmannLattice <: AbstractImagGrassmannLattice
     symmetry::Symbol
     function ImagGrassmannLattice(δτ::Real, bands::Int, N::Int, symmetry::Symbol)
         symmetry_spec(symmetry)     # 未知 Symbol 显式拒绝（D1）
-        bands_guard(symmetry, bands)   # 荷分辨形 bands≤2（D1）
+        bands_guard(symmetry, bands)   # 荷分辨形要求偶数带（轨道交错）
         N >= 1 || throw(ArgumentError("N ≥ 1 required"))
         new(convert(Float64, δτ), bands, N, symmetry)
     end

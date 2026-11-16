@@ -1,5 +1,25 @@
 # 接口更改说明
 
+## D1 修订批次：多轨道对称性支持（2026-11-16，进行中）
+
+- **bands_guard 语义修订（D1 修订，用户裁决）**：旧「:z2z2/:u1u1 要求 bands≤2」
+  不合理——多轨道（每轨道 up/down 两带）完全支持荷分辨形；新守卫 = **偶数带**
+  （轨道交错：奇带 = 各轨道 up、偶带 = down）。**var_charge 轨道交错修正**：
+  旧 `band == 1 ? up : down` 写法在 bands ≥ 3 时把轨道 2 的 up 错标 down，
+  改 `isodd(band)`。
+- **integrate 链上限 3 → 5**（GM 引擎均匀循环真实上限 K≤5；norb=2 = K+4IF
+  满员；norb≥3 走合并形 :z2/:u1）。
+- **多轨道端到端验证状态（norb=2 KanamoriIM, bands=4, 对角 1:1 混杂）**：
+  ①裸 K 链迹 = 原子极限 ED 机器精度（:z2/:u1/:u1u1 三形 4e-14）；②
+  occupation(band1) vs kanamori_ed = 1.7e-4（δτ 档）✓；③**Z 结构性偏差
+  ~4.7×（δτ 减半不收敛）**：port 四带 Z = (自身单带因子)^4 的因子化在
+  收缩中丢失（per-band port 因子 1.2177 vs port 自身单带 1.7650——同核同
+  强度）；④**:z2z2 bands=4 K 构造 segfault**（复现：
+  `GrassmannLattice(N=6, δτ=0.133, bands=4, contour=:imag, symmetry=:z2z2)` +
+  sysdynamics + integrate；日志 `unknown function (ip: nil)`）。
+  ③④ = 下一步分诊（③嫌疑 = 多 IF 链收缩的引擎侧带间记账；④ = :z2z2
+  4 带的 split_cell/扇区路由内存错误）。
+
 ## 命名收敛批次（2026-11-16）
 
 - **对称性类型重命名**：`AbstractSymmetrySpec` → **`AbstractGrassmannSymmetry`**、

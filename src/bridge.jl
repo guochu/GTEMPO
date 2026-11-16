@@ -8,9 +8,9 @@
 # 对称性用户手选（2026-11-13 D1 裁决，§3.4）：四个 spec 单例 ↔ :z2/:z2z2/:u1/:u1u1。
 # 荷标签（构造层纯数据）类型随 spec：
 #   :z2   Int（各带宇并合并——旧 GTEMPO 语义；sector = mod 2）
-#   :z2z2 NTuple{2,Int}（每带宇并，bands≤2；sector = mod 2 积）
+#   :z2z2 NTuple{2,Int}（每自旋宇并：奇带 = 各轨道 up、偶带 = down，偶数带）
 #   :u1   Int（各带总粒子数合并；sector = 原值）
-#   :u1u1 NTuple{2,Int}（每带荷，bands≤2；U1GTEMPO2 同款）
+#   :u1u1 NTuple{2,Int}（每自旋粒子数：奇带 = up、偶带 = down，偶数带；U1GTEMPO2 同款）
 # 费米符号不在标签里——由 GM.GrassmannBackend 显式注入（@grassmann 宏）。
 # 参考实现 = U1GTEMPO2 bridge.jl（ChargeCharge 通道机器精度验证过）；
 # 其余三通道靠 GM abelian 电池 + 本包跨对称性一致电池 + ED 三层兜底（R9）。
@@ -22,9 +22,9 @@
 
 abstract type AbstractGrassmannSymmetry end
 struct Z2Symmetry <: AbstractGrassmannSymmetry end       # :z2   全带合并宇并（旧语义）
-struct Z2Z2Symmetry <: AbstractGrassmannSymmetry end     # :z2z2 band1/2 各占宇并槽（≤2 带）
+struct Z2Z2Symmetry <: AbstractGrassmannSymmetry end     # :z2z2 每自旋宇并（奇带 up / 偶带 down，偶数带）
 struct U1Symmetry <: AbstractGrassmannSymmetry end       # :u1   全带合并总荷
-struct U1U1Symmetry <: AbstractGrassmannSymmetry end     # :u1u1 band1→槽1 band2→槽2（≤2 带）
+struct U1U1Symmetry <: AbstractGrassmannSymmetry end     # :u1u1 每自旋粒子数（奇带 up / 偶带 down，偶数带）
 
 "symmetry type → its Symbol (:z2/:z2z2/:u1/:u1u1; used by bands_guard and chain_spec)"
 symmetry_symbol(::Z2Symmetry) = :z2
@@ -97,11 +97,15 @@ sector_spec(::Type{ChargeCharge}) = U1U1Symmetry()
 sector_spec(::Type{Z2Z2}) = Z2Z2Symmetry()
 chain_spec(x::GM.GMPS) = sector_spec(TK.sectortype(x[1]))
 
-"荷分辨形 bands 守卫（:z2z2/:u1u1 每带分辨要求 bands≤2，超限显式拒绝——D1）"
+"荷分辨形 bands 守卫（:z2z2/:u1u1）：多轨道完全支持——轨道交错约定
+（奇带 = 各轨道 up、偶带 = down；bands = 2·轨道数），唯一结构要求 = bands
+为偶数；语义要求（杂质 Hamiltonian 与 IF 确实携带该对称性，如 KanamoriIM）
+由模型/调用方保证。单荷形 :z2/:u1 无要求。"
 function bands_guard(s::Symbol, bands::Int)
-    if (s === :z2z2 || s === :u1u1) && bands > 2
+    if (s === :z2z2 || s === :u1u1) && isodd(bands)
         throw(ArgumentError(
-            "symmetry :$s supports at most 2 bands (got $bands); use :z2 or :u1 for merged marks"))
+            "symmetry :$s resolves per-spin flavor and requires an even number of bands " *
+            "(orbital interleaving: odd bands = up, even bands = down), got bands = $bands"))
     end
     return bands
 end
@@ -111,8 +115,11 @@ end
 不在荷上；荷分辨形 band→槽位映射照旧。"
 var_charge(::Z2Symmetry, band::Int, bands::Int) = Z2Label(1)
 var_charge(::U1Symmetry, band::Int, bands::Int) = 1
-var_charge(::Z2Z2Symmetry, band::Int, bands::Int) = band == 1 ? (Z2Label(1), Z2Label(0)) : (Z2Label(0), Z2Label(1))
-var_charge(::U1U1Symmetry, band::Int, bands::Int) = band == 1 ? (1, 0) : (0, 1)
+# 轨道交错：奇带 = 各轨道 up（第一味）、偶带 = down（第二味）——多轨道
+# （bands = 2·轨道数）与双带同式；旧「band == 1 ? up : down」写法在 bands ≥ 3
+# 时把轨道 2 的 up 错标成 down（2026-11-16 修正，随 bands_guard 放宽）
+var_charge(::Z2Z2Symmetry, band::Int, bands::Int) = isodd(band) ? (Z2Label(1), Z2Label(0)) : (Z2Label(0), Z2Label(1))
+var_charge(::U1U1Symmetry, band::Int, bands::Int) = isodd(band) ? (1, 0) : (0, 1)
 
 "站形：band b 的物理站空间（单荷形全站同形；双荷形按带奇偶交替朝向——
 :u1u1 = U1GTEMPO2 同款 up/down 交替站形）"
@@ -487,7 +494,9 @@ check_charge(x::GM.GMPS) = _check_structure(x)
 # ---------------------------------------------------------------------------
 
 function integrate_scaled(states::GM.GMPS...)
-    1 <= length(states) <= 3 || throw(ArgumentError("integrate supports one to three independent factors"))
+    # 上限 = GM 引擎的均匀循环链数（K ≤ 5：K + 4 IF ⟹ norb=2 荷分辨形满员；
+    # 更高轨道数走合并宇并/总荷形 :z2/:u1——单 IF 链不限轨道数）
+    1 <= length(states) <= 5 || throw(ArgumentError("integrate supports one to five independent factors (GM engine chain bound K ≤ 5)"))
     z = GM.Zvalue(collect(states))
     z
 end
@@ -502,7 +511,7 @@ struct EnvironmentCache
     denominator_condition::Float64
 end
 function EnvironmentCache(states::Tuple)
-    1 <= length(states) <= 3 || throw(ArgumentError("one to three factors required"))
+    1 <= length(states) <= 5 || throw(ArgumentError("one to five factors required (GM engine chain bound)"))
     cache = GM.environments(states...)
     mid = cache.L ÷ 2                      # 站粒度半链切割（旧对粒度 mid 同语义）
     lmid = cache.leftenv[mid+1]; rmid = cache.rightenv[mid+1]
