@@ -9,6 +9,9 @@
   整文件删除（ScaledScalar/value 透传移入主文件 using+export）。
 - **`zero_charge` 删除**（非导出内部助手）：荷单位直用 `one(G)`（扇区类型上
   语义恒等）。
+- **`parity_label` 删除**（非导出内部助手）：与 GM `fermionparity` 逐方法
+  相同（四对称形 χ 同态注册一致），oddlater Koszul 符号调用点直用
+  `GM.fermionparity`。
 - **src 布局重排**（公开 API 零变化，git mv 保历史）：`lattices/lattices.jl` →
   `lattices.jl`（单文件不设目录）；杂质模型层 `sysdynamics/` →
   **`impuritymodels/`**（入口文件同步更名 `impuritymodels.jl`——该文件是

@@ -99,12 +99,6 @@ function fock_charges(::Type{G}, bands::Int) where {G<:Sector}
     return out
 end
 
-"荷宇称（oddlater Koszul 符号用；标签 = TK 扇区）"
-parity_label(s::TK.Z2Irrep) = isodd(s.n)
-parity_label(s::TK.U1Irrep) = isodd(s.charge)
-parity_label(s::Z2Z2) = isodd(s[1].n + s[2].n)
-parity_label(s::ChargeCharge) = isodd(s[1].charge + s[2].charge)
-
 # ---------------------------------------------------------------------------
 # 插入算符（测量与 ρ₀；Phase 5 消费）
 # ---------------------------------------------------------------------------
@@ -224,7 +218,7 @@ function _system_factor_reference(lattice::AbstractGrassmannLattice, model::Abst
         for (cut, items) in cuts, ins in items
             cut >= k || continue
             q = ins.charge === nothing ? z : ins.charge
-            oddlater += parity_label(q) ? 1 : 0
+            oddlater += GM.fermionparity(q) ? 1 : 0
         end
         for m in 0:dim^2-1
             mats[m+1] .*= (-1)^(oddlater * count_ones(m))
