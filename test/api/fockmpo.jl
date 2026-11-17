@@ -12,10 +12,12 @@ import LinearAlgebra
 @testset "FockMPO: fockmpo2gmps 对拍矩阵" begin
 
     function _wf_build(lattice, model, order, coupling_norm, insertions, initial_state)
-        # 新路径：切位 ≥ 1 走 sparsefockmpo 乘法（左右各一）；ρ₀/切位 0 三明治
-        # 走 fockmpo2gmps 的 rho0/insertions kwargs（fold 在转换内做，不预折）
-        cut0 = filter(i -> i.boundary == 0, insertions)
-        ge1 = filter(i -> i.boundary >= 1, insertions)
+        # 新路径：切位（cut index）≥ 1 走 sparsefockmpo 乘法（左右各一）；切位 0
+        # 三明治走 fockmpo2gmps 的 rho0/insertions kwargs（fold 在转换内做，不预折）。
+        # ⚠️ 过滤按 insertion_cut_index 而非 boundary 字段——:- 支 boundary 0 =
+        # 链末切位（cut = ni+2Nt）非 ρ₀ 切位（与 src/fockmpo.jl 同口径）
+        cut0 = filter(i -> GTEMPO.insertion_cut_index(lattice, i) == 0, insertions)
+        ge1 = filter(i -> GTEMPO.insertion_cut_index(lattice, i) >= 1, insertions)
         Kf = fock_sysdynamics(lattice, model; order=order, coupling_norm=coupling_norm)
         Wl = sparsefockmpo(lattice, filter(i -> i.side === :left, ge1))
         Wr = sparsefockmpo(lattice, filter(i -> i.side === :right, ge1))
@@ -30,9 +32,10 @@ import LinearAlgebra
     end
 
     function _wf_check(lattice, model, order, coupling_norm, insertions; initial_state=nothing)
+        # 基线钉旧径（交叉验证语义不随后端缺省漂移——plan Phase 3 起缺省 :fock）
         K_base = sysdynamics(lattice, model; order=order, coupling_norm=coupling_norm,
                              insertions=insertions, initial_state=initial_state,
-                             spec=TK.sectortype(lattice))
+                             spec=TK.sectortype(lattice), backend=:reference)
         K_new = _wf_build(lattice, model, order, coupling_norm, insertions, initial_state)
         nst = length(K_base)
         if 4^nst <= 2^20
@@ -94,8 +97,10 @@ import LinearAlgebra
         end
     end
 
-    # ---- real：真空 ρ₀ + 偶/奇插入 ----
-    for (bands, model, sym) in ((1, model1, U1Symmetry()), (2, model2, U1U1Symmetry()))
+    # ---- real：真空 ρ₀ + 偶/奇插入（bands=2 覆盖 U1U1 与单 U1——单 U1×2 带
+    # 曾漏网：:- 支 boundary 0 = 链末切位，lesser(j=0) 路径）----
+    for (bands, model, sym) in ((1, model1, U1Symmetry()), (2, model2, U1U1Symmetry()),
+                                (2, model2, U1Symmetry()))
         lat = GrassmannLattice(N=2, δt=0.1, bands=bands, contour=:real, symmetry=sym)
         qc = var_charge(TK.sectortype(lat), 1, bands)
         d = GTEMPO._fock_ops(bands)[1]; ddag = d'
@@ -117,11 +122,17 @@ import LinearAlgebra
                        OperatorInsertion(:+, 2, d; charge=GTEMPO.qneg(qc))]
                 _wf_check(lat, model, order, cn, ins)
             end
+            @testset "real bands=$bands $sym order=$order lesser 式奇双插(j=0 链末切位)" begin
+                ins = [OperatorInsertion(:-, 0, ddag; charge=qc),
+                       OperatorInsertion(:+, 2, d; charge=GTEMPO.qneg(qc))]
+                _wf_check(lat, model, order, cn, ins)
+            end
         end
     end
 
-    # ---- mixed：Kadanoff 轮廓抽查 ----
-    for (bands, model, sym) in ((1, model1, U1Symmetry()), (2, model2, U1U1Symmetry()))
+    # ---- mixed：Kadanoff 轮廓抽查（对称性覆盖同 real 段）----
+    for (bands, model, sym) in ((1, model1, U1Symmetry()), (2, model2, U1U1Symmetry()),
+                                (2, model2, U1Symmetry()))
         lat = GrassmannLattice(Nt=2, Nτ=2, δt=0.1, δτ=0.25, bands=bands, contour=:mixed, symmetry=sym)
         d = GTEMPO._fock_ops(bands)[1]; ddag = d'
         qc = var_charge(TK.sectortype(lat), 1, bands)
@@ -134,6 +145,11 @@ import LinearAlgebra
                 ins = [OperatorInsertion(:τ, 2, d; charge=GTEMPO.qneg(qc)),
                        OperatorInsertion(:τ, 1, ddag; charge=qc),
                        OperatorInsertion(:+, 1, GTEMPO._number_op(bands, nothing))]
+                _wf_check(lat, model, order, cn, ins)
+            end
+            @testset "mixed bands=$bands $sym order=$order rt 链末奇双插(:-,0)" begin
+                ins = [OperatorInsertion(:-, 0, ddag; charge=qc),
+                       OperatorInsertion(:+, 1, d; charge=GTEMPO.qneg(qc))]
                 _wf_check(lat, model, order, cn, ins)
             end
         end
@@ -159,7 +175,7 @@ import LinearAlgebra
                            [OperatorInsertion(:τ, 1, GTEMPO._number_op(bands, nothing))],
                            [OperatorInsertion(:τ, 2, d; charge=GTEMPO.qneg(qc)),
                             OperatorInsertion(:τ, 1, ddag; charge=qc)])
-            K_base = sysdynamics(lat, model; order=1, insertions=insertions)
+            K_base = sysdynamics(lat, model; order=1, insertions=insertions, backend=:reference)
             K_new = _wf_build(lat, model, 1, 0.0, insertions, nothing)
             @testset "integrate 端到端 bands=$bands ins=$(length(insertions))" begin
                 Zb = integrate(K_base)

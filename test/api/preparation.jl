@@ -26,6 +26,8 @@ import GrassmannMPS as GM
 end
 
 @testset "API: 制备对象逐位性（验收 3：缓存命中 = 重算）" begin
+	# 钉旧径（backend=:reference）：本组验收的是两层缓存机制本身（plan
+	# measurement_cache_refactor §5）——新径 prep 缓存另见下方 fock 缓存测试组
 	μ = 0.4; β = 0.8
 	lat = GrassmannLattice(N=3, δt=0.1, bands=1, contour=:real, symmetry=U1Symmetry())
 	model = ToulouseIM(ϵ_d=μ)
@@ -38,25 +40,25 @@ end
 	                  OperatorInsertion(:+, 0, ddag; charge=qc)]
 	prep = prepare_system(lat, model; order=1, initial_state=ρ0)
 	# 无插入 + 奇插入对（扫描首/中/末点）：prep vs 无缓存重建逐位
-	@test GM.todense(sysdynamics(prep)) == GM.todense(sysdynamics(lat, model; initial_state=ρ0))
+	@test GM.todense(sysdynamics(prep; backend=:reference)) == GM.todense(sysdynamics(lat, model; initial_state=ρ0, backend=:reference))
 	for i in (1, 2, 3)
-		Kp = sysdynamics(prep; insertions=greater_ins(i))
-		Kf = sysdynamics(lat, model; initial_state=ρ0, insertions=greater_ins(i))
+		Kp = sysdynamics(prep; insertions=greater_ins(i), backend=:reference)
+		Kf = sysdynamics(lat, model; initial_state=ρ0, insertions=greater_ins(i), backend=:reference)
 		@test GM.todense(Kp) == GM.todense(Kf)
 		# 命中路径：重复调用逐位不变（别名污染回归：缓存列不得被 append! 改写）
-		@test GM.todense(sysdynamics(prep; insertions=greater_ins(i))) == GM.todense(Kp)
+		@test GM.todense(sysdynamics(prep; insertions=greater_ins(i), backend=:reference)) == GM.todense(Kp)
 	end
 	# 虚时轮廓（:τ 传播子键）同款逐位
 	lati = GrassmannLattice(N=3, δτ=0.25, contour=:imag, symmetry=U1Symmetry())
 	prepi = prepare_system(lati, model)
 	Kip = sysdynamics(prepi; insertions=[OperatorInsertion(:τ, 2, d; charge=GTEMPO.qneg(qc)),
-	                                     OperatorInsertion(:τ, 0, ddag; charge=qc)])
+	                                             OperatorInsertion(:τ, 0, ddag; charge=qc)], backend=:reference)
 	Kif = sysdynamics(lati, model; insertions=[OperatorInsertion(:τ, 2, d; charge=GTEMPO.qneg(qc)),
-	                                           OperatorInsertion(:τ, 0, ddag; charge=qc)])
+	                                                 OperatorInsertion(:τ, 0, ddag; charge=qc)], backend=:reference)
 	@test GM.todense(Kip) == GM.todense(Kif)
 end
 
-@testset "API: 缓存键完备性（验收 4：同格换插入产出不同且各自正确）" begin
+@testset "API: 缓存键完备性（验收 4：同格换插入产出不同且各自正确；旧径钉 :reference）" begin
 	μ = 0.4; β = 0.8
 	lat = GrassmannLattice(N=3, δt=0.1, bands=1, contour=:real, symmetry=U1Symmetry())
 	model = ToulouseIM(ϵ_d=μ)
@@ -73,14 +75,14 @@ end
 	          OperatorInsertion(:+, 0, ddag; charge=qc)]
 	ins_r = [OperatorInsertion(:+, 3, n; side=:right)]
 	for ins in (ins_n, ins_dn, ins_r)
-		@test GM.todense(sysdynamics(prep; insertions=ins)) ==
-		      GM.todense(sysdynamics(lat, model; initial_state=ρ0, insertions=ins))
+		@test GM.todense(sysdynamics(prep; insertions=ins, backend=:reference)) ==
+		      GM.todense(sysdynamics(lat, model; initial_state=ρ0, insertions=ins, backend=:reference))
 	end
 	# 且互不相同（键漏字段 = 同值假命中）
-	dn = GM.todense(sysdynamics(prep; insertions=ins_dn))
-	nn_ = GM.todense(sysdynamics(prep; insertions=ins_n))
-	rr = GM.todense(sysdynamics(prep; insertions=ins_r))
-	ee = GM.todense(sysdynamics(prep))
+	dn = GM.todense(sysdynamics(prep; insertions=ins_dn, backend=:reference))
+	nn_ = GM.todense(sysdynamics(prep; insertions=ins_n, backend=:reference))
+	rr = GM.todense(sysdynamics(prep; insertions=ins_r, backend=:reference))
+	ee = GM.todense(sysdynamics(prep; backend=:reference))
 	@test dn != nn_ && dn != ee && nn_ != ee && rr != nn_
 end
 
@@ -124,4 +126,61 @@ end
 	prep1 = prepare_system(lats, ToulouseIM(ϵ_d=μ); order=2, coupling_norm=0.5, initial_state=ρ0s)
 	@test GM.todense(sysdynamics_weyl2order(prep1)) ==
 	      GM.todense(sysdynamics_weyl2order(lats, ToulouseIM(ϵ_d=μ); coupling_norm=0.5, initial_state=ρ0s))
+end
+
+@testset "API: 制备对象 Fock 缓存（新径，plan fock_mpo Phase 2）" begin
+	# 显式 backend=:fock（不随全局缺省漂移）：单槽缓存命中逐位、插入乘法
+	# 别名透传不污染缓存链、clear_cache! 清空
+	μ = 0.4; β = 0.8
+	lat = GrassmannLattice(N=3, δt=0.1, bands=1, contour=:real, symmetry=U1Symmetry())
+	model = ToulouseIM(ϵ_d=μ)
+	q = exp(-β * μ)
+	ρ0 = Matrix{ComplexF64}(Diagonal([1.0, q])); ρ0 ./= tr(ρ0)
+	spec = GTEMPO.sectortype(U1Symmetry())
+	qc = var_charge(spec, 1, 1)
+	d = GTEMPO._fock_ops(1)[1]; ddag = d'
+	prep = prepare_system(lat, model; order=1, initial_state=ρ0)
+	# prep 新径 vs lattice/model 新径（无缓存重建）逐位；首调建缓存
+	@test prep.fockmpo[] === nothing
+	K1 = sysdynamics(prep; backend=:fock)
+	@test prep.fockmpo[] !== nothing
+	@test GM.todense(K1) == GM.todense(sysdynamics(lat, model; initial_state=ρ0, backend=:fock))
+	# 命中路径逐位稳定
+	@test GM.todense(sysdynamics(prep; backend=:fock)) == GM.todense(K1)
+	# 奇插入对：prep 缓存链 + 稀疏乘法 vs 重建逐位；重复调用逐位
+	gt_ins(i) = [OperatorInsertion(:+, i, d; charge=GTEMPO.qneg(qc)),
+	             OperatorInsertion(:+, 0, ddag; charge=qc)]
+	Ki = sysdynamics(prep; insertions=gt_ins(2), backend=:fock)
+	@test GM.todense(Ki) == GM.todense(sysdynamics(lat, model; initial_state=ρ0,
+	                                               insertions=gt_ins(2), backend=:fock))
+	@test GM.todense(sysdynamics(prep; insertions=gt_ins(2), backend=:fock)) == GM.todense(Ki)
+	# 插入乘法别名透传不回写缓存链（乘后无插入链逐位不变）
+	@test GM.todense(sysdynamics(prep; backend=:fock)) == GM.todense(K1)
+	# clear_cache! 清 FockMPO 缓存
+	clear_cache!(prep)
+	@test prep.fockmpo[] === nothing
+	@test GM.todense(sysdynamics(prep; backend=:fock)) == GM.todense(K1)
+	# weyl2order prep 版新径：制备绑定（order=2 + coupling_norm）
+	prep2 = prepare_system(lat, model; order=2, coupling_norm=0.5, initial_state=ρ0)
+	@test GM.todense(sysdynamics_weyl2order(prep2; backend=:fock)) ==
+	      GM.todense(sysdynamics_weyl2order(lat, model; coupling_norm=0.5,
+	                                        initial_state=ρ0, backend=:fock))
+	# 扫描流（greater prep==fresh 标量逐位，走 _inserted_expectation 的 prep 分支
+	# ——测量层无 backend kwarg，经全局开关路由：组内临时切 :fock，finally 恢复）
+	bath = discretefermionicbath([1.0], [0.5]; β=β)
+	kernel = hybridization(lat, bath)
+	Is = hybriddynamics(lat, bath, PartialIF(); band=1)
+	saved = GTEMPO.sysfactor_backend()
+	try
+		GTEMPO.set_sysfactor_backend!(:fock)
+		K = sysdynamics(lat, model; initial_state=ρ0)
+		Z = integrate(K, Is)
+		for i in 1:3
+			@test greater(lat, model, kernel, Is; i=i, j=0, Z=Z, preparation=prep) ==
+			      greater(lat, model, kernel, Is; i=i, j=0, Z=Z, order=1, coupling_norm=0.0,
+			              initial_state=ρ0)
+		end
+	finally
+		GTEMPO.set_sysfactor_backend!(saved)
+	end
 end

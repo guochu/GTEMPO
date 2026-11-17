@@ -169,6 +169,10 @@ spec 由 `sectortype(lattice)` 派生、绑定制备对象不进键。构造时�
   split_cell 张量列（Ol组/Or组/cut0组 = 切位 `OperatorInsertion` 元组，经
   结构化 `==`/`hash` 进键；prefix荷 = 切位 < k 的累计插入荷——
   leftlabels 的自由度，rightlabels 由 (prefix, Ol∪Or 荷) 唯一决定）。
+  两者仅 `backend=:reference`（旧径）消费；
+- **FockMPO 缓存**（`fockmpo`，`backend=:fock` 新径）：单槽 lazy 缓存——
+  FockMPO 只依赖 (lattice, model, order, coupling_norm)，与插入无关，扫描型
+  测量按次经稀疏乘法施加插入（乘法非原地，缓存不被污染）。
 
 扫描型测量（如 greater(i,0)，i = 1..N）的 automaton 成本从 O(N·L) 摊销到
 O(L + N·切位邻域)。所有权约定（scaling.jl 老原则）：缓存严格归属本对象，
@@ -188,13 +192,14 @@ struct SystemFactorPreparation{G<:Sector}
     fqs::Vector{G}
     charges_per_cell::Vector{G}
     dim::Int
+    fockmpo::Base.RefValue{Any}   # 新径 FockMPO 缓存（lazy；类型在 fockmpo.jl，include 在本文件后）
     propagators::Dict{Tuple{Symbol,Int},Matrix{ComplexF64}}
     cell_tensors::Dict{Tuple,Vector}
     function SystemFactorPreparation(lattice, model, order, coupling_norm, initial_state,
                                      cells, weights, fqs::Vector{G}, charges_per_cell::Vector{G},
                                      dim) where {G<:Sector}
         new{G}(lattice, model, order, coupling_norm, initial_state, cells, weights,
-               fqs, charges_per_cell, dim,
+               fqs, charges_per_cell, dim, Ref{Any}(nothing),
                Dict{Tuple{Symbol,Int},Matrix{ComplexF64}}(), Dict{Tuple,Vector}())
     end
 end
@@ -232,12 +237,13 @@ function prepare_system(lattice::AbstractGrassmannLattice, model::AbstractImpuri
                                    fqs, charges, 2^bands)
 end
 
-"清空两层缓存（预计算字段保留；distinct 格数被扫描形态天然有界，一般无需调用）"
+"清空两层缓存与新径 FockMPO 缓存（预计算字段保留；distinct 格数被扫描形态
+天然有界，一般无需调用）"
 clear_cache!(prep::SystemFactorPreparation) =
-    (empty!(prep.propagators); empty!(prep.cell_tensors); prep)
+    (empty!(prep.propagators); empty!(prep.cell_tensors); prep.fockmpo[] = nothing; prep)
 
 # ---------------------------------------------------------------------------
-# 参考装配（dense core + split_cell；golden 锚定路径）
+# 参考装配（dense core + split_cell；旧径 = 交叉验证基准，Phase 3 起 deprecated）
 # ---------------------------------------------------------------------------
 
 "单元数据 → 变量粒度裸张量列（split_cell 逐格 SVD 切分；无数值截断）"
@@ -256,6 +262,10 @@ end
 两层缓存——键完备（F3 函数依赖逐项对映）⟺ 命中返回张量与重算逐位一致。
 格张量键的 `prefix` 取 leftlabels 口径（cut-k 更新前）；rightlabels 由
 (prefix, Ol∪Or 荷) 唯一决定，键完整。
+
+**deprecated（plan/sysdynamics_fock_mpo_plan.md Phase 3）**：默认后端已切
+`:fock`（`_system_factor_fock`）；本径保留为交叉验证基准
+（`backend=:reference` 显式选择；test/api/fockmpo.jl 对拍闸门的锚定侧）。
 """
 function _system_factor_reference(prep::SystemFactorPreparation; insertions=OperatorInsertion[],
                                   trunc=nothing, truncerrs=nothing)
@@ -395,6 +405,9 @@ end
 便利路径：一次性 `prepare_system` 后走制备对象版（缓存随用即抛）。
 `spec` 必须与 `sectortype(lattice)` 一致（站点空间由 symmetry 派生，不一致
 的 spec 本就无法构造合法链——原实现会静默产出错块路由链，现显式拒绝）。
+
+**deprecated（plan/sysdynamics_fock_mpo_plan.md Phase 3）**：交叉验证基准，
+`backend=:reference` 显式选择。
 """
 function _system_factor_reference(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian;
                                   order::Int=1, initial_state=nothing, coupling_norm::Real=0.0,
@@ -458,36 +471,77 @@ end
 # spec symbol 反查（守卫报错信息用）
 
 # ---------------------------------------------------------------------------
+# 新旧径并存开关（plan/sysdynamics_fock_mpo_plan.md Phase 2/3）
+# ---------------------------------------------------------------------------
+
+"系统因子后端开关（Phase 2 落地时缺省 :reference，Phase 3 翻 :fock）"
+const SYSFACTOR_BACKEND = Ref{Symbol}(:reference)
+
+"""
+    set_sysfactor_backend!(b::Symbol) -> Symbol
+
+系统因子 K 构造后端：`:fock` = 新径（`fock_sysdynamics` Fock 直积 MPO + 插入
+稀疏乘法 + `fockmpo2gmps` 转换）；`:reference` = 旧径（dense core automaton +
+split_cell-for-K，交叉验证基准）。进程级配置（非缓存，不归属数据对象）——
+测试与基准切换用；生产代码走 `sysdynamics` 的 `backend` kwarg 缺省值。
+"""
+function set_sysfactor_backend!(b::Symbol)
+    b in (:fock, :reference) ||
+        throw(ArgumentError("backend must be :fock or :reference, got $b"))
+    SYSFACTOR_BACKEND[] = b
+    return b
+end
+
+"当前系统因子后端（见 set_sysfactor_backend!）"
+sysfactor_backend() = SYSFACTOR_BACKEND[]
+
+_backend_guard(b::Symbol) =
+    b in (:fock, :reference) ||
+    throw(ArgumentError("backend must be :fock or :reference, got $b"))
+
+# ---------------------------------------------------------------------------
 # 公开皮肤（旧 API 名保持；plan §3.3）
 # ---------------------------------------------------------------------------
 
 """
     sysdynamics(lattice, model; order=1, initial_state=nothing,
-                coupling_norm=0.0, insertions=OperatorInsertion[], trunc) -> GMPS
+                coupling_norm=0.0, insertions=OperatorInsertion[], trunc,
+                backend=sysfactor_backend()) -> GMPS
 
 杂质系统因子 K（cell automaton；order=1 相干 anti-Wick 语义，q=1 局部权重）。
 ρ₀/迹闭合已折进单元（boundarycondition! 不再需要）；`initial_state`
 （FockMatrix/矩阵）仅实时轮廓生效（缺省 = 真空投影）。
+
+`backend`：`:fock` = 新径（`_system_factor_fock`：FockMPO 直积 + fockmpo2gmps
+转换，plan/sysdynamics_fock_mpo_plan.md Phase 3 起缺省）；`:reference` = 旧径
+（`_system_factor_reference`，deprecated，交叉验证基准）。
 """
 function sysdynamics(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian;
-                     order::Integer=1, kwargs...)
+                     order::Integer=1, backend::Symbol=sysfactor_backend(), kwargs...)
     order in (1, 2) || throw(ArgumentError("order must be 1 or 2"))
+    _backend_guard(backend)
+    backend === :fock &&
+        return _system_factor_fock(lattice, model; order=Int(order), kwargs...)
     return _system_factor_reference(lattice, model; order=Int(order),
                                     spec=TK.sectortype(lattice), kwargs...)
 end
 
 """
     sysdynamics(prep::SystemFactorPreparation; insertions=OperatorInsertion[],
-                trunc=nothing, truncerrs=nothing) -> GMPS
+                trunc=nothing, truncerrs=nothing, backend=sysfactor_backend()) -> GMPS
 
-制备对象版 K：传播子/格张量经 `prep` 两层缓存（键完备 ⟺ 命中返回张量与
-重算逐位一致——golden 无需重锚）；`insertions` 每次调用新构造的对象经
-结构化 `==`/`hash` 进键。扫描型测量（`prepare_system` + 测量层
-`preparation=prep` 透传）的 automaton 成本从 O(N·L) 摊销到
-O(L + N·切位邻域)。原签名保持为便利包装（一次性 prepare_system 即抛）。
+制备对象版 K：`:fock` = FockMPO 经 `prep.fockmpo` 单槽缓存（与插入无关——扫描
+型测量 O(1) 复用，插入按次稀疏乘法施加）；`:reference` = 传播子/格张量两层
+缓存（键完备 ⟺ 命中返回张量与重算逐位一致；deprecated 交叉验证基准）。
+`insertions` 每次调用新构造的对象经结构化 `==`/`hash` 进键（旧径）。扫描型
+测量（`prepare_system` + 测量层 `preparation=prep` 透传）的 automaton 成本
+从 O(N·L) 摊销到 O(L + N·切位邻域)。原签名保持为便利包装（一次性
+prepare_system 即抛）。
 """
 function sysdynamics(prep::SystemFactorPreparation; insertions=OperatorInsertion[],
-                     trunc=nothing, truncerrs=nothing)
+                     trunc=nothing, truncerrs=nothing, backend::Symbol=sysfactor_backend())
+    _backend_guard(backend)
+    backend === :fock && return _system_factor_fock(prep; insertions, trunc, truncerrs)
     return _system_factor_reference(prep; insertions, trunc, truncerrs)
 end
 
@@ -496,10 +550,13 @@ end
 
 Weyl 二阶 K（order=2：q=1/2 对称半步 S·M·S + Weyl 标量
 exp(coupling_norm/4·Σ step²)；`coupling_norm` = 全带总耦合 Σ_b α_b，必填 ≥ 0）。
-IF 与收缩零改动（INTEGRATION.md §2 F1）。
+IF 与收缩零改动（INTEGRATION.md §2 F1）。`backend` 语义同 sysdynamics。
 """
 function sysdynamics_weyl2order(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian;
-                                coupling_norm::Real, kwargs...)
+                                coupling_norm::Real, backend::Symbol=sysfactor_backend(), kwargs...)
+    _backend_guard(backend)
+    backend === :fock &&
+        return _system_factor_fock(lattice, model; order=2, coupling_norm=coupling_norm, kwargs...)
     return _system_factor_reference(lattice, model; order=2, coupling_norm=coupling_norm,
                                     spec=TK.sectortype(lattice), kwargs...)
 end
@@ -509,10 +566,13 @@ end
 
 制备对象版 Weyl 二阶 K：`coupling_norm` 以 `prep` 绑定为准（Weyl 标量用），
 不接受逐调用覆盖——order=2 的制备必须走 `prepare_system(...; order=2,
-coupling_norm=...)`。
+coupling_norm=...)`。`backend` 语义同 sysdynamics。
 """
-function sysdynamics_weyl2order(prep::SystemFactorPreparation; kwargs...)
+function sysdynamics_weyl2order(prep::SystemFactorPreparation;
+                                backend::Symbol=sysfactor_backend(), kwargs...)
     prep.order == 2 ||
         throw(ArgumentError("sysdynamics_weyl2order requires an order=2 preparation (prepare_system(...; order=2, coupling_norm=...))"))
+    _backend_guard(backend)
+    backend === :fock && return _system_factor_fock(prep; kwargs...)
     return _system_factor_reference(prep; kwargs...)
 end

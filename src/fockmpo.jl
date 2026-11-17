@@ -151,7 +151,7 @@ end
 """
     fock_initstate!(lattice, f::FockMPO, rho0=nothing) -> FockMPO
 
-ρ₀ 折叠（原地）：ρ₀ 右乘进首 site 全部单项式块（=(M·ρ₀) 同语义）。
+    ρ₀ 折叠（原地）：ρ₀ 右乘进首 site 全部单项式块（=(M·ρ₀) 同语义）。
 `rho0` 缺省 = fock_vacuumstate(lattice)。**切位 0 插入不经本函数**——
 Ol₀·ρ·Or₀ 三明治序由 fockmpo2gmps 的 rho0/insertions kwargs 保证
 （先 fold 后乘会得到 Ol₀·O₁·ρ 的错误序）；走 kwargs 路线时不要再调本函数。
@@ -172,13 +172,13 @@ end
 """
     sparsefockmpo(lattice, insertions) -> SparseFockMPO
 
-插入算符 → 稀疏算符链：切位 ≥ 1 的插入按 `insertion_cut_index` 映射到链位，
+    插入算符 → 稀疏算符链：切位 ≥ 1 的插入按 `insertion_cut_index` 映射到链位，
 同位算符按 push 序折成列积（foldr/foldl，先 push 最左，0⁺ 序）。**切位 0 插入
 在此过滤掉**（归 fockmpo2gmps 的 rho0/insertions 三明治）；全部插入须同 side
-（左右各建一个 SparseFockMPO）。
-"""
+（左右各建一个 SparseFockMPO）。⚠️ 过滤按 cut index 而非 `boundary` 字段——
+`:-` 支 boundary 0 = 链末切位（cut = 2Nt），不是 ρ₀ 切位（lesser(j=0) 路径）。"""
 function sparsefockmpo(lattice::AbstractGrassmannLattice, insertions::Vector{OperatorInsertion})
-    ins1 = filter(i -> i.boundary >= 1, insertions)
+    ins1 = filter(i -> insertion_cut_index(lattice, i) >= 1, insertions)
     side = isempty(ins1) ? :left : first(ins1).side
     all(i -> i.side === side, ins1) ||
         throw(ArgumentError("mixed sides: build one SparseFockMPO per side (:left / :right)"))
@@ -295,13 +295,17 @@ function fockmpo2gmps(f::FockMPO, lattice::AbstractGrassmannLattice;
     end
     total_q == z || throw(ArgumentError("total insertion charge must be zero"))
 
-    # ρ₀ + 切位 0 三明治（Ol₀·ρ·Or₀；push 序 = 0⁺ 序）
+    # ρ₀ + 切位 0 三明治（Ol₀·ρ·Or₀；push 序 = 0⁺ 序）——过滤按 cut index：
+    # `:-` 支 boundary 0 映射链末切位（cut = 2Nt），不是 ρ₀ 切位（与旧径 cuts
+    # 键同口径）
     rho = rho0 === nothing ? fock_vacuumstate(lattice) :
           (rho0 isa FockMatrix ? Matrix{ComplexF64}(rho0.data) : Matrix{ComplexF64}(rho0))
     size(rho) == (dim, dim) || throw(DimensionMismatch("rho0 must be $dim×$dim"))
-    rho = foldr((i, A) -> i.matrix * A, filter(i -> i.boundary == 0 && i.side === :left, insertions);
+    rho = foldr((i, A) -> i.matrix * A,
+                filter(i -> insertion_cut_index(lattice, i) == 0 && i.side === :left, insertions);
                 init=rho)
-    rho = foldl((A, i) -> A * i.matrix, filter(i -> i.boundary == 0 && i.side === :right, insertions);
+    rho = foldl((A, i) -> A * i.matrix,
+                filter(i -> insertion_cut_index(lattice, i) == 0 && i.side === :right, insertions);
                 init=rho)
 
     # prefix 荷（标签口径 = leftlabels；rightlabels 由 (prefix, 切位荷) 唯一决定）
@@ -396,4 +400,78 @@ fockmpo2gmps 的数学逆（用途 = Fock 层再操作/跨口径调试对拍）�
 """
 function gmps2fockmpo(g::GMPS, lattice::AbstractGrassmannLattice)
     throw(ArgumentError("gmps2fockmpo：V2 未实施（plan/sysdynamics_fock_mpo_plan.md §3.2；楔积基底映射与合并秩待定谳）"))
+end
+
+# ---------------------------------------------------------------------------
+# 闭环装配：sysdynamics 公开入口 backend=:fock 的新径实现（plan Phase 2）
+# ---------------------------------------------------------------------------
+
+"切位 ≥ 1 插入乘进 Fock 链（左右各一 SparseFockMPO，切位 0 归 fockmpo2gmps
+的 rho0/insertions 三明治）——test/api/fockmpo.jl 闸门 _wf_build 同配方。
+乘法非原地：产物在支撑位新建张量、其余透传别名，输入链（含缓存链）不被污染。"
+function _fockmpo_with_insertions(lattice::AbstractGrassmannLattice, Kf::FockMPO,
+                                  insertions)
+    ge1 = filter(i -> insertion_cut_index(lattice, i) >= 1, insertions)
+    Wl = sparsefockmpo(lattice, filter(i -> i.side === :left, ge1))
+    Wr = sparsefockmpo(lattice, filter(i -> i.side === :right, ge1))
+    return Wr * (Wl * Kf)
+end
+
+"Weyl 标量 lscale（order=2 = coupling_norm/4·Σ step²，一阶 0）——旧径同式同序"
+_fock_weyl_lscale(lattice::AbstractGrassmannLattice, order::Int, coupling_norm::Real) =
+    order == 2 ? real(coupling_norm / 4 *
+                      sum(_cell_step2(lattice, b) for (b, _) in chronological_cells(lattice))) :
+    0.0
+
+"""
+    _system_factor_fock(lattice, model; order=1, coupling_norm=0.0, initial_state=nothing,
+                        insertions=OperatorInsertion[], trunc=nothing, truncerrs=nothing,
+                        spec=nothing) -> GMPS
+
+sysdynamics 新径（backend=:fock）：`fock_sysdynamics` → 切位 ≥ 1 插入稀疏乘法
+→ `fockmpo2gmps`（ρ₀/切位 0 三明治 + 迹闭合 + oddlater + prefix + reorder）。
+语义与 `_system_factor_reference` 逐位对齐（test/api/fockmpo.jl 163 项对拍
+闸门）：`initial_state` 仅实时轮廓生效（虚时/混合 = 热迹 I——此处按轮廓门控，
+`fockmpo2gmps` 的 rho0 直通）；`spec` 兼容旧径 kwarg（须 = sectortype(lattice)）。
+"""
+function _system_factor_fock(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian;
+                             order::Int=1, coupling_norm::Real=0.0, initial_state=nothing,
+                             insertions=OperatorInsertion[], trunc=nothing, truncerrs=nothing,
+                             spec=nothing)
+    order in (1, 2) || throw(ArgumentError("order must be 1 or 2"))
+    spec === nothing || spec === TK.sectortype(lattice) ||
+        throw(ArgumentError("spec $spec ≠ sectortype(lattice) $(TK.sectortype(lattice))"))
+    Kf = _fockmpo_with_insertions(lattice,
+                                  fock_sysdynamics(lattice, model; order=order,
+                                                   coupling_norm=coupling_norm),
+                                  insertions)
+    rho0 = lattice isa AbstractRealGrassmannLattice ? initial_state : nothing
+    return fockmpo2gmps(Kf, lattice; rho0=rho0, insertions=insertions,
+                        weyl_lscale=_fock_weyl_lscale(lattice, order, coupling_norm),
+                        trunc=trunc, truncerrs=truncerrs)
+end
+
+"""
+    _system_factor_fock(prep::SystemFactorPreparation; insertions=OperatorInsertion[],
+                        trunc=nothing, truncerrs=nothing) -> GMPS
+
+制备对象版新径：FockMPO 只依赖 (lattice, model, order, coupling_norm)——与
+插入无关，`prep.fockmpo` 单槽缓存摊销扫描型测量（automaton 成本 O(L) 一次 +
+每测量仅切位邻域稀疏乘法）；ρ₀/oddlater/prefix 每次经 fockmpo2gmps kwargs
+施加（order/coupling_norm/initial_state 以 prep 绑定为准，与旧径 prep-wins
+语义一致）。
+"""
+function _system_factor_fock(prep::SystemFactorPreparation; insertions=OperatorInsertion[],
+                             trunc=nothing, truncerrs=nothing)
+    lattice = prep.lattice
+    if prep.fockmpo[] === nothing
+        prep.fockmpo[] = fock_sysdynamics(lattice, prep.model; order=prep.order,
+                                          coupling_norm=prep.coupling_norm)
+    end
+    Kf = prep.fockmpo[]::FockMPO
+    Kf2 = _fockmpo_with_insertions(lattice, Kf, insertions)
+    rho0 = lattice isa AbstractRealGrassmannLattice ? prep.initial_state : nothing
+    return fockmpo2gmps(Kf2, lattice; rho0=rho0, insertions=insertions,
+                        weyl_lscale=_fock_weyl_lscale(lattice, prep.order, prep.coupling_norm),
+                        trunc=trunc, truncerrs=truncerrs)
 end
