@@ -7,8 +7,9 @@
 #
 # 对称性用户手选（2026-11-13 D1 裁决，§3.4；2026-11-16 A1/A2 裁决：spec =
 # TK 扇区类型本身、荷标签 = TK 扇区；2026-11-16 单例化：Symbol 字符串选择
-# 退役，改为四个对称性单例类型 Z2Symmetry/Z2Z2Symmetry/U1Symmetry/
-# U1U1Symmetry（Symmetry 后缀避免与 GM 扇区类型撞名），sectortype 按类型分派）。
+# 退役，改为四个对称性单例；2026-11-17 单例定义上收上游 GM/grassmannspaces.jl
+# ——GrassmannSymmetry 抽象 + 四单例 + sectortype 扩展全在 GM，本包 import
+# 后原样再导出，不再本地定义）。
 # 荷标签（构造层纯数据）类型随对称性：
 #   Z2Symmetry   → Z2Irrep      各带宇并合并——旧 GTEMPO 语义；sector = mod 2
 #   Z2Z2Symmetry → Z2Z2         每自旋宇并：奇带 = 各轨道 up、偶带 = down，偶数带
@@ -19,22 +20,10 @@
 # 其余三通道靠 GM abelian 电池 + 本包跨对称性一致电池 + ED 三层兜底（R9）。
 
 # ---------------------------------------------------------------------------
-# 对称性单例（用户手选面：lattice 构造的 symmetry 输入；本文件是唯一允许
-# 按对称性分支的位置之一，与 GM/grassmannspaces.jl 的注册表对表）
+# 对称性分支层（用户手选面：lattice 构造的 symmetry 输入 = GM 单例，定义在
+# GM/grassmannspaces.jl；本文件是唯一允许按对称性分支的位置，分派键 = TK
+# 扇区类型）
 # ---------------------------------------------------------------------------
-
-abstract type GrassmannSymmetry end
-struct Z2Symmetry <: GrassmannSymmetry end       # 各带宇并合并（旧语义）
-struct Z2Z2Symmetry <: GrassmannSymmetry end     # 每自旋宇并（奇带 up / 偶带 down，偶数带）
-struct U1Symmetry <: GrassmannSymmetry end       # 各带总粒子数合并
-struct U1U1Symmetry <: GrassmannSymmetry end     # 每自旋粒子数（奇带 up / 偶带 down，偶数带）
-
-"对称性单例类型 → TK 扇区类型（spec）"
-TK.sectortype(::Type{Z2Symmetry}) = TK.Z2Irrep
-TK.sectortype(::Type{Z2Z2Symmetry}) = Z2Z2
-TK.sectortype(::Type{U1Symmetry}) = TK.U1Irrep
-TK.sectortype(::Type{U1U1Symmetry}) = ChargeCharge
-TK.sectortype(sym::GrassmannSymmetry) = TK.sectortype(typeof(sym))
 
 # 荷标签代数（TK 扇区直用）：融合 = first(⊗)（GM 自身惯用法）、负 = dual、
 # 减 = 加负。宇并形 mod 2 语义由扇区融合自然承载（+1 与 −1 同扇区不压重）。
@@ -76,18 +65,11 @@ var_charge(::Type{Z2Z2}, band::Int, bands::Int) =
 var_charge(::Type{ChargeCharge}, band::Int, bands::Int) =
     isodd(band) ? ChargeCharge(TK.U1Irrep(1), TK.U1Irrep(0)) : ChargeCharge(TK.U1Irrep(0), TK.U1Irrep(1))
 
-"扇区类型 → GrassmannMPS 对称性单例（GM 公共入口 2026-11-17 起 = GrassmannSymmetry，
-单例定义与本章单例同构——GM/grassmannspaces.jl 注册表对表）"
-_gm_symmetry(::Type{TK.Z2Irrep}) = GM.Z2Symmetry()
-_gm_symmetry(::Type{Z2Z2}) = GM.Z2Z2Symmetry()
-_gm_symmetry(::Type{TK.U1Irrep}) = GM.U1Symmetry()
-_gm_symmetry(::Type{ChargeCharge}) = GM.U1U1Symmetry()
-
 "站形：band b 的物理站空间（单荷形全站同形；双荷形按带奇偶交替朝向——
 :u1u1 = U1GTEMPO2 同款 up/down 交替站形；朝向序 = GM 规范形注册表
-canonical_grassmann_spaces 的 [up, down] 约定）"
+canonical_grassmann_spaces 的 [up, down] 约定；扇区类型 → 单例映射 = GM._symmetry）"
 function station_space(::Type{G}, band::Int) where {G<:Sector}
-    spaces = GM.canonical_grassmann_spaces(_gm_symmetry(G))
+    spaces = GM.canonical_grassmann_spaces(GM._symmetry(G))
     return length(spaces) == 1 ? only(spaces) : spaces[isodd(band) ? 1 : 2]
 end
 

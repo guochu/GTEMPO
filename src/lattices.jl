@@ -7,9 +7,9 @@
 #   虚时：[格 Nτ][…][格 1]（格 i ⟷ 块 k−i+1）。
 # 格点计数语义（与旧 lattice 的 k=步数+1 不同——Chrono 无额外端点格点）：
 #   N/Nt/Nτ kwarg = 物理步数（= 单元数）；k/kt/kτ = 对应分支的格点数。
-# lattice 按对称性单例类型参数化（2026-11-16：Symbol 字符串手选退役，单例名带
-# Symmetry 后缀避免与 GM 扇区类型撞名）——
-# `symmetry::Sym` 字段携带 bridge 的 GrassmannSymmetry 单例（Z2/Z2Z2/U1/U1U1），
+# lattice 按对称性单例类型参数化（2026-11-16：Symbol 字符串手选退役；单例
+# 定义上游 GM/grassmannspaces.jl，本包再导出）——
+# `symmetry::Sym` 字段携带 GM 的 GrassmannSymmetry 单例（Z2/Z2Z2/U1/U1U1），
 # `TK.sectortype(lattice)` 编译期即得扇区类型（spec），下游免重复输入扇区
 # 信息。ordering 管链排布、symmetry 管扇区标记，两者正交（§3.4）。
 

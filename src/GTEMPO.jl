@@ -34,6 +34,8 @@ import GrassmannMPS: vacuumstate, expectation,   # 扩展目标（lattice / solu
 using GrassmannMPS: GMPS, SparseGMPS, ScaledScalar, ExpectationCache,
     ChargeCharge, Z2Z2, grassmannspace, grassmann_basis, wedge_vertex,
     canonical_grassmann_spaces,
+    # 对称性单例（定义上游 GM/grassmannspaces.jl，本包再导出）
+    GrassmannSymmetry, Z2Symmetry, Z2Z2Symmetry, U1Symmetry, U1U1Symmetry,
     environments, Zvalue, value, truncrelerr, truncdimcutoff, truncate!,
     leftorth!, rightorth!, swap!, reorder!, randomgmps,
     mult, mult!, apply!, DMRG2, SVDCompression,
@@ -84,7 +86,7 @@ export AbstractGrassmannLattice, AbstractImagGrassmannLattice, AbstractRealGrass
 export ImagGrassmannLattice, RealGrassmannLattice, MixedGrassmannLattice, GrassmannLattice
 export branches, indexmappings, vacuumstate
 export symmetry, site_spaces
-export GrassmannSymmetry, Z2Symmetry, Z2Z2Symmetry, U1Symmetry, U1U1Symmetry
+export GrassmannSymmetry, Z2Symmetry, Z2Z2Symmetry, U1Symmetry, U1U1Symmetry  # GM 单例再导出
 
 # 对称性 / 桥层（构造 + 引擎接线）
 export Truncation
