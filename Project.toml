@@ -4,6 +4,7 @@ authors = ["Guo Chu <guochu604b@gmail.com>", "Sun Zhijie <zjsun@mail.ustc.edu.cn
 version = "0.0.1"
 
 [deps]
+ExpExp = "05571471-befe-4da2-8d73-f7916647c25f"
 GrassmannMPS = "8f6e1d24-5a70-4b3e-9c2a-71b7e0d5a001"
 ImpurityModelBase = "a5817ebb-6d84-46c1-a17a-d25f868e249e"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"

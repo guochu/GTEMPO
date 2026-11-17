@@ -23,6 +23,7 @@ import QuAPI: branch
 using LinearAlgebra: LinearAlgebra, eigen, Diagonal, I, tr, norm, diag
 import TensorKit as TK
 import MatrixAlgebraKit as MAK
+import ExpExp: anchored_matrix_pencil_sweep   # fit_exponentials 薄壳核心（plan kernel_and_fit §Part 2 案 B）
 using TensorKit: ⊗, ⊠, ←, Vect, Z2Irrep, U1Irrep, Sector,
                  sectors, sectortype, dim, fusiontrees, SpaceMismatch,
                  SectorVector, SectorDict

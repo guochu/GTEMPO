@@ -1,5 +1,7 @@
 # HybridizationKernel 轻量化 + fit_exponentials 与 ExpExp 去重裁定计划
 
+> **✅ 已完结（2026-11-17，Part 1 + Part 2 终局均落地，见 §5 实施状态）。**
+
 - 日期：2026-11-16
 - 基线：GTEMPO HEAD `c01f446c` + 工作区
 - 关联：`measurement_cache_refactor_plan.md`（缓存键引用 kernel.blocks 的语义——Phase B 实施时以本计划 Part 1 的 accessor 为准）；其余计划无文本冲突
@@ -91,5 +93,27 @@ end
 ## 4. 不做清单
 
 - BCS 浴 kernel 化（corr 直通已是最轻形态）；
-- ExpExp 依赖引入（除非案 B 翻案）；
+- ExpExp 依赖引入（除非案 B 翻案）——**已被 §2.2 翻案取代**；
 - `hybridization(lattice, corr)` accessor 路线复活（T7 已裁退役， throwing 现状保持）。
+
+## 5. 实施状态（2026-11-17 完结）
+
+- **Part 1 ✅（2026-11-16，ac21d6cf + b4ad1a82）**：`HybridizationKernel{L,C}` 存 QuAPI corr
+  （Toeplitz 向量 O(N)）；blocks = 构造端一次建齐的窗口化 branch 视图（评审后不做惰性缓存——
+  建视图 O(N)/块，不值得属性魔法）；`validate_tti` 删；内存 N=2048 258 KiB vs 旧 256 MiB
+  ~1000×；golden 逐位不变实证。
+- **Part 2 终局 ✅（案 B 全线落地）**：
+  - ExpExp 侧（2026-11-16，详见 `ExpExp/plan/expexp_anchored_pencil_plan.md` §6）：
+    `anchored_matrix_pencil` / `anchored_matrix_pencil_sweep` / `AnchoredMatrixPencil` 三件套 +
+    47 项测试；**2026-11-17 终局裁决 `rightanchors` 输入整体删除**（恒双端锚定折叠、投影分支不实现）。
+  - GTEMPO 侧（2026-11-17 本会话）：`fit_exponentials` 改薄壳——核心委托
+    `anchored_matrix_pencil_sweep`，`rightanchors` kwarg 删除，IF 域策略层留本地
+    （零序列/L=1 早退 + 退化窗单位根回退，铅笔失败后触发）；Project.toml 加 ExpExp
+    路径依赖（Pkg.develop，Manifest 纯新增无版本跳动）；`MAK` 保留（cross_factors 秩截断仍消费）。
+  - **慢线裁决（§2.3 步骤 0 预言的重锚）实测无对象**：新旧实现 A/B 审计（imag/real 核序列
+    单 δ 双 δ、超临界折叠、混合亚/超临界）——**节点/锚集/窗口重建曲线在全部 ExactTTI 面
+    配置逐位相同**（ MAK gesdvd vs LA gesdd 的 U/V 相位差被铅笔特征值的多项式不变量吸收）；
+    唯一非零 = 病态双 δ（cond(B)~1e13）权重歧义 ~1e-3，但其窗口重建曲线差 2.8e-16
+    （机器档）且不在 ExactTTI 测试面。fixture 检查器与全套测试无需重锚。
+- **§2.2 的案 A 文档两行被案 B 薄壳 docstring 取代**（同族关系 + 策略层边界已写进
+  `fit_exponentials` docstring）。

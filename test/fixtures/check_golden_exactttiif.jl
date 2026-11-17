@@ -11,6 +11,8 @@
 #      它们编码旧栈 ExactTTI 自己的已知 Prony 缺陷（旧 imagtime 测试在案：
 #      TTI 算法 ≈5% 不随 δτ 收敛），新实现已超越——imag N=4 对照
 #      occupation 旧 0.37555（距 ED 2.5e-2）vs 新 0.34992（距 ED 8.7e-4）。
+#   ④ 2026-11-17 起实时块 = 守卫语义（DiracDelta |q|=1 边界极点，ExactTTI
+#      响抛、ED 锚走 PartialIF）——见 real 块注记。
 #
 # 布局适配备忘：memory_cell/contact 合并胞按 U1GTEMPO2 存储 [± 相邻、j 降序]
 # 设计——real 因子在虚拟 ± 相邻布局构建后 GM.reorder! 到 Chrono 站序；虚时
@@ -86,24 +88,24 @@ end
         @test abs(occ - ed) < 2e-3
     end
 
-    # ================= 实时 N=3（热 ρ₀，Weyl 二阶）=================
+    # ================= 实时 N=3（热 ρ₀，Weyl 二阶）：守卫语义 =================
+    # 2026-11-17 终局裁决（ExpExp rightanchors 删除 + GTEMPO real 因子守卫激活，
+    # 8c997dd6）下的实时语义：DiracDelta（无阻尼浴）的实时核极点 = e^{-iωδt}，
+    # 模长恰在稳定边界 |q|=1——折叠朝向由数值抖动决定（:left/:right 随链长
+    # 轮盘；Nt=3/8 → :right、5/12 → :left，本机位型实测）。:right 时守卫
+    # "growing real pole unsupported" 响抛（真实轴 ExactTTI 因子装配只支持
+    # :left；边界/超临界核按裁决走 PartialIF，其行指数装配无极点折叠）。
+    # 本块断言守卫 + ED 演化锚走 PartialIF（实时物理的 ED 锚另有 weyl golden
+    # 检查器与 normalbath 套件覆盖）。
     let lat = GrassmannLattice(N=3, δt=0.15, bands=1, contour=:real)
         cn = α
         Is_p = (hybriddynamics(lat, bath, PartialIF(); band=1, coupling_norm=cn),)
-        Is_e = (hybriddynamics(lat, bath, ExactTTI(); band=1, coupling_norm=cn),)
         K = sysdynamics_weyl2order(lat, ToulouseIM(ϵ_d=μ); coupling_norm=cn, initial_state=ρ0_1)
-        tp, te = to_var(Is_p[1]), to_var(Is_e[1])
-        keys_all = union(keys(tp), keys(te))
-        err = maximum(abs(get(tp, k, 0im) - get(te, k, 0im)) for k in keys_all; init=0.0)
-        @test err < 1e-10
-        println("real N=3 IF 表: max |ExactTTI − PartialIF| = ", err)
+        @test_throws ArgumentError hybriddynamics(lat, bath, ExactTTI(); band=1, coupling_norm=cn)
+        println("real N=3: 边界极点核 ExactTTI 守卫响抛 ✓（DiracDelta |q|=1 抖动折叠 :right）")
         zp = integrate_scaled(K, Is_p...)
-        ze = integrate_scaled(K, Is_e...)
-        Zp, Ze = exp(zp.logabs) * zp.phase, exp(ze.logabs) * ze.phase
-        @test abs(Ze - Zp) / abs(Zp) < 1e-10
+        Zp = exp(zp.logabs) * zp.phase
         kw = (order=2, coupling_norm=cn, initial_state=ρ0_1)
-        @test occupation(lat, ToulouseIM(ϵ_d=μ), nothing, Is_e...; j=3, branch=:+, band=1, Z=Ze, kw...) ≈
-              occupation(lat, ToulouseIM(ϵ_d=μ), nothing, Is_p...; j=3, branch=:+, band=1, Z=Zp, kw...) atol = 1e-10
         # ED 锚：演化 t=0.45
         I2 = Matrix{ComplexF64}(I, 2, 2)
         bb = _annih1()
@@ -119,9 +121,9 @@ end
             for _ in 1:3; rr = Ue * rr * Ue'; end
             return real(tr(rr * kron(n1m, I2)))
         end
-        occ = real(occupation(lat, ToulouseIM(ϵ_d=μ), nothing, Is_e...; j=3, branch=:+, band=1, Z=Ze, kw...))
+        occ = real(occupation(lat, ToulouseIM(ϵ_d=μ), nothing, Is_p...; j=3, branch=:+, band=1, Z=Zp, kw...))
         ed = edreal()
-        @printf("real: ⟨n(t=.45)⟩ ExactTTI=%.7f  ED=%.7f  err=%.2e\n", occ, ed, abs(occ - ed))
+        @printf("real: ⟨n(t=.45)⟩ PartialIF=%.7f  ED=%.7f  err=%.2e\n", occ, ed, abs(occ - ed))
         @test abs(occ - ed) < 1e-4
     end
 
