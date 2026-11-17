@@ -372,7 +372,9 @@ function real_factors(emit, spec, lattice, k::HybridizationKernel, band, alg, di
     vars = [_virtual_merged_vars(lattice, band, m) for m in 1:n]   # 虚拟 ± 相邻布局
     perm = _virtual_to_chrono_perm(lattice, n)
     for (component, y) in ((:greater, g), (:lesser, l))
-        f = fit_exponentials(y; rtol=alg.rtol, maxterms=alg.maxterms, rightanchors=false)
+        # rightanchors 默认 true：超临界极点精确折叠为 :right，由下方守卫拒绝；
+        # 传 false 会把增长极点静默投影到单位圆，架空该守卫。
+        f = fit_exponentials(y; rtol=alg.rtol, maxterms=alg.maxterms)
         push!(residuals, f.relative_error)
         expansions = get!(diagnostics, :real_expansions, Dict{Symbol,Any}())
         expansions[component] = (; f..., fit_interval=(1, n - 1), convention=:integrated_lag_one)
