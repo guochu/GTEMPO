@@ -8,10 +8,9 @@ using GTEMPO: branches
 
 Random.seed!(12354)
 
-# plan/sysdynamics_fock_mpo_plan.md Phase 2 验收：全套切新径（K 构造后端开关，
-# 见 set_sysfactor_backend!；旧径机制测试已在各自文件内显式钉 :reference）。
-# Phase 3 缺省翻 :fock 后本行撤除。
-GTEMPO.set_sysfactor_backend!(:fock)
+# 系统因子 K 构造缺省后端 = :fock（plan/sysdynamics_fock_mpo_plan.md Phase 3）；
+# 旧径机制测试已在各自文件内显式钉 :reference。如需全套切回旧径验证：
+# GTEMPO.set_sysfactor_backend!(:reference)
 
 # shared utilities: spectra + ED reference builders（API 无关）
 include("util.jl")

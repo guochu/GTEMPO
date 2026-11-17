@@ -474,8 +474,9 @@ end
 # 新旧径并存开关（plan/sysdynamics_fock_mpo_plan.md Phase 2/3）
 # ---------------------------------------------------------------------------
 
-"系统因子后端开关（Phase 2 落地时缺省 :reference，Phase 3 翻 :fock）"
-const SYSFACTOR_BACKEND = Ref{Symbol}(:reference)
+"系统因子后端开关（plan/sysdynamics_fock_mpo_plan.md Phase 3 起缺省 :fock；
+:reference = 旧径交叉验证基准）"
+const SYSFACTOR_BACKEND = Ref{Symbol}(:fock)
 
 """
     set_sysfactor_backend!(b::Symbol) -> Symbol
