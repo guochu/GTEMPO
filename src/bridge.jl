@@ -76,11 +76,18 @@ var_charge(::Type{Z2Z2}, band::Int, bands::Int) =
 var_charge(::Type{ChargeCharge}, band::Int, bands::Int) =
     isodd(band) ? ChargeCharge(TK.U1Irrep(1), TK.U1Irrep(0)) : ChargeCharge(TK.U1Irrep(0), TK.U1Irrep(1))
 
+"扇区类型 → GrassmannMPS 对称性单例（GM 公共入口 2026-11-17 起 = GrassmannSymmetry，
+单例定义与本章单例同构——GM/grassmannspaces.jl 注册表对表）"
+_gm_symmetry(::Type{TK.Z2Irrep}) = GM.Z2Symmetry()
+_gm_symmetry(::Type{Z2Z2}) = GM.Z2Z2Symmetry()
+_gm_symmetry(::Type{TK.U1Irrep}) = GM.U1Symmetry()
+_gm_symmetry(::Type{ChargeCharge}) = GM.U1U1Symmetry()
+
 "站形：band b 的物理站空间（单荷形全站同形；双荷形按带奇偶交替朝向——
 :u1u1 = U1GTEMPO2 同款 up/down 交替站形；朝向序 = GM 规范形注册表
 canonical_grassmann_spaces 的 [up, down] 约定）"
 function station_space(::Type{G}, band::Int) where {G<:Sector}
-    spaces = GM.canonical_grassmann_spaces(G)
+    spaces = GM.canonical_grassmann_spaces(_gm_symmetry(G))
     return length(spaces) == 1 ? only(spaces) : spaces[isodd(band) ? 1 : 2]
 end
 
