@@ -1,5 +1,7 @@
 # fock_sysdynamics 计划（v2）：Fock 表象直积 MPO + fockmpo2gmps/gmps2fockmpo 互逆转换
 
+> **✅ 已完结（2026-11-17，四阶段全落地，见 §7 实施状态）。**
+
 - 日期：2026-11-17（v2：按用户锚点修订——TEMPO NonDiagonalHyb 先例、格点数确认、转换数学原理重推）
 - 基线：GTEMPO HEAD `f3ee05c4` 系工作区（measurement cache / 接口简化已实施）
 - 关联：`if_expmult_backend_plan.md`（IF 装配，独立）；`measurement_cache_refactor_plan.md`（缓存**本计划推迟**，V2）
@@ -170,3 +172,11 @@ Z  = integrate(K, Is...)
 ## 6. 工作量与顺序
 
 Phase 1 ≈ 2 天（类型层 + 转换数学 + 全配置矩阵，本计划科学核心；含 GM `MPOTensor` 别名一行前置）；Phase 2 ≈ 1 天（`FockMPO * FockMPO` 收缩 ~50 行 + 端到端）；Phase 3 ≈ 半天；Phase 4 ≈ 半天。总 ≈ 4 天。顺序严格 1→2→3→4；Phase 1 不过全停。
+
+## 7. 实施状态（2026-11-17 完结）
+
+- **Phase 1 ✅（前会话，GTEMPO 68e90cb0 + GM 789a1c6）**：类型层 + `fockmpo2gmps` + 对拍闸门（163 项）。关键 pivot（原型实证，`debug/fockmpo_proto/`）：无 SVD 直构被 GM 楔积规范相位 σ(occ) 定谳否决 → 分站装置复用基线 split_cell+pairize（符号规范逐位继承）；FockMPO 键腿 = 非分格 Vect[G]（带荷对角 MPO 腿不可分格表达）。§2 的「无 SVD 两层变换」数学方案由此被取代。
+- **Phase 2 残余 ✅（本会话）**：`SYSFACTOR_BACKEND` 开关（`:fock`/`:reference`，`set_sysfactor_backend!`）+ `_system_factor_fock`（lattice/model 与 prep 双版）+ prep `fockmpo` 单槽缓存（FockMPO 与插入无关——扫描 automaton 成本 O(L) 一次 + 每测量仅切位邻域稀疏乘法）。**期间定谳并修复 V1 切位 bug**：`sparsefockmpo`/`fockmpo2gmps` 三明治原按 `boundary==0` 过滤，而 `:-` 支 boundary 0 = **链末切位**（cut = ni+2Nt）非 ρ₀——lesser(j=0) 的 ddag 被错折进链头 → 链归零（real 轮廓被真空 ρ₀ 投影湮灭而侥幸不可见，mixed ρ₀=I 露馅）；改按 `insertion_cut_index` 过滤（src 与闸门同口径），闸门补 U1×bands=2 与 (:-,0) 链末用例（163→203 项）。**全套测试切 `:fock` 绿；双后端 todense 逐位 Δ=0**（抽样 bands∈{1,2} × order∈{1,2} × 三轮廓 × 链末切位）——**golden 零漂移，V3 重锚不需要**。
+- **Phase 3 ✅（本会话）**：缺省 `backend=:fock`；`_system_factor_reference` deprecated 保留 = 交叉验证基准（对拍闸门锚定侧；`backend=:reference` 显式可达）。
+- **Phase 4 ✅（本会话，按 V1 pivot 重释）**：调用点审计——生产入口（sysdynamics/sysdynamics_weyl2order ×4 + 测量层 `_inserted_expectation`/`electriccurrent_fast`）全走新径。plan 原文的退役清单被 pivot 取代：split_cell/pairize-for-K 即 `fockmpo2gmps` 分站装置本体（保留）；foldr·foldl 切位折叠与 prefix 在新径同样需要（保留）；pair-labels 机制不存在于 src。旧径整体删除推迟至 V2 裁决（闸门锚定侧）。
+- **V2（另立计划，未立项）**：缓存/效率（FockMPO 按 (lattice,spec) 缓存、§2 无 SVD 直构路线以 σ 谱为起点）、`gmps2fockmpo`（楔积基底映射 + 合并秩）、单站/格形式评估（§3.3）。
