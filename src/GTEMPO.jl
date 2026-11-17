@@ -31,7 +31,7 @@ using TensorKit: ⊗, ⊠, ←, Vect, Z2Irrep, U1Irrep, Sector,
 import GrassmannMPS as GM
 import GrassmannMPS: vacuumstate, expectation,   # 扩展目标（lattice / solution 方法）
     coefficient_scaled                           # 桥层扩展目标（同函数新方法）
-using GrassmannMPS: GMPS, SparseGMPS, ScaledScalar, ExpectationCache,
+using GrassmannMPS: GMPS, SparseGMPS, MPOTensor, ScaledScalar, ExpectationCache,
     ChargeCharge, Z2Z2, grassmannspace, grassmann_basis, wedge_vertex,
     canonical_grassmann_spaces,
     # 对称性单例（定义上游 GM/grassmannspaces.jl，本包再导出）
@@ -57,6 +57,9 @@ include("impuritymodels/impuritymodels.jl")
 
 # K 构造（cell automaton；sysdynamics / sysdynamics_weyl2order）
 include("sysdynamics.jl")
+
+# Fock 直积 MPO + fockmpo2gmps 转换（plan/sysdynamics_fock_mpo_plan.md V1）
+include("fockmpo.jl")
 
 # IF 构造（PartialIF / ExactTTI 首批，D3）
 include("influence.jl")
@@ -107,6 +110,8 @@ export prepare_system, SystemFactorPreparation, clear_cache!
 export InfluenceFunctionalAlgorithm, PartialIF, ExactTTI, InfluenceFunctional
 export bcs_hybriddynamics, bcs_partial_if
 export var_charge, cell_charges, fock_charges
+export FockMPO, SparseFockMPO, fock_sysdynamics, fock_vacuumstate, fock_initstate!,
+       sparsefockmpo, fockmpo2gmps, gmps2fockmpo
 export HybridizationKernel, hybridization, influence_functional, hybriddynamics
 
 # 观测量（Phase 5b：inserted-K 边界观测 + 算符缓存原始关联两轨，D5 裁决见 measurements/）
