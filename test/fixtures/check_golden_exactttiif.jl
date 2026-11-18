@@ -100,7 +100,7 @@ end
     let lat = GrassmannLattice(N=3, δt=0.15, bands=1, contour=:real)
         cn = α
         Is_p = (hybriddynamics(lat, bath, PartialIF(); band=1, coupling_norm=cn),)
-        K = sysdynamics_weyl2order(lat, ToulouseIM(ϵ_d=μ); coupling_norm=cn, initial_state=ρ0_1)
+        K = sysdynamics(lat, ToulouseIM(ϵ_d=μ); order=2, coupling_norm=cn, initial_state=ρ0_1)
         @test_throws ArgumentError hybriddynamics(lat, bath, ExactTTI(); band=1, coupling_norm=cn)
         println("real N=3: 边界极点核 ExactTTI 守卫响抛 ✓（DiracDelta |q|=1 抖动折叠 :right）")
         zp = integrate_scaled(K, Is_p...)

@@ -7,7 +7,6 @@ using LinearAlgebra: Diagonal, norm
 	K = sysdynamics(lat, model)
 	@test K isa GM.GMPS && length(K) == length(lat) ÷ 2   # pair 布局：每胞 bands 站
 	@test iscanonical(K)
-	@test_throws UndefKeywordError sysdynamics_weyl2order(lat, model)   # 缺 coupling_norm kwarg
 	@test sysdynamics(lat, model; order=2) isa GM.GMPS   # cn=0 合法（仅无 Weyl 标量）
 
 	# 实时 order=1 / initial_state（实时专属）
@@ -41,10 +40,10 @@ using LinearAlgebra: Diagonal, norm
 	@test length(K1) == 1
 end
 
-@testset "API: sysdynamics_weyl2order" begin
+@testset "API: sysdynamics order=2（Weyl 二阶）" begin
 	lat = GrassmannLattice(N=3, δt=0.1, bands=2, contour=:real)
 	model = AndersonIM(U=0.5, ϵ_d=-0.5)
-	K = sysdynamics_weyl2order(lat, model; coupling_norm=1.0)
+	K = sysdynamics(lat, model; order=2, coupling_norm=1.0)
 	@test length(K) == length(lat) ÷ 2 && norm(K) > 0
 	# Weyl 标量 = exp(cn/4·Σ step²)：order=1 链 × e^{−Nt·dt²/4·...} 平移不改变迹，
 	# 这里只验证量级与键维有限

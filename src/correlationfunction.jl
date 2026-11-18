@@ -52,7 +52,7 @@ correlationfunction(bath::AbstractBCSBath, lattice::MixedGrassmannLattice) =
     coupling_norm(f) -> Real
     coupling_norm(bath::AbstractNormalBath) -> Real
 
-浴谱总强度 α（= `hybriddynamics`/`sysdynamics_weyl2order` 的 `coupling_norm`
+浴谱总强度 α（= `hybriddynamics`/`sysdynamics(...; order=2)` 的 `coupling_norm`
 kwarg 在单带下的取值；多带总量 = `sum(coupling_norm, baths)`）：
 
 - `DiracDelta`：α；

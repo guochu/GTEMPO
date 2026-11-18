@@ -601,7 +601,7 @@ end
 
 从 QuAPI 关联函数构建 `band` 带的影响泛函链（influence_functional 便捷入口）。
 `coupling_norm`（全带总耦合 Σ_b α_b）仅在配合 Weyl 二阶 K 时需要，随 kernel
-携带给 sysdynamics_weyl2order。
+携带给 sysdynamics（order=2）与测量层。
 """
 function hybriddynamics(lattice::AbstractGrassmannLattice, bath::AbstractBath,
                         alg::InfluenceFunctionalAlgorithm=PartialIF();

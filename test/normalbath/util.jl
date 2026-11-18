@@ -46,7 +46,7 @@ function fermionic_setup(lattice, bath, model; β=nothing, order::Int=1, couplin
 	                                coupling_norm=coupling_norm), lattice.bands)
 	initial = β === nothing ? nothing : thermal_impurity_state(model, β)
 	K = order == 2 ?
-		sysdynamics_weyl2order(lattice, model; coupling_norm=coupling_norm, initial_state=initial) :
+		sysdynamics(lattice, model; order=2, coupling_norm=coupling_norm, initial_state=initial) :
 		sysdynamics(lattice, model; initial_state=initial)
 	return K, Is
 end

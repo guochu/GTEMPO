@@ -68,7 +68,7 @@ end
             cn = α * 2
             IF1 = hybriddynamics(lat, bath, PartialIF(); band=1, coupling_norm=cn)
             vac = vacuumstate(lat)
-            K = sysdynamics_weyl2order(lat, AndersonIM(U=U, ϵ_d=μ); coupling_norm=cn)
+            K = sysdynamics(lat, AndersonIM(U=U, ϵ_d=μ); order=2, coupling_norm=cn)
             zs = integrate_scaled(K, IF1, vac)
             Z = exp(zs.logabs) * zs.phase
             occ = occupation(lat, AndersonIM(U=U, ϵ_d=μ), nothing, IF1, vac; j=N ÷ 2, branch=:τ,
@@ -89,7 +89,7 @@ end
         cn = α * 2
         IF0 = hybriddynamics(lat0, bath, PartialIF(); band=1, coupling_norm=cn)
         vac0 = vacuumstate(lat0)
-        K0 = sysdynamics_weyl2order(lat0, AndersonIM(U=U, ϵ_d=μ); coupling_norm=cn)
+        K0 = sysdynamics(lat0, AndersonIM(U=U, ϵ_d=μ); order=2, coupling_norm=cn)
         zs0 = integrate_scaled(K0, IF0, vac0)
         ref_Z = exp(zs0.logabs) * zs0.phase
         ref_occ = occupation(lat0, AndersonIM(U=U, ϵ_d=μ), nothing, IF0, vac0; j=2, branch=:τ,
@@ -98,7 +98,7 @@ end
             lat = GrassmannLattice(N=N, δτ=0.25, bands=2, contour=:imag, symmetry=sym)
             IF1 = hybriddynamics(lat, bath, PartialIF(); band=1, coupling_norm=cn)
             vac = vacuumstate(lat)
-            K = sysdynamics_weyl2order(lat, AndersonIM(U=U, ϵ_d=μ); coupling_norm=cn)
+            K = sysdynamics(lat, AndersonIM(U=U, ϵ_d=μ); order=2, coupling_norm=cn)
             zs = integrate_scaled(K, IF1, vac)
             Z = exp(zs.logabs) * zs.phase
             occ = occupation(lat, AndersonIM(U=U, ϵ_d=μ), nothing, IF1, vac; j=2, branch=:τ,
@@ -114,13 +114,13 @@ end
         cn = α * 2
         Is = ntuple(b -> hybriddynamics(lat, bath, PartialIF(); band=b, coupling_norm=cn), 2)
         ρ0 = Diagonal(ComplexF64[1.0, exp(-β * μ), exp(-β * μ), exp(-β * 2μ)]); ρ0 /= tr(ρ0)
-        K = sysdynamics_weyl2order(lat, AndersonIM(U=0.0, ϵ_d=μ); coupling_norm=cn, initial_state=ρ0)
+        K = sysdynamics(lat, AndersonIM(U=0.0, ϵ_d=μ); order=2, coupling_norm=cn, initial_state=ρ0)
         zs = integrate_scaled(K, Is...)
         Z = exp(zs.logabs) * zs.phase
         # ① U=0 带因子化：⟨n₁⟩ ≡ M=1 值
         lat1 = GrassmannLattice(N=N, δt=dt, bands=1, contour=:real)
         IF1m = hybriddynamics(lat1, bath, PartialIF(); band=1, coupling_norm=α)
-        K1 = sysdynamics_weyl2order(lat1, ToulouseIM(ϵ_d=μ); coupling_norm=α,
+        K1 = sysdynamics(lat1, ToulouseIM(ϵ_d=μ); order=2, coupling_norm=α,
                                     initial_state=Diagonal(ComplexF64[1.0, exp(-β * μ)]) / (1 + exp(-β * μ)))
         zs1 = integrate_scaled(K1, IF1m)
         Z1 = exp(zs1.logabs) * zs1.phase

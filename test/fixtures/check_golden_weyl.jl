@@ -45,7 +45,7 @@ function run_case(name)
     cn = α * bands
     Is = [hybriddynamics(lat, bath, PartialIF(); band=b, coupling_norm=cn) for b in 1:bands]
     if order == 2
-        K = sysdynamics_weyl2order(lat, model; coupling_norm=cn, initial_state=rho0)
+        K = sysdynamics(lat, model; order=2, coupling_norm=cn, initial_state=rho0)
     else
         K = sysdynamics(lat, model; order=1, initial_state=rho0)
     end

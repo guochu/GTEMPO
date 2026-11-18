@@ -11,7 +11,8 @@ module GTEMPO
 #   #1 GrassmannOrdering 家族与 Chrono ordering 类型层删除（排布固定 Chrono，
 #       lattice 无 ordering 输入——2026-11-16）；
 #   #2 electronphonon 暂停（整目录移除，恢复路径见 changes.md）；
-#   #3 sysdynamics_weyl2order 新增（port/sysdynamics.jl，K 链局部 Weyl 二阶）；
+#   #3 Weyl 二阶 K（order=2 局部 S·M·S + Weyl 标量；原 sysdynamics_weyl2order
+#       convenience 已删——统一走 sysdynamics(...; order=2)，2026-11-18）；
 #   #4 对称性用户手选 :z2/:z2z2/:u1/:u1u1（port/bridge.jl，D1 裁决）；
 #      BCS 仅 :z2（D7 裁决）；CUDA ext 直接删除（用户裁决）。
 # =====================================================================
@@ -56,7 +57,7 @@ include("correlationfunction.jl")
 # 杂质模型（fock_propagator/fock_thermalstate 纯数值接口）
 include("impuritymodels/impuritymodels.jl")
 
-# K 构造（sysdynamics / sysdynamics_weyl2order 全权委托 fock_sysdynamics +
+# K 构造（sysdynamics 全权委托 fock_sysdynamics +
 # fockmpo2gmps；旧径随 V2 删除——plan/sysdynamics_fock_mpo_plan.md）
 include("sysdynamics/sysdynamics.jl")
 include("sysdynamics/fockmpo.jl")
@@ -103,7 +104,7 @@ export ScaledScalar, value
 export correlationfunction, coupling_norm
 
 # K 构造（SystemFactorPreparation/prepare_system/clear_cache! 随旧径 V2 删除）
-export sysdynamics, sysdynamics_weyl2order, OperatorInsertion
+export sysdynamics, OperatorInsertion
 
 # IF 构造
 export InfluenceFunctionalAlgorithm, PartialIF, ExactTTI, InfluenceFunctional

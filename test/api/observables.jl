@@ -11,7 +11,7 @@ using LinearAlgebra: Diagonal, eigen
 	model = AndersonIM(U=0.0, ϵ_d=μ)
 	kernel = hybridization(lat, bath; coupling_norm=1.0)
 	Is = ntuple(b -> hybriddynamics(lat, bath, PartialIF(); band=b, coupling_norm=1.0), 2)
-	K = sysdynamics_weyl2order(lat, model; coupling_norm=1.0, initial_state=ρ0)
+	K = sysdynamics(lat, model; order=2, coupling_norm=1.0, initial_state=ρ0)
 	zs = integrate_scaled(K, Is...)
 	Z = exp(zs.logabs) * zs.phase
 	@test Z ≈ 0.9998529294302793 atol = 1e-10
@@ -189,7 +189,7 @@ end
 	model = AndersonIM(U=0.0, ϵ_d=μ)
 	kernel = hybridization(lat, bath; coupling_norm=1.0)
 	Is = ntuple(b -> hybriddynamics(lat, bath, PartialIF(); band=b, coupling_norm=1.0), 2)
-	K = sysdynamics_weyl2order(lat, model; coupling_norm=1.0, initial_state=ρ0)
+	K = sysdynamics(lat, model; order=2, coupling_norm=1.0, initial_state=ρ0)
 	Z = integrate(K, Is...)
 	# raw_lead_correlator = lesser 图案（⟨d†(+,k) d(b2,j)⟩；同切位 a†a）
 	r = raw_lead_correlator(lat, model, kernel, Is...; k=2, j=2, b2=:+, band=1, Z=Z,
@@ -219,7 +219,7 @@ end
 	model = AndersonIM(U=0.0, ϵ_d=μ)
 	kernel = hybridization(lat, bath; coupling_norm=1.0)
 	Is = ntuple(b -> hybriddynamics(lat, bath, PartialIF(); band=b, coupling_norm=1.0), 2)
-	K = sysdynamics_weyl2order(lat, model; coupling_norm=1.0, initial_state=ρ0)
+	K = sysdynamics(lat, model; order=2, coupling_norm=1.0, initial_state=ρ0)
 	zs = integrate_scaled(K, Is...)
 	Z = exp(zs.logabs) * zs.phase
 	cache = environments_cache(K, Is...)

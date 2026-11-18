@@ -1,6 +1,6 @@
 # sysdynamics.jl：杂质系统因子 K 构造（槽算符/插入/切位/存储序 + 公开入口）
 #
-# 公开 sysdynamics/sysdynamics_weyl2order 全权委托 fock_sysdynamics +
+# 公开 sysdynamics 全权委托 fock_sysdynamics +
 # fockmpo2gmps（本目录 fockmpo.jl；plan/sysdynamics_fock_mpo_plan.md）：
 #   Fock 直积 MPO 开链装配 → 切位 ≥ 1 插入稀疏乘法 → 转换（ρ₀/切位 0
 #   三明治 + prefix + oddlater + 迹闭合 + split_cell/pairize 分站 + reorder）。
@@ -233,19 +233,5 @@ function sysdynamics(lattice::AbstractGrassmannLattice, model::AbstractImpurityH
                      order::Integer=1, kwargs...)
     order in (1, 2) || throw(ArgumentError("order must be 1 or 2"))
     return _system_factor_fock(lattice, model; order=Int(order),
-                               spec=TK.sectortype(lattice), kwargs...)
-end
-
-"""
-    sysdynamics_weyl2order(lattice, model; coupling_norm, kwargs...) -> GMPS
-
-Weyl 二阶 K（order=2：q=1/2 对称半步 S·M·S + Weyl 标量
-exp(coupling_norm/4·Σ step²)；`coupling_norm` = 全带总耦合 Σ_b α_b，必填 ≥ 0）。
-实现同 sysdynamics（fock_sysdynamics order=2 + fockmpo2gmps 的 weyl_lscale）。
-IF 与收缩零改动（INTEGRATION.md §2 F1）。
-"""
-function sysdynamics_weyl2order(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian;
-                                coupling_norm::Real, kwargs...)
-    return _system_factor_fock(lattice, model; order=2, coupling_norm=coupling_norm,
                                spec=TK.sectortype(lattice), kwargs...)
 end
