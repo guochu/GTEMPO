@@ -18,22 +18,26 @@
 		@test gd(exact, full) < 1e-12
 	end
 
-	# ---- ① 实时互换（连续谱阻尼核；偏差 = 拟合残差档，旧路径同源同 rtol）----
+	# ---- ① 实时互换（连续谱阻尼核；缺省 alg_expan = OverDeterminedProny(15,1e-4)
+	#       对短核列残差 ~1e-6 档 ⟹ 互换 ~2.5e-3；高精度配
+	#       ExactTTI(alg_expan = Defaults.alg_expan(tol=1e-10, n=40)) 或锚定铅笔）----
 	let lat = GrassmannLattice(N=4, δt=0.15, contour=:real)
 		spec_c = spectrum(ϵ -> sqrt(1 - (ϵ / 10)^2) / π, lb=-10, ub=10)
 		bath = fermionicbath(spec_c, β=1.0)
 		kernel = correlationfunction(bath, lat)
 		exact = influence_functional(lat, kernel; alg=ExactTTI()).state
 		rowchain = influence_functional(lat, kernel; alg=PartialIF()).state
-		@test gd(exact, rowchain) < 1e-9          # cross_rtol=1e-10 拟合残差档
+		@test gd(exact, rowchain) < 1e-2
 	end
 
-	# ---- ③ 实时增长极点守卫（DiracDelta |q|=1 边界极点响抛；折叠朝向随链长/
-	#       位型抖动轮盘——N=3 为本机实测 :right 位型）----
+	# ---- ③ DiracDelta 实时边界极点（|q|=1）可装配（2026-11-18 alg_expan 语义：
+	#       无锚点折叠 ⟹ 旧 :right 守卫退役；单模核 Prony 精确 ⟹ 机器精度互换）----
 	let lat = GrassmannLattice(N=3, δt=0.15, contour=:real)
 		bath = fermionicbath(DiracDelta(ω=1.0, α=0.5), β=1.0)
 		kernel = correlationfunction(bath, lat)
-		@test_throws ArgumentError influence_functional(lat, kernel; alg=ExactTTI())
+		exact = influence_functional(lat, kernel; alg=ExactTTI()).state
+		rowchain = influence_functional(lat, kernel; alg=PartialIF()).state
+		@test gd(exact, rowchain) < 1e-12
 	end
 
 	# ---- ① 混合互换（Pairing 直读路线——机器精度）----

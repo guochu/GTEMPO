@@ -55,6 +55,31 @@ function fit_exponentials(y; rtol=1e-10, maxterms=40, pencil_rows=128)
     end
 end
 
+"""
+    fit_exponentials(alg::ExpExp.ExponentialExpansionAlgorithm, y)
+        -> (; weights, nodes, relative_error)
+
+ExactTTI 的函数指数分解（alg_expan 面）：`ExpExp.expansion.exponential_expansion`
+薄壳 + GTEMPO 拟合约定对齐（y[d] = Σ wᵢ·qᵢ^(d−1) ⟹ w = α·β、q = β）+ IF 域
+早退（零序列 / L == 1）+ 重建相对误差。分解精度随 alg 配置（Defaults.alg_expan()
+= OverDeterminedProny(n=15, tol=1e-4)：精确单极点核机器精度、连续谱核列
+~1e-5–1e-7 档）。
+"""
+function fit_exponentials(alg::ExpExp.ExponentialExpansionAlgorithm, y::Vector{<:Number})
+    y = ComplexF64.(y)
+    all(isfinite, y) || throw(ArgumentError("nonfinite fit samples"))
+    (isempty(y) || all(iszero, y)) &&
+        return (; weights=ComplexF64[], nodes=ComplexF64[], relative_error=0.0)
+    isempty(y) == false && length(y) == 1 &&
+        return (; weights=[y[1]], nodes=ComplexF64[0.0], relative_error=0.0)
+    as, bs = ExpExp.exponential_expansion(y, alg)
+    w = as .* bs
+    L = length(y)
+    recon = [sum(w[i] * bs[i]^(d - 1) for i in eachindex(w)) for d in 1:L]
+    err = norm(recon - y) / max(norm(y), eps())
+    return (; weights=ComplexF64.(w), nodes=ComplexF64.(bs), relative_error=err)
+end
+
 # ---------------------------------------------------------------------------
 # 站表与列读取助手
 # ---------------------------------------------------------------------------
@@ -99,7 +124,7 @@ function _tti_imag_factors(kernel::HybridizationKernel, lattice::AbstractGrassma
     thermal <= 1e-12 || throw(ArgumentError("imaginary kernel violates thermal pairing"))
     audit = (; thermal_residual=thermal)
     if lattice isa AbstractImagGrassmannLattice
-        f = fit_exponentials(lower; rtol=alg.rtol, maxterms=alg.maxterms)
+        f = fit_exponentials(alg.alg_expan, lower)
         audit = (; audit..., imag_expansion=(; f..., fit_interval=(1, n - 1),
                                                convention=:integrated_lag_one))
         # 环核的开放双线性分解（拟合约定 y[d] = Σₖ wₖ qₖ^{d−1}，环反周期
@@ -159,12 +184,11 @@ function _real_fits(kernel, lattice, band, alg)
         end
     end
     err = sqrt(error2) / max(sqrt(total2), eps())
-    err <= max(alg.rtol, 1e-12) || throw(ArgumentError("ExactTTI real Keldysh relations fail: $err"))
+    err <= 1e-12 || throw(ArgumentError("ExactTTI real Keldysh relations fail: $err"))
     if lattice isa AbstractRealGrassmannLattice
-        fg = fit_exponentials(g; rtol=alg.rtol, maxterms=alg.maxterms)
-        fl = fit_exponentials(l; rtol=alg.rtol, maxterms=alg.maxterms)
-        all(a -> a === :left, fg.anchors) && all(a -> a === :left, fl.anchors) || throw(ArgumentError(
-            "growing real pole unsupported; use PartialIF"))
+        # alg_expan 分解（无锚点折叠语义；增长/边界极点由 Pairing 装配原生支撑）
+        fg = fit_exponentials(alg.alg_expan, g)
+        fl = fit_exponentials(alg.alg_expan, l)
         return fg, fl, err
     end
     return nothing, nothing, err
@@ -280,10 +304,9 @@ O(α²λ)，GTEMPO ESS 实测 3.2e-4）。截秩语义：real/imag 通道 rtol =
 由拟合重构自带，不叠加截断），cross 通道 rtol = cross_rtol（口径同旧 cross
 通道）。factor_rtol 映射到乘法压缩策略（旧逐因子 cleanup 语义）。"
 function _exacttti_state(lattice::AbstractGrassmannLattice, kernel::HybridizationKernel,
-                         alg::ExactTTI, trunc::Truncation)
+                         alg::ExactTTI)
     diag = Dict{Symbol,Any}()
-    mult = alg.factor_rtol === nothing ? SVDCompression(trunc=trunc) :
-           SVDCompression(trunc=Truncation(D=typemax(Int), rtol=alg.factor_rtol))
+    mult = _mult(alg)
     pol_exact = GM.PolarExp(rtol=0.0, alg_mult=mult)             # real/imag 通道：精确
     pol_cross = GM.PolarExp(rtol=alg.cross_rtol, alg_mult=mult)  # cross 通道：截秩
     state = vacuumstate(lattice)

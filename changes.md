@@ -47,6 +47,24 @@
   partialif.jl（走 fullfactor 路径）、`integrate/integrate_scaled` lattice 便捷形 →
   influencefunctional.jl。`bcs_partial_if` 导出随之移除。if_gates.jl 同步改为互换/守卫
   闸门（vs 旧链 dense 对拍随参照删除，物理锚 = ED 套件 + golden）。
+- **算法对象现代化（2026-11-18 第三批，用户三裁决）**：①`Base.@kwdef` → `@kwdef`；
+  ②`PartialIF{Tr<:TruncationStrategy}`——乘法压缩截断随算法对象携带
+  （`trunc` 字段 = `Defaults.alg_trunc_if()` 缺省，替代旧 maxdim/rtol 字段）；
+  ③`ExactTTI{Tr<:TruncationStrategy}` 增加 `trunc`（同上）与 `alg_expan`
+  （`ExpExp.ExponentialExpansionAlgorithm` 面，缺省 `Defaults.alg_expan()`
+  = OverDeterminedProny(15, 1e-4)）字段——tti_imag/real 的核列拟合经
+  `fit_exponentials(alg_expan, y)` 分派（ExpExp.exponential_expansion 薄壳，
+  y[d] = Σ w·q^(d-1) 约定对齐）。**随动语义**：旧 :left/:right 锚点概念随
+  alg_expan 退役（Pairing 装配原生支撑任意模长极点）⟹ 实时 "growing real
+  pole" 守卫删除，DiracDelta |q|=1 边界极点核实时 ExactTTI 从此可装配
+  （机器精度互换）；旧 rtol/maxterms 字段退役（配置随 alg_expan）。
+  **精度注记**：缺省 Prony(15,1e-4) 对精确单极点核机器精度、连续谱短核列
+  （L=3）残差 ~1e-1 档（小样本本征极限，ExpExp MatrixPencil 同档）⟹
+  连续谱实时互换闸门放宽至 1e-2；高精度配置 =
+  `ExactTTI(alg_expan = Defaults.alg_expan(tol=1e-10, n=40))`；锚定铅笔
+  保留为独立 `GTEMPO.fit_exponentials(y; rtol, maxterms)`。
+  `influence_functional`/`hybriddynamics`/`bcs_hybriddynamics` 的 `trunc`
+  kwarg 随之退役（截断随算法对象）。
 - **测试**：25 文件迁移新 API；新增 `test/api/if_gates.jl`（每因子 dense 对拍 +
   互换对拍闸门，12 项）。全套绿；两个 golden fixture 检查器按值保持
   （weyl 8/8、exactttiif 6/6，机器精度无需重锚）。

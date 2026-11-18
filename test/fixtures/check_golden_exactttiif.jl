@@ -89,22 +89,23 @@ end
         @test abs(occ - ed) < 2e-3
     end
 
-    # ================= 实时 N=3（热 ρ₀，Weyl 二阶）：守卫语义 =================
-    # 2026-11-17 终局裁决（ExpExp rightanchors 删除 + GTEMPO real 因子守卫激活，
-    # 8c997dd6）下的实时语义：DiracDelta（无阻尼浴）的实时核极点 = e^{-iωδt}，
-    # 模长恰在稳定边界 |q|=1——折叠朝向由数值抖动决定（:left/:right 随链长
-    # 轮盘；Nt=3/8 → :right、5/12 → :left，本机位型实测）。:right 时守卫
-    # "growing real pole unsupported" 响抛（真实轴 ExactTTI 因子装配只支持
-    # :left；边界/超临界核按裁决走 PartialIF，其行指数装配无极点折叠）。
-    # 本块断言守卫 + ED 演化锚走 PartialIF（实时物理的 ED 锚另有 weyl golden
-    # 检查器与 normalbath 套件覆盖）。
+    # ================= 实时 N=3（热 ρ₀，Weyl 二阶）：alg_expan 语义 =================
+    # 2026-11-18 更新（ExactTTI.alg_expan 落地）：函数指数分解走 alg_expan 面
+    # （无锚点折叠语义），Pairing 装配原生支撑任意模长极点 ⟹ 旧 :right 守卫
+    # 退役，DiracDelta（|q|=1 边界极点核）实时 ExactTTI 可装配且单模核 Prony
+    # 精确 ⟹ 与 PartialIF 机器精度互换。实时物理的 ED 锚另有 weyl golden
+    # 检查器与 normalbath 套件覆盖。
     let lat = GrassmannLattice(N=3, δt=0.15, bands=1, contour=:real)
         cn = α
         kernel = correlationfunction(bath, lat)
         Is_p = (hybriddynamics(lat, kernel, PartialIF()),)
+        Is_e = (hybriddynamics(lat, kernel, ExactTTI()),)
         K = sysdynamics(lat, ToulouseIM(ϵ_d=μ); order=2, coupling_norm=cn, initial_state=ρ0_1)
-        @test_throws ArgumentError hybriddynamics(lat, kernel, ExactTTI())
-        println("real N=3: 边界极点核 ExactTTI 守卫响抛 ✓（DiracDelta |q|=1 抖动折叠 :right）")
+        te, tp = to_var(Is_e[1]), to_var(Is_p[1])
+        keys_all = union(keys(te), keys(tp))
+        err_if = maximum(abs(get(te, k, 0im) - get(tp, k, 0im)) for k in keys_all; init=0.0)
+        @test err_if < 1e-10
+        println("real N=3: DiracDelta 边界极点核 ExactTTI 可装配 ✓  IF 表互换 = ", err_if)
         zp = integrate_scaled(K, Is_p...)
         Zp = exp(zp.logabs) * zp.phase
         kw = (order=2, coupling_norm=cn, initial_state=ρ0_1)

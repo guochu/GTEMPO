@@ -24,6 +24,7 @@ import QuAPI: branch
 using LinearAlgebra: LinearAlgebra, eigen, Diagonal, I, tr, norm, diag
 import TensorKit as TK
 import MatrixAlgebraKit as MAK
+import ExpExp
 import ExpExp: anchored_matrix_pencil_sweep   # fit_exponentials 薄壳核心（plan kernel_and_fit §Part 2 案 B）
 using TensorKit: ⊗, ⊠, ←, Vect, Z2Irrep, U1Irrep, Sector,
                  sectors, sectortype, dim, fusiontrees, SpaceMismatch,
@@ -33,7 +34,7 @@ using TensorKit: ⊗, ⊠, ←, Vect, Z2Irrep, U1Irrep, Sector,
 import GrassmannMPS as GM
 import GrassmannMPS: vacuumstate, expectation,   # 扩展目标（lattice / solution 方法）
     coefficient_scaled                           # 桥层扩展目标（同函数新方法）
-using GrassmannMPS: GMPS, SparseGMPS, MPOTensor, ScaledScalar, ExpectationCache,
+using GrassmannMPS: GMPS, SparseGMPS, MPOTensor, ScaledScalar, ExpectationCache, TruncationStrategy,
     ChargeCharge, Z2Z2, grassmannspace, grassmann_basis, wedge_vertex,
     canonical_grassmann_spaces,
     # 对称性单例（定义上游 GM/grassmannspaces.jl，本包再导出）
