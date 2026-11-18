@@ -109,13 +109,14 @@ end
     hybriddynamics(lattice, kernel, alg=PartialIF(); diagnostics=Dict()) -> GMPS | Tuple{GMPS...}
 
 IF 链装配（真空起始）：`hybriddynamics(lattice, ...) =
-hybriddynamics!(vacuumstate(promote_type(lattice, kernel), lattice), lattice, ...)`。
-单带 kernel 返回单 GMPS；多带 kernel 返回逐带 `Tuple`（`Is...` 变参兼容）。
+hybriddynamics!(vacuumstate(promote_type(TK.scalartype(lattice), TK.scalartype(kernel)),
+lattice), lattice, ...)`——提升的是两者的 scalartype。单带 kernel 返回单
+GMPS；多带 kernel 返回逐带 `Tuple`（`Is...` 变参兼容）。
 """
 function hybriddynamics(lattice::AbstractGrassmannLattice, kernel::HybridizationKernel,
                         alg::InfluenceFunctionalAlgorithm=PartialIF();
                         diagnostics::Dict{Symbol,Any}=Dict{Symbol,Any}())
-    return hybriddynamics!(vacuumstate(promote_type(lattice, kernel), lattice),
+    return hybriddynamics!(vacuumstate(promote_type(TK.scalartype(lattice), TK.scalartype(kernel)), lattice),
                            lattice, kernel, alg; diagnostics)
 end
 

@@ -72,9 +72,9 @@
   `hybriddynamics!(gmps, lattice, kernel, alg; diagnostics)`——单带 normal/BCS 轨道核
   就地装配 `gmps` 恒等返回，多带 normal 核逐带从 `copy(gmps)` 起步返回元组
   （**顺带修正**：ExactTTI 多带此前误把各带因子叠进同一 state，现逐带独立装配）；
-  `hybriddynamics(lattice, ...) = hybriddynamics!(vacuumstate(promote_type(lattice, kernel),
-  lattice), lattice, ...)`——新增 `Base.promote_rule`/实例 `promote_type`（lattice ×
-  kernel 标量提升）与 `vacuumstate(::Type, lattice)`；④`Defaults.alg_expan` 改返回
+  `hybriddynamics(lattice, ...) = hybriddynamics!(vacuumstate(promote_type(
+  scalartype(lattice), scalartype(kernel)), lattice), lattice, ...)`——提升的是
+  两者的 scalartype，配 `vacuumstate(::Type, lattice)`；④`Defaults.alg_expan` 改返回
   `ExpExp.AnchoredMatrixPencil`（ ExpExp 已有算法，n=40/tol=1e-10/pencil_rows=128
   与既有锚定铅笔路径同参）——ExactTTI 缺省分解行为与铅笔路线逐位一致
   （含 :right 锚点展平契约），OverDeterminedProny 仍可经 `alg_expan` 字段插拔。

@@ -321,12 +321,6 @@ end
 _is_cm(::CorrelationMatrix) = true
 _is_cm(::AbstractMatrix) = false
 
-"lattice × kernel 的标量型提升（hybriddynamics 的真空起始态
-vacuumstate(promote_type(lattice, kernel), lattice) 用）"
-Base.promote_rule(::Type{L}, ::Type{K}) where {L<:AbstractGrassmannLattice,K<:HybridizationKernel{T}} where {T} =
-    promote_type(TK.scalartype(L), T)
-Base.promote_type(lattice::AbstractGrassmannLattice, kernel::HybridizationKernel) =
-    promote_type(promote_rule(typeof(lattice), typeof(kernel)))
 
 "逐带 kernel 视图：只保留 band 的键、bands = [band]（块对象别名共享，零拷贝）。
 多带 normal 核的逐带装配内部切片用。"
