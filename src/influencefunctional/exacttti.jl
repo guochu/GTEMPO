@@ -74,14 +74,21 @@ _fitcolumn(f, m::Int) = sum(w * r^(m - 1) for (w, r) in zip(f.weights, f.nodes);
 # ---------------------------------------------------------------------------
 
 """
-    tti_imag_factors(kernel, lattice; band) -> (; factors, audit)
+    tti_imag_factors(kernel, lattice; alg) -> (; factors, audit)
 
 热通道因子（τ/τ 核）：纯虚时格 = ExpDecaySumSum（上下三角级联 + 等时接触，
-锚点列拟合池——现行 imag_factors 的极点内容）；混合格 τ 段 = Pairing（τ 站
-全矩阵）。热配对审计保留（thermal_residual ∈ audit）。
+锚点列拟合池）；混合格 τ 段 = Pairing（τ 站全矩阵）。热配对审计保留
+（thermal_residual ∈ audit）。band 范围由 kernel 决定：单带 normal 核（多带
+核请走 influence_functional/hybriddynamics，内部逐带切片装配）。
 """
 function tti_imag_factors(kernel::HybridizationKernel, lattice::AbstractGrassmannLattice;
-                          band::Int, alg=ExactTTI())
+                          alg=ExactTTI())
+    _tti_band_guard(kernel, lattice)
+    return _tti_imag_factors(kernel, lattice, only(kernel.bands), alg)
+end
+
+function _tti_imag_factors(kernel::HybridizationKernel, lattice::AbstractGrassmannLattice,
+                           band::Int, alg)
     lattice isa Union{AbstractImagGrassmannLattice,AbstractMixedGrassmannLattice} ||
         return (; factors=GM.GrassmannFactor[], audit=NamedTuple())
     n = lattice.kτ
@@ -164,7 +171,7 @@ function _real_fits(kernel, lattice, band, alg)
 end
 
 """
-    tti_real_factors(kernel, lattice; band) -> (; factors, audit)
+    tti_real_factors(kernel, lattice; alg) -> (; factors, audit)
 
 实时双通道因子（greater/lesser 两侧列）：Pairing × 4（(+,+)、(−,−)、(+,−)、
 (−,+)），C = 拟合重构（Keldysh 关系审计通过的 (g,l) 列 ⟹ 与现行 pole 记忆
@@ -172,7 +179,13 @@ end
 rt 块 = 原始块 C（无重构）。Keldysh 尾审计保留（keldysh_residual ∈ audit）。
 """
 function tti_real_factors(kernel::HybridizationKernel, lattice::AbstractGrassmannLattice;
-                          band::Int, alg=ExactTTI())
+                          alg=ExactTTI())
+    _tti_band_guard(kernel, lattice)
+    return _tti_real_factors(kernel, lattice, only(kernel.bands), alg)
+end
+
+function _tti_real_factors(kernel::HybridizationKernel, lattice::AbstractGrassmannLattice,
+                           band::Int, alg)
     lattice isa Union{AbstractRealGrassmannLattice,AbstractMixedGrassmannLattice} ||
         return (; factors=GM.GrassmannFactor[], audit=NamedTuple())
     n = _branch_len(lattice, :+)                    # 纯实时 = k；混合 = kt
@@ -217,7 +230,7 @@ end
 # ---------------------------------------------------------------------------
 
 """
-    tti_cross_factors(kernel, lattice; band) -> (; factors, audit)
+    tti_cross_factors(kernel, lattice; alg) -> (; factors, audit)
 
 混合交叉通道因子（τ↔rt 六块）：Pairing × 2（τ→rt 行腿 = ā_τ、rt→τ 行腿 =
 ā_rt；列腿恒 a）——块值直读（现行 rankone 发射的 GM 原生对应物；旧实现
@@ -226,7 +239,13 @@ ExactTTI ≡ PartialIF 互换对拍裁决）。秩审计保留（cross_ranks/cro
 ∈ audit；SVD 秩一压缩由 PolarExp 按 cross_rtol 承接）。
 """
 function tti_cross_factors(kernel::HybridizationKernel, lattice::AbstractGrassmannLattice;
-                           band::Int, alg=ExactTTI())
+                           alg=ExactTTI())
+    _tti_band_guard(kernel, lattice)
+    return _tti_cross_factors(kernel, lattice, only(kernel.bands), alg)
+end
+
+function _tti_cross_factors(kernel::HybridizationKernel, lattice::AbstractGrassmannLattice,
+                            band::Int, alg)
     lattice isa AbstractMixedGrassmannLattice && lattice.Nt > 0 ||
         return (; factors=GM.GrassmannFactor[], audit=NamedTuple())
     st_τ = [_station(lattice, (:τ, j), band) for j in 1:lattice.Nτ]
@@ -261,7 +280,7 @@ O(α²λ)，GTEMPO ESS 实测 3.2e-4）。截秩语义：real/imag 通道 rtol =
 由拟合重构自带，不叠加截断），cross 通道 rtol = cross_rtol（口径同旧 cross
 通道）。factor_rtol 映射到乘法压缩策略（旧逐因子 cleanup 语义）。"
 function _exacttti_state(lattice::AbstractGrassmannLattice, kernel::HybridizationKernel,
-                         alg::ExactTTI, band::Int, trunc::Truncation)
+                         alg::ExactTTI, trunc::Truncation)
     diag = Dict{Symbol,Any}()
     mult = alg.factor_rtol === nothing ? SVDCompression(trunc=trunc) :
            SVDCompression(trunc=Truncation(D=typemax(Int), rtol=alg.factor_rtol))
@@ -269,14 +288,28 @@ function _exacttti_state(lattice::AbstractGrassmannLattice, kernel::Hybridizatio
     pol_cross = GM.PolarExp(rtol=alg.cross_rtol, alg_mult=mult)  # cross 通道：截秩
     state = vacuumstate(lattice)
     truncerrs = Float64[]
-    for (tti, pol) in ((tti_real_factors, pol_exact), (tti_imag_factors, pol_exact),
-                       (tti_cross_factors, pol_cross))
-        (; factors, audit) = tti(kernel, lattice; band, alg)
-        isempty(audit) || merge!(diag, pairs(audit))
-        for f in factors
-            state, err = GM.expmult!(state, f, pol)
-            push!(truncerrs, err)
+    for b in kernel.bands                                   # band 信息在 kernel，逐带切片
+        kb = _band_kernel(kernel, b)
+        for (tti, pol) in ((tti_real_factors, pol_exact), (tti_imag_factors, pol_exact),
+                           (tti_cross_factors, pol_cross))
+            (; factors, audit) = tti(kb, lattice; alg)
+            isempty(audit) || merge!(diag, pairs(audit))
+            for f in factors
+                state, err = GM.expmult!(state, f, pol)
+                push!(truncerrs, err)
+            end
         end
     end
     return state, truncerrs, diag
+end
+
+"tti_* 的核范围守卫：仅单带 normal 核（多带核逐带切片在 _exacttti_state 内部；
+BCS 核 D7 不支持 ExactTTI，由 influence_functional 拦截）"
+function _tti_band_guard(kernel::HybridizationKernel, lattice::AbstractGrassmannLattice)
+    _is_orbital_kernel(kernel) && throw(ArgumentError(
+        "ExactTTI does not support BCS kernels (D7: BCS is PartialIF-only), got orbital $(kernel.bands)"))
+    length(kernel.bands) == 1 || throw(ArgumentError(
+        "tti_* factors require a single-band normal kernel, got bands $(kernel.bands); " *
+        "use influence_functional/hybriddynamics for multi-band assembly"))
+    only(kernel.bands) in kernel.bands || throw(BoundsError(kernel.bands, 0))
 end

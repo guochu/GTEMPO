@@ -321,6 +321,18 @@ end
 _is_cm(::CorrelationMatrix) = true
 _is_cm(::AbstractMatrix) = false
 
+"逐带 kernel 视图：只保留 band 的键、bands = [band]（块对象别名共享，零拷贝）。
+多带 normal 核的逐带装配内部切片用。"
+function _band_kernel(kernel::HybridizationKernel, band::Int)
+    band in kernel.bands || throw(BoundsError(kernel.bands, band))
+    blocks = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},eltype(values(kernel.blocks))}()
+    for (key, value) in kernel.blocks
+        (key[1].band == band && key[2].band == band) || continue
+        blocks[key] = value
+    end
+    return HybridizationKernel(blocks, kernel.coupling_norm, [band])
+end
+
 # ---------------------------------------------------------------------------
 # coupling_norm：浴谱总强度（kernel.coupling_norm 的单浴因子；多带总量 =
 # Σ_b coupling_norm(bath_b)。μ/β 不进谱权重——它们只进 Δ 装配的核因子

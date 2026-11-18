@@ -99,6 +99,10 @@ function cell_charges(::Type{G}, bands::Int) where {G<:Sector}
     return out
 end
 
+"IF 变量荷序列（全链 = nblocks 格 × 每格 2·bands 变量，存储序）"
+_site_charges(::Type{G}, lattice) where {G<:Sector} =
+    repeat(cell_charges(G, lattice.bands), nblocks(lattice))
+
 "BCS 守卫（D7 裁决）：BCS 反常关联破坏粒子数守恒、宇称恒守恒 → 仅 Z2Symmetry"
 function bcs_symmetry_guard(sym::GrassmannSymmetry)
     sym isa Z2Symmetry || throw(ArgumentError(

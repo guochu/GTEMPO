@@ -65,10 +65,9 @@ include("impuritymodels/impuritymodels.jl")
 include("sysdynamics/sysdynamics.jl")
 include("sysdynamics/fockmpo.jl")
 
-# IF 构造（W1 拆分：influencefunctional/ 新装配 + influence.jl deprecated
-# 旧径，plan/if_expmult_backend_plan.md；新装配先入——旧径入口委托其类型）
+# IF 构造（W1–W4 后端统一完成；旧 influence.jl 装配档案随 2026-11-18
+# 入口切换退役删除——plan/if_expmult_backend_plan.md）
 include("influencefunctional/influencefunctional.jl")
-include("influence.jl")
 
 # 积分与观测量（GM 引擎接线 + inserted-K/算符两轨，D5）
 include("measurements/measurements.jl")
@@ -111,11 +110,10 @@ export correlationfunction, coupling_norm, ContourBlockIndex, changebands
 # K 构造（SystemFactorPreparation/prepare_system/clear_cache! 随旧径 V2 删除）
 export sysdynamics, OperatorInsertion
 
-# IF 构造（W3/W4 装配面：fullfactor/tti_* = influencefunctional/ 后端统一入口；
-# bcs_partial_if/旧装配 = deprecated 冻结档案，交叉验证期满退役）
+# IF 构造（W3/W4 装配面：fullfactor/tti_* = influencefunctional/ 后端统一入口）
 export InfluenceFunctionalAlgorithm, PartialIF, ExactTTI, InfluenceFunctional
 export fullfactor, tti_imag_factors, tti_real_factors, tti_cross_factors
-export bcs_hybriddynamics, bcs_partial_if
+export bcs_hybriddynamics
 export var_charge, cell_charges, fock_charges
 export FockMPO, SparseFockMPO, fock_sysdynamics, fock_vacuumstate, fock_initstate!,
        sparsefockmpo, fockmpo2gmps, gmps2fockmpo

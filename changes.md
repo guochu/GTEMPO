@@ -34,6 +34,19 @@
   （旧路径 cross 行腿落在 a 型腿 = 潜在味错位，无测试覆盖，已废弃）。
 - **BCS**：`bcs_hybriddynamics` 换轨 fullfactor 路线；`bcs_partial_if` 签名改为
   `(lattice, kernel)`（块值直读，Keldysh 号构造期折叠）——deprecated 冻结档案。
+- **band 输入退役（2026-11-18 第二批，band 信息在 kernel）**：`fullfactor(kernel, lattice)`、
+  `tti_imag/real/cross_factors(kernel, lattice; alg)`、`influence_functional(lattice, kernel; alg, trunc)`
+  全部不再接收 band——装配范围由 `kernel.bands` 决定。单带 normal / BCS 轨道核 = 单 IF；
+  多带 normal 核 = 逐带 IF 元组（`InfluenceFunctional.bands` 字段、`state` 为 Tuple）。
+  `fullfactor`/`tti_*` 仅接受单带 normal 或 BCS 轨道核（多带核逐带切片在装配内部，
+  `_band_kernel` 视图零拷贝）。`hybriddynamics` = `influence_functional(...).state` 薄壳。
+- **`src/influence.jl` 删除（2026-11-18 第二批）**：旧装配档案（partial_row/partial_if/
+  memory_cell/embed_cells/contact_factor/embed_single/rankone_factor/旧 imag_/real_/
+  cross_factors/bcs_partial_if）随入口切换期满退役。迁移存活符号：`_cell_var_index` →
+  influencefunctional/partialif.jl、`_site_charges` → bridge.jl、`bcs_hybriddynamics` →
+  partialif.jl（走 fullfactor 路径）、`integrate/integrate_scaled` lattice 便捷形 →
+  influencefunctional.jl。`bcs_partial_if` 导出随之移除。if_gates.jl 同步改为互换/守卫
+  闸门（vs 旧链 dense 对拍随参照删除，物理锚 = ED 套件 + golden）。
 - **测试**：25 文件迁移新 API；新增 `test/api/if_gates.jl`（每因子 dense 对拍 +
   互换对拍闸门，12 项）。全套绿；两个 golden fixture 检查器按值保持
   （weyl 8/8、exactttiif 6/6，机器精度无需重锚）。
