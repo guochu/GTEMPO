@@ -47,8 +47,8 @@ import LinearAlgebra
         K_new = _wf_build(lattice, model, order, coupling_norm, insertions, initial_state)
         nst = length(K_base)
         if 4^nst <= 2^20
-            tb = GM.todense(K_base).data
-            tn = GM.todense(K_new).data
+            tb = GM.Dense.todense(K_base).data
+            tn = GM.Dense.todense(K_new).data
             @test length(tn) == length(tb)
             Δ = maximum(abs.(tn .- tb))
             @test Δ <= 1e-10
@@ -171,7 +171,7 @@ import LinearAlgebra
     K_a = fockmpo2gmps(fock_initstate!(lat, copy(Kf), rho_fold), lat)
     K_b = fockmpo2gmps(copy(Kf), lat; rho0=rho_fold)
     @testset "fock_initstate! 与 kwargs 双路一致" begin
-        @test GM.todense(K_a) ≈ GM.todense(K_b) atol = 1e-12
+        @test GM.Dense.todense(K_a) ≈ GM.Dense.todense(K_b) atol = 1e-12
     end
 
     # ---- 端到端：integrate(K_new) vs integrate(K_base) ----

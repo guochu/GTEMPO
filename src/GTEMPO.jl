@@ -44,7 +44,7 @@ using GrassmannMPS: GMPS, SparseGMPS, MPOTensor, ScaledScalar, ExpectationCache,
     mult, mult!, apply!, DMRG2, SVDCompression,
     canonicalize!, iscanonical, entanglement_entropy, entanglement_spectrum,
     schmidt_values, bonddims, bondspaces, physpace, physpaces,
-    logscale, setlogscale!, todense, coefficient_scaled, coefficient, NoTruncation
+    logscale, setlogscale!, coefficient_scaled, coefficient, NoTruncation
 
 # 缺省算法参数（Defaults 嵌套模块）
 include("defaults.jl")

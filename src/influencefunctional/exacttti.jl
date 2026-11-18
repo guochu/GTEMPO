@@ -46,13 +46,13 @@ function fit_exponentials(alg::ExpExp.ExponentialExpansionAlgorithm, y::Vector{<
         # expansion, not a fit fallback to another IF algorithm.
         bases = ComplexF64[0.8 * cis(2pi * j / L) for j in 0:L-1]
         B = [q^(d - 1) for d in 1:L, q in bases]
-        amps = B \ y
-        w = amps .* bases
+        w = B \ y                      # B 已按 GTEMPO 约定 q^(d−1) 构建 ⟹ 权重 = amps
         recon = [sum(w[i] * bases[i]^(d - 1) for i in eachindex(w)) for d in 1:L]
         err = norm(recon - y) / max(norm(y), eps())
-        err <= alg.tol || throw(ArgumentError(
-            "exponential expansion unreachable: best residual $err exceeds tol $(alg.tol)"))
     end
+    # 拟合质量契约：err ≤ alg.tol 或抛（含 L > alg.n 无回退资格的情形）
+    err <= alg.tol || throw(ArgumentError(
+        "exponential expansion unreachable: best residual $err exceeds tol $(alg.tol)"))
     return (; weights=ComplexF64.(w), nodes=ComplexF64.(bases), relative_error=err)
 end
 
@@ -308,10 +308,10 @@ end
 "tti_* 的核范围守卫：仅单带 normal 核（多带核逐带切片在 _exacttti_state 内部；
 BCS 核 D7 不支持 ExactTTI，由 influence_functional 拦截）"
 function _tti_band_guard(kernel::HybridizationKernel, lattice::AbstractGrassmannLattice)
-    _is_orbital_kernel(kernel) && throw(ArgumentError(
-        "ExactTTI does not support BCS kernels (D7: BCS is PartialIF-only), got orbital $(kernel.bands)"))
+    _has_cross_band_keys(kernel) && throw(ArgumentError(
+        "ExactTTI does not support BCS/anomalous kernels (D7: BCS is PartialIF-only), " *
+        "got bands $(kernel.bands)"))
     length(kernel.bands) == 1 || throw(ArgumentError(
         "tti_* factors require a single-band normal kernel, got bands $(kernel.bands); " *
-        "use influence_functional/hybriddynamics for multi-band assembly"))
-    only(kernel.bands) in kernel.bands || throw(BoundsError(kernel.bands, 0))
+        "use hybriddynamics for multi-band assembly"))
 end

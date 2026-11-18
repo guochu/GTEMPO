@@ -6,7 +6,7 @@
 #   ③ 守卫：实时增长极点响抛、BCS × ExactTTI 拒绝（D7）、band 范围守卫；
 #   ED 对拍由既有套件承接（normalbath/bcs/multiorbital + exactttiif golden）。
 @testset "IF 装配闸门（W3/W4 后端统一）" begin
-	gd(x, y) = maximum(abs.(GM.todense(x).data - GM.todense(y).data))
+	gd(x, y) = maximum(abs.(GM.Dense.todense(x).data - GM.Dense.todense(y).data))
 
 	# ---- ① 虚时互换（单模浴，μ=0 / μ≠0，拟合精确 → 机器精度）----
 	for (bath, label) in ((discretefermionicbath([1.0], [0.5]; β=1.0), "μ=0"),
@@ -67,7 +67,64 @@
 		@test fullfactor(kernelb, latb) isa GM.AnomalousPairing      # BCS 轨道核 OK
 		bathn = discretefermionicbath([1.0], [0.5]; β=1.0)
 		kfull = correlationfunction(bathn, latb)                     # 多带 normal 核
-		@test_throws ArgumentError fullfactor(kfull, latb)
-		@test_throws ArgumentError tti_imag_factors(kfull, latb)
+		ff = fullfactor(kfull, latb)                                 # 泛化：多带核 = 紧凑站点表因子
+		@test ff isa GM.AnomalousPairing && length(ff.sites) == length(latb) ÷ 2
+		@test_throws ArgumentError tti_imag_factors(kfull, latb)     # tti_* 仍限单带核
+	end
+end
+
+@testset "泛化 kernel：随机跨带耦合 PartialIF（dense oracle）" begin
+	# 一般 HybridizationKernel 可含跨带耦合（Δ_b1b2 ≠ 0）——二次型不可按带分解，
+	# hybriddynamics 走单链整体装配（fullfactor 紧凑站点表）；正确性 = 装配态
+	# vs 严格 exp(todense(fullfactor)) 的 GM dense oracle（DT.tositewise 契约）。
+	DT = GM.Dense
+	import Random
+	function rand_kernel(rng, lat, bands_list)
+		T = ComplexF64
+		blocks = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{T},CorrelationMatrix{T}}}()
+		brs = branches(lat)
+		for b1 in bands_list, b2 in bands_list, br1 in brs, br2 in brs
+			n1 = br1 === :τ ? lat.kτ : lat.kt
+			n2 = br2 === :τ ? lat.kτ : lat.kt
+			blocks[(ContourBlockIndex(br1, b1), ContourBlockIndex(br2, b2))] =
+				randn(rng, T, n1, n2)          # 一般稠密核（非 Toeplitz，Matrix 值）
+		end
+		HybridizationKernel(blocks, 0.0, sort(unique(bands_list)))
+	end
+	gd(x, y) = maximum(abs.(x .- y))
+
+	# ⚠️ dense oracle 按 2^(2·站数) 分配——案例站数上限 8（2^16 = 65k 项），
+	# 更大格走 ED/互换闸门验算，勿在此扩 N（内存爆炸点）。
+	# 随机稠密二次型的精确指数中点键维上限 = 2^M——D=512 覆盖 M ≤ 8 案例的无截断
+	# 验证（缺省 D=128 在 M ≥ 8 会截断，属算法语义非 bug）。
+	alg = PartialIF(trunc=GTEMPO.Defaults.alg_trunc_if(D=512))
+	for (B, kbands, N) in ((2, [1, 2], 3), (3, [1, 2, 3], 2), (4, [2, 3], 2), (4, [1, 3], 2))
+		rng = Random.MersenneTwister(hash((B, tuple(kbands...), N)))
+		lat = GrassmannLattice(N=N, δτ=0.25, bands=B, contour=:imag)
+		kernel = rand_kernel(rng, lat, kbands)
+		state, diag = hybriddynamics!(vacuumstate(lat), lat, kernel, alg)
+		oracle = DT.tositewise(DT.exp(DT.todense(fullfactor(kernel, lat), length(lat) ÷ 2)))
+		@test gd(DT.tositewise(GM.Dense.todense(state)), oracle) < 1e-10
+	end
+
+	# 实时轮廓（± 分支槽位数学）+ 跨 2 带全耦合
+	let rng = Random.MersenneTwister(777)
+		lat = GrassmannLattice(N=2, δt=0.15, bands=2, contour=:real)
+		kernel = rand_kernel(rng, lat, [1, 2])
+		state, _ = hybriddynamics!(vacuumstate(lat), lat, kernel, alg)
+		oracle = DT.tositewise(DT.exp(DT.todense(fullfactor(kernel, lat), length(lat) ÷ 2)))
+		@test gd(DT.tositewise(GM.Dense.todense(state)), oracle) < 1e-10
+	end
+
+	# 多带带对角核（无跨带键）仍逐带元组；跨带核单链
+	let rng = Random.MersenneTwister(99)
+		lat = GrassmannLattice(N=3, δτ=0.25, bands=3, contour=:imag)
+		diag_kernel = rand_kernel(rng, lat, [1, 2, 3])
+		filter!(p -> p[1][1].band == p[1][2].band, diag_kernel.blocks)   # 只留带对角键
+		Is, _ = hybriddynamics(lat, diag_kernel, PartialIF())
+		@test Is isa Tuple && length(Is) == 3
+		kernel = rand_kernel(rng, lat, [1, 2, 3])
+		state, _ = hybriddynamics(lat, kernel, PartialIF())
+		@test state isa GM.GMPS
 	end
 end

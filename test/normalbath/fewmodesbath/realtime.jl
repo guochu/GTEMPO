@@ -59,7 +59,7 @@ end
 	                                    [tunneling(1, 1, coeff=μ1)]; bands=1)
 	lat = GrassmannLattice(N=Nt, δt=δt, contour=:real)
 	kernel = correlationfunction(bath, lat)
-	Is = hybriddynamics(lat, kernel, PartialIF())
+	Is, _ = hybriddynamics(lat, kernel, PartialIF())
 	K = sysdynamics(lat, model; initial_state=thermal_impurity_state(model, β))
 	Z = integrate(K, Is)
 	for i in 1:Nt
@@ -94,7 +94,7 @@ end
 	                              [TdImpurityOp([tunneling(1, 1)], t -> A * sin(ωt * t))])
 	lat = GrassmannLattice(N=Nt, δt=δt, contour=:real)
 	kernel = correlationfunction(bath, lat)
-	Is = hybriddynamics(lat, kernel, PartialIF())
+	Is, _ = hybriddynamics(lat, kernel, PartialIF())
 	# 热初态取 hτ（预淬 μ0）
 	ρ0 = Matrix{ComplexF64}(fock_thermalstate(QuenchedImpurityHamiltonian(
 		[tunneling(1, 1, coeff=μ0)], [tunneling(1, 1, coeff=μ1)]; bands=1), β).data)

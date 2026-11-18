@@ -3,7 +3,7 @@ module Defaults
 	# a nested module does not see the enclosing module's bindings, so the
 	# names used below are imported explicitly
 	using GrassmannMPS: TruncationStrategy, truncdimcutoff, truncrelerr
-	using ExpExp: OverDeterminedProny
+	using ExpExp: AnchoredMatrixPencil
 	import ..SVDCompression
 
 	const D = 128       # default bond dimension
@@ -16,5 +16,6 @@ module Defaults
 	alg_trunc_if(; D::Int=D, ϵ::Real=tolgauge, add_back::Int=0) = truncdimcutoff(D=D, ϵ=ϵ, add_back=add_back)
 	alg_trunc_sys(; ϵ::Real=tolgauge) = truncrelerr(ϵ)
 	alg_mult(; trunc::TruncationStrategy=alg_trunc_if()) = SVDCompression(trunc=trunc)
-	alg_expan(; n::Int=15, tol::Real=1.0e-4, verbosity::Int=0) = OverDeterminedProny(n=n, tol=tol, verbosity=verbosity)
+	alg_expan(; n::Int=40, tol::Real=1.0e-10, pencil_rows::Int=128) =
+		AnchoredMatrixPencil(n=n, tol=tol, pencil_rows=pencil_rows, verbosity=0)
 end

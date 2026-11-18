@@ -123,14 +123,22 @@ end
 	@test isempty(f0.nodes) && isempty(f0.weights) && f0.relative_error == 0.0
 	f1 = GTEMPO.fit_exponentials(D.alg_expan(), ComplexF64[3.0])
 	@test f1.nodes == [0.0] && f1.weights == [3.0] && f1.relative_error == 0.0
-	# 退化窗回退：线性序列铅笔不达 → 单位根精确插值（L ≤ alg.n）
+	# 契约断言：err ≤ alg.tol（铅笔收敛或单位根回退，节点数随收敛路径 2–8）
 	fr = GTEMPO.fit_exponentials(D.alg_expan(), ComplexF64.(collect(1.0:8.0)))
-	@test length(fr.nodes) == 8 && fr.relative_error <= 1e-10
-	# 无回退资格（L > alg.n）→ sweep 的 ArgumentError 透传（带最优残差）
+	@test fr.relative_error <= 1e-10 && 2 <= length(fr.nodes) <= 8
+	# 线性 50 点：铅笔残差 1.03e-10 边缘超 tol 且 L > alg.n 无回退 → 抛
 	@test_throws ArgumentError GTEMPO.fit_exponentials(D.alg_expan(), ComplexF64.(collect(1.0:50.0)))
-	# 超临界极点折叠（恒等式精确，展平后节点 ≤ 1）
+	# 无规律噪声序列：8 点复序列恰被 4 极点精确表示（16 dof = 16 约束）——
+	# 铅笔机器精度收敛（超临界节点直出、代数精确），回退不触发（无需求即正确）
+	using Random
+	rng = Random.MersenneTwister(42)
+	yv = ComplexF64.(randn(rng, 8) .+ im .* randn(rng, 8))
+	fv = GTEMPO.fit_exponentials(D.alg_expan(), yv)
+	@test fv.relative_error <= 1e-12
+	# 超临界极点：节点直出（|q| = 1.2 未折叠），y[d] = Σ w·q^(d−1) 重建精确——
+	# 下游 Pairing/ESS 装配对任意模长节点代数精确（守卫已随锚点概念退役）
 	yg = ComplexF64[1.2^(d-1) for d in 1:10]
 	fg = GTEMPO.fit_exponentials(D.alg_expan(), yg)
-	@test length(fg.nodes) == 1 && abs(fg.nodes[1]) <= 1
-	@test maximum(abs.([fg.weights[1] * fg.nodes[1]^(10-d) for d in 1:10] .- yg)) / norm(yg) <= 1e-10
+	@test length(fg.nodes) == 1 && abs(fg.nodes[1] - 1.2) <= 1e-10
+	@test maximum(abs.([fg.weights[1] * fg.nodes[1]^(d-1) for d in 1:10] .- yg)) / norm(yg) <= 1e-10
 end

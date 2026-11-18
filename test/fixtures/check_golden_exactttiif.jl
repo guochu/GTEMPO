@@ -40,7 +40,7 @@ end
 
 "GMPS → 变量粒度系数表（升序单项式基，站 digit 展平）"
 function to_var(x)
-    dv = GM.Dense.tositewise(GM.todense(x))
+    dv = GM.Dense.tositewise(GM.Dense.todense(x))
     L = length(x)
     out = Dict{Int,ComplexF64}()
     for (idx, val) in enumerate(dv)
