@@ -47,8 +47,8 @@ import LinearAlgebra
         K_new = _wf_build(lattice, model, order, coupling_norm, insertions, initial_state)
         nst = length(K_base)
         if 4^nst <= 2^20
-            tb = GM.todense(K_base)
-            tn = GM.todense(K_new)
+            tb = GM.todense(K_base).data
+            tn = GM.todense(K_new).data
             @test length(tn) == length(tb)
             Δ = maximum(abs.(tn .- tb))
             @test Δ <= 1e-10

@@ -7,7 +7,7 @@
 
 	lat = GrassmannLattice(N=N, δτ=δτ, contour=:imag)
 	kernel = correlationfunction(bath, lat)
-	Is = hybriddynamics(lat, kernel, PartialIF())
+	Is, _ = hybriddynamics(lat, kernel, PartialIF())
 	model = ToulouseIM(ϵ_d=μ)
 	K = sysdynamics(lat, model)
 	Z = integrate(K, Is)

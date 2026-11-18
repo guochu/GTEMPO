@@ -6,15 +6,15 @@
 #   ③ 守卫：实时增长极点响抛、BCS × ExactTTI 拒绝（D7）、band 范围守卫；
 #   ED 对拍由既有套件承接（normalbath/bcs/multiorbital + exactttiif golden）。
 @testset "IF 装配闸门（W3/W4 后端统一）" begin
-	gd(x, y) = maximum(abs.(GM.todense(x; order=:msb) - GM.todense(y; order=:msb)))
+	gd(x, y) = maximum(abs.(GM.todense(x).data - GM.todense(y).data))
 
 	# ---- ① 虚时互换（单模浴，μ=0 / μ≠0，拟合精确 → 机器精度）----
 	for (bath, label) in ((discretefermionicbath([1.0], [0.5]; β=1.0), "μ=0"),
 	                      (fermionicbath(DiracDelta(ω=1.0, α=0.5), β=1.0, μ=0.7), "μ=0.7"))
 		lat = GrassmannLattice(N=4, δτ=0.25, contour=:imag)
 		kernel = correlationfunction(bath, lat)
-		full = hybriddynamics(lat, kernel, PartialIF())
-		exact = hybriddynamics(lat, kernel, ExactTTI())
+		full, _ = hybriddynamics(lat, kernel, PartialIF())
+		exact, _ = hybriddynamics(lat, kernel, ExactTTI())
 		@test gd(exact, full) < 1e-12
 	end
 
@@ -25,8 +25,8 @@
 		spec_c = spectrum(ϵ -> sqrt(1 - (ϵ / 10)^2) / π, lb=-10, ub=10)
 		bath = fermionicbath(spec_c, β=1.0)
 		kernel = correlationfunction(bath, lat)
-		exact = hybriddynamics(lat, kernel, ExactTTI())
-		rowchain = hybriddynamics(lat, kernel, PartialIF())
+		exact, _ = hybriddynamics(lat, kernel, ExactTTI())
+		rowchain, _ = hybriddynamics(lat, kernel, PartialIF())
 		@test gd(exact, rowchain) < 1e-2
 	end
 
@@ -35,8 +35,8 @@
 	let lat = GrassmannLattice(N=3, δt=0.15, contour=:real)
 		bath = fermionicbath(DiracDelta(ω=1.0, α=0.5), β=1.0)
 		kernel = correlationfunction(bath, lat)
-		exact = hybriddynamics(lat, kernel, ExactTTI())
-		rowchain = hybriddynamics(lat, kernel, PartialIF())
+		exact, _ = hybriddynamics(lat, kernel, ExactTTI())
+		rowchain, _ = hybriddynamics(lat, kernel, PartialIF())
 		@test gd(exact, rowchain) < 1e-12
 	end
 
@@ -45,8 +45,8 @@
 		spec_c = spectrum(ϵ -> sqrt(1 - (ϵ / 10)^2) / π, lb=-10, ub=10)
 		bath = fermionicbath(spec_c, β=latm.β)
 		kernel = correlationfunction(bath, latm)
-		exact = hybriddynamics(latm, kernel, ExactTTI())
-		rowchain = hybriddynamics(latm, kernel, PartialIF())
+		exact, _ = hybriddynamics(latm, kernel, ExactTTI())
+		rowchain, _ = hybriddynamics(latm, kernel, PartialIF())
 		@test gd(exact, rowchain) < 1e-12
 	end
 
@@ -54,8 +54,8 @@
 	let lat = GrassmannLattice(N=4, δτ=0.25, contour=:imag, symmetry=U1Symmetry())
 		bath = discretefermionicbath([1.0], [0.5]; β=1.0)
 		kernel = correlationfunction(bath, lat)
-		exact = hybriddynamics(lat, kernel, ExactTTI())
-		rowchain = hybriddynamics(lat, kernel, PartialIF())
+		exact, _ = hybriddynamics(lat, kernel, ExactTTI())
+		rowchain, _ = hybriddynamics(lat, kernel, PartialIF())
 		@test gd(exact, rowchain) < 1e-12
 	end
 

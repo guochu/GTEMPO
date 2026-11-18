@@ -40,7 +40,7 @@ end
 
 "GMPS → 变量粒度系数表（升序单项式基，站 digit 展平）"
 function to_var(x)
-    dv = GM.todense(x; order=:msb)
+    dv = GM.Dense.tositewise(GM.todense(x))
     L = length(x)
     out = Dict{Int,ComplexF64}()
     for (idx, val) in enumerate(dv)
@@ -61,8 +61,8 @@ end
     # ================= 虚时 N=4 =================
     let lat = GrassmannLattice(N=4, δτ=0.25, bands=1, contour=:imag)
         kernel = correlationfunction(bath, lat)
-        Is_p = (hybriddynamics(lat, kernel, PartialIF()),)
-        Is_e = (hybriddynamics(lat, kernel, ExactTTI()),)
+        Is_p = (first(hybriddynamics(lat, kernel, PartialIF())),)
+        Is_e = (first(hybriddynamics(lat, kernel, ExactTTI())),)
         K = sysdynamics(lat, ToulouseIM(ϵ_d=μ); order=1)
         tp, te = to_var(Is_p[1]), to_var(Is_e[1])
         keys_all = union(keys(tp), keys(te))
@@ -98,8 +98,8 @@ end
     let lat = GrassmannLattice(N=3, δt=0.15, bands=1, contour=:real)
         cn = α
         kernel = correlationfunction(bath, lat)
-        Is_p = (hybriddynamics(lat, kernel, PartialIF()),)
-        Is_e = (hybriddynamics(lat, kernel, ExactTTI()),)
+        Is_p = (first(hybriddynamics(lat, kernel, PartialIF())),)
+        Is_e = (first(hybriddynamics(lat, kernel, ExactTTI())),)
         K = sysdynamics(lat, ToulouseIM(ϵ_d=μ); order=2, coupling_norm=cn, initial_state=ρ0_1)
         te, tp = to_var(Is_e[1]), to_var(Is_p[1])
         keys_all = union(keys(te), keys(tp))

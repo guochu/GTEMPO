@@ -46,7 +46,7 @@ function fermionic_setup(lattice, bath, model; β=nothing, order::Int=1, couplin
 	order == 2 && coupling_norm === nothing &&
 		throw(ArgumentError("order=2 requires coupling_norm"))
 	kernel = correlationfunction(bath, lattice)
-	Is = hybriddynamics(lattice, kernel, PartialIF())
+	Is, _ = hybriddynamics(lattice, kernel, PartialIF())
 	Is isa GMPS && (Is = (Is,))                     # 单带 → 单 IF 元组（Is... 契约）
 	initial = β === nothing ? nothing : thermal_impurity_state(model, β)
 	K = order == 2 ?

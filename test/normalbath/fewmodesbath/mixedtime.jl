@@ -11,7 +11,7 @@
 	bath = discretefermionicbath([ω], [α]; β=β)
 	kernel = correlationfunction(bath, lat)
 	model = ToulouseIM(ϵ_d=μ)
-	Is = hybriddynamics(lat, kernel, PartialIF())
+	Is, _ = hybriddynamics(lat, kernel, PartialIF())
 	K = sysdynamics(lat, model)
 	Z = integrate(K, Is)
 	for i in 1:Nt

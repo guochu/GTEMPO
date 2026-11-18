@@ -18,66 +18,42 @@
 # InfluenceFunctional.diagnostics（kernel diagnostics 字段已随 W2 删除）。
 
 """
-    fit_exponentials(y; rtol=1e-10, maxterms=40, pencil_rows=128)
-        -> (; weights, nodes, anchors, relative_error)
-
-双端锚定矩阵铅笔（Hua–Sarkar：Hankel 行子采样 + 一次 SVD 最小阶扫描）——核心 =
-`ExpExp.anchored_matrix_pencil_sweep`（`anchored_matrix_pencil` 的单 SVD 秩扫
-变体）。`|q| > 1` 极点一律经恒等式 `q^(d−1) = q^(L−1)·(1/q)^(L−d)` 精确折叠为
-`:right` 锚（权重吸收常数），返回节点全部模长 ≤ 1。
-
-IF 域策略层（留本函数，ExpExp 不收——F6）：零序列 / `L == 1` 早退；铅笔扫完
-不达 `rtol` 且 `L ≤ maxterms` 时以单位根 `q_j = 0.8·cis(2πj/L)` 做精确有界
-插值（合法有限窗展开，非回退到其它 IF 算法）；仍不达则透传 sweep 的
-ArgumentError（消息带最优残差）。
-"""
-function fit_exponentials(y; rtol=1e-10, maxterms=40, pencil_rows=128)
-    0 < rtol < 1 && maxterms >= 1 && pencil_rows >= 1 || throw(ArgumentError("invalid fit settings"))
-    y = ComplexF64.(y); L = length(y)
-    all(isfinite, y) || throw(ArgumentError("nonfinite fit samples"))
-    (L == 0 || all(iszero, y)) && return (; weights=ComplexF64[], nodes=ComplexF64[], anchors=Symbol[], relative_error=0.0)
-    L == 1 && return (; weights=[y[1]], nodes=ComplexF64[0], anchors=[:left], relative_error=0.0)
-    try
-        w, nodes, anchors, err =
-            anchored_matrix_pencil_sweep(y; tol=rtol, n=maxterms, pencil_rows=pencil_rows)
-        return (; weights=w, nodes=nodes, anchors=anchors, relative_error=err)
-    catch e
-        e isa ArgumentError || rethrow()
-        # Short finite windows can be underdetermined for a pencil. An exact bounded
-        # exponential interpolation is a valid finite-window expansion, not a fit
-        # fallback to another IF algorithm.
-        L <= maxterms || rethrow()
-        nodes = ComplexF64[0.8 * cis(2pi * j / L) for j in 0:L-1]
-        B = [q^(d - 1) for d in 1:L, q in nodes]; w = B \ y
-        err = norm(B * w - y) / norm(y)
-        err <= rtol && return (; weights=w, nodes=nodes, anchors=fill(:left, L), relative_error=err)
-        rethrow()
-    end
-end
-
-"""
     fit_exponentials(alg::ExpExp.ExponentialExpansionAlgorithm, y)
         -> (; weights, nodes, relative_error)
 
-ExactTTI 的函数指数分解（alg_expan 面）：`ExpExp.expansion.exponential_expansion`
-薄壳 + GTEMPO 拟合约定对齐（y[d] = Σ wᵢ·qᵢ^(d−1) ⟹ w = α·β、q = β）+ IF 域
-早退（零序列 / L == 1）+ 重建相对误差。分解精度随 alg 配置（Defaults.alg_expan()
-= OverDeterminedProny(n=15, tol=1e-4)：精确单极点核机器精度、连续谱核列
-~1e-5–1e-7 档）。
+ExactTTI 的函数指数分解（alg_expan 面）：`ExpExp.exponential_expansion` 薄壳 +
+GTEMPO 拟合约定对齐（y[d] = Σ wᵢ·qᵢ^(d−1) ⟹ w = α·β、q = β）+ IF 域策略层：
+零序列 / `L == 1` 早退；分解不达 `alg.tol` 且 `L ≤ alg.n` 时以单位根
+`q_j = 0.8·cis(2πj/L)` 做精确有界插值（合法有限窗展开，非回退到其它 IF 算
+法——短窗对铅笔/总体最小二乘欠定时的无损失路）；仍不达则透传 ArgumentError
+（消息带最优残差）。分解精度随 alg 配置（缺省 AnchoredMatrixPencil(40, 1e-10,
+128)：精确单极点核机器精度；连续谱短核列受小样本极限）。
 """
 function fit_exponentials(alg::ExpExp.ExponentialExpansionAlgorithm, y::Vector{<:Number})
     y = ComplexF64.(y)
     all(isfinite, y) || throw(ArgumentError("nonfinite fit samples"))
     (isempty(y) || all(iszero, y)) &&
         return (; weights=ComplexF64[], nodes=ComplexF64[], relative_error=0.0)
-    isempty(y) == false && length(y) == 1 &&
-        return (; weights=[y[1]], nodes=ComplexF64[0.0], relative_error=0.0)
-    as, bs = ExpExp.exponential_expansion(y, alg)
-    w = as .* bs
+    length(y) == 1 && return (; weights=[y[1]], nodes=ComplexF64[0.0], relative_error=0.0)
     L = length(y)
-    recon = [sum(w[i] * bs[i]^(d - 1) for i in eachindex(w)) for d in 1:L]
+    amps, bases = ExpExp.exponential_expansion(y, alg)
+    w = amps .* bases
+    recon = [sum(w[i] * bases[i]^(d - 1) for i in eachindex(w)) for d in 1:L]
     err = norm(recon - y) / max(norm(y), eps())
-    return (; weights=ComplexF64.(w), nodes=ComplexF64.(bs), relative_error=err)
+    if err > alg.tol && L <= alg.n
+        # Short finite windows can be underdetermined for a pencil / total LS.
+        # An exact bounded exponential interpolation is a valid finite-window
+        # expansion, not a fit fallback to another IF algorithm.
+        bases = ComplexF64[0.8 * cis(2pi * j / L) for j in 0:L-1]
+        B = [q^(d - 1) for d in 1:L, q in bases]
+        amps = B \ y
+        w = amps .* bases
+        recon = [sum(w[i] * bases[i]^(d - 1) for i in eachindex(w)) for d in 1:L]
+        err = norm(recon - y) / max(norm(y), eps())
+        err <= alg.tol || throw(ArgumentError(
+            "exponential expansion unreachable: best residual $err exceeds tol $(alg.tol)"))
+    end
+    return (; weights=ComplexF64.(w), nodes=ComplexF64.(bases), relative_error=err)
 end
 
 # ---------------------------------------------------------------------------

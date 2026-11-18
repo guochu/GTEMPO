@@ -19,7 +19,7 @@ using LinearAlgebra: Hermitian, eigen
 
 	lat = GrassmannLattice(N=Nt, δt=δt, contour=:real)
 	kernel = correlationfunction(bath, lat)
-	Is = hybriddynamics(lat, kernel, PartialIF())
+	Is, _ = hybriddynamics(lat, kernel, PartialIF())
 	model = ToulouseIM(ϵ_d=μ)
 	ρ0_imp = thermal_impurity_state(model, β)
 	K = sysdynamics(lat, model; initial_state=ρ0_imp)

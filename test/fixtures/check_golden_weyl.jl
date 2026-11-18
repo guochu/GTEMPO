@@ -45,7 +45,7 @@ function run_case(name)
     end
     cn = α * bands
     kernel = correlationfunction(bath, lat)
-    Is = hybriddynamics(lat, kernel, PartialIF())
+    Is, _ = hybriddynamics(lat, kernel, PartialIF())
     Is isa GM.GMPS && (Is = (Is,))
     if order == 2
         K = sysdynamics(lat, model; order=2, coupling_norm=cn, initial_state=rho0)

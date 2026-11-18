@@ -102,7 +102,7 @@ function hybriddynamics!(gmps, lattice::AbstractGrassmannLattice, kernel::Hybrid
         throw(ArgumentError("unsupported IF algorithm $(typeof(alg))"))
     end
     diagnostics[:truncerrs] = truncerrs
-    return state
+    return state, diagnostics
 end
 
 """

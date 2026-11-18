@@ -67,7 +67,7 @@ end
             lat = GrassmannLattice(N=N, δτ=dτ, bands=2, contour=:imag)
             cn = α * 2
             kernel = correlationfunction(bath, lat; band=1)
-            IF1 = hybriddynamics(lat, kernel, PartialIF())
+            IF1, _ = hybriddynamics(lat, kernel, PartialIF())
             vac = vacuumstate(lat)
             K = sysdynamics(lat, AndersonIM(U=U, ϵ_d=μ); order=2, coupling_norm=cn)
             zs = integrate_scaled(K, IF1, vac)
@@ -89,7 +89,7 @@ end
         lat0 = GrassmannLattice(N=N, δτ=0.25, bands=2, contour=:imag, symmetry=Z2Symmetry())
         cn = α * 2
         kernel0 = correlationfunction(bath, lat0; band=1)
-        IF0 = hybriddynamics(lat0, kernel0, PartialIF())
+        IF0, _ = hybriddynamics(lat0, kernel0, PartialIF())
         vac0 = vacuumstate(lat0)
         K0 = sysdynamics(lat0, AndersonIM(U=U, ϵ_d=μ); order=2, coupling_norm=cn)
         zs0 = integrate_scaled(K0, IF0, vac0)
@@ -99,7 +99,7 @@ end
         for sym in (U1Symmetry(), Z2Z2Symmetry(), U1U1Symmetry())
             lat = GrassmannLattice(N=N, δτ=0.25, bands=2, contour=:imag, symmetry=sym)
             kernel = correlationfunction(bath, lat; band=1)
-            IF1 = hybriddynamics(lat, kernel, PartialIF())
+            IF1, _ = hybriddynamics(lat, kernel, PartialIF())
             vac = vacuumstate(lat)
             K = sysdynamics(lat, AndersonIM(U=U, ϵ_d=μ); order=2, coupling_norm=cn)
             zs = integrate_scaled(K, IF1, vac)
@@ -116,14 +116,14 @@ end
         lat = GrassmannLattice(N=N, δt=dt, bands=2, contour=:real)
         cn = α * 2
         kernel = correlationfunction(bath, lat)
-        Is = hybriddynamics(lat, kernel, PartialIF())
+        Is, _ = hybriddynamics(lat, kernel, PartialIF())
         ρ0 = Diagonal(ComplexF64[1.0, exp(-β * μ), exp(-β * μ), exp(-β * 2μ)]); ρ0 /= tr(ρ0)
         K = sysdynamics(lat, AndersonIM(U=0.0, ϵ_d=μ); order=2, coupling_norm=cn, initial_state=ρ0)
         zs = integrate_scaled(K, Is...)
         Z = exp(zs.logabs) * zs.phase
         # ① U=0 带因子化：⟨n₁⟩ ≡ M=1 值
         lat1 = GrassmannLattice(N=N, δt=dt, bands=1, contour=:real)
-        IF1m = hybriddynamics(lat1, correlationfunction(bath, lat1), PartialIF())
+        IF1m, _ = hybriddynamics(lat1, correlationfunction(bath, lat1), PartialIF())
         K1 = sysdynamics(lat1, ToulouseIM(ϵ_d=μ); order=2, coupling_norm=α,
                                     initial_state=Diagonal(ComplexF64[1.0, exp(-β * μ)]) / (1 + exp(-β * μ)))
         zs1 = integrate_scaled(K1, IF1m)

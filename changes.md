@@ -78,6 +78,17 @@
   `ExpExp.AnchoredMatrixPencil`（ ExpExp 已有算法，n=40/tol=1e-10/pencil_rows=128
   与既有锚定铅笔路径同参）——ExactTTI 缺省分解行为与铅笔路线逐位一致
   （含 :right 锚点展平契约），OverDeterminedProny 仍可经 `alg_expan` 字段插拔。
+- **hybriddynamics 二元组返回 + fullfactor 泛化（2026-11-18 第五批，用户五裁决）**：
+  ①`fit_exponentials(y; rtol, maxterms, pencil_rows)` 关键字形删除（有界插值回退
+  移植进 alg_expan 面：分解残差 > alg.tol 且 L ≤ alg.n 时触发，值判据驱动）；
+  ②`fit_exponentials(alg, y)` 内 `as` → `amps`/`bases`；
+  ③`fullfactor` 泛化为**紧凑站点表**构造——`GM.AnomalousPairing(C, sites)`，
+  C 覆盖 kernel 作用域的全部变量对（2M×2M，M = 作用域站数），lattice 可含比
+  kernel 更多的 bands（核外带不进因子）；单带/多带 normal 与 BCS 轨道核全部
+  适用（旧单带/单 orbital 限定删除）；
+  ④`hybriddynamics`/`hybriddynamics!` 的 `diagnostics` 从输入改为**第二输出**
+  （不再作可变输入 kwarg）：`(state, diagnostics)` 二元组返回，约 40 处测试
+  调用点解构迁移；extensions/secondorderif 五脚本同步 `first(...)` 迁移。
 - **测试**：25 文件迁移新 API；新增 `test/api/if_gates.jl`（每因子 dense 对拍 +
   互换对拍闸门，12 项）。全套绿；两个 golden fixture 检查器按值保持
   （weyl 8/8、exactttiif 6/6，机器精度无需重锚）。

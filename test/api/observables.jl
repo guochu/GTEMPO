@@ -10,7 +10,7 @@ using LinearAlgebra: Diagonal, eigen
 	ρ0 = Diagonal(ComplexF64[1.0, q, q, q * q]); ρ0 /= tr(ρ0)
 	model = AndersonIM(U=0.0, ϵ_d=μ)
 	kernel = correlationfunction(bath, lat)
-	Is = hybriddynamics(lat, kernel, PartialIF())
+	Is, _ = hybriddynamics(lat, kernel, PartialIF())
 	K = sysdynamics(lat, model; order=2, coupling_norm=1.0, initial_state=ρ0)
 	zs = integrate_scaled(K, Is...)
 	Z = exp(zs.logabs) * zs.phase
@@ -42,7 +42,7 @@ end
 	lat = GrassmannLattice(N=4, δτ=0.25, bands=2, contour=:imag, symmetry=U1Symmetry())
 	model = AndersonIM(U=0.0, ϵ_d=μ)
 	kernel = correlationfunction(bath, lat)
-	Is = hybriddynamics(lat, kernel, PartialIF())
+	Is, _ = hybriddynamics(lat, kernel, PartialIF())
 	K = sysdynamics(lat, model)
 	Z = integrate(K, Is...)
 	@test Z ≈ 2.543041612650098 atol = 1e-10
@@ -67,7 +67,7 @@ end
 	lat = GrassmannLattice(N=8, δτ=β/8, contour=:imag)
 	bath = discretefermionicbath([ω], [α]; β=β)
 	kernel = correlationfunction(bath, lat)
-	Is = hybriddynamics(lat, kernel, PartialIF())
+	Is, _ = hybriddynamics(lat, kernel, PartialIF())
 	K = sysdynamics(lat, ToulouseIM(ϵ_d=μ))
 	Z = integrate(K, Is)
 	# Grassmann 路线 Z = 浴归一化（缺纯浴配分因子，Z_B 铁律）+ 行因子化 O(δτ) 常数
@@ -82,7 +82,7 @@ end
 	# 实时（热初态 = 杂质热态 × 浴真空；H0 = 退耦 Hamiltonian）
 	lat = GrassmannLattice(N=3, δt=0.05, contour=:real)
 	kernel = correlationfunction(bath, lat)
-	Is = hybriddynamics(lat, kernel, PartialIF())
+	Is, _ = hybriddynamics(lat, kernel, PartialIF())
 	d_imp = fermion_annihilators(1)[1]
 	himp = μ * d_imp' * d_imp
 	ρ0 = Matrix{ComplexF64}(exp(-β * himp)); ρ0 /= tr(ρ0)
@@ -114,7 +114,7 @@ end
 	lat2 = GrassmannLattice(N=6, δτ=β/6, bands=2, contour=:imag)
 	bath2 = discretefermionicbath([ω, ω], [α, α]; β=β)
 	kernel2 = correlationfunction(bath2, lat2)
-	Is2 = hybriddynamics(lat2, kernel2, PartialIF())
+	Is2, _ = hybriddynamics(lat2, kernel2, PartialIF())
 	K2 = sysdynamics(lat2, AndersonIM(U=1.0, ϵ_d=μ))
 	Z2 = integrate(K2, Is2...)
 	bathZ2 = (1 + exp(-β * ω))^2
@@ -132,7 +132,7 @@ end
 	lat = GrassmannLattice(N=3, δt=0.05, contour=:real)
 	bath = discretefermionicbath([ω], [α]; β=β)
 	kernel = correlationfunction(bath, lat)
-	Is = hybriddynamics(lat, kernel, PartialIF())
+	Is, _ = hybriddynamics(lat, kernel, PartialIF())
 	d_imp = fermion_annihilators(1)[1]
 	himp = μ * d_imp' * d_imp
 	ρ0 = Matrix{ComplexF64}(exp(-β * himp)); ρ0 /= tr(ρ0)
@@ -157,7 +157,7 @@ end
 	lat = GrassmannLattice(N=3, δt=0.05, contour=:real)
 	bath = discretefermionicbath([ω], [α]; β=β)
 	kernel = correlationfunction(bath, lat)
-	Is = hybriddynamics(lat, kernel, PartialIF())
+	Is, _ = hybriddynamics(lat, kernel, PartialIF())
 	d_imp = fermion_annihilators(1)[1]
 	himp = μ * d_imp' * d_imp
 	ρ0 = Matrix{ComplexF64}(exp(-β * himp)); ρ0 /= tr(ρ0)
@@ -188,7 +188,7 @@ end
 	ρ0 = Diagonal(ComplexF64[1.0, q, q, q * q]); ρ0 /= tr(ρ0)
 	model = AndersonIM(U=0.0, ϵ_d=μ)
 	kernel = correlationfunction(bath, lat)
-	Is = hybriddynamics(lat, kernel, PartialIF())
+	Is, _ = hybriddynamics(lat, kernel, PartialIF())
 	K = sysdynamics(lat, model; order=2, coupling_norm=1.0, initial_state=ρ0)
 	Z = integrate(K, Is...)
 	# raw_lead_correlator = lesser 图案（⟨d†(+,k) d(b2,j)⟩；同切位 a†a）
@@ -218,7 +218,7 @@ end
 	ρ0 = Diagonal(ComplexF64[1.0, q, q, q * q]); ρ0 /= tr(ρ0)
 	model = AndersonIM(U=0.0, ϵ_d=μ)
 	kernel = correlationfunction(bath, lat)
-	Is = hybriddynamics(lat, kernel, PartialIF())
+	Is, _ = hybriddynamics(lat, kernel, PartialIF())
 	K = sysdynamics(lat, model; order=2, coupling_norm=1.0, initial_state=ρ0)
 	zs = integrate_scaled(K, Is...)
 	Z = exp(zs.logabs) * zs.phase
