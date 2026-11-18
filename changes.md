@@ -65,6 +65,19 @@
   保留为独立 `GTEMPO.fit_exponentials(y; rtol, maxterms)`。
   `influence_functional`/`hybriddynamics`/`bcs_hybriddynamics` 的 `trunc`
   kwarg 随之退役（截断随算法对象）。
+- **hybriddynamics 入口原地化（2026-11-18 第四批，用户四裁决）**：①关键字便捷形
+  删除；②`InfluenceFunctional` 结构与 `influence_functional` 入口删除（导出移除）——
+  `hybriddynamics` 收 `gmps`+`diagnostics`（truncerrs 包装进 `diagnostics[:truncerrs]`，
+  通道审计键合并；截断随算法对象，`trunc` kwarg 无）；③新增原地版
+  `hybriddynamics!(gmps, lattice, kernel, alg; diagnostics)`——单带 normal/BCS 轨道核
+  就地装配 `gmps` 恒等返回，多带 normal 核逐带从 `copy(gmps)` 起步返回元组
+  （**顺带修正**：ExactTTI 多带此前误把各带因子叠进同一 state，现逐带独立装配）；
+  `hybriddynamics(lattice, ...) = hybriddynamics!(vacuumstate(promote_type(lattice, kernel),
+  lattice), lattice, ...)`——新增 `Base.promote_rule`/实例 `promote_type`（lattice ×
+  kernel 标量提升）与 `vacuumstate(::Type, lattice)`；④`Defaults.alg_expan` 改返回
+  `ExpExp.AnchoredMatrixPencil`（ ExpExp 已有算法，n=40/tol=1e-10/pencil_rows=128
+  与既有锚定铅笔路径同参）——ExactTTI 缺省分解行为与铅笔路线逐位一致
+  （含 :right 锚点展平契约），OverDeterminedProny 仍可经 `alg_expan` 字段插拔。
 - **测试**：25 文件迁移新 API；新增 `test/api/if_gates.jl`（每因子 dense 对拍 +
   互换对拍闸门，12 项）。全套绿；两个 golden fixture 检查器按值保持
   （weyl 8/8、exactttiif 6/6，机器精度无需重锚）。

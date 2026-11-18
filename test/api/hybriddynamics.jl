@@ -85,7 +85,8 @@ end
 		@test I isa GM.GMPS && length(I) == length(lat) ÷ 2
 		@test check_charge(I)
 	end
-	Ik = hybriddynamics(lat, kernel; alg=PartialIF())          # 关键字形委托
+	# 原地版：多带核逐带从 copy(gmps) 起步（多带返回元组；单带恒等断言见上）
+	Ik = hybriddynamics(lat, kernel)
 	@test Ik isa Tuple && length(Ik) == length(Is)
 	@test all(i -> isapprox(integrate(Ik[i]), integrate(Is[i]); rtol=1e-12), eachindex(Is))
 	# 单带 kernel → 单 IF

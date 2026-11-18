@@ -13,8 +13,8 @@
 	                      (fermionicbath(DiracDelta(ω=1.0, α=0.5), β=1.0, μ=0.7), "μ=0.7"))
 		lat = GrassmannLattice(N=4, δτ=0.25, contour=:imag)
 		kernel = correlationfunction(bath, lat)
-		full = influence_functional(lat, kernel; alg=PartialIF()).state
-		exact = influence_functional(lat, kernel; alg=ExactTTI()).state
+		full = hybriddynamics(lat, kernel, PartialIF())
+		exact = hybriddynamics(lat, kernel, ExactTTI())
 		@test gd(exact, full) < 1e-12
 	end
 
@@ -25,8 +25,8 @@
 		spec_c = spectrum(ϵ -> sqrt(1 - (ϵ / 10)^2) / π, lb=-10, ub=10)
 		bath = fermionicbath(spec_c, β=1.0)
 		kernel = correlationfunction(bath, lat)
-		exact = influence_functional(lat, kernel; alg=ExactTTI()).state
-		rowchain = influence_functional(lat, kernel; alg=PartialIF()).state
+		exact = hybriddynamics(lat, kernel, ExactTTI())
+		rowchain = hybriddynamics(lat, kernel, PartialIF())
 		@test gd(exact, rowchain) < 1e-2
 	end
 
@@ -35,8 +35,8 @@
 	let lat = GrassmannLattice(N=3, δt=0.15, contour=:real)
 		bath = fermionicbath(DiracDelta(ω=1.0, α=0.5), β=1.0)
 		kernel = correlationfunction(bath, lat)
-		exact = influence_functional(lat, kernel; alg=ExactTTI()).state
-		rowchain = influence_functional(lat, kernel; alg=PartialIF()).state
+		exact = hybriddynamics(lat, kernel, ExactTTI())
+		rowchain = hybriddynamics(lat, kernel, PartialIF())
 		@test gd(exact, rowchain) < 1e-12
 	end
 
@@ -45,8 +45,8 @@
 		spec_c = spectrum(ϵ -> sqrt(1 - (ϵ / 10)^2) / π, lb=-10, ub=10)
 		bath = fermionicbath(spec_c, β=latm.β)
 		kernel = correlationfunction(bath, latm)
-		exact = influence_functional(latm, kernel; alg=ExactTTI()).state
-		rowchain = influence_functional(latm, kernel; alg=PartialIF()).state
+		exact = hybriddynamics(latm, kernel, ExactTTI())
+		rowchain = hybriddynamics(latm, kernel, PartialIF())
 		@test gd(exact, rowchain) < 1e-12
 	end
 
@@ -54,8 +54,8 @@
 	let lat = GrassmannLattice(N=4, δτ=0.25, contour=:imag, symmetry=U1Symmetry())
 		bath = discretefermionicbath([1.0], [0.5]; β=1.0)
 		kernel = correlationfunction(bath, lat)
-		exact = influence_functional(lat, kernel; alg=ExactTTI()).state
-		rowchain = influence_functional(lat, kernel; alg=PartialIF()).state
+		exact = hybriddynamics(lat, kernel, ExactTTI())
+		rowchain = hybriddynamics(lat, kernel, PartialIF())
 		@test gd(exact, rowchain) < 1e-12
 	end
 
@@ -63,7 +63,7 @@
 	let latb = GrassmannLattice(N=4, δτ=0.25, bands=2, contour=:imag, symmetry=Z2Symmetry())
 		bathb = bcsbath(fermionicbath(DiracDelta(ω=1.0, α=0.5), β=1.0), Δ=0.4)
 		kernelb = correlationfunction(bathb, latb)
-		@test_throws ArgumentError influence_functional(latb, kernelb; alg=ExactTTI())
+		@test_throws ArgumentError hybriddynamics(latb, kernelb, ExactTTI())
 		@test fullfactor(kernelb, latb) isa GM.AnomalousPairing      # BCS 轨道核 OK
 		bathn = discretefermionicbath([1.0], [0.5]; β=1.0)
 		kfull = correlationfunction(bathn, latb)                     # 多带 normal 核

@@ -63,16 +63,17 @@ function _fullfactor(kernel::HybridizationKernel, lattice::AbstractGrassmannLatt
     return GM.AnomalousPairing(C)
 end
 
-"PartialIF 组装：vacuumstate → expmult!(fullfactor, PartialExp)，逐 kernel.bands
-装配（单带/BCS = 单 IF；多带 normal = 逐带 IF 元组）；乘法压缩截断 = alg.trunc"
-function _partialif_state(lattice::AbstractGrassmannLattice, kernel::HybridizationKernel,
+"PartialIF 组装（原地）：expmult!(gmps, fullfactor, PartialExp)，逐 kernel.bands
+装配（单带/BCS = 就地装配 gmps；多带 normal = 逐带从 copy(gmps) 起步）；乘法
+压缩截断 = alg.trunc"
+function _partialif_state(gmps, lattice::AbstractGrassmannLattice, kernel::HybridizationKernel,
                           alg::PartialIF)
     exp = GM.PartialExp(alg_mult=SVDCompression(trunc=alg.trunc))
     if length(kernel.bands) == 1 || _is_orbital_kernel(kernel)
-        state, err = GM.expmult!(vacuumstate(lattice), _fullfactor(kernel, lattice), exp)
+        state, err = GM.expmult!(gmps, _fullfactor(kernel, lattice), exp)
         return state, [err]
     end
-    states = [GM.expmult!(vacuumstate(lattice),
+    states = [GM.expmult!(_copy_mps(gmps),
                           _fullfactor(_band_kernel(kernel, b), lattice), exp)
               for b in kernel.bands]
     return tuple(first.(states)...), map(last, states)
@@ -91,5 +92,5 @@ function bcs_hybriddynamics(lattice::AbstractGrassmannLattice, bath::AbstractBCS
     alg isa PartialIF || throw(ArgumentError(
         "BCS IF supports only PartialIF on the GM stack (D7), got $(typeof(alg))"))
     kernel = correlationfunction(bath, lattice; orbital)
-    return influence_functional(lattice, kernel; alg).state
+    return hybriddynamics(lattice, kernel, alg)
 end

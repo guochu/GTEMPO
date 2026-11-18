@@ -281,5 +281,9 @@ end
 "真空链（GM 真空：左边界真空、键恒等穿透）"
 vacuumstate(lattice::AbstractGrassmannLattice) = GM.vacuumstate(ComplexF64, site_spaces(lattice))
 
+"真空链（标量型显式：hybriddynamics 的 vacuumstate(promote_type(lattice, kernel), lattice) 用）"
+vacuumstate(::Type{T}, lattice::AbstractGrassmannLattice) where {T<:Number} =
+    GM.vacuumstate(T, site_spaces(lattice))
+
 "lattice 携带的对称性单例（Z2/Z2Z2/U1/U1U1；export 已声明）"
 symmetry(l::AbstractGrassmannLattice) = l.symmetry

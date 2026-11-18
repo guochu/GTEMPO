@@ -112,13 +112,13 @@ export correlationfunction, coupling_norm, ContourBlockIndex, changebands
 export sysdynamics, OperatorInsertion
 
 # IF 构造（W3/W4 装配面：fullfactor/tti_* = influencefunctional/ 后端统一入口）
-export InfluenceFunctionalAlgorithm, PartialIF, ExactTTI, InfluenceFunctional
+export InfluenceFunctionalAlgorithm, PartialIF, ExactTTI
 export fullfactor, tti_imag_factors, tti_real_factors, tti_cross_factors
-export bcs_hybriddynamics
+export bcs_hybriddynamics, hybriddynamics!
 export var_charge, cell_charges, fock_charges
 export FockMPO, SparseFockMPO, fock_sysdynamics, fock_vacuumstate, fock_initstate!,
        sparsefockmpo, fockmpo2gmps, gmps2fockmpo
-export HybridizationKernel, influence_functional, hybriddynamics
+export HybridizationKernel, hybriddynamics, hybriddynamics!
 
 # 观测量（Phase 5b：inserted-K 边界观测 + 算符缓存原始关联两轨，D5 裁决见 measurements/）
 export occupation, greater, lesser, matsubara, default_branch, nn

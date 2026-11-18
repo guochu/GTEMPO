@@ -303,16 +303,18 @@ TTIExp = ExpDecayExp 逐通道物化——**要求 GM ≥ expdecayexp-same-orbit
 O(α²λ)，GTEMPO ESS 实测 3.2e-4）。截秩语义：real/imag 通道 rtol = 0（压缩
 由拟合重构自带，不叠加截断），cross 通道 rtol = cross_rtol（口径同旧 cross
 通道）。factor_rtol 映射到乘法压缩策略（旧逐因子 cleanup 语义）。"
-function _exacttti_state(lattice::AbstractGrassmannLattice, kernel::HybridizationKernel,
+function _exacttti_state(gmps, lattice::AbstractGrassmannLattice, kernel::HybridizationKernel,
                          alg::ExactTTI)
     diag = Dict{Symbol,Any}()
     mult = _mult(alg)
     pol_exact = GM.PolarExp(rtol=0.0, alg_mult=mult)             # real/imag 通道：精确
     pol_cross = GM.PolarExp(rtol=alg.cross_rtol, alg_mult=mult)  # cross 通道：截秩
-    state = vacuumstate(lattice)
+    single = length(kernel.bands) == 1
+    band_states = Any[single ? gmps : _copy_mps(gmps) for _ in kernel.bands]
     truncerrs = Float64[]
-    for b in kernel.bands                                   # band 信息在 kernel，逐带切片
+    for (bi, b) in enumerate(kernel.bands)                  # band 信息在 kernel，逐带切片
         kb = _band_kernel(kernel, b)
+        state = band_states[bi]                             # 逐带独立装配（各带自己的 IF 链）
         for (tti, pol) in ((tti_real_factors, pol_exact), (tti_imag_factors, pol_exact),
                            (tti_cross_factors, pol_cross))
             (; factors, audit) = tti(kb, lattice; alg)
@@ -322,8 +324,9 @@ function _exacttti_state(lattice::AbstractGrassmannLattice, kernel::Hybridizatio
                 push!(truncerrs, err)
             end
         end
+        band_states[bi] = state
     end
-    return state, truncerrs, diag
+    return single ? band_states[1] : tuple(band_states...), truncerrs, diag
 end
 
 "tti_* 的核范围守卫：仅单带 normal 核（多带核逐带切片在 _exacttti_state 内部；

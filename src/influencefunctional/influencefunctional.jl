@@ -61,68 +61,62 @@ struct ExactTTI{Tr<:TruncationStrategy} <: InfluenceFunctionalAlgorithm
     end
 end
 
-struct InfluenceFunctional{K,S}
-    kernel::K
-    state::S                                # 单带/BCS 核 = GMPS；多带 normal 核 = 逐带元组
-    bands::Vector{Int}                      # 装配覆盖的带（= kernel.bands；BCS = 轨道带对）
-    diagnostics::Dict{Symbol,Any}
-    reports::Vector{Float64}                # 逐步乘法压缩的 GM truncerr（标准标量通道）
-end
-
 "ExactTTI 的乘法压缩策略（trunc 随算法对象；factor_rtol 覆盖为纯 rtol 截断）"
 _mult(alg::ExactTTI) =
     alg.factor_rtol === nothing ? SVDCompression(trunc=alg.trunc) :
     SVDCompression(trunc=Truncation(D=typemax(Int), rtol=alg.factor_rtol))
 
-"""
-    influence_functional(lattice, kernel; alg=PartialIF()) -> InfluenceFunctional
+"GMPS 起始态深拷贝（多带核逐带装配的起步态；TensorMap 逐张拷贝）"
+_copy_mps(x::GM.GMPS) = begin
+    out = GM.GMPS(copy.(x.data))
+    GM.setlogscale!(out, GM.logscale(x))
+    out
+end
 
-IF 构造入口（W3/W4 后端统一）：装配范围由 `kernel.bands` 决定（band 不重复
-输入）——单带 normal / BCS 轨道核（bands = [band1, band2]）= 单 IF；多带
-normal 核 = 逐带 IF 元组（`kernel.bands` 序，`state` 为 Tuple）。乘法压缩
-截断随算法对象携带（`alg.trunc`）。ExactTTI 不支持 BCS kernel（D7：BCS 仅
-PartialIF）。
 """
-function influence_functional(lattice::AbstractGrassmannLattice, kernel::HybridizationKernel;
-                              alg::InfluenceFunctionalAlgorithm=PartialIF())
+    hybriddynamics!(gmps, lattice, kernel, alg=PartialIF(); diagnostics=Dict()) -> GMPS | Tuple{GMPS...}
+
+原地 IF 装配（装配范围由 `kernel.bands` 决定，band 不重复输入）：单带
+normal / BCS 轨道核 = 就地装配 `gmps`（原样返回）；多带 normal 核 = 逐带从
+`copy(gmps)` 起步装配（`gmps` 语义上应为真空起始态，本身不变），返回逐带
+元组。乘法压缩截断随算法对象携带（`alg.trunc`）；truncerrs 与通道审计
+包装进 `diagnostics`（`:truncerrs` + 审计键 + `:algorithm`/`:truncation`）。
+ExactTTI 不支持 BCS kernel（D7：BCS 仅 PartialIF）。
+"""
+function hybriddynamics!(gmps, lattice::AbstractGrassmannLattice, kernel::HybridizationKernel,
+                         alg::InfluenceFunctionalAlgorithm=PartialIF();
+                         diagnostics::Dict{Symbol,Any}=Dict{Symbol,Any}())
     all(b -> 1 <= b <= lattice.bands, kernel.bands) ||
         throw(BoundsError(1:lattice.bands, kernel.bands))
     isbcs = _is_orbital_kernel(kernel)
-    diag = Dict{Symbol,Any}(:algorithm => alg, :truncation => alg.trunc)
-    state, truncerrs = if alg isa PartialIF
-        _partialif_state(lattice, kernel, alg)
+    diagnostics[:algorithm] = alg
+    diagnostics[:truncation] = alg.trunc
+    if alg isa PartialIF
+        state, truncerrs = _partialif_state(gmps, lattice, kernel, alg)
     elseif alg isa ExactTTI
         isbcs && throw(ArgumentError(
             "ExactTTI does not support BCS kernels (D7: BCS is PartialIF-only), got orbital $(kernel.bands)"))
-        _exacttti_state(lattice, kernel, alg)
+        state, truncerrs, diag = _exacttti_state(gmps, lattice, kernel, alg)
+        merge!(diagnostics, diag)
     else
         throw(ArgumentError("unsupported IF algorithm $(typeof(alg))"))
     end
-    diag[:assembly] = alg isa PartialIF ? :fullfactor_partial_exp : :tti_factors_polar_exp
-    return InfluenceFunctional(kernel, state, copy(kernel.bands), diag, truncerrs)
+    diagnostics[:truncerrs] = truncerrs
+    return state
 end
 
-# ---------------------------------------------------------------------------
-# 公开皮肤：hybriddynamics / integrate（corr → kernel → IF 链；band 信息在
-# kernel 中——多带核返回逐带 IF 元组，单带核返回单 IF，`Is...` 变参兼容）
-# ---------------------------------------------------------------------------
-
 """
-    hybriddynamics(lattice, kernel, alg=PartialIF()) -> GMPS | Tuple{GMPS...}
-    hybriddynamics(lattice, kernel; alg=PartialIF()) = hybriddynamics(lattice, kernel, alg)
+    hybriddynamics(lattice, kernel, alg=PartialIF(); diagnostics=Dict()) -> GMPS | Tuple{GMPS...}
 
-逐带 IF 链（influence_functional 便捷入口）：装配范围 = `kernel.bands`。
-单带 kernel 返回单 GMPS；多带 kernel 返回 `Tuple`（逐带序）。乘法压缩截断
-随算法对象携带（`alg.trunc`）。
+IF 链装配（真空起始）：`hybriddynamics(lattice, ...) =
+hybriddynamics!(vacuumstate(promote_type(lattice, kernel), lattice), lattice, ...)`。
+单带 kernel 返回单 GMPS；多带 kernel 返回逐带 `Tuple`（`Is...` 变参兼容）。
 """
 function hybriddynamics(lattice::AbstractGrassmannLattice, kernel::HybridizationKernel,
-                        alg::InfluenceFunctionalAlgorithm)
-    return influence_functional(lattice, kernel; alg).state
-end
-
-function hybriddynamics(lattice::AbstractGrassmannLattice, kernel::HybridizationKernel;
-                        alg::InfluenceFunctionalAlgorithm=PartialIF())
-    return hybriddynamics(lattice, kernel, alg)
+                        alg::InfluenceFunctionalAlgorithm=PartialIF();
+                        diagnostics::Dict{Symbol,Any}=Dict{Symbol,Any}())
+    return hybriddynamics!(vacuumstate(promote_type(lattice, kernel), lattice),
+                           lattice, kernel, alg; diagnostics)
 end
 
 "integrate(lattice, x0, x1...) —— Berezin 迹（链 = (K, Is...)，GM 引擎）"
