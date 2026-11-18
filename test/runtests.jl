@@ -8,9 +8,8 @@ using GTEMPO: branches
 
 Random.seed!(12354)
 
-# 系统因子 K 构造缺省后端 = :fock（plan/sysdynamics_fock_mpo_plan.md Phase 3）；
-# 旧径机制测试已在各自文件内显式钉 :reference。如需全套切回旧径验证：
-# GTEMPO.set_sysfactor_backend!(:reference)
+# 系统因子 K 构造 = fock_sysdynamics + fockmpo2gmps 唯一路径（旧径
+# SystemFactorPreparation/_system_factor_reference 已随 V2 删除）。
 
 # shared utilities: spectra + ED reference builders（API 无关）
 include("util.jl")

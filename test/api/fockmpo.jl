@@ -1,10 +1,13 @@
 import TensorKit as TK
 import Random
 import LinearAlgebra
-# fockmpo.jl：FockMPO 直积 MPO + fockmpo2gmps 对拍闸门（plan V1 Phase 1）
+# fockmpo.jl：FockMPO 直积 MPO + fockmpo2gmps 闸门（plan V1 Phase 1；
+# 2026-11-18 起 = 公开 sysdynamics vs 手工闭环 workflow 接线对拍——迁移期的
+# 旧径锚定（_system_factor_reference，203 项全绿）已随 V2 删除退役，绝对
+# 数值锚由 observables golden（U1GTEMPO2 机器精度）与 ED 电池承接）
 #
-# 对拍 = 新链 todense vs 现行 sysdynamics 链 todense 机器精度（sign-gauge 逐位
-# 一致：分站装置 = 基线自己的 split_cell+pairize）。配置矩阵：
+# 对拍 = 公开 sysdynamics（纯委托实现体）vs 手工闭环（fock_sysdynamics →
+# sparse * → fockmpo2gmps kwargs）todense 机器精度。配置矩阵：
 #   {imag, real, mixed} × bands{1,2} × spec{:z2,:u1,:u1u1}（:z2z2 抽查）
 #   × 插入{无、偶（n̂ cut0/内/末）、奇（greater/lesser 式双插带荷）、多插}
 #   × order{1,2}
@@ -32,10 +35,11 @@ import LinearAlgebra
     end
 
     function _wf_check(lattice, model, order, coupling_norm, insertions; initial_state=nothing)
-        # 基线钉旧径（交叉验证语义不随后端缺省漂移——plan Phase 3 起缺省 :fock）
+        # 基线 = 公开入口（纯委托 _system_factor_fock）——对拍手工闭环 workflow
+        # （_wf_build）：kwargs 接线合同（rho0 轮廓门控/切位过滤/prefix/oddlater/
+        # lscale 路由）与规范装配一致
         K_base = sysdynamics(lattice, model; order=order, coupling_norm=coupling_norm,
-                             insertions=insertions, initial_state=initial_state,
-                             spec=TK.sectortype(lattice), backend=:reference)
+                             insertions=insertions, initial_state=initial_state)
         K_new = _wf_build(lattice, model, order, coupling_norm, insertions, initial_state)
         nst = length(K_base)
         if 4^nst <= 2^20
@@ -175,7 +179,7 @@ import LinearAlgebra
                            [OperatorInsertion(:τ, 1, GTEMPO._number_op(bands, nothing))],
                            [OperatorInsertion(:τ, 2, d; charge=GTEMPO.qneg(qc)),
                             OperatorInsertion(:τ, 1, ddag; charge=qc)])
-            K_base = sysdynamics(lat, model; order=1, insertions=insertions, backend=:reference)
+            K_base = sysdynamics(lat, model; order=1, insertions=insertions)
             K_new = _wf_build(lat, model, 1, 0.0, insertions, nothing)
             @testset "integrate 端到端 bands=$bands ins=$(length(insertions))" begin
                 Zb = integrate(K_base)

@@ -240,15 +240,10 @@ end
 		@test fast_c ≈ linear atol = 1e-12
 		@test fast_d ≈ linear atol = 1e-12
 	end
-	# ② preparation 透传（制备缓存 K）与逐点重建值相等
-	prep = prepare_system(lat, model; order=2, coupling_norm=1.0, initial_state=ρ0)
-	@test electriccurrent_fast(lat, model, kernel, Is...; k=3, band=1, Z=Z, preparation=prep) ==
-	      electriccurrent_fast(lat, model, kernel, Is...; k=3, band=1, Z=Z,
-	                           order=2, coupling_norm=1.0, initial_state=ρ0)
-	# ③ k = 1（空和）短路零电流
+	# ② k = 1（空和）短路零电流
 	@test cached_electriccurrent_fast(lat, kernel, K, Is...; k=1) == 0.0im
 	@test electriccurrent_fast(lat, model, kernel, Is...; k=1, Z=Z) == 0.0im
-	# ④ D5 跨语义：快速版 = 胞坐标流算符（备份 fast 同款），与边界插入 slow 差
+	# ③ D5 跨语义：快速版 = 胞坐标流算符（备份 fast 同款），与边界插入 slow 差
 	#   O(胞内接触项)，经 2/δt·Σ|η| 放大 —— 实测 δt=0.15 时 |Δ| ≈ 0.054·k/2 档，
 	#   容差按此标定（0.08k）；边界语义锚定路径仍是 electriccurrent
 	for k in 2:4

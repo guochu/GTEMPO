@@ -51,3 +51,25 @@ end
 	@test all(>(0), bonddims(K))
 	# K(weyl, order=2) ∧ 自身 = K₂₂ 因子化检验（U=0 精确路径在 ED 电池覆盖）
 end
+
+@testset "API: OperatorInsertion 结构化 ==/hash" begin
+	# 结构化相等是插入按内容分组的先决（sparsefockmpo 同切位列积 /
+	# fockmpo2gmps 切位元数据）；用户每次测量调用新构造插入对象，=== 不成立
+	spec = GTEMPO.sectortype(U1Symmetry())
+	qc = var_charge(spec, 1, 1)
+	d = GTEMPO._fock_ops(1)[1]
+	a = OperatorInsertion(:+, 3, d; charge=qc)
+	@test a == OperatorInsertion(:+, 3, d; charge=qc)          # 新构造对象逐字段相等
+	@test hash(a) == hash(OperatorInsertion(:+, 3, d; charge=qc))
+	@test a != OperatorInsertion(:-, 3, d; charge=qc)          # branch
+	@test a != OperatorInsertion(:+, 4, d; charge=qc)          # boundary
+	@test a != OperatorInsertion(:+, 3, 2d; charge=qc)         # matrix
+	@test a != OperatorInsertion(:+, 3, d)                     # charge（nothing）
+	@test a != OperatorInsertion(:+, 3, d; charge=qc, side=:right)   # side
+	@test a != OperatorInsertion(:+, 3, d; charge=GTEMPO.qneg(qc))
+	# 同切位双插入键：元组 hash/== 走结构化定义
+	k1 = (:+, 3, (a, OperatorInsertion(:+, 0, d'; charge=GTEMPO.qneg(qc))))
+	k2 = (:+, 3, (OperatorInsertion(:+, 3, d; charge=qc), OperatorInsertion(:+, 0, d'; charge=GTEMPO.qneg(qc))))
+	@test k1 == k2 && hash(k1) == hash(k2)
+	@test Dict(k1 => 1)[k2] == 1
+end

@@ -56,11 +56,10 @@ include("correlationfunction.jl")
 # 杂质模型（fock_propagator/fock_thermalstate 纯数值接口）
 include("impuritymodels/impuritymodels.jl")
 
-# K 构造（cell automaton；sysdynamics / sysdynamics_weyl2order）
-include("sysdynamics.jl")
-
-# Fock 直积 MPO + fockmpo2gmps 转换（plan/sysdynamics_fock_mpo_plan.md V1）
-include("fockmpo.jl")
+# K 构造（sysdynamics / sysdynamics_weyl2order 全权委托 fock_sysdynamics +
+# fockmpo2gmps；旧径随 V2 删除——plan/sysdynamics_fock_mpo_plan.md）
+include("sysdynamics/sysdynamics.jl")
+include("sysdynamics/fockmpo.jl")
 
 # IF 构造（PartialIF / ExactTTI 首批，D3）
 include("influence.jl")
@@ -103,9 +102,8 @@ export ScaledScalar, value
 # correlation functions
 export correlationfunction, coupling_norm
 
-# K 构造
+# K 构造（SystemFactorPreparation/prepare_system/clear_cache! 随旧径 V2 删除）
 export sysdynamics, sysdynamics_weyl2order, OperatorInsertion
-export prepare_system, SystemFactorPreparation, clear_cache!
 
 # IF 构造
 export InfluenceFunctionalAlgorithm, PartialIF, ExactTTI, InfluenceFunctional

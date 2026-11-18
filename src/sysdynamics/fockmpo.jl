@@ -1,6 +1,8 @@
-# fockmpo.jl：Fock 表象直积 MPO + fockmpo2gmps 转换（plan/sysdynamics_fock_mpo_plan.md V1）
+# fockmpo.jl：Fock 表象直积 MPO + fockmpo2gmps 转换
+# （plan/sysdynamics_fock_mpo_plan.md；2026-11-18 起为 sysdynamics 唯一路径——
+#  旧径 _system_factor_reference/SystemFactorPreparation 随 V2 删除）
 #
-# 架构（V1 三段）：
+# 架构（三段闭环）：
 #   fock_sysdynamics → FockMPO（Fock 键直积 MPO，开链：无 ρ₀/迹闭合/插入）
 #   sparsefockmpo `*` → 插入算符乘进链（左/右作用；纯张量收缩，无 graded 符号）
 #   fockmpo2gmps → 迹闭合 + ρ₀/切位 0 三明治 + 键重封块 + oddlater → split_cell
@@ -19,7 +21,8 @@
 #      （q(a_out) = q(a_in) + q_m）矛盾——带荷对角 MPO 腿不可分格表达。
 #      扇区结构由 fockmpo2gmps 重建（split_cell 的荷差键 + pairize 的分格站）。
 #
-# 语义（对齐 _system_factor_reference，逐位）：
+# 语义（迁移期经 203 项对拍闸门对齐旧径逐位；旧径删除后由闸门接线对拍
+# + observables golden U1GTEMPO2 机器精度锚承接）：
 #   一阶（q=1）：τ/+ 支 mats = S·M、− 支 M·S；二阶（Weyl）：S·M·S + Weyl 标量
 #   lscale = coupling_norm/4·Σ step²（fockmpo2gmps 的 weyl_lscale kwarg）。
 #   ρ₀/切位 0 插入三明治（Ol₀·ρ·Or₀）由 fockmpo2gmps 的 rho0/insertions kwargs
@@ -403,7 +406,8 @@ function gmps2fockmpo(g::GMPS, lattice::AbstractGrassmannLattice)
 end
 
 # ---------------------------------------------------------------------------
-# 闭环装配：sysdynamics 公开入口 backend=:fock 的新径实现（plan Phase 2）
+# 闭环装配：sysdynamics 公开入口的实现体（2026-11-18 起唯一路径——旧径随 V2
+# 删除；plan/sysdynamics_fock_mpo_plan.md）
 # ---------------------------------------------------------------------------
 
 "切位 ≥ 1 插入乘进 Fock 链（左右各一 SparseFockMPO，切位 0 归 fockmpo2gmps
@@ -428,10 +432,10 @@ _fock_weyl_lscale(lattice::AbstractGrassmannLattice, order::Int, coupling_norm::
                         insertions=OperatorInsertion[], trunc=nothing, truncerrs=nothing,
                         spec=nothing) -> GMPS
 
-sysdynamics 新径（backend=:fock）：`fock_sysdynamics` → 切位 ≥ 1 插入稀疏乘法
-→ `fockmpo2gmps`（ρ₀/切位 0 三明治 + 迹闭合 + oddlater + prefix + reorder）。
-语义与 `_system_factor_reference` 逐位对齐（test/api/fockmpo.jl 163 项对拍
-闸门）：`initial_state` 仅实时轮廓生效（虚时/混合 = 热迹 I——此处按轮廓门控，
+sysdynamics 的实现体（`fock_sysdynamics` → 切位 ≥ 1 插入稀疏乘法 →
+`fockmpo2gmps`：ρ₀/切位 0 三明治 + 迹闭合 + oddlater + prefix + reorder）。
+语义经 test/api/fockmpo.jl 对拍闸门锚定（迁移期对旧径 203 项绿；旧径已随
+V2 删除，闸门基线改手工闭环 workflow）：`initial_state` 仅实时轮廓生效（虚时/混合 = 热迹 I——此处按轮廓门控，
 `fockmpo2gmps` 的 rho0 直通）；`spec` 兼容旧径 kwarg（须 = sectortype(lattice)）。
 """
 function _system_factor_fock(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian;
@@ -451,27 +455,4 @@ function _system_factor_fock(lattice::AbstractGrassmannLattice, model::AbstractI
                         trunc=trunc, truncerrs=truncerrs)
 end
 
-"""
-    _system_factor_fock(prep::SystemFactorPreparation; insertions=OperatorInsertion[],
-                        trunc=nothing, truncerrs=nothing) -> GMPS
 
-制备对象版新径：FockMPO 只依赖 (lattice, model, order, coupling_norm)——与
-插入无关，`prep.fockmpo` 单槽缓存摊销扫描型测量（automaton 成本 O(L) 一次 +
-每测量仅切位邻域稀疏乘法）；ρ₀/oddlater/prefix 每次经 fockmpo2gmps kwargs
-施加（order/coupling_norm/initial_state 以 prep 绑定为准，与旧径 prep-wins
-语义一致）。
-"""
-function _system_factor_fock(prep::SystemFactorPreparation; insertions=OperatorInsertion[],
-                             trunc=nothing, truncerrs=nothing)
-    lattice = prep.lattice
-    if prep.fockmpo[] === nothing
-        prep.fockmpo[] = fock_sysdynamics(lattice, prep.model; order=prep.order,
-                                          coupling_norm=prep.coupling_norm)
-    end
-    Kf = prep.fockmpo[]::FockMPO
-    Kf2 = _fockmpo_with_insertions(lattice, Kf, insertions)
-    rho0 = lattice isa AbstractRealGrassmannLattice ? prep.initial_state : nothing
-    return fockmpo2gmps(Kf2, lattice; rho0=rho0, insertions=insertions,
-                        weyl_lscale=_fock_weyl_lscale(lattice, prep.order, prep.coupling_norm),
-                        trunc=trunc, truncerrs=truncerrs)
-end
