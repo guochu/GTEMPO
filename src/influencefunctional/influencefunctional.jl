@@ -30,11 +30,11 @@ _trunc(alg::PartialIF) = Truncation(D=alg.maxdim, rtol=alg.rtol)
 """
     ExactTTI(; rtol=1e-10, maxterms=40, cross_rtol=rtol, factor_rtol=nothing)
 
-ExactTTI：tti_imag/real/cross 三通道因子（拟合照旧）经 expmult! 装配——
-Pairing 走 PolarExp（SVD 秩一；real/imag 通道 rtol=0 精确、cross 通道
-rtol=cross_rtol 截秩），ExpDecay 族（虚时 ESS）走 PartialExp 幂零行表
-（WII 有序指数裁剪交叉对、对环核开放分解不精确——dense 对拍定谳见
-exacttti.jl 装配注）。`factor_rtol` = 逐因子乘前压缩容差（nothing = 关闭）。
+ExactTTI：tti_imag/real/cross 三通道因子（拟合照旧）统一经 expmult!×PolarExp
+装配（Pairing/AnomalousPairing = SVD 秩一精确指数；ExpDecay 族委托 TTIExp
+逐通道物化——要求 GM ≥ expdecayexp-same-orbital-fix a7b39bb 同轨道触碰块
+修正）。real/imag 通道 SVD rtol = 0（精确）、cross 通道 = cross_rtol（截秩
+口径同旧 cross 通道）。`factor_rtol` = 逐因子乘前压缩容差（nothing = 关闭）。
 """
 struct ExactTTI <: InfluenceFunctionalAlgorithm
     rtol::Float64

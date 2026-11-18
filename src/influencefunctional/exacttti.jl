@@ -251,24 +251,22 @@ end
 # ExactTTI 装配：vacuumstate → 逐因子 expmult!×PolarExp
 # ---------------------------------------------------------------------------
 
-"ExactTTI 组装链：tti_real/imag/cross 因子逐个 expmult!（因子偶元互相超交换
-⟹ 应用序无关）。幂算法按因子容器分派（2026-11-18 dense 对拍定谳）：
-- Pairing → PolarExp（SVD 秩一精确指数；分量 Xₖ² = 0 ⟹ e^{Xₖ} = 1 + Xₖ
-  精确）：real/imag 通道 Pairing rtol = 0（截秩只剔精确零 σ——压缩由拟合
-  重构自带，无截断误差），cross 通道 rtol = cross_rtol（截秩阈值口径同旧
-  cross 通道）；
-- ExpDecay 族（虚时 ESS）→ PartialExp（幂零行表）——WII 有序指数（PolarExp
-  对 ExpDecay 族的委托目标）裁剪交叉/嵌套对，对 τ 环核的开放双线性分解
-  **不精确**（N=4 单模实测 3.2e-4；环核 X² = 0 ⟹ PartialExp 机器精确
-  6.7e-16）；factor_rtol 映射到乘法压缩策略（旧逐因子 cleanup 语义）。"
+"ExactTTI 组装链：tti_real/imag/cross 因子逐个 expmult!×PolarExp（因子偶元
+互相超交换 ⟹ 应用序无关）。PolarExp 对 Pairing/AnomalousPairing = SVD 秩一
+精确指数（分量 Xₖ² = 0 ⟹ e^{Xₖ} = 1 + Xₖ）；对 ExpDecay 族（虚时 ESS）委托
+TTIExp = ExpDecayExp 逐通道物化——**要求 GM ≥ expdecayexp-same-orbital-fix
+（a7b39bb）**：同轨道（asite == bsite）触碰块已删，物化对朴素 exp 严格
+（触碰项与 local × 过线配对 pfaffian 逐项相消 ⟹ 净零；修正前同轨道偏差
+O(α²λ)，GTEMPO ESS 实测 3.2e-4）。截秩语义：real/imag 通道 rtol = 0（压缩
+由拟合重构自带，不叠加截断），cross 通道 rtol = cross_rtol（口径同旧 cross
+通道）。factor_rtol 映射到乘法压缩策略（旧逐因子 cleanup 语义）。"
 function _exacttti_state(lattice::AbstractGrassmannLattice, kernel::HybridizationKernel,
                          alg::ExactTTI, band::Int, trunc::Truncation)
     diag = Dict{Symbol,Any}()
     mult = alg.factor_rtol === nothing ? SVDCompression(trunc=trunc) :
            SVDCompression(trunc=Truncation(D=typemax(Int), rtol=alg.factor_rtol))
-    pol_exact = GM.PolarExp(rtol=0.0, alg_mult=mult)          # real/imag Pairing：精确
-    pol_cross = GM.PolarExp(rtol=alg.cross_rtol, alg_mult=mult)  # cross Pairing：截秩
-    partial = GM.PartialExp(alg_mult=mult)
+    pol_exact = GM.PolarExp(rtol=0.0, alg_mult=mult)             # real/imag 通道：精确
+    pol_cross = GM.PolarExp(rtol=alg.cross_rtol, alg_mult=mult)  # cross 通道：截秩
     state = vacuumstate(lattice)
     truncerrs = Float64[]
     for (tti, pol) in ((tti_real_factors, pol_exact), (tti_imag_factors, pol_exact),
@@ -276,8 +274,7 @@ function _exacttti_state(lattice::AbstractGrassmannLattice, kernel::Hybridizatio
         (; factors, audit) = tti(kernel, lattice; band, alg)
         isempty(audit) || merge!(diag, pairs(audit))
         for f in factors
-            state, err = f isa GM.Pairing ? GM.expmult!(state, f, pol) :
-                                            GM.expmult!(state, f, partial)
+            state, err = GM.expmult!(state, f, pol)
             push!(truncerrs, err)
         end
     end
