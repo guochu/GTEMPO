@@ -45,6 +45,9 @@ using GrassmannMPS: GMPS, SparseGMPS, MPOTensor, ScaledScalar, ExpectationCache,
     schmidt_values, bonddims, bondspaces, physpace, physpaces,
     logscale, setlogscale!, todense, coefficient_scaled, coefficient, NoTruncation
 
+# 缺省算法参数（Defaults 嵌套模块）
+include("defaults.jl")
+
 # ---------------------------------------------------------------------
 # 后端适配层（GrassmannMPS 桥 + Chrono lattice + 缩放）+ 相关函数层
 # ---------------------------------------------------------------------

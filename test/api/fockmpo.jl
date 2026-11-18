@@ -21,7 +21,7 @@ import LinearAlgebra
         # 链末切位（cut = ni+2Nt）非 ρ₀ 切位（与 src/fockmpo.jl 同口径）
         cut0 = filter(i -> GTEMPO.insertion_cut_index(lattice, i) == 0, insertions)
         ge1 = filter(i -> GTEMPO.insertion_cut_index(lattice, i) >= 1, insertions)
-        Kf = fock_sysdynamics(lattice, model; order=order, coupling_norm=coupling_norm)
+        Kf = fock_sysdynamics(lattice, model; order=order)
         Wl = sparsefockmpo(lattice, filter(i -> i.side === :left, ge1))
         Wr = sparsefockmpo(lattice, filter(i -> i.side === :right, ge1))
         Kf = Wr * (Wl * Kf)
@@ -31,7 +31,11 @@ import LinearAlgebra
                  Matrix{ComplexF64}(initial_state)))
         lscale = order == 2 ? real(coupling_norm / 4 *
                                    sum(GTEMPO._cell_step2(lattice, b) for (b, _) in GTEMPO.chronological_cells(lattice))) : 0.0
-        return fockmpo2gmps(Kf, lattice; rho0=rho0, insertions=insertions, weyl_lscale=lscale)
+        # Weyl 标量由调用方后置累加补上（2026-11-18 起转换不再收 weyl_lscale；
+        # ⚠️ logscale += lscale——压缩归一化因子已在 logscale 内，覆盖会抹掉）
+        out = fockmpo2gmps(Kf, lattice; rho0=rho0, insertions=insertions)
+        GM.setlogscale!(out, GM.logscale(out) + lscale)
+        return out
     end
 
     function _wf_check(lattice, model, order, coupling_norm, insertions; initial_state=nothing)

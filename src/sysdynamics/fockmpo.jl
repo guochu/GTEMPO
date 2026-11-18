@@ -24,7 +24,8 @@
 # 语义（迁移期经 203 项对拍闸门对齐旧径逐位；旧径删除后由闸门接线对拍
 # + observables golden U1GTEMPO2 机器精度锚承接）：
 #   一阶（q=1）：τ/+ 支 mats = S·M、− 支 M·S；二阶（Weyl）：S·M·S + Weyl 标量
-#   lscale = coupling_norm/4·Σ step²（fockmpo2gmps 的 weyl_lscale kwarg）。
+#   lscale = coupling_norm/4·Σ step²（_system_factor_fock/sysdynamics 层
+#   setlogscale!——2026-11-18 起 coupling_norm 不进 fock_sysdynamics/fockmpo2gmps）。
 #   ρ₀/切位 0 插入三明治（Ol₀·ρ·Or₀）由 fockmpo2gmps 的 rho0/insertions kwargs
 #   折进首格核；切位 ≥ 1 插入走 sparsefockmpo `*`；oddlater Koszul 号
 #   (−1)^{oddlater·popcount(m)} 由 fockmpo2gmps 按插入元数据统一施加（两次乘法
@@ -46,7 +47,8 @@ Fock 表象直积 MPO（纯容器，与 GMPS 同构的类型参数化）：每�
 bands 合并进 site 内部（Fock 维 2^bands、单项式腿 4^bands，site 内块对角——
 slot 指标过站不变，每单项式一个 (dim,dim) 算符块）。站位解释由 lattice 携带：
 site k ↔ chronological_cells(lattice)[k]。logscale 不挂 FockMPO——Weyl 标量在
-fockmpo2gmps 产出 GMPS 后 setlogscale!（weyl_lscale kwarg）。ρ₀/插入在链上以
+fockmpo2gmps 产出 GMPS 后由 _system_factor_fock/sysdynamics 层 setlogscale!。
+ρ₀/插入在链上以
 块乘法/转换 kwargs 表达，链本体保持开链（无 ρ₀/迹闭合，可复用于其它收缩口径）。
 """
 struct FockMPO{T<:GM.MPOTensor}
@@ -91,19 +93,19 @@ function _fock_propagator_at(lattice::AbstractGrassmannLattice, model, b::Symbol
 end
 
 """
-    fock_sysdynamics(lattice, model; order=1, coupling_norm=0.0) -> FockMPO
+    fock_sysdynamics(lattice, model; order=1) -> FockMPO
 
 杂质系统因子 K 的 Fock 直积 MPO（开链，纯 Fock 无 Grassmann 内容）：逐物理格
 一 site，site 内块对角（每单项式 m 一个 (dim,dim) 算符块）。单元算符与
 sysdynamics 同口径：一阶 τ/+ 支 S·M、− 支 M·S；二阶 S·M·S。**不含** ρ₀/
-迹闭合/插入/oddlater——ρ₀ 与切位 0 插入走 fockmpo2gmps 的 rho0/insertions
-kwargs，切位 ≥ 1 插入走 sparsefockmpo `*`，oddlater 由 fockmpo2gmps 施加。
+迹闭合/插入/oddlater/Weyl 标量——ρ₀ 与切位 0 插入走 fockmpo2gmps 的
+rho0/insertions kwargs，切位 ≥ 1 插入走 sparsefockmpo `*`，oddlater 由
+fockmpo2gmps 施加，Weyl 标量由调用方（_system_factor_fock/sysdynamics 层）
+setlogscale! 补上。
 """
 function fock_sysdynamics(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian;
-                          order::Integer=1, coupling_norm::Real=0.0)
+                          order::Integer=1)
     order in (1, 2) || throw(ArgumentError("order must be 1 or 2"))
-    order == 2 && !(coupling_norm >= 0) &&
-        throw(ArgumentError("order=2 requires coupling_norm ≥ 0 (total Σ_b α_b)"))
     bands = lattice.bands
     G = TK.sectortype(lattice)
     bands_guard(G, bands)
@@ -258,7 +260,7 @@ end
 
 """
     fockmpo2gmps(f::FockMPO, lattice; rho0=nothing, insertions=OperatorInsertion[],
-                 weyl_lscale=0.0, trunc=nothing, truncerrs=nothing) -> GMPS
+                 trunc=nothing, truncerrs=nothing) -> GMPS
 
 FockMPO → GMPS（迹闭合 + 分站）：逐格把 FockMPO site 的 (dim,dim) 单项式块重排
 进 (s,t) 对差键核（线程注入：cell1 = (M₁ρ₀)[s,t]、中间 = M[v,s]δ_{t,w}、末格 =
@@ -273,13 +275,15 @@ kwargs：
   标签移位）+ oddlater Koszul 号 (−1)^{oddlater·popcount(m)}（oddlater = 切位 ≥ k
   的奇插入数）+ 总荷守卫（Σ charge = 0）。插入的矩阵本体应已乘进链（sparsefockmpo
   `*`），本函数不重复乘。
-- `weyl_lscale`：Weyl 标量 exp(lscale)（二阶 = coupling_norm/4·Σ step²，由调用方
-  计算；一阶 = 0）。
 - `trunc`/`truncerrs`：reorder 后的 GM.truncate! 透传（缺省不截断）。
+
+**Weyl 标量不在本函数**——调用方（_system_factor_fock/sysdynamics 层）持
+coupling_norm，对产出的 GMPS 做 `logscale += lscale`（⚠️ 累加非覆盖：
+truncate!/swap! 的压缩归一化因子已吸收进 logscale，E2 语义）。
 """
 function fockmpo2gmps(f::FockMPO, lattice::AbstractGrassmannLattice;
                       rho0=nothing, insertions=OperatorInsertion[],
-                      weyl_lscale=0.0, trunc=nothing, truncerrs=nothing)
+                      trunc=nothing, truncerrs=nothing)
     G = TK.sectortype(lattice)
     bands = lattice.bands
     dim = 2^bands
@@ -371,7 +375,6 @@ function fockmpo2gmps(f::FockMPO, lattice::AbstractGrassmannLattice;
         data === nothing ? (data = copy(column)) : append!(data, column)
     end
     out = pairize(G, data)
-    GM.setlogscale!(out, weyl_lscale)
     # 时序构造 → 存储序：每格 bands 站成块移动（GM.reorder! perm 语义 = 新链第 k 站
     # = 原链第 perm[k] 站；swap! 费米换序号已修复）
     chrono = Dict(cell => k for (k, cell) in enumerate(cells))
@@ -434,8 +437,12 @@ _fock_weyl_lscale(lattice::AbstractGrassmannLattice, order::Int, coupling_norm::
 
 sysdynamics 的实现体（`fock_sysdynamics` → 切位 ≥ 1 插入稀疏乘法 →
 `fockmpo2gmps`：ρ₀/切位 0 三明治 + 迹闭合 + oddlater + prefix + reorder）。
-语义经 test/api/fockmpo.jl 对拍闸门锚定（迁移期对旧径 203 项绿；旧径已随
-V2 删除，闸门基线改手工闭环 workflow）：`initial_state` 仅实时轮廓生效（虚时/混合 = 热迹 I——此处按轮廓门控，
+**coupling_norm（Weyl 标量）只在此层输入**：order=2 要求 ≥ 0，经
+`_fock_weyl_lscale` 算 lscale 后**累加**到产出 GMPS 的 logscale
+（`logscale += lscale`——logscale 是链幅的 log 场，E2 语义下 truncate!/swap!
+会把压缩归一化因子吸收进去，覆盖会抹掉这些因子；乘 exp(lscale) 语义 =
+累加）。语义经 test/api/fockmpo.jl 对拍闸门锚定：
+`initial_state` 仅实时轮廓生效（虚时/混合 = 热迹 I——此处按轮廓门控，
 `fockmpo2gmps` 的 rho0 直通）；`spec` 兼容旧径 kwarg（须 = sectortype(lattice)）。
 """
 function _system_factor_fock(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian;
@@ -443,16 +450,18 @@ function _system_factor_fock(lattice::AbstractGrassmannLattice, model::AbstractI
                              insertions=OperatorInsertion[], trunc=nothing, truncerrs=nothing,
                              spec=nothing)
     order in (1, 2) || throw(ArgumentError("order must be 1 or 2"))
+    order == 2 && !(coupling_norm >= 0) &&
+        throw(ArgumentError("order=2 requires coupling_norm ≥ 0 (total Σ_b α_b)"))
     spec === nothing || spec === TK.sectortype(lattice) ||
         throw(ArgumentError("spec $spec ≠ sectortype(lattice) $(TK.sectortype(lattice))"))
     Kf = _fockmpo_with_insertions(lattice,
-                                  fock_sysdynamics(lattice, model; order=order,
-                                                   coupling_norm=coupling_norm),
+                                  fock_sysdynamics(lattice, model; order=order),
                                   insertions)
     rho0 = lattice isa AbstractRealGrassmannLattice ? initial_state : nothing
-    return fockmpo2gmps(Kf, lattice; rho0=rho0, insertions=insertions,
-                        weyl_lscale=_fock_weyl_lscale(lattice, order, coupling_norm),
-                        trunc=trunc, truncerrs=truncerrs)
+    out = fockmpo2gmps(Kf, lattice; rho0=rho0, insertions=insertions,
+                       trunc=trunc, truncerrs=truncerrs)
+    GM.setlogscale!(out, GM.logscale(out) + _fock_weyl_lscale(lattice, order, coupling_norm))
+    return out
 end
 
 
