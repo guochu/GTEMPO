@@ -62,12 +62,20 @@ kwarg 在单带下的取值；多带总量 = `sum(coupling_norm, baths)`）：
 - δ×函数乘积（`DeltaMultF`/`DeltasMultF`，如热流的 ω 加权谱）：走各自
   quadgkwrapper 求和/取值规则（g ≡ 1）——同为 AbstractBoundedFunction，
   由 `quadgkwrapper(f)` 一并覆盖；
-- `AbstractNormalBath`：直接取其谱——**与 μ、β 无关**。
+- `AbstractNormalBath`：直接取其谱——**与 μ、β 无关**；
+- `AbstractBCSBath`：裸谱强度 ∫f dε（每带，`bath.spectrum` 直取——与 normal
+  同款）。**Δ、μ、β 都不进**：Weyl 标量只数对角接触（āσaσ 槽）的宽度，
+  Bogoliubov 正则性（u²+v²=1）保证反常通道（uv 块，ā↑ā↓/a↓a↑ 槽）对标量
+  零贡献、总宽度 = 裸谱 normal 范数（推导与数值裁决见 `bcsweyl/README.md`：
+  平凡系统接触缺口提取 cn*(Δ)/Σα ≡ 1（≤4e-4，Δ∈[0,2]）；generic H_S 下
+  Z 收敛斜率 1.97–1.98）。一个 BCS 浴 = 一个带对（两带各 α）⟹ K 侧
+  全带总量对该对按 2× 计入 `Σ_b coupling_norm(bath_b)`。
 
 扩展点：自定义谱子类实现 `quadgkwrapper` 乘积路径或直接补 `coupling_norm`
-方法。BCS 浴无定义（反常通道谱强度语义未定，不设方法 = 天然拒绝）。
+方法。
 """
 coupling_norm(f::DiracDelta) = f.α
 coupling_norm(f::DiscreteSpectrum) = sum(spectrumvalues(f))
 coupling_norm(f::AbstractBoundedFunction) = quadgkwrapper(f)
 coupling_norm(bath::AbstractNormalBath) = coupling_norm(bath.spectrum)
+coupling_norm(bath::AbstractBCSBath) = coupling_norm(bath.spectrum)

@@ -50,6 +50,22 @@ end
 	end
 end
 
+@testset "BCS: coupling_norm 语义（裸谱强度，Δ/μ/β 不进）" begin
+	# Weyl 标量的 BCS 定义 = 每带裸谱强度（bcsweyl/README.md 推导：反常通道
+	# 零贡献——Bogoliubov 正则性 u²+v²=1；接触缺口提取 cn*(Δ)/Σα ≡ 1 ≤ 4e-4）
+	α = 0.5
+	@test coupling_norm(bcsbath(fermionicbath(DiracDelta(ω=1.0, α=α), β=1.0), Δ=0.6)) == α
+	@test coupling_norm(bcsbath(fermionicbath(DiracDelta(ω=1.0, α=α), β=1.0), Δ=0)) ==
+	      coupling_norm(fermionicbath(DiracDelta(ω=1.0, α=α), β=1.0))   # Δ=0 与 normal 一致
+	@test coupling_norm(bcsbath(fermionicbath(DiracDelta(ω=1.0, α=α), β=2.0, μ=0.3), Δ=1.0)) == α   # β/μ 不进
+	vac = bcsvacuum(DiracDelta(ω=1.0, α=α), Δ=0.4)
+	@test coupling_norm(vac) == α
+	@test coupling_norm(discretebcsbath([1.0, 2.0], [α, α / 2]; β=1.0, Δ=0.3)) ≈ 1.5α
+	# 带对 K 侧总量 = 2×（两带各 α；contact_extract 实证 cn* = 2α）
+	bath = bcsbath(fermionicbath(DiracDelta(ω=1.0, α=α), β=1.0), Δ=0.5)
+	@test 2coupling_norm(bath) ≈ 1.0
+end
+
 @testset "BCS: 对称性守卫（D7 仅 :z2）" begin
 	for sym in (U1Symmetry(), U1U1Symmetry(), Z2Z2Symmetry())
 		@test_throws ArgumentError GTEMPO.bcs_symmetry_guard(sym)
