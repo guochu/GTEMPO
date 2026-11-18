@@ -11,104 +11,15 @@
 # timeevo/expmult! 另行移植）。
 
 # ---------------------------------------------------------------------------
-# kernel（canonical 块 + QuAPI 提取）
+# kernel 定义与构造已迁 correlationfunction.jl（plan/if_expmult W2：
+# HybridizationKernel{T} + ContourBlockIndex + correlationfunction 双构造）；
+# 本文件只保留 IF 装配消费面。
 # ---------------------------------------------------------------------------
 
-"""
-    HybridizationKernel
-
-单元级杂化核（canonical 约定）：`blocks[(b1,b2)][i,j]` = IF 指数系数
-ā_i^{b1} Δ a_j^{b2}（i, j = 单元下标 1..N）。`coupling_norm` = 全带总耦合
-Σ_b α_b（Weyl 标量补偿用；order=2 必需）。
-存储 = QuAPI 关联函数本体（Toeplitz 向量 O(N)，平移不变/Keldysh 约定由
-QuAPI 构造器校验）；`blocks` = 窗口化 branch 视图（构造端一次建齐，
-CorrelationMatrix 的 getindex 是 |i−j| 查表——值与稠密装配逐位一致，
-建视图成本 O(N)/块、数据不物化），构造时做逐块形状/有限性校验。
-"""
-struct HybridizationKernel{L,C}
-    lattice::L
-    corr::C                                   # QuAPI Imag/Real/MixedCorrelationFunction（O(N) 向量存储）
-    blocks::Dict{Tuple{Symbol,Symbol},AbstractMatrix{ComplexF64}}
-    coupling_norm::Union{Nothing,Float64}
-    diagnostics::Dict{Symbol,Any}
-    function HybridizationKernel(lattice, corr; coupling_norm=nothing, diagnostics=Dict{Symbol,Any}())
-        coupling_norm === nothing || (isfinite(coupling_norm) && coupling_norm >= 0) ||
-            throw(ArgumentError("invalid coupling norm"))
-        new{typeof(lattice),typeof(corr)}(lattice, corr, _kernel_blocks(lattice, corr),
-            coupling_norm === nothing ? nothing : Float64(coupling_norm),
-            Dict{Symbol,Any}(diagnostics))
-    end
-end
-
-"消费端净读数负号（Δm 的 τ↔rt 交叉块 GTEMPO 侧约定）的惰性包装：O(1) 查表"
-struct _NegView{P<:AbstractMatrix{ComplexF64}} <: AbstractMatrix{ComplexF64}
-    parent::P
-end
-Base.size(v::_NegView) = size(v.parent)
-Base.getindex(v::_NegView, i::Int, j::Int) = -v.parent[i, j]
-
-"窗口化 branch 视图 + 形状/有限性校验（等价旧构造端逐块校验）"
-function _kernel_block_view(corr, na::Int, nb::Int, b1::Symbol, b2::Symbol,
-                            rows::AbstractUnitRange, cols::AbstractUnitRange, neg::Bool)
-    B = branch(corr; b1, b2)
-    (size(B, 1) >= na && size(B, 2) >= nb) || throw(DimensionMismatch(
-        "kernel shape $b1/$b2: corr window $(size(B)) too small for lattice block ($na,$nb)"))
-    M = view(B, rows, cols)
-    all(isfinite, M) || throw(ArgumentError("nonfinite kernel block $b1/$b2"))
-    return neg ? _NegView(M) : M
-end
-
-function _kernel_blocks(lattice::AbstractImagGrassmannLattice, corr)
-    N = lattice.kτ
-    (size(corr.data, 1) >= N && size(corr.data, 2) >= N) || throw(DimensionMismatch(
-        "kernel shape τ/τ: corr window $(size(corr.data)) too small for lattice block ($N,$N)"))
-    M = view(corr.data, 1:N, 1:N)
-    all(isfinite, M) || throw(ArgumentError("nonfinite kernel block τ/τ"))
-    return Dict{Tuple{Symbol,Symbol},AbstractMatrix{ComplexF64}}((:τ, :τ) => M)
-end
-
-function _kernel_blocks(lattice, corr)
-    kr(b) = b === :τ ? lattice.kτ : (lattice isa AbstractRealGrassmannLattice ? lattice.k : lattice.Nt)
-    mixed = lattice isa AbstractMixedGrassmannLattice
-    out = Dict{Tuple{Symbol,Symbol},AbstractMatrix{ComplexF64}}()
-    for b1 in branches(lattice), b2 in branches(lattice)
-        neg = mixed && ((b1 === :τ) !== (b2 === :τ))
-        out[(b1, b2)] = _kernel_block_view(corr, kr(b1), kr(b2), b1, b2, 1:kr(b1), 1:kr(b2), neg)
-    end
-    return out
-end
-
-"""
-    hybridization(lattice, corr; coupling_norm=nothing) -> HybridizationKernel
-
-从 QuAPI 离散化函数直接提取 canonical 单元级核（IF = exp(Σ ā_i Δ_ij a_j)）——
-secondorderif kernels.jl 同款三路径（ED 验证过）：
-- 虚时：Δτ 的单元矩阵 [1:Nτ, 1:Nτ]；
-- 实时：Δt 谱路径（离散谱精确极点装配），四块 [1:Nt, 1:Nt] 直读
-  （块值 = 单元级全宽积分；QuAPI 内嵌的 Keldysh 跨支号与旧消费端 gate
-  在净语义中相消 ⟹ canonical = raw）；
-- 混合：Δm 九块，rt [1:Nt]/τ [1:Nτ]；Δm 的 τ↔rt 交叉块相对物理核差一个
-  整体负号（KernelCorrView 预翻 = 净读数）⟹ canonical 取负。
-`coupling_norm` 由调用方传入（全带总耦合 Σ_b α_b）：单带可 `coupling_norm(bath)`
-（`coupling_norm` 助手，见 correlationfunction.jl），多带 = `sum(coupling_norm, baths)`。
-"""
-function hybridization(lattice::AbstractGrassmannLattice, bath::AbstractBath; coupling_norm=nothing)
-    corr = if lattice isa AbstractImagGrassmannLattice
-        QuAPI.Δτ(bath; N=lattice.Nτ, δτ=lattice.δτ)
-    elseif lattice isa AbstractRealGrassmannLattice
-        QuAPI.Δt(bath; N=lattice.Nt, t=lattice.Nt * lattice.δt)
-    else
-        QuAPI.Δm(bath; Nτ=lattice.Nτ, t=lattice.Nt * lattice.δt, Nt=lattice.Nt, δτ=lattice.δτ)
-    end
-    return HybridizationKernel(lattice, corr; coupling_norm)
-end
-
-function hybridization(lattice::AbstractGrassmannLattice, corr; coupling_norm=nothing)
-    throw(ArgumentError("hybridization 需要浴对象（QuAPI 直接提取）；经 correlationfunction 的 accessor 路线已随 T7 标定退役"))
-end
-
 # ---------------------------------------------------------------------------
-# PartialIF：逐行秩一因子积（精确行指数；U1GTEMPO2 partial_if 同型）
+# ⚠️ deprecated（W3 语义换代冻结档案，交叉验证期后退役）：逐行秩一因子积
+# PartialIF——现行装配走 influencefunctional/partialif.jl 的 fullfactor +
+# expmult!×PartialExp（同一算符的整形式表示）；本段保留供每因子 dense 对拍。
 # ---------------------------------------------------------------------------
 
 """
@@ -164,7 +75,7 @@ function partial_if(lattice::AbstractGrassmannLattice, kernel::HybridizationKern
     ncells = length(cells)
     for (m, (b, j)) in enumerate(cells)
         # 行 = 格 (b,j)（branch 局部下标 j）；列值按存储格序逐位取核
-        values = [kernel.blocks[(b, cell[1])][j, cell[2]] for cell in cells]
+        values = [kernel.blocks[(ContourBlockIndex(b, band), ContourBlockIndex(cell[1], band))][j, cell[2]] for cell in cells]
         all(iszero, values) && continue
         anchor = _cell_var_index(lattice, (b, j), band, true)   # ā 变量位
         out, err = GM.mult(out, partial_row(spec, charges, anchor, cols, values); trunc)
@@ -185,48 +96,7 @@ function _cell_var_index(lattice, cell::Tuple{Symbol,Int}, band::Int, conj::Bool
 end
 
 
-# ---------------------------------------------------------------------------
-# 矩阵铅笔拟合（ExpExp AnchoredMatrixPencil 薄壳——plan kernel_and_fit §Part 2
-# 案 B：核心算法上收 ExpExp 通用库，本函数只留 IF 域策略层）
-# ---------------------------------------------------------------------------
-
-"""
-    fit_exponentials(y; rtol=1e-10, maxterms=40, pencil_rows=128)
-        -> (; weights, nodes, anchors, relative_error)
-
-双端锚定矩阵铅笔（Hua–Sarkar：Hankel 行子采样 + 一次 SVD 最小阶扫描）——核心 =
-`ExpExp.anchored_matrix_pencil_sweep`（`anchored_matrix_pencil` 的单 SVD 秩扫
-变体）。`|q| > 1` 极点一律经恒等式 `q^(d−1) = q^(L−1)·(1/q)^(L−d)` 精确折叠为
-`:right` 锚（权重吸收常数），返回节点全部模长 ≤ 1。
-
-IF 域策略层（留本函数，ExpExp 不收——F6）：零序列 / `L == 1` 早退；铅笔扫完
-不达 `rtol` 且 `L ≤ maxterms` 时以单位根 `q_j = 0.8·cis(2πj/L)` 做精确有界
-插值（合法有限窗展开，非回退到其它 IF 算法）；仍不达则透传 sweep 的
-ArgumentError（消息带最优残差）。
-"""
-function fit_exponentials(y; rtol=1e-10, maxterms=40, pencil_rows=128)
-    0 < rtol < 1 && maxterms >= 1 && pencil_rows >= 1 || throw(ArgumentError("invalid fit settings"))
-    y = ComplexF64.(y); L = length(y)
-    all(isfinite, y) || throw(ArgumentError("nonfinite fit samples"))
-    (L == 0 || all(iszero, y)) && return (; weights=ComplexF64[], nodes=ComplexF64[], anchors=Symbol[], relative_error=0.0)
-    L == 1 && return (; weights=[y[1]], nodes=ComplexF64[0], anchors=[:left], relative_error=0.0)
-    try
-        w, nodes, anchors, err =
-            anchored_matrix_pencil_sweep(y; tol=rtol, n=maxterms, pencil_rows=pencil_rows)
-        return (; weights=w, nodes=nodes, anchors=anchors, relative_error=err)
-    catch e
-        e isa ArgumentError || rethrow()
-        # Short finite windows can be underdetermined for a pencil. An exact bounded
-        # exponential interpolation is a valid finite-window expansion, not a fit
-        # fallback to another IF algorithm.
-        L <= maxterms || rethrow()
-        nodes = ComplexF64[0.8 * cis(2pi * j / L) for j in 0:L-1]
-        B = [q^(d - 1) for d in 1:L, q in nodes]; w = B \ y
-        err = norm(B * w - y) / norm(y)
-        err <= rtol && return (; weights=w, nodes=nodes, anchors=fill(:left, L), relative_error=err)
-        rethrow()
-    end
-end
+# 矩阵铅笔拟合 fit_exponentials 已迁 influencefunctional/exacttti.jl（W4 拟合层）。
 
 # ---------------------------------------------------------------------------
 # 外代数记忆元胞（U1GTEMPO2 memory_cell/embed_cells/contact_factor 原样）
@@ -322,6 +192,11 @@ function contact_factor(spec, lattice, band, bs, D)
 end
 
 # ---------------------------------------------------------------------------
+# ⚠️ deprecated（W4 换代冻结档案）：ExactTTI 旧三通道装配（memory_cell/
+# contact_factor/embed_cells 发射；tti_* 新构造见 influencefunctional/
+# exacttti.jl）。混合 cross 通道的 rank-one 系数向量落在 a 型腿（cross_factors
+# rows/cols 同 conj=false）= 潜在味错位（无测试覆盖、新路由由互换对拍裁决）。
+#
 # ExactTTI：实/虚/交叉三族指数因子（U1GTEMPO2 real/imag/cross_factors 同型）
 #
 # 布局适配：memory_cell/contact 的合并胞转移按 U1GTEMPO2 存储 [± 相邻、j 降序]
@@ -354,10 +229,10 @@ end
 function real_factors(emit, spec, lattice, k::HybridizationKernel, band, alg, diagnostics)
     lattice isa Union{AbstractRealGrassmannLattice,AbstractMixedGrassmannLattice} || return nothing
     n = lattice.k
-    blocks = k.blocks
+    blocks(x, y) = k.blocks[(ContourBlockIndex(x, band), ContourBlockIndex(y, band))]
     residuals = Float64[]; nfactors = 0
-    g = ComplexF64[blocks[(:+, :+)][i + 1, 1] for i in 1:n-1]
-    l = ComplexF64[blocks[(:+, :-)][i + 1, 1] for i in 1:n-1]
+    g = ComplexF64[blocks(:+, :+)[i + 1, 1] for i in 1:n-1]
+    l = ComplexF64[blocks(:+, :-)[i + 1, 1] for i in 1:n-1]
     # Keldysh tails audit（structured Lag 块近似：直读 kernel 的 Toeplitz 性）
     locations = [(max(d, 0) + 1, max(-d, 0) + 1) for d in -(n - 1):n-1]
     error2 = 0.0; total2 = 0.0
@@ -366,7 +241,7 @@ function real_factors(emit, spec, lattice, k::HybridizationKernel, band, alg, di
         v = i > j ? (g[i-j], l[i-j], -g[i-j], -l[i-j]) : (-conj(l[j-i]), conj(l[j-i]), -conj(g[j-i]), conj(g[j-i]))
         weight = n - abs(i - j)
         for (pair, x) in zip(((:+, :+), (:+, :-), (:-, :+), (:-, :-)), v)
-            error2 += weight * abs2(x - blocks[pair][i, j]); total2 += weight * abs2(blocks[pair][i, j])
+            error2 += weight * abs2(x - blocks(pair...)[i, j]); total2 += weight * abs2(blocks(pair...)[i, j])
         end
     end
     err = sqrt(error2) / max(sqrt(total2), eps())
@@ -395,7 +270,7 @@ function real_factors(emit, spec, lattice, k::HybridizationKernel, band, alg, di
         end
     end
     diagnostics[:real_fit_residuals] = residuals; diagnostics[:real_pole_factors] = nfactors
-    D = [blocks[(a, b)][1, 1] for a in (:+, :-), b in (:+, :-)]
+    D = [blocks(a, b)[1, 1] for a in (:+, :-), b in (:+, :-)]
     all(iszero, D) || emit(contact_factor(spec, lattice, band, (:+, :-), D))
     nothing
 end
@@ -404,7 +279,7 @@ function imag_factors(emit, spec, lattice, k::HybridizationKernel, band, alg, di
     lattice isa Union{AbstractImagGrassmannLattice,AbstractMixedGrassmannLattice} || return nothing
     z = one(spec)
     n = lattice.kτ
-    M = k.blocks[(:τ, :τ)]   # Toeplitz 平移不变由 corr 存储结构性保证（QuAPI 构造器校验）
+    M = k.blocks[(ContourBlockIndex(:τ, band), ContourBlockIndex(:τ, band))]   # Toeplitz 平移不变由 corr 存储结构性保证（QuAPI 构造器校验）
     lower = ComplexF64[M[j+1, 1] for j in 1:n-1]; upper = ComplexF64[M[1, j+1] for j in 1:n-1]
     thermal = norm(upper + reverse(lower)) / max(norm(lower), eps())
     thermal <= max(alg.rtol, 1e-12) || throw(ArgumentError("imaginary kernel violates thermal pairing"))
@@ -496,7 +371,7 @@ function cross_factors(emit, spec, lattice, k::HybridizationKernel, band, alg, d
     for (rowbs, colbs) in (((:τ,), (:+, :-)), ((:+, :-), (:τ,)))
         rows = [_cell_var_index(lattice, (b, j), band, false) for b in rowbs for j in 1:lattice.Nτ]
         cols = [_cell_var_index(lattice, (b, j), band, false) for b in colbs for j in 1:lattice.Nt]
-        M = vcat([hcat([k.blocks[(a, b)] for b in colbs]...) for a in rowbs]...)
+        M = vcat([hcat([k.blocks[(ContourBlockIndex(a, band), ContourBlockIndex(b, band))] for b in colbs]...) for a in rowbs]...)
         U, S, V = MAK.svd_compact(M); sv = diag(S); tot = sum(abs2, sv); r = length(sv)
         while r > 0 && sum(abs2, sv[r:end]) <= alg.cross_rtol^2 * tot; r -= 1; end
         push!(ranks, r); push!(errors, iszero(tot) ? 0.0 : sqrt(sum(abs2, sv[r+1:end]) / tot))
@@ -509,106 +384,39 @@ function cross_factors(emit, spec, lattice, k::HybridizationKernel, band, alg, d
     diagnostics[:cross_ranks] = ranks; diagnostics[:cross_residuals] = errors; nothing
 end
 
-# ---------------------------------------------------------------------------
-# IF 算法类型与入口（公开皮肤保名）
-# ---------------------------------------------------------------------------
-
-abstract type InfluenceFunctionalAlgorithm end
-
-"""
-    PartialIF(; maxdim=128, rtol=1e-12)
-
-逐行秩一因子积 IF（精确行指数 + 乘间压缩；SciPost Phys. Core 7, 063 (2024)）。
-"""
-Base.@kwdef struct PartialIF <: InfluenceFunctionalAlgorithm
-    maxdim::Int = 128
-    rtol::Float64 = 1e-12
-end
-_trunc(alg::PartialIF) = Truncation(D=alg.maxdim, rtol=alg.rtol)
-
-"""
-    ExactTTI(; rtol=1e-10, maxterms=40, cross_rtol=rtol, factor_rtol=nothing)
-
-矩阵铅笔拟合 IF（U1GTEMPO2 ExactTTI 同型）：实轴 greater/lesser 双通道 +
-虚时热通道 + 混合交叉通道，各展成指数因子精确楔积。
-"""
-struct ExactTTI <: InfluenceFunctionalAlgorithm
-    rtol::Float64
-    maxterms::Int
-    cross_rtol::Float64
-    factor_rtol::Union{Nothing,Float64}
-    function ExactTTI(; rtol::Real=1e-10, maxterms::Integer=40, cross_rtol::Real=rtol,
-                      factor_rtol::Union{Nothing,Real}=nothing)
-        Float64(rtol); Int(maxterms)
-        0 < rtol < 1 && 0 < cross_rtol < 1 && maxterms >= 1 ||
-            throw(ArgumentError("invalid IF fit settings"))
-        factor_rtol === nothing || (isfinite(factor_rtol) && 0 <= factor_rtol < 1) ||
-            throw(ArgumentError("invalid factor cleanup tolerance"))
-        new(Float64(rtol), Int(maxterms), Float64(cross_rtol),
-            factor_rtol === nothing ? nothing : Float64(factor_rtol))
-    end
-end
-
-struct InfluenceFunctional{K,S}
-    kernel::K
-    state::S
-    band::Int
-    diagnostics::Dict{Symbol,Any}
-    reports::Vector{Float64}              # 逐步乘法压缩的 GM truncerr（标准标量通道）
-end
-
-"""
-    influence_functional(lattice, kernel; alg=PartialIF(), band=1, trunc=Truncation()) -> InfluenceFunctional
-
-IF 构造入口（Phase 3 首批：PartialIF / ExactTTI）。
-"""
-function influence_functional(lattice::AbstractGrassmannLattice, kernel::HybridizationKernel;
-                              alg::InfluenceFunctionalAlgorithm=PartialIF(), band::Int=1,
-                              trunc::Truncation=Truncation())
-    1 <= band <= lattice.bands || throw(BoundsError(1:lattice.bands, band))
-    truncerrs = Float64[]
-    diag = copy(kernel.diagnostics)
-    diag[:algorithm] = alg; diag[:truncation] = trunc
-    spec = TK.sectortype(lattice)
-    if alg isa PartialIF
-        state = partial_if(lattice, kernel; band, trunc=_trunc(alg), truncerrs)
-    elseif alg isa ExactTTI
-        state = vacuumstate(lattice)
-        cleanup_truncerrs = Float64[]
-        for builder in (real_factors, imag_factors, cross_factors)
-            builder(function (f)
-                        if alg.factor_rtol !== nothing
-                            _, err = GM.truncate!(f; trunc=Truncation(D=typemax(Int), rtol=alg.factor_rtol))
-                            push!(cleanup_truncerrs, err)
-                        end
-                        state, err = GM.mult(state, f; trunc)
-                        push!(truncerrs, err)
-                    end, spec, lattice, kernel, band, alg, diag)
-        end
-        diag[:factor_cleanup_truncerrs] = cleanup_truncerrs
-    else
-        throw(ArgumentError("unsupported IF algorithm $(typeof(alg))"))
-    end
-    InfluenceFunctional(kernel, state, band, diag, truncerrs)
-end
+# IF 算法类型/InfluenceFunctional/influence_functional 入口已迁
+# influencefunctional/influencefunctional.jl（W1 拆分 + W3/W4 后端统一）。
 
 # ---------------------------------------------------------------------------
-# 公开皮肤：hybriddynamics（旧 API 名；corr → kernel → IF 链）
+# 公开皮肤：hybriddynamics（corr → kernel → IF 链；W2 裁决：band/orbital
+# 信息在 kernel 中——签名收窄为 (lattice, kernel, alg)，多带 kernel 返回
+# 逐带 IF 序（kernel.bands 序），单带 kernel 返回单 IF）
 # ---------------------------------------------------------------------------
 
 """
-    hybriddynamics(lattice, corr, alg=PartialIF(); band=1, coupling_norm=nothing) -> GMPS
+    hybriddynamics(lattice, kernel, alg=PartialIF(); trunc) -> GMPS | Tuple{GMPS...}
+    hybriddynamics(lattice, kernel; alg=PartialIF(), trunc) = hybriddynamics(lattice, kernel, alg; trunc)
 
-从 QuAPI 关联函数构建 `band` 带的影响泛函链（influence_functional 便捷入口）。
-`coupling_norm`（全带总耦合 Σ_b α_b）仅在配合 Weyl 二阶 K 时需要，随 kernel
-携带给 sysdynamics（order=2）与测量层。
+逐带 IF 链（influence_functional 便捷入口）：band 覆盖 = `kernel.bands`。
+单带 kernel 返回单 GMPS（与 `Is...` 变参消费兼容）；多带 kernel 返回
+`Tuple`（逐带序）。多带 IF 请配合 `correlationfunction(...)` 全带核一次装配
+（免逐带重建 corr）。
 """
-function hybriddynamics(lattice::AbstractGrassmannLattice, bath::AbstractBath,
-                        alg::InfluenceFunctionalAlgorithm=PartialIF();
-                        band::Int=1, coupling_norm::Union{Nothing,Real}=nothing,
+function hybriddynamics(lattice::AbstractGrassmannLattice, kernel::HybridizationKernel,
+                        alg::InfluenceFunctionalAlgorithm;
                         trunc::Truncation=Truncation())
-    kernel = hybridization(lattice, bath; coupling_norm=coupling_norm)
-    return influence_functional(lattice, kernel; alg, band, trunc).state
+    all(b -> 1 <= b <= lattice.bands, kernel.bands) || throw(BoundsError(1:lattice.bands, kernel.bands))
+    if length(kernel.bands) == 1
+        return influence_functional(lattice, kernel; alg, band=kernel.bands[1], trunc).state
+    end
+    return ntuple(b -> influence_functional(lattice, kernel; alg, band=b, trunc).state,
+                  length(kernel.bands))
+end
+
+function hybriddynamics(lattice::AbstractGrassmannLattice, kernel::HybridizationKernel;
+                        alg::InfluenceFunctionalAlgorithm=PartialIF(),
+                        trunc::Truncation=Truncation())
+    return hybriddynamics(lattice, kernel, alg; trunc)
 end
 
 "integrate(lattice, x0, x1...) —— Berezin 迹（链 = (K, Is...)，GM 引擎）"
@@ -644,25 +452,24 @@ function _bcs_legs(lattice::AbstractGrassmannLattice, band1::Int, band2::Int)
 end
 
 """
-    bcs_partial_if(lattice, corr; band1=1, band2=2, trunc=Truncation(), truncerrs) -> GMPS
+    bcs_partial_if(lattice, kernel; trunc=Truncation(), truncerrs) -> GMPS
 
 BCS 反常 partial IF = Π_row exp(行腿 × Σ 列腿系数) 的逐行因子积（精确）。
-系数直读 QuAPI `BCSCorrelationFunction[row_ix, col_ix]`（有向指数系数语义、
-无 conj 翻转；实时跨支 Keldysh 相对号内嵌于块值，装配处补 −1，与旧栈
-partialif_hybrid 同款）。行/列腿覆盖指数四类单项式
-(ā↑,a↑)/(ā↓,a↓)/(ā↑,ā↓)/(a↓,a↑)——腿的 (band, conj) 标签经 QuAPI getindex
-选择对应 Δ 块。**仅 :z2**（对称性守卫 D7）。
+系数直读 kernel 块（有向指数系数语义、无 conj 翻转；Keldysh 相对号已在
+`correlationfunction` 构造期折进块值——实时跨支块）。行/列腿覆盖指数四类
+单项式 (ā↑,a↑)/(ā↓,a↓)/(ā↑,ā↓)/(a↓,a↑)——腿的 (band, conj) 组合按
+`_bcs_leg_conjs` 味表选择对应块键。**仅 :z2**（对称性守卫 D7）。
 """
-function bcs_partial_if(lattice::AbstractGrassmannLattice, corr::QuAPI.BCSCorrelationFunction;
-                        band1::Int=1, band2::Int=2, trunc::Truncation=Truncation(),
+function bcs_partial_if(lattice::AbstractGrassmannLattice, kernel::HybridizationKernel;
+                        trunc::Truncation=Truncation(),
                         truncerrs::Vector{Float64}=Float64[])
     spec = TK.sectortype(lattice)
     spec === TK.Z2Irrep || throw(ArgumentError(
         "BCS IF supports only symmetry=$Z2Symmetry (anomalous pairing breaks particle-number " *
         "conservation; only parity is conserved), got $(symmetry(lattice))"))
-    (1 <= band1 < band2 <= lattice.bands) || throw(ArgumentError(
-        "BCS orbital requires 1 ≤ band1 < band2 ≤ bands, got ($band1, $band2)"))
-    keldysh = branches(lattice) == (:+, :-)
+    length(kernel.bands) == 2 || throw(ArgumentError(
+        "BCS kernel requires an orbital (band pair), got bands $(kernel.bands)"))
+    band1, band2 = kernel.bands
     charges = _site_charges(spec, lattice)
     rows, cols = _bcs_legs(lattice, band1, band2)
     col_pos = [lattice[c] for c in cols]
@@ -672,7 +479,13 @@ function bcs_partial_if(lattice::AbstractGrassmannLattice, corr::QuAPI.BCSCorrel
         ws = Dict{Int,ComplexF64}()
         for (c, p) in zip(cols, col_pos)
             c == r && continue
-            v = corr[r, c] * (keldysh && branch(r) !== branch(c) ? -1 : 1)
+            key = (ContourBlockIndex(branch(r), r.band), ContourBlockIndex(branch(c), c.band))
+            # 键存在且腿 conj 与味表一致（(ā↑,a↓) 型误配对无块、跳过）
+            haskey(kernel.blocks, key) &&
+                (r.conj, c.conj) == _bcs_leg_conjs(r.band, c.band) || continue
+            v = kernel.blocks[key][r.j, c.j]
+            # 块值已带构造期约定（实时跨支 Keldysh 号已折入），直读即物理终值；
+            # 同变量自配对 ξ² = 0 且系数位不可重复（上方 c == r 剔除）
             iszero(v) || (ws[p] = v)
         end
         isempty(ws) && continue
@@ -684,18 +497,17 @@ function bcs_partial_if(lattice::AbstractGrassmannLattice, corr::QuAPI.BCSCorrel
 end
 
 """
-    bcs_hybriddynamics(lattice, bath::AbstractBCSBath, alg=PartialIF(); band=1, trunc) -> GMPS
+    bcs_hybriddynamics(lattice, bath::AbstractBCSBath, alg=PartialIF(); orbital=1, trunc) -> GMPS
 
-BCS bath 的 IF 链便捷入口（旧 hybriddynamics(::BCSCorrelationFunction) 同位）：
-`band` 选轨道（band1 = 2·band−1、band2 = 2·band），对称性守卫 :z2（D7）。
+BCS bath 的 IF 链便捷入口：`orbital` 选 Nambu 对（band1 = 2·orbital−1、
+band2 = 2·orbital），对称性守卫 :z2（D7）。kernel 构造 =
+`correlationfunction(bath, lattice; orbital)`。
 """
 function bcs_hybriddynamics(lattice::AbstractGrassmannLattice, bath::AbstractBCSBath,
                             alg::InfluenceFunctionalAlgorithm=PartialIF();
-                            band::Int=1, trunc::Truncation=Truncation())
+                            orbital::Int=1, trunc::Truncation=Truncation())
     alg isa PartialIF || throw(ArgumentError(
         "BCS IF supports only PartialIF on the GM stack (D7), got $(typeof(alg))"))
-    corr = correlationfunction(bath, lattice)
-    band1 = 2 * band - 1
-    truncerrs = Float64[]
-    return bcs_partial_if(lattice, corr; band1=band1, band2=band1 + 1, trunc=trunc, truncerrs=truncerrs)
+    kernel = correlationfunction(bath, lattice; orbital)
+    return influence_functional(lattice, kernel; alg, band=first(kernel.bands), trunc).state
 end

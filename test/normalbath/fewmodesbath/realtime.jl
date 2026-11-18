@@ -9,7 +9,7 @@
 
 	lat = GrassmannLattice(N=Nt, δt=δt, contour=:real)
 	bath = discretefermionicbath([ω], [α]; β=β)
-	kernel = hybridization(lat, bath)
+	kernel = correlationfunction(bath, lat)
 	model = ToulouseIM(ϵ_d=μ)
 	for order in (1, 2)
 		K, Is = fermionic_setup(lat, bath, model; β=β, order=order, coupling_norm=coupling_norm(bath))
@@ -35,7 +35,7 @@ end
 
 	lat = GrassmannLattice(N=Nt, δt=δt, contour=:real, bands=2)
 	bath = discretefermionicbath([ω], [α]; β=β)
-	kernel = hybridization(lat, bath; coupling_norm=coupling_norm(bath))
+	kernel = correlationfunction(bath, lat)
 	model = AndersonIM(U=U, ϵ_d=μ)
 	K, Is = fermionic_setup(lat, bath, model; β=β, order=2, coupling_norm=coupling_norm(bath))
 	Z = integrate(K, Is...)
@@ -58,8 +58,8 @@ end
 	model = QuenchedImpurityHamiltonian([tunneling(1, 1, coeff=μ0)],
 	                                    [tunneling(1, 1, coeff=μ1)]; bands=1)
 	lat = GrassmannLattice(N=Nt, δt=δt, contour=:real)
-	kernel = hybridization(lat, bath)
-	Is = hybriddynamics(lat, bath, PartialIF(); band=1)
+	kernel = correlationfunction(bath, lat)
+	Is = hybriddynamics(lat, kernel, PartialIF())
 	K = sysdynamics(lat, model; initial_state=thermal_impurity_state(model, β))
 	Z = integrate(K, Is)
 	for i in 1:Nt
@@ -93,8 +93,8 @@ end
 	                              [tunneling(1, 1, coeff=μ1)],
 	                              [TdImpurityOp([tunneling(1, 1)], t -> A * sin(ωt * t))])
 	lat = GrassmannLattice(N=Nt, δt=δt, contour=:real)
-	kernel = hybridization(lat, bath)
-	Is = hybriddynamics(lat, bath, PartialIF(); band=1)
+	kernel = correlationfunction(bath, lat)
+	Is = hybriddynamics(lat, kernel, PartialIF())
 	# 热初态取 hτ（预淬 μ0）
 	ρ0 = Matrix{ComplexF64}(fock_thermalstate(QuenchedImpurityHamiltonian(
 		[tunneling(1, 1, coeff=μ0)], [tunneling(1, 1, coeff=μ1)]; bands=1), β).data)

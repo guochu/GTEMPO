@@ -6,8 +6,8 @@
 	g_ana = [toulouse_Gτ(bath, τ; ϵ_d=μ) for τ in δτ:δτ:β]
 
 	lat = GrassmannLattice(N=N, δτ=δτ, contour=:imag)
-	kernel = hybridization(lat, bath)
-	Is = hybriddynamics(lat, bath, PartialIF(); band=1)
+	kernel = correlationfunction(bath, lat)
+	Is = hybriddynamics(lat, kernel, PartialIF())
 	model = ToulouseIM(ϵ_d=μ)
 	K = sysdynamics(lat, model)
 	Z = integrate(K, Is)

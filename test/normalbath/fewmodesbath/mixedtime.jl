@@ -9,9 +9,9 @@
 
 	lat = GrassmannLattice(Nt=Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed)
 	bath = discretefermionicbath([ω], [α]; β=β)
-	kernel = hybridization(lat, bath)
+	kernel = correlationfunction(bath, lat)
 	model = ToulouseIM(ϵ_d=μ)
-	Is = hybriddynamics(lat, bath, PartialIF(); band=1)
+	Is = hybriddynamics(lat, kernel, PartialIF())
 	K = sysdynamics(lat, model)
 	Z = integrate(K, Is)
 	for i in 1:Nt

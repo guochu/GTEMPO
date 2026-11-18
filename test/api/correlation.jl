@@ -1,19 +1,28 @@
-@testset "API: correlationfunction（QuAPI 包装）" begin
+@testset "API: correlationfunction（kernel 构造，W2）" begin
 	β = 1.0
 	bath = discretefermionicbath([1.0], [0.5]; β=β)
 
-	# 虚时：Δτ 矩阵
+	# 虚时：τ/τ 块（CorrelationMatrix 存储）
 	lat = GrassmannLattice(N=4, δτ=0.25, contour=:imag)
-	corr = correlationfunction(bath, lat)
-	@test corr isa ImagCorrelationFunction
-	# 实时：QuAPI 关联对象四块
+	kernel = correlationfunction(bath, lat)
+	@test kernel isa HybridizationKernel
+	@test kernel.blocks[(ContourBlockIndex(:τ, 1), ContourBlockIndex(:τ, 1))] isa CorrelationMatrix
+	# 实时：四块（跨支 = CorrelationMatrix，Toeplitz 向量存储）
 	lat = GrassmannLattice(N=4, δt=0.1, contour=:real)
-	corr = correlationfunction(bath, lat)
-	@test corr isa RealCorrelationFunction
-	# 混合
+	kernel = correlationfunction(bath, lat)
+	@test kernel.blocks[(ContourBlockIndex(:+, 1), ContourBlockIndex(:-, 1))] isa CorrelationMatrix
+	# 混合：τ↔rt = Matrix（构造期折叠物化），同支 = CorrelationMatrix
 	lat = GrassmannLattice(Nt=3, δt=0.1, Nτ=4, δτ=0.25, contour=:mixed)
-	corr = correlationfunction(bath, lat)
-	@test corr isa MixedCorrelationFunction
+	kernel = correlationfunction(bath, lat)
+	@test kernel.blocks[(ContourBlockIndex(:τ, 1), ContourBlockIndex(:+, 1))] isa Matrix
+	@test kernel.blocks[(ContourBlockIndex(:+, 1), ContourBlockIndex(:+, 1))] isa CorrelationMatrix
+	# 单带构造：bands = [band]，块键仅该带
+	lat2 = GrassmannLattice(Nt=3, δt=0.1, Nτ=4, δτ=0.25, contour=:mixed, bands=2)
+	k1 = correlationfunction(bath, lat2; band=2)
+	@test k1.bands == [2]
+	@test keys(k1.blocks) == Set(((ContourBlockIndex(b1, 2), ContourBlockIndex(b2, 2))
+	                              for b1 in branches(lat2), b2 in branches(lat2)))
+	@test_throws BoundsError correlationfunction(bath, lat; band=2)   # band 越界
 end
 
 @testset "API: baths（ImpurityModelBase 皮肤）" begin

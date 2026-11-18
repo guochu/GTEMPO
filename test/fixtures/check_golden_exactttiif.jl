@@ -60,8 +60,9 @@ end
 @testset "ExactTTI ≡ PartialIF + ED 锚" begin
     # ================= 虚时 N=4 =================
     let lat = GrassmannLattice(N=4, δτ=0.25, bands=1, contour=:imag)
-        Is_p = (hybriddynamics(lat, bath, PartialIF(); band=1, coupling_norm=α),)
-        Is_e = (hybriddynamics(lat, bath, ExactTTI(); band=1, coupling_norm=α),)
+        kernel = correlationfunction(bath, lat)
+        Is_p = (hybriddynamics(lat, kernel, PartialIF()),)
+        Is_e = (hybriddynamics(lat, kernel, ExactTTI()),)
         K = sysdynamics(lat, ToulouseIM(ϵ_d=μ); order=1)
         tp, te = to_var(Is_p[1]), to_var(Is_e[1])
         keys_all = union(keys(tp), keys(te))
@@ -99,9 +100,10 @@ end
     # 检查器与 normalbath 套件覆盖）。
     let lat = GrassmannLattice(N=3, δt=0.15, bands=1, contour=:real)
         cn = α
-        Is_p = (hybriddynamics(lat, bath, PartialIF(); band=1, coupling_norm=cn),)
+        kernel = correlationfunction(bath, lat)
+        Is_p = (hybriddynamics(lat, kernel, PartialIF()),)
         K = sysdynamics(lat, ToulouseIM(ϵ_d=μ); order=2, coupling_norm=cn, initial_state=ρ0_1)
-        @test_throws ArgumentError hybriddynamics(lat, bath, ExactTTI(); band=1, coupling_norm=cn)
+        @test_throws ArgumentError hybriddynamics(lat, kernel, ExactTTI())
         println("real N=3: 边界极点核 ExactTTI 守卫响抛 ✓（DiracDelta |q|=1 抖动折叠 :right）")
         zp = integrate_scaled(K, Is_p...)
         Zp = exp(zp.logabs) * zp.phase

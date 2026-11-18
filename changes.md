@@ -1,5 +1,44 @@
 # 接口更改说明
 
+## IF 装配后端统一批次（2026-11-18，plan/if_expmult_backend_plan.md W1–W4）
+
+- **`HybridizationKernel` 重定义（W2）**：`HybridizationKernel{L,C}`（lattice +
+  QuAPI corr 本体 + `(Symbol,Symbol)` 视图 + diagnostics）→ `HybridizationKernel{T<:Number}`
+  纯数据核——`blocks::Dict{Tuple{ContourBlockIndex,ContourBlockIndex}, Union{Matrix{T},CorrelationMatrix{T}}}`
+  + `coupling_norm::Float64` + `bands::Vector{Int}`（`ContourBlockIndex(branch, band)` 新公开类型；
+  `scalartype` 仅 Type 定义）。定义与构造迁 `correlationfunction.jl`。
+- **构造端 API 更名**：`hybridization(lattice, bath; coupling_norm)` **退役** →
+  `correlationfunction(bath, lattice; band)`（normal 单带/全带）与
+  `correlationfunction(bcsbath, lattice; orbital)`（BCS 轨道）——normal/BCS 同一类型（F5）。
+  `coupling_norm` 自动（单带 = `coupling_norm(bath)`，全带 = bands×，BCS 轨道 = 2×）；
+  多浴耦合 = `Base.:+`（Toeplitz 向量相加、缺键透传、总耦合标量自动）；
+  `changebands(kernel, [old=>new…])` 带重排/单带核扩多带（零数据改动）。
+- **`hybriddynamics` 签名收窄**：`(lattice, kernel, alg; trunc)`（位置形主式）+
+  `(lattice, kernel; alg, trunc)`（关键字形）——band/orbital 输入删除（信息在 kernel）。
+  多带 kernel 返回逐带 IF 元组、单带返回单 IF。
+- **存储约定（构造期符号收编）**：blocks 值 = IF 指数系数（纯实时跨支块保留 QuAPI
+  内嵌 Keldysh 号；混合 τ↔rt 块构造期整体取负——旧 `_NegView` 惰性预翻物化退役；
+  BCS 实时 = 访问器物化（顶点移位内嵌）+ 跨支号折叠）。**电流 η⁺⁻ = −blocks[(:+,:-)]
+  负号保留**（电流算符 η = 无号物理块，与指数系数差 Keldysh 基一个相对号——公式层
+  常数，ED 锚定；计划 §2.1 的「ηpm 负号删」按此裁决不实施，见 correlationfunction.jl 注）。
+- **测量层**：`kernel_order` 退役（diagnostics 字段删，order 显式 kwarg 转发、缺省 1）；
+  `kernel_coupling_norm` 一行化；电流 η 块读取 band 键化（`_kernel_eta`）。
+- **`src/influencefunctional/`（W1/W3/W4）**：`partialif.jl` = `fullfactor`
+  （AnomalousPairing 整形式、有向单一取向存储）+ PartialIF 经 `expmult!×PartialExp`
+  （语义换代：同一 IF 算符的幂零指数表示，旧逐行因子积冻结 influence.jl）；
+  `exacttti.jl` = `tti_imag/real/cross_factors` + ExactTTI 装配——虚时 ESS
+  （上下三角级联 + 等时修正，极点压缩保留；**幂算法分派**：ExpDecay 族走
+  PartialExp——WII 有序指数裁剪交叉对对环核不精确 3.2e-4，dense 对拍定谳）、
+  实时/混合 Pairing×PolarExp（SVD 秩一；实时 = 拟合重构 C、混合 = 原始块 C
+  ——混合格 ExpDecay cell 平铺无法限制分支子格）。混合 ExactTTI 从此可用
+  （旧路径 cross 行腿落在 a 型腿 = 潜在味错位，无测试覆盖，已废弃）。
+- **BCS**：`bcs_hybriddynamics` 换轨 fullfactor 路线；`bcs_partial_if` 签名改为
+  `(lattice, kernel)`（块值直读，Keldysh 号构造期折叠）——deprecated 冻结档案。
+- **测试**：25 文件迁移新 API；新增 `test/api/if_gates.jl`（每因子 dense 对拍 +
+  互换对拍闸门，12 项）。全套绿；两个 golden fixture 检查器按值保持
+  （weyl 8/8、exactttiif 6/6，机器精度无需重锚）。
+- 旧 API 恢复路径：git 历史 48fd249b..本次提交前（hybridization/旧 kernel/旧装配）。
+
 ## kernel.blocks 物化退役批次（2026-11-16，plan/kernel_and_fit_simplification_plan.md Part 1）
 
 - **`HybridizationKernel` 存储改 = QuAPI 关联函数本体**（`Imag/Real/MixedCorrelationFunction`，

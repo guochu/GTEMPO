@@ -8,7 +8,7 @@
 
 	lat = GrassmannLattice(N=N, δτ=δτ, contour=:imag)
 	bath = discretefermionicbath([ω], [α]; β=β)
-	kernel = hybridization(lat, bath)
+	kernel = correlationfunction(bath, lat)
 	model = ToulouseIM(ϵ_d=μ)
 	K, Is = fermionic_setup(lat, bath, model)
 	Z = integrate(K, Is...)
@@ -33,7 +33,7 @@ end
 
 	lat = GrassmannLattice(N=N, δτ=δτ, contour=:imag)
 	bath = discretefermionicbath([s[1] for s in specs], [s[2] for s in specs]; β=β)
-	kernel = hybridization(lat, bath)
+	kernel = correlationfunction(bath, lat)
 	model = ToulouseIM(ϵ_d=μ)
 	K, Is = fermionic_setup(lat, bath, model)
 	Z = integrate(K, Is...)
@@ -49,7 +49,7 @@ end
 
 	lat = GrassmannLattice(N=N, δτ=δτ, bands=2, contour=:imag)
 	bath = discretefermionicbath([ω], [α]; β=β)
-	kernel = hybridization(lat, bath)
+	kernel = correlationfunction(bath, lat)
 	model = AndersonIM(U=U, ϵ_d=μ)
 	K, Is = fermionic_setup(lat, bath, model)
 	Z = integrate(K, Is...)
@@ -71,7 +71,7 @@ end
 	model = QuenchedImpurityHamiltonian([tunneling(1, 1, coeff=μ0)],
 	                                    [tunneling(1, 1, coeff=μ1)]; bands=1)
 	lat = GrassmannLattice(N=N, δτ=δτ, contour=:imag)
-	kernel = hybridization(lat, bath)
+	kernel = correlationfunction(bath, lat)
 	K, Is = fermionic_setup(lat, bath, model)
 	Z = integrate(K, Is...)
 	m = [matsubara(lat, model, kernel, Is...; i=i, j=0, Z=Z) for i in 1:lat.k]

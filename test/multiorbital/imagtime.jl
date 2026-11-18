@@ -32,7 +32,7 @@ end
 	lat = GrassmannLattice(N=N, δτ=δτ, contour=:imag, bands=4)
 	lattice1 = similar(lat, bands=1)
 	corr = correlationfunction(bath, lattice1)
-	mpsI = hybriddynamics(lattice1, corr, trunc=trunc)
+	mpsI = hybriddynamics(lattice1, kernel, PartialIF(); trunc=trunc)
 	Is = [fillband(lat, mpsI, band=b) for b in 1:4]
 
 	mpsK = sysdynamics(lat, model, trunc=trunc)

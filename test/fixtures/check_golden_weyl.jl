@@ -10,6 +10,7 @@
 using Test
 using GTEMPO
 using GTEMPO: branches
+import GrassmannMPS as GM
 using ImpurityModelBase
 using LinearAlgebra: diagm, I
 
@@ -43,7 +44,9 @@ function run_case(name)
         error("unknown kind $kind")
     end
     cn = α * bands
-    Is = [hybriddynamics(lat, bath, PartialIF(); band=b, coupling_norm=cn) for b in 1:bands]
+    kernel = correlationfunction(bath, lat)
+    Is = hybriddynamics(lat, kernel, PartialIF())
+    Is isa GM.GMPS && (Is = (Is,))
     if order == 2
         K = sysdynamics(lat, model; order=2, coupling_norm=cn, initial_state=rho0)
     else

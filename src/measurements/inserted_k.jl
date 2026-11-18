@@ -67,7 +67,7 @@ end
 """
 function occupation(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian,
                     kernel::Union{Nothing,HybridizationKernel}, Is...; j::Integer, branch::Symbol=default_branch(lattice),
-                    band::Union{Nothing,Int}=nothing, order::Integer=kernel_order(kernel),
+                    band::Union{Nothing,Int}=nothing, order::Integer=1,
                     coupling_norm::Real=kernel_coupling_norm(kernel), initial_state=nothing, Z)
     ins = [OperatorInsertion(branch, Int(j), _number_op(lattice.bands, band))]
     return _inserted_expectation(lattice, model, Is, Z, ins; order=Int(order),
@@ -88,7 +88,7 @@ default_branch(lattice::AbstractGrassmannLattice) =
 """
 function raw_correlation(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian,
                          kernel::Union{Nothing,HybridizationKernel}, Is...; i::Integer, j::Integer=0,
-                         kind::Symbol=:greater, order::Integer=kernel_order(kernel),
+                         kind::Symbol=:greater, order::Integer=1,
                          coupling_norm::Real=kernel_coupling_norm(kernel), initial_state=nothing)
     (lattice isa AbstractRealGrassmannLattice || lattice isa AbstractMixedGrassmannLattice) ||
         throw(ArgumentError("实时/混合轮廓专用；纯虚时用 matsubara"))
@@ -135,7 +135,7 @@ end
 （缺省随 kernel 元数据；hybridization 的 diagnostics 未登记 order 时返回
 1——**golden 教训：忽略调用方显式值会以 order=1 链对 order=2 的 Z 归一**）"
 function _normalized_two_point(lattice, model, kernel, Is, Z, i, j, kind;
-                               order::Integer=kernel_order(kernel),
+                               order::Integer=1,
                                coupling_norm::Real=kernel_coupling_norm(kernel), kwargs...)
     spec = TK.sectortype(lattice)
     qc = var_charge(spec, 1, lattice.bands)
@@ -163,7 +163,7 @@ G(β,0) = +⟨d†d⟩（热环等时同号）。
 """
 function matsubara(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian,
                    kernel::Union{Nothing,HybridizationKernel}, Is...; i::Integer, j::Integer=0, Z,
-                   order::Integer=kernel_order(kernel), coupling_norm::Real=kernel_coupling_norm(kernel),
+                   order::Integer=1, coupling_norm::Real=kernel_coupling_norm(kernel),
                    initial_state=nothing)
     # τ↔τ 插入在混合（Kadanoff）轮廓同样合法（虚时支 = 热态构建腿）
     lattice isa AbstractImagGrassmannLattice || lattice isa AbstractMixedGrassmannLattice ||
@@ -188,7 +188,7 @@ end
 function nn(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian,
             kernel::Union{Nothing,HybridizationKernel}, Is...; i::Integer, j::Integer,
             b1::Symbol=default_branch(lattice), b2::Symbol=b1,
-            band::Union{Int,Tuple{Int,Int}}=(1, 1), order::Integer=kernel_order(kernel),
+            band::Union{Int,Tuple{Int,Int}}=(1, 1), order::Integer=1,
             coupling_norm::Real=kernel_coupling_norm(kernel), initial_state=nothing, Z)
     band1, band2 = band isa Int ? (band, band) : band
     if i == j && b1 === b2 && band1 == band2
@@ -201,12 +201,18 @@ function nn(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonia
                                  coupling_norm=coupling_norm, initial_state=initial_state)
 end
 
-# kernel 元数据便捷（耦合范数/order 随 kernel 携带）；nothing（显式 order/
-# coupling_norm 路径）安全——kwarg 默认值在 kernel=nothing 时也求值
-kernel_coupling_norm(k::HybridizationKernel) = k.coupling_norm === nothing ? 0.0 : k.coupling_norm
+# kernel 元数据便捷（耦合范数随 kernel 携带；order 元数据随 W2 重定义退役
+# ——diagnostics 字段已删，测量层 order 显式 kwarg 转发，缺省 1）；
+# nothing（显式 coupling_norm 路径）安全——kwarg 默认值在 kernel=nothing 时也求值
+kernel_coupling_norm(k::HybridizationKernel) = k.coupling_norm
 kernel_coupling_norm(::Nothing) = 0.0
-kernel_order(k::HybridizationKernel) = get(k.diagnostics, :order, 1)
-kernel_order(::Nothing) = 1
+
+"电流 η 系数的块读取（band 键化；η⁺⁻ = −块值——电流算符的 η = 无号物理块，
+与指数系数差 Keldysh 基一个相对号，公式层常数，见 correlationfunction.jl 注）"
+function _kernel_eta(kernel::HybridizationKernel, b::Symbol, band::Int)
+    band in kernel.bands || throw(BoundsError(kernel.bands, band))
+    return kernel.blocks[(ContourBlockIndex(:+, band), ContourBlockIndex(b, band))]
+end
 
 # ---------------------------------------------------------------------------
 # Currents（Phase 5c 精确版：GF 求和公式 + 带荷双插入；旧 currents.jl 同公式）
@@ -220,7 +226,7 @@ golden 验证过的 greater/lesser 同款：charge=nothing、:left 乘）。
 """
 function raw_lead_correlator(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian,
                              kernel::Union{Nothing,HybridizationKernel}, Is...; k::Integer, j::Integer,
-                             b2::Symbol=:+, band::Int=1, order::Integer=kernel_order(kernel),
+                             b2::Symbol=:+, band::Int=1, order::Integer=1,
                              coupling_norm::Real=kernel_coupling_norm(kernel), initial_state=nothing, Z)
     qc = var_charge(TK.sectortype(lattice), band, lattice.bands)
     d = _fock_ops(lattice.bands)[band]
@@ -236,17 +242,17 @@ end
     electriccurrent(lattice, model, kernel, Is...; k, band=1, Z, ...) -> Complex
 
 边界 t_k 的电流（GF 求和精确版）：`(2/δt)·Σ_{j<k}[η⁺⁺[k,j]·⟨ā(+,k)a(+,j)⟩ +
-η⁺⁻[k,j]·⟨ā(+,k)a(−,j)⟩]`，η⁺⁺ = kernel.blocks[(:+,:+)]（raw）、η⁺⁻ =
+η⁺⁻[k,j]·⟨ā(+,k)a(−,j)⟩]`，η⁺⁺ = kernel 块直读（raw）、η⁺⁻ =
 −blocks[(:+,:−)]。⚠️ η 块禁走顶点移位 accessor（旧栈 ED 电流对比 4/8 vs 8/8
 教训在案，旧 currents.jl 注释原文）。k 固定、j 变化的求和形态正是制备缓存的
 摊销区。
 """
 function electriccurrent(lattice::AbstractRealGrassmannLattice, model::AbstractImpurityHamiltonian,
                          kernel::Union{Nothing,HybridizationKernel}, Is...; k::Integer, band::Int=1, Z,
-                         order::Integer=kernel_order(kernel), coupling_norm::Real=kernel_coupling_norm(kernel),
+                         order::Integer=1, coupling_norm::Real=kernel_coupling_norm(kernel),
                          initial_state=nothing)
-    ηpp = Matrix(kernel.blocks[(:+, :+)])       # 循环底板一次性物化（惰性视图 → 稠密）
-    ηpm = -Matrix(kernel.blocks[(:+, :-)])
+    ηpp = Matrix(_kernel_eta(kernel, :+, band))   # 循环底板一次性物化（惰性视图 → 稠密）
+    ηpm = -Matrix(_kernel_eta(kernel, :-, band))
     curr = 0.0im
     for j in 1:k-1
         curr += ηpp[k, j] * raw_lead_correlator(lattice, model, kernel, Is...; k=k, j=j, b2=:+,
@@ -271,7 +277,7 @@ O(胞内接触项)——边界语义锚定路径仍是 electriccurrent；两轨�
 """
 function electriccurrent_fast(lattice::AbstractRealGrassmannLattice, model::AbstractImpurityHamiltonian,
                               kernel::Union{Nothing,HybridizationKernel}, Is...; k::Integer, band::Int=1, Z,
-                              order::Integer=kernel_order(kernel), coupling_norm::Real=kernel_coupling_norm(kernel),
+                              order::Integer=1, coupling_norm::Real=kernel_coupling_norm(kernel),
                               initial_state=nothing)
     Int(k) == 1 && return 0.0im
     op = current_operator(lattice, kernel, Int(k); band)
@@ -300,9 +306,9 @@ end
 function heatcurrent(lattice::AbstractRealGrassmannLattice, model::AbstractImpurityHamiltonian,
                      bath::AbstractNormalBath, Is...; k::Integer, band::Int=1, Z,
                      order::Integer=1, coupling_norm::Real=0.0, initial_state=nothing)
-    kernel_η = hybridization(lattice, _weighted_bath(bath))
-    ηpp = Matrix(kernel_η.blocks[(:+, :+)])     # 循环底板一次性物化（惰性视图 → 稠密）
-    ηpm = -Matrix(kernel_η.blocks[(:+, :-)])
+    kernel_η = correlationfunction(_weighted_bath(bath), lattice)
+    ηpp = Matrix(_kernel_eta(kernel_η, :+, band))   # 循环底板一次性物化（惰性视图 → 稠密）
+    ηpm = -Matrix(_kernel_eta(kernel_η, :-, band))
     curr = 0.0im
     for j in 1:k-1
         curr += ηpp[k, j] * raw_lead_correlator(lattice, model, nothing, Is...; k=k, j=j, b2=:+,

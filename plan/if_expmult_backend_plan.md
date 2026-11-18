@@ -1,5 +1,31 @@
 # IF 装配后端统一计划（v2）：influencefunctional/ 拆分 + HybridizationKernel{T} 重定义 + expmult! 后端
 
+> **✅ 实施完结（2026-11-18，分支 if-expmult-backend）**：Phase 0–3 落地。
+> 验收：全套测试绿（含 203 项 FockMPO 对拍、BCS/multiorbital ED）；闸门测试
+> `test/api/if_gates.jl` 12 项绿——每因子 dense 对拍（虚时 fullfactor/ExactTTI
+> vs 冻结链 ~1e-15；BCS 5.4e-13；混合 ExactTTI vs PartialIF ~9e-15）、互换
+> 对拍（实时连续谱 7e-10 = 拟合残差档，旧路径同源）；golden 按值保持
+> （weyl 8/8、exactttiif 6/6，机器精度无需重锚）。性能基准：fullfactor 单次
+> expmult! vs 旧逐行发射 0.8–1.3×（同档，无回退）；连续谱 ExactTTI 1.9s vs
+> 旧 PartialIF 2.4s。
+> **实施裁决（与计划原文的差异，均由 dense 闸门定谳）**：
+> 1. blocks 存储约定 = IF 指数系数（纯实时跨支块保留 QuAPI 内嵌 Keldysh 号）；
+>    电流公式 η⁺⁻ = −blocks 的负号保留——指数系数与电流 η 在同一块上物理差
+>    一个号，单一存储不能同时直读两边（ED/旧栈双锚定）；§2.1「ηpm 负号删」
+>    不实施，负号定性为电流公式自身约定。
+> 2. W4 因子容器按结构力定：虚时 = ExpDecaySumSum（上下三角级联 + 等时修正；
+>    环核反周期折叠使下三角系数 = lower[n−m]——级联 α/λ 按 w/q、w·q^{n−1}、
+>    1/q 定标）；实时/混合 = Pairing（± 链拼接与 − 支反序使跨支 Toeplitz 不可
+>    用统一 cell 级联表达）。幂算法分派：Pairing → PolarExp（SVD 秩一，
+>    real/imag 通道 rtol=0 精确、cross 通道 cross_rtol 截秩），ExpDecay 族 →
+>    PartialExp（WII 有序指数裁剪交叉对、对环核开放分解不精确 3.2e-4——
+>    环核 X²=0 ⟹ PartialExp 机器精确）。
+> 3. 混合格 ExactTTI = 全 Pairing 直读路线（新能力）；旧 cross_factors 的
+>    rank-one 行/列系数向量均落在 a 型腿 = 潜在味错位（无测试覆盖的历史缺陷，
+>    新路线以互换对拍裁决，冻结档案注记在 influence.jl）。
+> 4. 旧 mixedtime.jl/electronphonon 测试文件不在 runtests 链（死文件），未迁移。
+
+
 - 日期：2026-11-17（v2：用户五项裁决——文件夹拆分、HybridizationKernel{T} 重定义、fullfactor/PartialExp、tti_* 因子/PolarExp）
 - 基线：GTEMPO HEAD `f3ee05c4` 系工作区
 - 关联：**GM `polarexp-svd-rankone` 计划 = 本计划的 GM 侧前置**（PolarExp 支持 Pairing/AnomalousPairing SVD 秩一精确指数，旧实现更名 TTIExp——已定稿可实施）；`sysdynamics_fock_mpo_plan.md`（K 侧，独立并行）；kernel/fit Part1（kernel 存 corr 视图已实施，本计划的 blocks 键在其上推广）

@@ -2,8 +2,8 @@
 	β = 1.0; δt = 0.05; Nt = 3; δτ = 0.25; Nτ = 4
 	bath = fermionicbath(spectrum_func(), β=β, μ=0)
 	lat = GrassmannLattice(Nt=Nt, δt=δt, Nτ=Nτ, δτ=δτ, contour=:mixed)
-	kernel = hybridization(lat, bath)
-	Is = hybriddynamics(lat, bath, PartialIF(); band=1)
+	kernel = correlationfunction(bath, lat)
+	Is = hybriddynamics(lat, kernel, PartialIF())
 	model = ToulouseIM(ϵ_d=1.0)
 	K = sysdynamics(lat, model)
 	Z = integrate(K, Is)
@@ -19,8 +19,8 @@
 	end
 	# τ 支 matsubara 与纯虚时轮廓一致（同一 β 谱）
 	latτ = GrassmannLattice(N=Nτ, δτ=δτ, contour=:imag)
-	kernelτ = hybridization(latτ, bath)
-	Isτ = hybriddynamics(latτ, bath, PartialIF(); band=1)
+	kernelτ = correlationfunction(bath, latτ)
+	Isτ = hybriddynamics(latτ, kernelτ, PartialIF())
 	Kτ = sysdynamics(latτ, model)
 	Zτ = integrate(Kτ, Isτ)
 	for i in 1:Nτ

@@ -10,9 +10,9 @@ println("========== Part 4: multi-orbital (≤2 bands) ==========")
 
 	lat = GrassmannLattice(N=Nτ, δτ=δτ, bands=2, contour=:imag, symmetry=Z2Symmetry())
 	bath = discretefermionicbath([ω], [α]; β=β)
-	kernel = hybridization(lat, bath)
+	kernel = correlationfunction(bath, lat)
 	model = KanamoriIM(U=U, J=J, norb=1, μ=μ)
-	Is = ntuple(b -> hybriddynamics(lat, bath, PartialIF(); band=b), 2)
+	Is = hybriddynamics(lat, kernel, PartialIF())
 	K = sysdynamics(lat, model)
 	Z = integrate(K, Is...)
 	# port 虚时 Z = 浴归一化配分（Z_full/Z_B——Z_B 已在归一化关联函数处除掉），

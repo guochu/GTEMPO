@@ -65,7 +65,9 @@ include("impuritymodels/impuritymodels.jl")
 include("sysdynamics/sysdynamics.jl")
 include("sysdynamics/fockmpo.jl")
 
-# IF 构造（PartialIF / ExactTTI 首批，D3）
+# IF 构造（W1 拆分：influencefunctional/ 新装配 + influence.jl deprecated
+# 旧径，plan/if_expmult_backend_plan.md；新装配先入——旧径入口委托其类型）
+include("influencefunctional/influencefunctional.jl")
 include("influence.jl")
 
 # 积分与观测量（GM 引擎接线 + inserted-K/算符两轨，D5）
@@ -104,18 +106,20 @@ export EnvironmentCache
 export ScaledScalar, value
 
 # correlation functions
-export correlationfunction, coupling_norm
+export correlationfunction, coupling_norm, ContourBlockIndex, changebands
 
 # K 构造（SystemFactorPreparation/prepare_system/clear_cache! 随旧径 V2 删除）
 export sysdynamics, OperatorInsertion
 
-# IF 构造
+# IF 构造（W3/W4 装配面：fullfactor/tti_* = influencefunctional/ 后端统一入口；
+# bcs_partial_if/旧装配 = deprecated 冻结档案，交叉验证期满退役）
 export InfluenceFunctionalAlgorithm, PartialIF, ExactTTI, InfluenceFunctional
+export fullfactor, tti_imag_factors, tti_real_factors, tti_cross_factors
 export bcs_hybriddynamics, bcs_partial_if
 export var_charge, cell_charges, fock_charges
 export FockMPO, SparseFockMPO, fock_sysdynamics, fock_vacuumstate, fock_initstate!,
        sparsefockmpo, fockmpo2gmps, gmps2fockmpo
-export HybridizationKernel, hybridization, influence_functional, hybriddynamics
+export HybridizationKernel, influence_functional, hybriddynamics
 
 # 观测量（Phase 5b：inserted-K 边界观测 + 算符缓存原始关联两轨，D5 裁决见 measurements/）
 export occupation, greater, lesser, matsubara, default_branch, nn

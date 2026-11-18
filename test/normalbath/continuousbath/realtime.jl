@@ -18,8 +18,8 @@ using LinearAlgebra: Hermitian, eigen
 	gt_ed = [-im * sum(v2 .* exp.(-im .* w .* t) .* (1 ./(exp.(-β .* w) .+ 1))) for t in ts]
 
 	lat = GrassmannLattice(N=Nt, δt=δt, contour=:real)
-	kernel = hybridization(lat, bath)
-	Is = hybriddynamics(lat, bath, PartialIF(); band=1)
+	kernel = correlationfunction(bath, lat)
+	Is = hybriddynamics(lat, kernel, PartialIF())
 	model = ToulouseIM(ϵ_d=μ)
 	ρ0_imp = thermal_impurity_state(model, β)
 	K = sysdynamics(lat, model; initial_state=ρ0_imp)
