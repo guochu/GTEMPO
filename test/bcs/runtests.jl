@@ -77,23 +77,14 @@ end
 
 @testset "BCS: 实时演化 vs bcs_ed（PartialIF / PolarIF 互换 + ED 锚）" begin
 	# plan/bcs_exacttti_plan.md Phase R 闸门（T3 + T6 物理面）：raw 核一阶
-	# 离散化档 ED 对拍——去顶点移位后一阶常数回归标定档（7.2e-5/1.1e-4，
-	# 实测 max abs gt 1.4e-4 / lt 6.5e-5，δt 减半减半 ✓ 一阶收敛）。
-	# ED 初态口径 = 杂质热态 ⊗ 浴热态（数守恒退耦 H0——与 fewmodes realtime
-	# 测试同款；现行栈 initial_state 只进杂质）。
+	# 离散化档 ED 对拍。**ED 初态必须含浴配对项**（bcs_ed 返回的 H0 = 杂质 ⊗
+	# 配对浴——TN 的 kernel 编码配对浴热态；未配对 H0dec 与 TN 模型不一致，
+	# 曾制造 ~1e-5 的 δt⁰ 假地板（R7，2026-11-19 定谳））。
 	U = 1.0; ϵ_ed = 0.8; ω = 1.0; α = 0.5
 	β = 1.0; T = 0.25; Nt = 5; δt = T / Nt
 	ts = (1:Nt) .* δt
-	H, Ab, Bb, _ = bcs_ed(U, ϵ_ed; ω₀=ω, α=α, Δ=0.6)
-	p1 = spin_half_matrices()
-	n̂, σ₊, σ₋, JW = p1["n"], p1["+"], p1["-"], -p1["z"]
-	I2 = one(n̂)
-	n_imp = kron(n̂, I2) + kron(I2, n̂)
-	Himpbare = -ϵ_ed * n_imp + U * kron(n̂, n̂)
-	I4 = Matrix{ComplexF64}(I, 4, 4)
-	n_bath = kron(I2, n̂) + kron(n̂, I2)
-	H0dec = kron(Himpbare, I4) + ω * kron(I4, n_bath)
-	gt_ed, lt_ed = greater_lesser_ed(H, Ab, Bb, H0dec, ts, β)
+	H, Ab, Bb, H0 = bcs_ed(U, ϵ_ed; ω₀=ω, α=α, Δ=0.6)
+	gt_ed, lt_ed = greater_lesser_ed(H, Ab, Bb, H0, ts, β)
 
 	lat = GrassmannLattice(N=Nt, δt=δt, bands=2, contour=:real, symmetry=Z2Symmetry())
 	model = AndersonIM(U=U, ϵ_d=-ϵ_ed)
@@ -119,22 +110,16 @@ end
 
 @testset "BCS: Weyl 二阶实时演化（order2 ED 锚 + 阶改善）" begin
 	# plan/bcs_exacttti_plan.md Phase W 套件级闸门：Weyl-2 K 机器 × BCS IF 端到端
-	# ——order=2 对 bcs_ed 偏差较 order=1 收缩 ≥10×（实测 ~40×：K 链 bath 无关、
-	# Weyl 标量 BCS 无修正——bcsweyl F5 裁决的端到端确证）。全 N 斜率标定 =
-	# validation/bcs_realtime_scaling.jl（N ∈ {4,8,16,32}）。
+	# ——order=2 对 bcs_ed 偏差较 order=1 收缩 ≥10×（K 链 bath 无关、Weyl 标量
+	# BCS 无修正——bcsweyl F5 裁决的端到端确证）。全 N 斜率标定 =
+	# validation/bcs_realtime_scaling.jl（N ∈ {4,8,16,32}，R7 修正后 order=2
+	# 渐近斜率 2.000 ✓——旧 ~1e-5 地板 = ED 初态未含浴配对项的参照错）。
+	# **ED 初态必须含浴配对项**（bcs_ed 返回的 H0；见上一 testset 注）。
 	U = 1.0; ϵ_ed = 0.8; ω = 1.0; α = 0.5
 	β = 1.0; T = 0.25; Nt = 8; δt = T / Nt
 	ts = (1:Nt) .* δt
-	H, Ab, Bb, _ = bcs_ed(U, ϵ_ed; ω₀=ω, α=α, Δ=0.6)
-	p1 = spin_half_matrices()
-	n̂, σ₊, σ₋, JW = p1["n"], p1["+"], p1["-"], -p1["z"]
-	I2 = one(n̂)
-	n_imp = kron(n̂, I2) + kron(I2, n̂)
-	Himpbare = -ϵ_ed * n_imp + U * kron(n̂, n̂)
-	I4 = Matrix{ComplexF64}(I, 4, 4)
-	n_bath = kron(I2, n̂) + kron(n̂, I2)
-	H0dec = kron(Himpbare, I4) + ω * kron(I4, n_bath)
-	gt_ed, lt_ed = greater_lesser_ed(H, Ab, Bb, H0dec, ts, β)
+	H, Ab, Bb, H0 = bcs_ed(U, ϵ_ed; ω₀=ω, α=α, Δ=0.6)
+	gt_ed, lt_ed = greater_lesser_ed(H, Ab, Bb, H0, ts, β)
 
 	lat = GrassmannLattice(N=Nt, δt=δt, bands=2, contour=:real, symmetry=Z2Symmetry())
 	model = AndersonIM(U=U, ϵ_d=-ϵ_ed)

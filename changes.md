@@ -1,5 +1,20 @@
 # 接口更改说明
 
+## R7 定谳批：BCS 实时 ED 参照初态修正（2026-11-19）
+
+- **BCS ED 参照初态修正（测试/验证面，无 src 改动）**：`test/bcs/runtests.jl`
+  两个实时 testset 与 `validation/bcs_realtime_scaling.jl` 的
+  `greater_lesser_ed` 初态从手搓未配对浴热态（`H0dec = kron(Himpbare,I4) +
+  ω·kron(I4,n_bath)`）改为 **bcs_ed 返回的 H0（杂质 ⊗ 配对浴）**——TN 的
+  kernel 编码配对浴热态，未配对参照与 TN 模型不一致 = Weyl2 order=2
+  "~1e-5 δt 无关地板"的根源（R7 定谳：δt⁰ 系统差、Δ=0 消失、两阶共有、
+  order=1 斜率拟合被污染 1.07–1.09 → 实际 1.016/0.959）。修正后 order=2
+  渐近斜率 **2.000**（4.3e-5→6.8e-7，Nt=4→32）——Weyl 标量无 BCS 修正的
+  端到端确证（bcsweyl F5）落定。排查档案 = debug/r7_floor/（Z 恒等式探针、
+  λ 二分、解析 BdG 第三参照）。
+- `validation/bcs_realtime_scaling.jl` 同批修复已删 API 残留
+  （`bcs_hybriddynamics` → `correlationfunction` + `hybriddynamics`）。
+
 ## ExactTTI 审查修正批（2026-11-19，三裁决）
 
 - **严格 TTI 门（Breaking，替代 fit/direct 静默降级）**：`tti_imag_factors`/

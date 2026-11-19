@@ -21,7 +21,9 @@ const U = 1.0; const ϵ_ed = 0.8; const ω = 1.0; const α = 0.5
 const β = 1.0; const T = 0.4; const Δ_bcs = 0.6
 
 let
-    # ED 参照（最大网格全时序；短网格取其前缀——同 H/H0 连续演化）
+    # ED 参照（最大网格全时序；短网格取其前缀——同 H/H0 连续演化）。
+    # **H0 必须用 bcs_ed 返回的杂质 ⊗ 配对浴热态**（TN 的 kernel 编码配对浴；
+    # 未配对 H0dec 与 TN 模型不一致 = R7 假地板根源，2026-11-19 定谳）
     Nmax = 32
     δt = T / Nmax
     ts = (1:Nmax) .* δt
@@ -32,9 +34,8 @@ let
     Himpbare = -ϵ_ed * n_imp + U * kron(n̂, n̂)
     I4 = Matrix{ComplexF64}(I, 4, 4)
     n_bath = kron(I2, n̂) + kron(n̂, I2)
-    H, Ab, Bb, _ = bcs_ed(U, ϵ_ed; ω₀=ω, α=α, Δ=Δ_bcs)
-    H0dec = kron(Himpbare, I4) + ω * kron(I4, n_bath)
-    gt_ed, lt_ed = greater_lesser_ed(H, Ab, Bb, H0dec, ts, β)
+    H, Ab, Bb, H0 = bcs_ed(U, ϵ_ed; ω₀=ω, α=α, Δ=Δ_bcs)
+    gt_ed, lt_ed = greater_lesser_ed(H, Ab, Bb, H0, ts, β)
     model = AndersonIM(U=U, ϵ_d=-ϵ_ed)
     bath = bcsbath(fermionicbath(DiracDelta(ω=ω, α=α), β=β), Δ=Δ_bcs)
     cn = coupling_norm(bath) * 2
@@ -50,15 +51,16 @@ let
         δt = T / Nt
         lat = GrassmannLattice(N=Nt, δt=δt, bands=2, contour=:real, symmetry=Z2Symmetry())
         kernel = correlationfunction(bath, lat)
-        Is = bcs_hybriddynamics(lat, bath, PartialIF())
+        Is, _ = hybriddynamics(lat, kernel, PartialIF())
+        Is = Is isa Tuple ? Is : (Is,)      # 单链包装（GMPS 不可 splat）
         for order in (1, 2)
             K = order == 2 ?
                 sysdynamics(lat, model; order=2, coupling_norm=cn, initial_state=ρ0) :
                 sysdynamics(lat, model; initial_state=ρ0)
-            Z = integrate(K, Is)
-            gt = [greater(lat, model, kernel, Is; i=i, j=0, Z=Z, order=order,
+            Z = integrate(K, Is...)
+            gt = [greater(lat, model, kernel, Is...; i=i, j=0, Z=Z, order=order,
                           coupling_norm=cn, initial_state=ρ0) for i in 1:Nt]
-            lt = [lesser(lat, model, kernel, Is; i=i, j=0, Z=Z, order=order,
+            lt = [lesser(lat, model, kernel, Is...; i=i, j=0, Z=Z, order=order,
                          coupling_norm=cn, initial_state=ρ0) for i in 1:Nt]
             # 斜率口径 = 绝对偏差（跨 N 可比）；ED 参照按时刻对齐切片——
             # 端口格点 i·T/Nt = ED 网格下标 i·stride（Nmax 必须被 Nt 整除）
@@ -84,10 +86,13 @@ let
             @printf("order=%d %s: slope = %.3f\n", order, lbl, slope)
         end
     end
-    println("实测结论（2026-11-19，raw 口径）：")
-    println("  order=1 slope ≈ 1.07–1.09 ✓（一阶；raw 常数档，阶不变）")
-    println("  order=2 较 order=1 改善 ~40×（1e-4 → 1e-5 档），但 Nt≥8 撞 ~1e-5")
-    println("  δt 无关地板（紧截断不变、随 Nt 线性缓增 = 每格常数残差特征）——")
-    println("  渐近斜率 ≈ 2.00 被地板掩盖。地板源疑 = 二阶接触门 × BCS 交互")
-    println("  （plan R7 排查面；正常 bath 九组基准 1.996–2.005 无此地板）。")
+    println("实测结论（2026-11-19 R7 定谳，配对浴初态口径）：")
+    println("  order=1 slope ≈ 1.0 ✓（实测 1.016/0.959；raw 常数档，阶不变——旧 1.07–1.09")
+    println("  略偏 = 未配对参照的 δt⁰ 失配污染斜率拟合）")
+    println("  order=2 渐近斜率 = 2.000 ✓——Weyl 标量无 BCS 修正的端到端确证。")
+    println("  旧 ~1e-5 δt 无关地板 = **ED 参照初态缺浴配对项**（H0dec 用未配对浴，")
+    println("  而 TN kernel 编码配对浴热态——模型不一致的 δt⁰ 系统差；Δ=0 时消失、")
+    println("  两阶共有、order=1 被更大 O(δt) 误差掩盖）。修复 = greater_lesser_ed")
+    println("  传 bcs_ed 返回的 H0（含浴配对项）。Z 恒等式探针（Z=1）全程无地板——")
+    println("  地板只入 greater/lesser 插入测量，与排查记录一致。")
 end

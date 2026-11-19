@@ -286,10 +286,15 @@ ComplexF64 ⟹ 真空态已 promote，无需 `_complex_mps`）。
 **Phase W（T7 + goldens）**：
 - 套件闸门：order=2 较 order=1 偏差收缩 ≥10×（实测 ~40×，Nt=8
   1.2e-4 → 1.2e-5）——Weyl-2 × BCS 端到端成立，:z2/U≠0（Anderson）稳定；
-- `validation/bcs_realtime_scaling.jl`：order=1 斜率 1.07–1.09 ✓；
-  **order=2 渐近斜率 ≈ 2.00 未达**——Nt≥8 撞 ~1e-5 δt 无关地板（紧截断
-  不变、随 Nt 线性缓增 = 每格常数残差特征），疑二阶接触门 × BCS 交互
-  （R7 触发，待排查；normal bath 九组基准无此地板）；
+- `validation/bcs_realtime_scaling.jl`：order=1 斜率 1.07–1.09 ✓（R7 后
+  修正口径 1.016/0.959）；
+  **order=2 渐近斜率 ≈ 2.00 未达 → R7 已定谳关闭（2026-11-19 第五批）**：
+  ~1e-5 δt 无关地板 = **ED 参照初态 bug**——`greater_lesser_ed` 传了未配对
+  浴热态 H0dec，而 TN kernel 编码配对浴热态（模型不一致的 δt⁰ 系统差；
+  Δ=0 消失、两阶共有、order=1 被掩盖）。修复 = 传 bcs_ed 返回的 H0（含浴
+  配对项）；修正后 order=2 斜率 2.000（4.3e-5→6.8e-7，Nt=4→32）、order=1
+  1.016/0.959。排查档案 debug/r7_floor/（Z 恒等式探针 + λ 二分 + 解析
+  BdG 第三参照）；
 - **标定方法两陷阱（已修）**：ED 参照须按时刻对齐切片（`gt_ed[(1:Nt).*stride]`
   ——首版半时刻错位伪造 order 无关大误差）；斜率口径 = 绝对偏差（relerr
   分母随窗口变化伪造斜率）；
