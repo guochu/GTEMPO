@@ -153,7 +153,7 @@ end
 		truncd, diag = hybriddynamics(lat, kernel, PolarIF(rtol=0.5))
 		d = gd(truncd, exact)
 		@test 0 < d < 1e-1                                # 实测 4.0e-3
-		@test all(isfinite, diag[:truncerrs])
+		@test isfinite(diag[:truncerr])
 		@test isfinite(integrate(truncd))
 	end
 end

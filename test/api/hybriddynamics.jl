@@ -126,14 +126,14 @@ end
 	Ik, diagk = hybriddynamics!(g, lat, kernel, PartialIF())
 	@test Ik === g
 	@test integrate(Ik) ≈ integrate(Is) rtol = 1e-12
-	@test diagk[:truncerrs] isa Vector{Float64}
+	@test diagk[:truncerr] isa Float64
 	@test haskey(diagk, :algorithm) && haskey(diagk, :truncation)
 	# 单带 kernel → 单 IF + 原地恒等 + diagnostics 第二输出
 	k2 = correlationfunction(bath0, lat; band=2)
 	g2 = vacuumstate(lat)
 	I2, diag2 = hybriddynamics!(g2, lat, k2, PartialIF())
 	@test I2 === g2
-	@test diag2[:truncerrs] isa Vector{Float64}
+	@test diag2[:truncerr] isa Float64
 	# band 越界显式拒绝
 	@test_throws BoundsError correlationfunction(bath0, lat; band=3)
 

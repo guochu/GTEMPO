@@ -7,7 +7,7 @@ println("========== Part 3: BCS (Z2 only) ==========")
 	model = AndersonIM(U=U, ϵ_d=-ϵ_d)
 	bathn = fermionicbath(DiracDelta(ω=ω, α=α), β=β)
 	bath0 = bcsbath(fermionicbath(DiracDelta(ω=ω, α=α), β=β), Δ=0)
-	Ibcs = bcs_hybriddynamics(lat, bath0)
+	Ibcs = first(hybriddynamics(lat, correlationfunction(bath0, lat)))
 	kernel = correlationfunction(bathn, lat)
 	In, _ = hybriddynamics(lat, kernel, PartialIF())
 	K = sysdynamics(lat, model)
@@ -29,7 +29,7 @@ end
 		lat = GrassmannLattice(N=Nτ, δτ=δτ, bands=2, contour=:imag, symmetry=Z2Symmetry())
 		model = AndersonIM(U=U, ϵ_d=-ϵ_ed)
 		bath = bcsbath(fermionicbath(DiracDelta(ω=ω, α=α), β=β), Δ=Δ)
-		Is = bcs_hybriddynamics(lat, bath)
+		Is = first(hybriddynamics(lat, correlationfunction(bath, lat)))
 		K = sysdynamics(lat, model)
 		Z = integrate(K, Is)
 		# BCS 浴自身带 Δ 配对项（破坏粒子数）→ 归一化分母 = 配对浴配分（复刻 bcs_ed 浴块）
@@ -72,7 +72,7 @@ end
 	end
 	lat = GrassmannLattice(N=4, δτ=0.25, bands=2, contour=:imag, symmetry=U1Symmetry())
 	bath = bcsbath(fermionicbath(DiracDelta(ω=1.0, α=0.5), β=1.0), Δ=0.6)
-	@test_throws ArgumentError bcs_hybriddynamics(lat, bath)
+	@test_throws ArgumentError correlationfunction(bath, lat)   # D7 守卫（构造端）
 end
 
 @testset "BCS: 实时演化 vs bcs_ed（PartialIF / PolarIF 互换 + ED 锚）" begin
@@ -103,7 +103,7 @@ end
 	K = sysdynamics(lat, model; initial_state=ρ0)
 	res = []
 	for alg in (PartialIF(), PolarIF())
-		Is = bcs_hybriddynamics(lat, bath, alg)
+		Is = first(hybriddynamics(lat, correlationfunction(bath, lat), alg))
 		Z = integrate(K, Is)
 		gt = [greater(lat, model, kernel, Is; i=i, j=0, Z=Z, initial_state=ρ0) for i in 1:Nt]
 		lt = [lesser(lat, model, kernel, Is; i=i, j=0, Z=Z, initial_state=ρ0) for i in 1:Nt]
@@ -142,7 +142,7 @@ end
 	kernel = correlationfunction(bath, lat)
 	cn = kernel.coupling_norm                     # 带对各 α（Weyl 标量 = normal 通道 α 和，Δ 不进）
 	ρ0 = thermal_impurity_state(model, β)
-	Is = bcs_hybriddynamics(lat, bath, PartialIF())
+	Is = first(hybriddynamics(lat, correlationfunction(bath, lat), PartialIF()))
 	errs = Float64[]
 	for order in (1, 2)
 		K = order == 2 ?

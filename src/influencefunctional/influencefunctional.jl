@@ -104,8 +104,8 @@ end
 单链（同 PartialIF 契约，SVD 秩一因子化乘入）。ExactTTI = 逐带独立
 装配：单带核就地单链；多带核逐带从 `copy(gmps)` 起步返回逐带元组。乘法
 压缩截断随算法对象携带（`alg.trunc`）。第二输出
-`diagnostics::Dict{Symbol,Any}` = 装配诊断：`:truncerrs`（逐步乘法压缩
-的 GM truncerr）+ 通道审计键（Keldysh/热配对残差、拟合展开）+
+`diagnostics::Dict{Symbol,Any}` = 装配诊断：`:truncerr`（乘法压缩
+总截断误差，Float64——第二输入 err 的累计终值）+ 通道审计键（Keldysh/热配对残差、拟合展开）+
 `:algorithm`/`:truncation`。ExactTTI 仅支持单带 normal 取向核（键 = (ā, a)；
 反常/跨带核 D7 走 PartialIF），且拟合层因子恒复 ⟹ 实链在装配入口复化
 （ExactTTI 返回态恒 ComplexF64，不再与 `gmps` 别名）。
@@ -116,10 +116,11 @@ function hybriddynamics!(gmps, lattice::AbstractGrassmannLattice, kernel::Hybrid
         throw(BoundsError(1:lattice.bands, kernel.bands))
     hascross = _has_cross_band_keys(kernel)
     diagnostics = Dict{Symbol,Any}(:algorithm => alg, :truncation => alg.trunc)
+    err = 0.0
     if alg isa PartialIF
-        state, truncerrs = _partialif_state(gmps, lattice, kernel, alg)
+        state, err = _partialif_state!(gmps, err, lattice, kernel, alg)
     elseif alg isa PolarIF
-        state, truncerrs = _polarif_state(gmps, lattice, kernel, alg)
+        state, err = _polarif_state!(gmps, err, lattice, kernel, alg)
     elseif alg isa ExactTTI
         (!_is_normal_conj(kernel) || hascross) && throw(ArgumentError(
             "ExactTTI does not support anomalous/cross-band kernels (D7: BCS is " *
@@ -127,12 +128,12 @@ function hybriddynamics!(gmps, lattice::AbstractGrassmannLattice, kernel::Hybrid
         length(kernel.bands) == 1 || throw(ArgumentError(
             "ExactTTI requires a single-band normal kernel, got bands $(kernel.bands); " *
             "build per-band kernels for multi-band assembly"))
-        state, truncerrs, diag = _exacttti_state(gmps, lattice, kernel, alg)
+        state, err, diag = _exacttti_state!(gmps, err, lattice, kernel, alg)
         merge!(diagnostics, diag)
     else
         throw(ArgumentError("unsupported IF algorithm $(typeof(alg))"))
     end
-    diagnostics[:truncerrs] = truncerrs
+    diagnostics[:truncerr] = err
     return state, diagnostics
 end
 
@@ -152,9 +153,6 @@ function hybriddynamics(lattice::AbstractGrassmannLattice, kernel::Hybridization
                            lattice, kernel, alg)
 end
 
-"integrate(lattice, x0, x1...) —— Berezin 迹（链 = (K, Is...)，GM 引擎）"
-integrate(lattice::AbstractGrassmannLattice, x0::GM.GMPS, x1::GM.GMPS...) = integrate(x0, x1...)
-integrate_scaled(lattice::AbstractGrassmannLattice, x0::GM.GMPS, x1::GM.GMPS...) = integrate_scaled(x0, x1...)
 
 include("partialif.jl")
 include("exacttti.jl")

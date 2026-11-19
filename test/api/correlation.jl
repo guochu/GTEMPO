@@ -84,7 +84,7 @@ end
 @testset "API: scheme 面（IFD 后端切换 + 严格 IF 入口）" begin
 	import IFDiscretization as IFD
 	# plan/ifd_backend_switch：后端切换 = correlationfunction 第三位 scheme 参数
-	# （缺省 IFD.QuAPI()）；严格面 = imag + Exact 元组解包 + normdelta 透传。
+	# （缺省 IFD.QuAPI()）；严格面 = imag + Exact 元组解包 + coupling_norm 复用（= normdelta）。
 	β = 1.0
 	bath = discretefermionicbath([1.0], [0.5]; β=β)
 	latτ = GrassmannLattice(N=4, δτ=0.25, contour=:imag)
@@ -95,7 +95,7 @@ end
 	k1 = correlationfunction(bath, latτ)
 	k2 = correlationfunction(bath, latτ, IFD.QuAPI())
 	@test collect(pairs(k1.blocks)) == collect(pairs(k2.blocks))
-	@test k1.normdelta === nothing && k2.normdelta === nothing
+
 
 	# T3b：imag + Exact（求解器要求可调用谱 → 连续谱 bath）——blocks ≡ 元组
 	# 第一位逐位、normdelta ≡ 第二位（det(BB)）
@@ -104,7 +104,7 @@ end
 	scheme = IFD.ExactEqualDistantKernel(IFD.EDToulouseSolver(8))
 	kx = correlationfunction(bathc, latτ, scheme)
 	res = IFD.Δτ(bathc; N=4, δτ=0.25, scheme)
-	@test kx.normdelta == real(res[2])   # 构造器剥离 IFD 容器标量型的 ~1e-15 虚部尾
+	@test kx.coupling_norm == real(res[2])   # coupling_norm 语义随 scheme（exact = normdelta 透传）；虚部尾守卫取实
 	@test Matrix(kx.blocks[(ContourBlockIndex(:τ, 1, true), ContourBlockIndex(:τ, 1, false))]) ==
 	      Matrix(res[1].data[1:4, 1:4])
 

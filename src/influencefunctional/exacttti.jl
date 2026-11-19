@@ -281,8 +281,8 @@ O(α²λ)，GTEMPO ESS 实测 3.2e-4）。截秩语义：real/imag 通道 rtol =
 通道）。标量型：拟合层因子恒 ComplexF64（fit_exponentials 契约）——实链
 （虚时格 × 实谱核）在装配入口复化（GM mult! 不做就地跨型提升 ⟹ ExactTTI
 返回态恒 ComplexF64、≠ 输入别名）。"
-function _exacttti_state(gmps, lattice::AbstractGrassmannLattice, kernel::HybridizationKernel,
-                         alg::ExactTTI)
+function _exacttti_state!(gmps, err::Float64, lattice::AbstractGrassmannLattice,
+                          kernel::HybridizationKernel, alg::ExactTTI)
     diag = Dict{Symbol,Any}()
     mult = _mult(alg)
     pol_exact = GM.PolarExp(rtol=0.0, alg_mult=mult)             # real/imag 通道：精确
@@ -290,7 +290,6 @@ function _exacttti_state(gmps, lattice::AbstractGrassmannLattice, kernel::Hybrid
     single = length(kernel.bands) == 1
     TK.scalartype(gmps) <: Real && (gmps = _complex_mps(gmps))   # 实链复化（见上注）
     band_states = Any[single ? gmps : _copy_mps(gmps) for _ in kernel.bands]
-    truncerrs = Float64[]
     for (bi, b) in enumerate(kernel.bands)                  # band 信息在 kernel，逐带切片
         kb = _band_kernel(kernel, b)
         state = band_states[bi]                             # 逐带独立装配（各带自己的 IF 链）
@@ -299,13 +298,13 @@ function _exacttti_state(gmps, lattice::AbstractGrassmannLattice, kernel::Hybrid
             (; factors, audit) = tti(kb, lattice; alg)
             isempty(audit) || merge!(diag, pairs(audit))
             for f in factors
-                state, err = GM.expmult!(state, f, pol)
-                push!(truncerrs, err)
+                state, e = GM.expmult!(state, f, pol)
+                err += e
             end
         end
         band_states[bi] = state
     end
-    return single ? band_states[1] : tuple(band_states...), truncerrs, diag
+    return (single ? band_states[1] : tuple(band_states...)), err, diag
 end
 
 "tti_* 的核范围守卫：仅单带 normal 取向核（键 = (ā, a)）；多带核逐带切片在

@@ -69,10 +69,10 @@ end
   通道）。**构造器从核键派生**（`any(key -> key[1].conj == key[2].conj)`）——
   单一事实来源，`changebands`/`Base.:+` 等重装路径自动一致（normal + 反常
   相加 = 反常）。
-- `normdelta::Union{Nothing,Float64}` = 严格核的 Z 归一常数透传（IFD exact
-  scheme 元组第二元 det(BB)，`Z = normdelta · Pf(B)`——exactif_port_plan 的
-  消费契约）；QuAPI/frozen scheme = `nothing`。`changebands`/`Base.:+` 重装
-  路径透传该字段。
+- `coupling_norm::Float64` 语义随离散 scheme：frozen（缺省 IFD.QuAPI()）=
+  全带总耦合 Σ_b α_b（Weyl 标量补偿用）；Exact scheme = 严格核 Z 归一常数
+  normdelta（IFD 元组第二元 det(BB) 透传，`Z = normdelta · Pf(B)` 的消费
+  契约归 exactif_port_plan）。
 
 `scalartype` 仅 Type 上定义（TensorKit 泛型回退 scalartype(x) =
 scalartype(typeof(x)) 自动覆盖实例）；T 由构造端 = `scalartype(corr)` 动态定
@@ -84,12 +84,10 @@ struct HybridizationKernel{T<:Number}
     coupling_norm::Float64
     bands::Vector{Int}
     anomalous::Bool     # 异味键存在（构造器从键派生）
-    normdelta::Union{Nothing,Float64}   # 严格核 Z 归一常数透传（frozen scheme = nothing）
 
     function HybridizationKernel(blocks::Dict{Tuple{ContourBlockIndex,ContourBlockIndex},
                                               Union{Matrix{T},CorrelationMatrix{T}}},
-                                 coupling_norm::Real, bands::Vector{Int},
-                                 normdelta::Union{Nothing,Number}=nothing) where {T<:Number}
+                                 coupling_norm::Real, bands::Vector{Int}) where {T<:Number}
         isfinite(coupling_norm) && coupling_norm >= 0 ||
             throw(ArgumentError("invalid coupling norm $coupling_norm"))
         isempty(bands) && throw(ArgumentError("empty band list"))
@@ -102,17 +100,9 @@ struct HybridizationKernel{T<:Number}
             all(isfinite, value) || throw(ArgumentError(
                 "nonfinite kernel block $(key[1].branch)/$(key[2].branch) band $(key[1].band)"))
         end
-        nd = normdelta
-        if nd !== nothing && !isa(nd, Real)     # IFD 元组第二元随核标量型（det(BB) 实值）
-            abs(imag(nd)) <= 1e-12 * max(1.0, abs(real(nd))) ||
-                throw(ArgumentError("non-real normdelta $nd"))
-            nd = real(nd)
-        end
-        nd === nothing || (isfinite(nd) && nd != 0 ||
-            throw(ArgumentError("invalid normdelta $nd")))
+        isfinite(coupling_norm) || throw(ArgumentError("nonfinite coupling norm $coupling_norm"))
         new{T}(blocks, Float64(coupling_norm), bands,
-               any(key -> key[1].conj == key[2].conj, keys(blocks)),
-               nd === nothing ? nothing : Float64(nd))
+               any(key -> key[1].conj == key[2].conj, keys(blocks)))
     end
 end
 
@@ -187,12 +177,12 @@ function correlationfunction(bath::AbstractNormalBath, lattice::AbstractGrassman
     # 严格 scheme 路由（plan ifd_backend_switch §3.1）：imag + Exact = 元组
     # (ImagCorrelationFunction, det(BB)) 解包；real/mixed + Exact = strict 容器
     # （装配级骨架+踢契约，非朴素指数系数）→ ArgumentError 指向 exactif_port_plan
-    normdelta = nothing
+    coupling = nothing
     if scheme isa IFD.ExactKernel && !(lattice isa AbstractImagGrassmannLattice)
         throw(ArgumentError(
             "real/mixed lattices do not support the Exact scheme in correlationfunction: " *
             "the strict containers carry assembly-level contracts (skeleton + kicks, " *
-            "Z = normdelta · Pf(B)) — see plan/exactif_port_plan.md for the block-level route"))
+            "Z = coupling_norm · Pf(B)) — see plan/exactif_port_plan.md for the block-level route"))
     end
     bands = band === nothing ? collect(1:lattice.bands) :
             (1 <= band <= lattice.bands || throw(BoundsError(1:lattice.bands, band));
@@ -203,7 +193,7 @@ function correlationfunction(bath::AbstractNormalBath, lattice::AbstractGrassman
     end
     corr = if lattice isa AbstractImagGrassmannLattice
         res = IFD.Δτ(bath; N=lattice.Nτ, δτ=lattice.δτ, scheme)
-        res isa Tuple ? (normdelta = res[2]; res[1]) : res     # exact scheme 元组解包（F2）
+        res isa Tuple ? (coupling = res[2]; res[1]) : res      # exact scheme 元组解包（F2）
     elseif lattice isa AbstractRealGrassmannLattice
         IFD.Δt(bath; N=lattice.Nt, t=lattice.Nt * lattice.δt, scheme)
     else
@@ -224,8 +214,18 @@ function correlationfunction(bath::AbstractNormalBath, lattice::AbstractGrassman
                         ContourBlockIndex(b2, first(bands), false))]
         end
     end
-    norm = length(bands) * coupling_norm(bath)
-    return HybridizationKernel(blocks, norm, bands, normdelta)
+    # coupling_norm 语义随 scheme（frozen = Σα；exact = normdelta 透传）；
+    # IFD 元组第二元随容器标量型带 ~1e-15 虚部尾（det(BB) 实值），守卫后取实
+    coupling = if coupling isa Nothing
+        Float64(length(bands) * coupling_norm(bath))
+    else
+        isa(coupling, Real) || abs(imag(coupling)) <= 1e-12 * max(1.0, abs(real(coupling))) ||
+            throw(ArgumentError("non-real exact normdelta $coupling"))
+        f = Float64(isa(coupling, Real) ? coupling : real(coupling))
+        isfinite(f) || throw(ArgumentError("nonfinite exact coupling norm $f"))
+        f
+    end
+    return HybridizationKernel(blocks, coupling, bands)
 end
 
 # ---------------------------------------------------------------------------
@@ -280,7 +280,7 @@ function correlationfunction(bath::AbstractBCSBath, lattice::AbstractGrassmannLa
     end
     corr = if lattice isa AbstractImagGrassmannLattice
         res = IFD.Δτ(bath; N=lattice.Nτ, δτ=lattice.δτ, scheme)
-        res isa Tuple ? (normdelta = res[2]; res[1]) : res     # exact scheme 元组解包（F2）
+        res isa Tuple ? (coupling = res[2]; res[1]) : res      # exact scheme 元组解包（F2）
     elseif lattice isa AbstractRealGrassmannLattice
         IFD.Δt(bath; N=lattice.Nt, t=lattice.Nt * lattice.δt, scheme)
     else

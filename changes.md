@@ -1,6 +1,21 @@
 # 接口更改说明
 
-## IF 离散化后端切换 QuAPI → IFDiscretization 批次（2026-11-19，plan/ifd_backend_switch_plan.md）
+## 装配内部接口精简批次（2026-11-19）
+
+- **装配内函数 `!` 化 + 总误差语义**：`_partialif_state/_polarif_state/
+  _exacttti_state` → `_partialif_state!/_polarif_state!/_exacttti_state!`
+  （原地装配）；第二输入 `err::Float64` = 累计总截断误差，返回
+  `(state, err + 本步累计)`——不再逐 factor 记录误差向量；
+  `hybriddynamics!` 的 diagnostics 键 `:truncerrs`（Vector）→
+  `:truncerr`（Float64 总计）。
+- **convenience 删除**：`integrate(lattice, …)` / `integrate_scaled(lattice,
+  …)` lattice 首参便捷形删除（GM 引擎 `integrate(K, Is...)` 直用）。
+- **`bcs_hybriddynamics` 删除**：BCS bath 经 `correlationfunction` 造核 +
+  `hybriddynamics` 同一装配函数（kernel 已涵盖），无独立入口。
+- **`coupling_norm` 语义 scheme 化**：frozen = 全带总耦合 Σα；Exact =
+  normdelta/det(BB) 透传（虚部尾守卫取实）——不新增核字段。
+
+## IF 离散化后端切换 QuAPI → IFDiscretization 批次（2026-11-19，plan/ifd_backend_switch_plan.md）## IF 离散化后端切换 QuAPI → IFDiscretization 批次（2026-11-19，plan/ifd_backend_switch_plan.md）
 
 - **后端切换 + scheme 入口（Part 1，Breaking）**：
   `correlationfunction(bath, lattice, scheme=IFD.QuAPI(); band/orbital)` 第三位
@@ -17,15 +32,14 @@
   `IFD.QuAPI()` scheme 类型名，均非包依赖）。**crosscheck 撤除**：
   `test/api/quapi_crosscheck.jl` 的 IFD↔QuAPI 位级对拍是 IFD 包的职责
   （其 `test/quapi/` 套件已承载同款对拍契约），不在 GTEMPO 落地。
-- **严格 IF 入口（Part 2）**：`HybridizationKernel` 增 `normdelta::
-  Union{Nothing,Float64}` 字段（A1 按推荐落地；frozen scheme = nothing，
-  changebands/Base.:+ 透传）——imag + `ExactEqualDistantKernel` → IFD 元组
-  `(ImagCorrelationFunction, det(BB))` 解包，normdelta 忠实透传（IFD 容器
-  标量型带 ~1e-15 虚部尾，构造器守卫后取实）；**real/mixed + Exact →
-  ArgumentError**（strict 容器 = 装配级骨架+踢契约，非朴素指数系数——消费
-  路线归 exactif_port_plan）；BCS + Exact = IFD 三轮廓 dispatch 已接线，
-  correlationfunction 透传（δ 谱自然报错自 IFD 内部）。normdelta 的
-  `Z = normdelta·Pf(B)` 消费契约不在本计划（exactif_port_plan 领域）。
+- **严格 IF 入口（Part 2）**：imag + `ExactEqualDistantKernel` → IFD 元组
+  `(ImagCorrelationFunction, det(BB))` 解包；**`coupling_norm` 字段复用**
+  （语义随离散 scheme：frozen = Σα；Exact = normdelta/det(BB) 透传——IFD
+  容器标量型带 ~1e-15 虚部尾，构造器守卫后取实；不新增字段）；**real/mixed
+  + Exact → ArgumentError**（strict 容器 = 装配级骨架+踢契约，非朴素指数
+  系数——消费路线归 exactif_port_plan）；BCS + Exact = IFD 三轮廓 dispatch
+  已接线，correlationfunction 透传（δ 谱自然报错自 IFD 内部）。
+  `Z = coupling_norm·Pf(B)` 消费契约不在本计划（exactif_port_plan 领域）。
 - **测试**：scheme 面 testset（缺省≡显式 QuAPI scheme 逐位、imag+Exact 元组
   解包、real/mixed 拒绝、MethodError 冒泡、exact IF 装配 smoke）。
 

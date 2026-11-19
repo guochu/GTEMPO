@@ -42,7 +42,7 @@ end
         Complex(c[1], c[2])
     end
     for (tag, alg) in (("pif", PartialIF()), ("polar", PolarIF()))
-        Is = bcs_hybriddynamics(lat, bath, alg)
+        Is = first(hybriddynamics(lat, correlationfunction(bath, lat), alg))
         for order in (1, 2)
             key = order == 1 ? tag : tag * "_o2"
             haskey(golden, key * "_Z") || continue
