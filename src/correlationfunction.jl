@@ -69,10 +69,9 @@ end
   通道）。**构造器从核键派生**（`any(key -> key[1].conj == key[2].conj)`）——
   单一事实来源，`changebands`/`Base.:+` 等重装路径自动一致（normal + 反常
   相加 = 反常）。
-- `coupling_norm::Float64` 语义随离散 scheme：frozen（缺省 IFD.QuAPI()）=
-  全带总耦合 Σ_b α_b（Weyl 标量补偿用）；Exact scheme = 严格核 Z 归一常数
-  normdelta（IFD 元组第二元 det(BB) 透传，`Z = normdelta · Pf(B)` 的消费
-  契约归 exactif_port_plan）。
+- `coupling_norm::Float64` = 全带总耦合 Σ_b α_b（Weyl 标量补偿用；scheme
+  语义扩展——如 Exact 的 normdelta 透传——待 exactif_port_plan 随 scheme 面
+  恢复时引入）。
 
 `scalartype` 仅 Type 上定义（TensorKit 泛型回退 scalartype(x) =
 scalartype(typeof(x)) 自动覆盖实例）；T 由构造端 = `scalartype(corr)` 动态定
@@ -174,16 +173,12 @@ secondorderif kernels.jl 同款三路径（ED 验证过）：
 function correlationfunction(bath::AbstractNormalBath, lattice::AbstractGrassmannLattice,
                              scheme::IFD.DiscretizationScheme=IFD.QuAPI();
                              band::Union{Nothing,Int}=nothing)
-    # 严格 scheme 路由（plan ifd_backend_switch §3.1）：imag + Exact = 元组
-    # (ImagCorrelationFunction, det(BB)) 解包；real/mixed + Exact = strict 容器
-    # （装配级骨架+踢契约，非朴素指数系数）→ ArgumentError 指向 exactif_port_plan
-    coupling = nothing
-    if scheme isa IFD.ExactKernel && !(lattice isa AbstractImagGrassmannLattice)
-        throw(ArgumentError(
-            "real/mixed lattices do not support the Exact scheme in correlationfunction: " *
-            "the strict containers carry assembly-level contracts (skeleton + kicks, " *
-            "Z = coupling_norm · Pf(B)) — see plan/exactif_port_plan.md for the block-level route"))
-    end
+    # scheme 限定（2026-11-19）：暂只接受 QuAPI 冻结核——GTEMPO 全包暂限定在
+    # QuAPI 离散化框架；Exact/严格核消费（骨架+踢契约、normdelta·Pf(B)）
+    # 待 exactif_port_plan 落地后随 scheme 面恢复
+    scheme isa IFD.QuAPI || throw(ArgumentError(
+        "correlationfunction is currently restricted to the QuAPI scheme (frozen kernel), " *
+        "got $(typeof(scheme)) — exact/strict routes are pending exactif_port_plan"))
     bands = band === nothing ? collect(1:lattice.bands) :
             (1 <= band <= lattice.bands || throw(BoundsError(1:lattice.bands, band));
              [band])
@@ -192,8 +187,7 @@ function correlationfunction(bath::AbstractNormalBath, lattice::AbstractGrassman
             @warn "lattice.β=$(lattice.β), but bath.β=$(bath.β)"
     end
     corr = if lattice isa AbstractImagGrassmannLattice
-        res = IFD.Δτ(bath; N=lattice.Nτ, δτ=lattice.δτ, scheme)
-        res isa Tuple ? (coupling = res[2]; res[1]) : res      # exact scheme 元组解包（F2）
+        IFD.Δτ(bath; N=lattice.Nτ, δτ=lattice.δτ, scheme)
     elseif lattice isa AbstractRealGrassmannLattice
         IFD.Δt(bath; N=lattice.Nt, t=lattice.Nt * lattice.δt, scheme)
     else
@@ -214,18 +208,7 @@ function correlationfunction(bath::AbstractNormalBath, lattice::AbstractGrassman
                         ContourBlockIndex(b2, first(bands), false))]
         end
     end
-    # coupling_norm 语义随 scheme（frozen = Σα；exact = normdelta 透传）；
-    # IFD 元组第二元随容器标量型带 ~1e-15 虚部尾（det(BB) 实值），守卫后取实
-    coupling = if coupling isa Nothing
-        Float64(length(bands) * coupling_norm(bath))
-    else
-        isa(coupling, Real) || abs(imag(coupling)) <= 1e-12 * max(1.0, abs(real(coupling))) ||
-            throw(ArgumentError("non-real exact normdelta $coupling"))
-        f = Float64(isa(coupling, Real) ? coupling : real(coupling))
-        isfinite(f) || throw(ArgumentError("nonfinite exact coupling norm $f"))
-        f
-    end
-    return HybridizationKernel(blocks, coupling, bands)
+    return HybridizationKernel(blocks, Float64(length(bands) * coupling_norm(bath)), bands)
 end
 
 # ---------------------------------------------------------------------------
@@ -267,6 +250,9 @@ normal 同构——Δ=0 时逐位等于 normal 核）；旧顶点移位口径与
 function correlationfunction(bath::AbstractBCSBath, lattice::AbstractGrassmannLattice,
                              scheme::IFD.DiscretizationScheme=IFD.QuAPI();
                              orbital::Union{Nothing,Int}=nothing)
+    scheme isa IFD.QuAPI || throw(ArgumentError(
+        "correlationfunction is currently restricted to the QuAPI scheme (frozen kernel), " *
+        "got $(typeof(scheme))"))
     bcs_symmetry_guard(symmetry(lattice))
     orbitals = orbital === nothing ? collect(1:lattice.bands ÷ 2) :
                (2 * orbital <= lattice.bands || throw(ArgumentError(
@@ -279,8 +265,7 @@ function correlationfunction(bath::AbstractBCSBath, lattice::AbstractGrassmannLa
             @warn "lattice.β=$(lattice.β), but bath.β=$(bath.β)"
     end
     corr = if lattice isa AbstractImagGrassmannLattice
-        res = IFD.Δτ(bath; N=lattice.Nτ, δτ=lattice.δτ, scheme)
-        res isa Tuple ? (coupling = res[2]; res[1]) : res      # exact scheme 元组解包（F2）
+        IFD.Δτ(bath; N=lattice.Nτ, δτ=lattice.δτ, scheme)
     elseif lattice isa AbstractRealGrassmannLattice
         IFD.Δt(bath; N=lattice.Nt, t=lattice.Nt * lattice.δt, scheme)
     else

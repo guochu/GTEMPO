@@ -1,5 +1,16 @@
 # 接口更改说明
 
+## QuAPI scheme 限定批次（2026-11-19）
+
+- **`correlationfunction` 限定只接受 `IFD.QuAPI()` scheme**（两个构造方法
+  入口守卫，非 QuAPI → ArgumentError）——GTEMPO 整包暂限定在 QuAPI 离散化
+  框架下。前一批的 Exact 路由（imag 元组解包 + coupling_norm 复用 normdelta
+  透传）随之撤除，`coupling_norm` 语义回到全带总耦合 Σα（Exact 的
+  normdelta 语义待 exactif_port_plan 落地时随 scheme 面恢复）。
+  IFDiscretization 依赖保留（`QuAPI()` scheme 类型与 Δ* 分派所在）；
+  scheme testset 收敛为缺省≡显式 QuAPI 逐位 + 非 QuAPI 拒绝面 +
+  MethodError 冒泡。
+
 ## 装配内部接口精简批次（2026-11-19）
 
 - **装配内函数 `!` 化 + 总误差语义**：`_partialif_state/_polarif_state/

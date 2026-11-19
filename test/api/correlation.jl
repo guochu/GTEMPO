@@ -81,7 +81,7 @@ end
 	@test Matrix(kab.blocks[key]) ≈ Matrix(kimg.blocks[key]) + Matrix(ka.blocks[key]) atol = 0.0
 end
 
-@testset "API: scheme 面（IFD 后端切换 + 严格 IF 入口）" begin
+@testset "API: scheme 面（IFD 后端 + QuAPI 限定）" begin
 	import IFDiscretization as IFD
 	# plan/ifd_backend_switch：后端切换 = correlationfunction 第三位 scheme 参数
 	# （缺省 IFD.QuAPI()）；严格面 = imag + Exact 元组解包 + coupling_norm 复用（= normdelta）。
@@ -97,32 +97,16 @@ end
 	@test collect(pairs(k1.blocks)) == collect(pairs(k2.blocks))
 
 
-	# T3b：imag + Exact（求解器要求可调用谱 → 连续谱 bath）——blocks ≡ 元组
-	# 第一位逐位、normdelta ≡ 第二位（det(BB)）
+	# 非 QuAPI scheme 拒绝（2026-11-19 限定：GTEMPO 暂只运行在 QuAPI 离散化
+	# 框架；Exact/严格核消费（骨架+踢契约、normdelta·Pf(B)）待 exactif_port_plan
+	# 随 scheme 面恢复）
 	spec = spectrum_func()
 	bathc = fermionicbath(spec, β=β, μ=0.0)
 	scheme = IFD.ExactEqualDistantKernel(IFD.EDToulouseSolver(8))
-	kx = correlationfunction(bathc, latτ, scheme)
-	res = IFD.Δτ(bathc; N=4, δτ=0.25, scheme)
-	@test kx.coupling_norm == real(res[2])   # coupling_norm 语义随 scheme（exact = normdelta 透传）；虚部尾守卫取实
-	@test Matrix(kx.blocks[(ContourBlockIndex(:τ, 1, true), ContourBlockIndex(:τ, 1, false))]) ==
-	      Matrix(res[1].data[1:4, 1:4])
-
-	# T4：real/mixed + Exact 拒绝（strict 容器 = 装配级骨架+踢契约，非朴素指数
-	# 系数——消费路线归 exactif_port_plan）；非法 scheme → MethodError 自然冒泡
+	@test_throws ArgumentError correlationfunction(bathc, latτ, scheme)
 	@test_throws ArgumentError correlationfunction(bathc, latr, scheme)
-	@test_throws ArgumentError correlationfunction(bathc, latm, scheme)
 	@test_throws ArgumentError correlationfunction(bath, latr, scheme)
+	# 非法 scheme → MethodError 自然冒泡
 	@test_throws MethodError correlationfunction(bath, latτ, "bogus")
-
-	# T5：exact IF 装配 smoke（normdelta·Pf(B) 的 Z 消费契约归 exactif_port_plan
-	# ——本计划只保证字段忠实透传 + 可装配：exact IF 的 bath 归一 Z 与 QuAPI
-	# scheme 同量级）
-	Isq, _ = hybriddynamics(latτ, k1, PartialIF())
-	Ise, _ = hybriddynamics(latτ, kx, PartialIF())
-	model = ToulouseIM(ϵ_d=1.25 * pi)
-	K = sysdynamics(latτ, model)
-	Zq = integrate(K, Isq)
-	Zx = integrate(K, Ise)
-	@test isfinite(Zx) && 0.5 < abs(Zx) / abs(Zq) < 2.0
+	# scheme 面收口（QuAPI 限定；Exact 随 exactif_port_plan 恢复时一并回归）
 end
