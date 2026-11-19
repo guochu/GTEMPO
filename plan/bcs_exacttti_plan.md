@@ -252,8 +252,28 @@ ComplexF64 ⟹ 真空态已 promote，无需 `_complex_mps`）。
 ## 8. 实施状态
 
 **✅ Phase R / Phase W 已落地（2026-11-19，提交 `e1f7f291` R + Phase W 批；
-基线 = 十批后 HEAD 02faecb5，R8 无冲突）**。A1 = 按用户指示 R→W 先行；
-A′/B′（is_tti + fit 泛化）待后续。A4 未裁（属 A′ 面）。
+基线 = 十批后 HEAD 02faecb5，R8 无冲突）**。A1 = 按用户指示 R→W 先行。
+
+**✅✅ Phase A′ / B′ 已落地（2026-11-19，同日第五批；混合轴面按用户裁决退役
+——比计划 §1.2 更彻底：混合格响抛而非 direct 承接，`tti_cross_factors` 与
+`ExactTTI.cross_rtol` 删除）**：
+
+- `is_tti` 公共谓词（CM 结构性 true / 稠密 Toeplitz 检验，rtol=1e-12 = A4
+  采纳推荐值）+ 味对分组 `(ba, ca, bb, cb)` fit/direct 门控 + `_tti_band_guard`
+  守卫退役 + 装配路由（band 对角 normal 逐带元组 / 跨带反常恒单链）；
+- **虚时环族广义化**（§3.2 (T,F) 跨带 + 同味环族一并落地——推导以「通道 =
+  链前向对 + 异味等时折叠」+ 链站序反转（`cell_block(:τ,j) = k−j+1`）钉死，
+  dense 算符对拍：单对 bitwise + 完整 BCS 四键 3.5e-18，即 T3 探针通过）；
+  **追加发现**：GM ExpDecayExp（WII 顶点序）只物化胞内前向对——asite>bsite
+  通道的同胞折叠被结构性排除 ⟹ ch3 等时接触 λ=0 通道恒取带序前向取向收编
+  全部同胞账目（ba==bb 退化为原式 `M[1,1] − Σα₁ + Σα₂`）；
+- 实时逐味 (g,l) 拟合重构 + 逐味 Keldysh 审计（§3.3；BCS 四味对全部 :fit
+  模式，残差 0.0）；audit 失败（非 TTI/热配对违反/Keldysh 违反）降级 direct
+  不报错（R3/R4 处置：audit 钉 `mode` + 逐对残差）；
+- `fit_exponentials` NaN 健壮性修复（铅笔退化列 [a,0,−a] 的 `err > tol` 轮盘）；
+- 测试：if_gates 新 24 项门控（跨带/同味/BCS 虚实时互换、direct 降级、
+  is_tti 单元、混合拒绝、元组/单链契约）；全套件 53 testset ~809 项绿 +
+  exactttiif golden 6/6 绿（normal 单带路径零变）。
 
 **Phase R（T6/T3）**：
 - raw 直存落地；**R6 探针否决计划预设**——「跨支构造期取负」删除：bcs_Δt

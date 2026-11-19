@@ -115,6 +115,62 @@ end
 	      kb_multi.blocks[(ContourBlockIndex(:+, 2, true), ContourBlockIndex(:-, 2, false))]
 end
 
+@testset "API: HybridizationKernel canonical 化（(a, ā) 键构造期等效转换）" begin
+	# 跨味键 (a, ā) 构造期换腿 + 转置 + 费米换序号取负 → canonical (ā, a)；
+	# 同味键（(ā,ā)/(a,a)）原样保留；消费端（fullfactor/tti_*）无取向检查。
+	lat = GrassmannLattice(N=4, δτ=0.25, bands=2, contour=:imag)
+	M = randn(ComplexF64, 4, 4)
+	blocks = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{ComplexF64},CorrelationMatrix{ComplexF64}}}(
+		(ContourBlockIndex(:τ, 1, false), ContourBlockIndex(:τ, 2, true)) => M)   # (a, ā) 键
+	kernel = HybridizationKernel(blocks, 0.0, [1, 2])
+	@test haskey(kernel.blocks, (ContourBlockIndex(:τ, 2, true), ContourBlockIndex(:τ, 1, false)))
+	@test length(kernel.blocks) == 1
+	@test Matrix(kernel.blocks[(ContourBlockIndex(:τ, 2, true), ContourBlockIndex(:τ, 1, false))]) ==
+	      -transpose(M)                                     # 换腿 + 转置 + 取负
+	@test kernel.anomalous == false                          # 跨味键不派生反常
+
+	# 装配等价：(a, ā) 手造核 ≡ canonical 核（−转置）——fullfactor 逐位一致
+	Mc = Matrix(-transpose(M))
+	blocks_c = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{ComplexF64},CorrelationMatrix{ComplexF64}}}(
+		(ContourBlockIndex(:τ, 2, true), ContourBlockIndex(:τ, 1, false)) => Mc)
+	kernel_c = HybridizationKernel(blocks_c, 0.0, [1, 2])
+	fa = fullfactor(kernel, lat)
+	fc = fullfactor(kernel_c, lat)
+	@test fa isa GM.Pairing && fc isa GM.Pairing
+	@test fa.C == fc.C
+	Ia, _ = hybriddynamics(lat, kernel, PartialIF())
+	Ic, _ = hybriddynamics(lat, kernel_c, PartialIF())
+	gd(x, y) = maximum(abs.(GM.Dense.todense(x).data - GM.Dense.todense(y).data))
+	@test gd(Ia, Ic) == 0.0
+
+	# CorrelationMatrix 块：转置 = 两 Toeplitz 向量互换（IFD transpose），取负逐向量
+	cm = CorrelationMatrix(ComplexF64[1.0, 0.5, 0.25], ComplexF64[1.0, 0.5, 0.125])
+	blocks_cm = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{ComplexF64},CorrelationMatrix{ComplexF64}}}(
+		(ContourBlockIndex(:τ, 1, false), ContourBlockIndex(:τ, 1, true)) => cm)
+	kcm = HybridizationKernel(blocks_cm, 0.0, [1])
+	Mcm = Matrix(kcm.blocks[(ContourBlockIndex(:τ, 1, true), ContourBlockIndex(:τ, 1, false))])
+	@test Mcm == Matrix(-transpose(Matrix(cm)))
+
+	# 碰撞加法合并：同一 canonical 键双来源 = 双线性项求和
+	A = randn(ComplexF64, 4, 4)
+	B = randn(ComplexF64, 4, 4)
+	blocks2 = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{ComplexF64},CorrelationMatrix{ComplexF64}}}(
+		(ContourBlockIndex(:τ, 1, false), ContourBlockIndex(:τ, 2, true)) => A,   # → (2T;1F): −Aᵀ
+		(ContourBlockIndex(:τ, 2, true), ContourBlockIndex(:τ, 1, false)) => B)   # canonical 原样
+	k2 = HybridizationKernel(blocks2, 0.0, [1, 2])
+	@test Matrix(k2.blocks[(ContourBlockIndex(:τ, 2, true), ContourBlockIndex(:τ, 1, false))]) ==
+	      B + (-transpose(A))
+
+	# 同味键原样保留（BCS 反常通道无 normal-conj 等效形）
+	blocks3 = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{ComplexF64},CorrelationMatrix{ComplexF64}}}(
+		(ContourBlockIndex(:τ, 1, true), ContourBlockIndex(:τ, 2, true)) => M,    # (ā, ā)
+		(ContourBlockIndex(:τ, 2, false), ContourBlockIndex(:τ, 1, false)) => Mc) # (a, a)
+	k3 = HybridizationKernel(blocks3, 0.0, [1, 2])
+	@test haskey(k3.blocks, (ContourBlockIndex(:τ, 1, true), ContourBlockIndex(:τ, 2, true)))
+	@test haskey(k3.blocks, (ContourBlockIndex(:τ, 2, false), ContourBlockIndex(:τ, 1, false)))
+	@test k3.anomalous == true
+end
+
 @testset "API: hybriddynamics（IF 链）" begin
 	lat = GrassmannLattice(N=4, δt=0.1, bands=2, contour=:real)
 	kernel = correlationfunction(bath0, lat)

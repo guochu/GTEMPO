@@ -1,11 +1,12 @@
 # IF 装配闸门测试（plan/if_expmult_backend_plan.md Phase 2 验收，2026-11-18
 # 旧装配档案退役后为互换/守卫闸门；2026-11-19 PolarIF 对拍并入各算例——
-# 同一 PartialIF 装配态复用，免重复装配）：
-#   ① 互换对拍：ExactTTI ≡ PartialIF（虚时/混合机器精度——混合格 Pairing 直读
-#     路线无拟合；实时 = 拟合残差档）+ PolarIF ≡ PartialIF（同一 fullfactor
-#     第二种精确因子化，差 = 压缩路径噪声档，逐例实测锚）；
+# 同一 PartialIF 装配态复用，免重复装配；2026-11-19 ExactTTI Phase A′/B′
+# 换代：任意耦合模式（跨带/反常味对）+ is_tti fit/direct 门控 + 混合轴退役）：
+#   ① 互换对拍：ExactTTI ≡ PartialIF（虚时/实时/跨带/同味机器精度——fit 残差
+#     档随 alg_expan）+ PolarIF ≡ PartialIF（同一 fullfactor 第二种精确因子化）；
 #   ② 跨对称性互换（U1 normal：fullfactor 仅 ηη̄ 条目可物化）；
-#   ③ 守卫：实时增长极点响抛、BCS × ExactTTI 拒绝（D7）、band 范围守卫；
+#   ③ 守卫与路由：混合格响抛（ExactTTI 轴面退役）、band 对角核逐带元组、
+#     跨带/反常核恒单链、严格 TTI 门（is_tti/热配对/Keldysh 响抛）；
 #   ED 对拍由既有套件承接（normalbath/bcs/multiorbital + exactttiif golden）。
 @testset "IF 装配闸门（W3/W4 后端统一）" begin
 	gd(x, y) = maximum(abs.(GM.Dense.todense(x).data - GM.Dense.todense(y).data))
@@ -48,15 +49,15 @@
 		@test gd(polar, rowchain) < 1e-13
 	end
 
-	# ---- ① 混合互换（Pairing 直读路线——ExactTTI 机器精度；PolarIF 压缩噪声档）----
+	# ---- ① 混合格拒绝（ExactTTI 混合轴退役——交叉通道随之删除；PartialIF 承接）----
 	let latm = GrassmannLattice(Nt=2, δt=0.15, Nτ=3, δτ=0.25, contour=:mixed)
 		spec_c = spectrum(ϵ -> sqrt(1 - (ϵ / 10)^2) / π, lb=-10, ub=10)
 		bath = fermionicbath(spec_c, β=latm.β)
 		kernel = correlationfunction(bath, latm)
-		exact, _ = hybriddynamics(latm, kernel, ExactTTI())
-		rowchain, _ = hybriddynamics(latm, kernel, PartialIF())
+		@test_throws MethodError hybriddynamics(latm, kernel, ExactTTI())
+		@test_throws MethodError tti_factors(kernel, latm)
+		rowchain, _ = hybriddynamics(latm, kernel, PartialIF())   # 混合格走 PartialIF/PolarIF
 		polar, _ = hybriddynamics(latm, kernel, PolarIF())
-		@test gd(exact, rowchain) < 1e-12
 		@test gd(polar, rowchain) < 1e-13   # 实测 5.3e-15
 	end
 
@@ -71,17 +72,44 @@
 		@test gd(polar, rowchain) < 1e-13
 	end
 
-	# ---- ③ BCS × ExactTTI 拒绝（D7）+ 多带核 fullfactor/tti_* 范围守卫 ----
+	# ---- ③ BCS × ExactTTI 互换（Phase A′/B′：反常味对环族 + 单链契约）----
+	# 虚时 BCS（uu/dd normal 对 + ud/du 同味对全走 fit；环族 bitwise 闸门 =
+	# plan/bcs_exacttti_plan.md T3 dense probe 的套件化）
 	let latb = GrassmannLattice(N=4, δτ=0.25, bands=2, contour=:imag, symmetry=Z2Symmetry())
 		bathb = bcsbath(fermionicbath(DiracDelta(ω=1.0, α=0.5), β=1.0), Δ=0.4)
 		kernelb = correlationfunction(bathb, latb)
-	@test_throws ArgumentError hybriddynamics(latb, kernelb, ExactTTI())
-	@test fullfactor(kernelb, latb) isa GM.AnomalousPairing      # BCS 轨道核（anomalous）OK
-	bathn = discretefermionicbath([1.0], [0.5]; β=1.0)
-	kfull = correlationfunction(bathn, latb)                     # 多带 normal 核
-	ff = fullfactor(kfull, latb)                                 # 泛化：normal = Pairing 单因子全带
-	@test ff isa GM.Pairing && ff.asites == ff.bsites && length(ff.asites) == length(latb) ÷ 2
-	@test_throws ArgumentError tti_imag_factors(kfull, latb)     # tti_* 仍限单带核
+		@test kernelb.anomalous == true
+		@test fullfactor(kernelb, latb) isa GM.AnomalousPairing      # BCS 轨道核（anomalous）OK
+		exactb, diagb = hybriddynamics(latb, kernelb, ExactTTI())
+		fullb, _ = hybriddynamics(latb, kernelb, PartialIF())
+		@test exactb isa GM.GMPS                                     # 反常核恒单链
+		@test gd(exactb, fullb) < 1e-10                              # 实测 3.7e-12
+		@test all(e.mode == :fit for e in diagb[:imag_expansions])
+		@test diagb[:thermal_residual] < 1e-12
+	end
+	# 实时 BCS（逐味 Keldysh 审计 + (g,l) 列拟合重构；T6 raw 口径）
+	let latbr = GrassmannLattice(N=2, δt=0.15, bands=2, contour=:real, symmetry=Z2Symmetry())
+		bathb = bcsbath(fermionicbath(DiracDelta(ω=1.0, α=0.5), β=1.0), Δ=0.4)
+		kernelbr = correlationfunction(bathb, latbr)
+		exactbr, diagbr = hybriddynamics(latbr, kernelbr, ExactTTI())
+		fullbr, _ = hybriddynamics(latbr, kernelbr, PartialIF())
+		@test exactbr isa GM.GMPS
+		@test gd(exactbr, fullbr) < 1e-10                            # 实测 3.1e-15
+		@test all(e.mode == :fit for e in diagbr[:real_expansions])
+		@test diagbr[:keldysh_residual] < 1e-12
+	end
+	# 多带 normal 核（band 对角）：tti_* 广义化后直接可用；装配走逐带元组
+	let latb = GrassmannLattice(N=4, δτ=0.25, bands=2, contour=:imag, symmetry=Z2Symmetry())
+		bathn = discretefermionicbath([1.0], [0.5]; β=1.0)
+		kfull = correlationfunction(bathn, latb)                     # 多带 normal 核
+		ff = fullfactor(kfull, latb)                                 # 泛化：normal = Pairing 单因子全带
+		@test ff isa GM.Pairing && ff.asites == ff.bsites && length(ff.asites) == length(latb) ÷ 2
+		factors_i = tti_factors(kfull, latb).factors                # 逐带味对环族（不再限单带核；虚轴 dispatch）
+		@test length(factors_i) == 2                                 # 每带一个 ESS 池
+		exactt, _ = hybriddynamics(latb, kfull, ExactTTI())
+		@test exactt isa Tuple && length(exactt) == 2                # 逐带元组路由
+		fullt, _ = hybriddynamics(latb, kfull, PartialIF())
+		@test abs(integrate(exactt...) - integrate(fullt)) < 1e-12
 	end
 end
 
@@ -212,5 +240,125 @@ end
 		kernel = rand_kernel(rng, lat, [1, 2, 3])
 		state, _ = hybriddynamics(lat, kernel, PartialIF())
 		@test state isa GM.GMPS
+	end
+end
+
+@testset "ExactTTI 广义耦合模式（Phase A′/B′：跨带/同味/严格 TTI 门/is_tti）" begin
+	gd(x, y) = maximum(abs.(GM.Dense.todense(x).data - GM.Dense.todense(y).data))
+	using LinearAlgebra: diagind
+	import Random
+
+	"环 Toeplitz 热核（反周期闭合：upper[m] = −lower[n−m]，对角 c）"
+	function ring_kernel(lower, c)
+		n = length(lower) + 1
+		M = zeros(ComplexF64, n, n)
+		for d in 1:n-1, k in 1:n-d
+			M[k+d, k] = lower[d]
+			M[k, k+d] = -lower[n-d]
+		end
+		M[diagind(M)] .= c
+		return M
+	end
+
+	# ---- 跨带 normal 虚时（任意 (ba,bb) (T,F) 味对环族；恒单链）----
+	let n = 4
+		lat = GrassmannLattice(N=n, δτ=0.25, bands=2, contour=:imag)
+		lower = ComplexF64[0.3 * 0.7^(m-1) * cis(0.4m) for m in 1:n-1]
+		M = ring_kernel(lower, 0.05 - 0.02im)
+		blocks = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{ComplexF64},CorrelationMatrix{ComplexF64}}}(
+			(ContourBlockIndex(:τ, 1, true), ContourBlockIndex(:τ, 2, false)) => M,
+			(ContourBlockIndex(:τ, 2, true), ContourBlockIndex(:τ, 1, false)) => ring_kernel(lower .* 0.5, 0.01im))
+		kernel = HybridizationKernel(blocks, 0.1, [1, 2])
+		exact, diagx = hybriddynamics(lat, kernel, ExactTTI())
+		full, _ = hybriddynamics(lat, kernel, PartialIF())
+		@test exact isa GM.GMPS                       # 跨带核恒单链
+		@test gd(exact, full) < 1e-12                 # 实测 1.2e-14
+		@test all(e.mode == :fit for e in diagx[:imag_expansions])
+	end
+
+	# ---- 同味（T,T）跨带虚时（BCS 反常通道的裸味对面）----
+	let n = 4
+		lat = GrassmannLattice(N=n, δτ=0.25, bands=2, contour=:imag, symmetry=Z2Symmetry())
+		lower = ComplexF64[0.25 * 0.6^(m-1) for m in 1:n-1]
+		M = ring_kernel(lower, 0.04im)
+		blocks = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{ComplexF64},CorrelationMatrix{ComplexF64}}}(
+			(ContourBlockIndex(:τ, 1, true), ContourBlockIndex(:τ, 2, true)) => M,
+			(ContourBlockIndex(:τ, 2, false), ContourBlockIndex(:τ, 1, false)) => ring_kernel(lower .* 0.5, -0.02im))
+		kernel = HybridizationKernel(blocks, 0.1, [1, 2])
+		@test kernel.anomalous == true
+		exact, diagx = hybriddynamics(lat, kernel, ExactTTI())
+		full, _ = hybriddynamics(lat, kernel, PartialIF())
+		@test exact isa GM.GMPS
+		@test gd(exact, full) < 1e-12                 # 实测 3.6e-15
+		@test all(e.mode == :fit for e in diagx[:imag_expansions])
+	end
+
+	# ---- 跨带 normal 实时（单带核 changebands 扩双带 + 跨带块别名；恒单链）----
+	let lat = GrassmannLattice(N=2, δt=0.15, bands=2, contour=:real)
+		k1 = correlationfunction(discretefermionicbath([1.0], [0.5]; β=1.0), lat)
+		blocks = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{ComplexF64},CorrelationMatrix{ComplexF64}}}()
+		merge!(blocks, Dict(changebands(k1, [1 => 1, 1 => 2]).blocks))
+		for b1 in (:+, :-), b2 in (:+, :-)            # 跨带键 = 带块别名（同 Toeplitz/TTI）
+			blocks[(ContourBlockIndex(b1, 1, true), ContourBlockIndex(b2, 2, false))] =
+				blocks[(ContourBlockIndex(b1, 1, true), ContourBlockIndex(b2, 1, false))]
+		end
+		kernel = HybridizationKernel(blocks, 0.2, [1, 2])
+		exact, diagx = hybriddynamics(lat, kernel, ExactTTI())
+		full, _ = hybriddynamics(lat, kernel, PartialIF())
+		@test exact isa GM.GMPS
+		@test gd(exact, full) < 1e-12                 # 实测 6.7e-15
+		@test all(e.mode == :fit for e in diagx[:real_expansions])
+	end
+
+	# ---- 严格 TTI 门（2026-11-19 审查裁决）：非 TTI 随机稠密核（虚时/实时）
+	#      与热配对违反一律响抛——ExactTTI = 严格 TTI 算法，非 TTI 核走
+	#      PartialIF/PolarIF ----
+	let rng = Random.MersenneTwister(41)
+		lat = GrassmannLattice(N=3, δτ=0.25, bands=2, contour=:imag)
+		blocks = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{ComplexF64},CorrelationMatrix{ComplexF64}}}(
+			(ContourBlockIndex(:τ, 1, true), ContourBlockIndex(:τ, 2, false)) => randn(rng, ComplexF64, 3, 3))
+		kernel = HybridizationKernel(blocks, 0.0, [1, 2])
+		@test is_tti(collect(values(kernel.blocks))[1]) == false
+		@test_throws ArgumentError tti_factors(kernel, lat)
+		@test_throws ArgumentError hybriddynamics(lat, kernel, ExactTTI())
+		full, _ = hybriddynamics(lat, kernel, PartialIF())   # 非 TTI 核走 PartialIF/PolarIF
+		@test full isa GM.GMPS
+	end
+	let rng = Random.MersenneTwister(42)
+		lat = GrassmannLattice(N=2, δt=0.15, bands=2, contour=:real, symmetry=Z2Symmetry())
+		blocks = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{ComplexF64},CorrelationMatrix{ComplexF64}}}()
+		for b1 in (:+, :-), b2 in (:+, :-)
+			blocks[(ContourBlockIndex(b1, 1, true), ContourBlockIndex(b2, 2, true))] = randn(rng, ComplexF64, 2, 2)
+		end
+		kernel = HybridizationKernel(blocks, 0.0, [1, 2])
+		@test_throws ArgumentError tti_factors(kernel, lat)
+		@test_throws ArgumentError hybriddynamics(lat, kernel, ExactTTI())
+	end
+
+	# ---- 热配对审计失败（虚时非反周期环核；Toeplitz 成立——热配对门单独触发）----
+	let lat = GrassmannLattice(N=4, δτ=0.25, contour=:imag)
+		M = zeros(ComplexF64, 4, 4)
+		for d in 1:3, k in 1:4-d                      # 违反反周期闭合（upper = +lower）
+			M[k+d, k] = 0.3 * 0.7^(d-1)
+			M[k, k+d] = 0.3 * 0.7^(d-1)
+		end
+		blocks = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{ComplexF64},CorrelationMatrix{ComplexF64}}}(
+			(ContourBlockIndex(:τ, 1, true), ContourBlockIndex(:τ, 1, false)) => M)
+		kernel = HybridizationKernel(blocks, 0.0, [1])
+		@test is_tti(M)
+		@test_throws ArgumentError tti_factors(kernel, lat)
+		@test_throws ArgumentError hybriddynamics(lat, kernel, ExactTTI())
+	end
+
+	# ---- is_tti 单元（T0：CM 结构性 true；Toeplitz 稠密 true；randn false；矩形；零块）----
+	let cm = CorrelationMatrix([1.0, 0.5, 0.25], [1.0, 0.5])
+		@test is_tti(cm) == true
+		toep = [1.0 2.0 3.0; 0.5 1.0 2.0; 0.25 0.5 1.0]
+		@test is_tti(toep) == true
+		@test is_tti(toep .+ 1e-15 .* randn(3, 3) .* toep; rtol=1e-12) == true
+		@test is_tti(randn(3, 3)) == false
+		rect = [1.0 2.0; 0.5 1.0; 0.25 0.5]           # 矩形（交叉块形状）
+		@test is_tti(rect) == true
+		@test is_tti(zeros(3, 3)) == true
 	end
 end

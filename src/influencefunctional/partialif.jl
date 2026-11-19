@@ -22,11 +22,6 @@
 _has_cross_band_keys(kernel::HybridizationKernel) =
     any(key[1].band != key[2].band for key in keys(kernel.blocks))
 
-"kernel 是否纯 normal 取向（所有键 = 行 ľ conj=true、列 conj=false——ExactTTI
-三通道因子构造的核形状契约；反常键 = BCS 专属，D7 PartialIF-only）"
-_is_normal_conj(kernel::HybridizationKernel) =
-    all(key -> key[1].conj && !key[2].conj, keys(kernel.blocks))
-
 """
     fullfactor(kernel, lattice) -> GM.Pairing | GM.AnomalousPairing
 
@@ -43,8 +38,8 @@ lattice 可包含比 kernel 更多的 bands（核外带 = 观测站，不进因�
   (ā↑, ā↓) / (a↓, a↑) 落同味象限。
 
 块值 = 构造期符号收编的指数系数（correlationfunction.jl 存储约定），直读
-不补号。non-anomalous 核若带非 canonical 键（行腿非 ā）响抛（Pairing 单取向
-全局味旗无法混合表达）。
+不补号。核的跨味键已由 `HybridizationKernel` 构造器 canonical 化为 (ā, a)
+取向（构造期换腿+转置+取负），Pairing 单取向路由按键直读、无取向检查。
 """
 function fullfactor(kernel::HybridizationKernel, lattice::AbstractGrassmannLattice)
     return _fullfactor(kernel, lattice)
@@ -78,9 +73,8 @@ function _fullfactor(kernel::HybridizationKernel, lattice::AbstractGrassmannLatt
         end
         return GM.AnomalousPairing(C, stations)
     end
-    # normal（荷守恒）：矩形站点表 Pairing——C = 槽全矩阵（行 ā、列 a）
-    _is_normal_conj(kernel) || throw(ArgumentError(
-        "non-anomalous kernel must carry canonical (ā, a) keys for the Pairing route"))
+    # normal（荷守恒）：矩形站点表 Pairing——C = 槽全矩阵（行 ā、列 a）；
+    # 跨味键已由核构造器 canonical 化（(ā, a) 取向），直接装配
     C = zeros(T, M, M)
     for (key, blk) in kernel.blocks
         br1, br2 = key[1].branch, key[2].branch

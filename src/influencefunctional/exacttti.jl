@@ -1,20 +1,33 @@
-# exacttti.jl：ExactTTI——tti_* 三通道因子构造 + GM expmult!×PolarExp 装配
-# （plan/if_expmult W4；拟合层不动 = ExpExp anchored pencil 供给）
+# exacttti.jl：ExactTTI——任意耦合模式的 TTI 因子构造 + GM expmult!×PolarExp 装配
+# （plan/if_expmult W4 + bcs_exacttti_plan Phase A′/B′（2026-11-19：is_tti 门控 +
+#   band/味守卫退役 + 任意多带核适用面）；混合时间轴面退役——交叉通道
+#   tti_cross_factors 与 cross_rtol 删除；审查二批：tti_factors 按轴 dispatch
+#   （虚轴/实轴两方法，混合格无方法 = MethodError），通道函数退役）
 #
-# 通道 → GM 因子容器映射（按块结构的可表达性裁定，dense 互换对拍裁决）：
-#   - 虚时热通道：ExpDecaySumSum（锚点列拟合池）——纯虚时格的 τ/τ 环核 =
-#     上下三角两条几何级联 + 等时接触修正（ExpDecaySum 的对角 = Σαₖ 语义，
-#     (T,F)/(F,T) 两取向的对角相消，修正子 λ=0 只携接触）——极点压缩保留；
-#     混合格 τ 段 → Pairing（τ 站显式表 + 全矩阵 C，ExpDecay cell 平铺无法
-#     限制到分支子格）。
-#   - 实时双通道（greater/lesser）：Pairing × 4（±± 同支、±∓ 跨支）——
-#     ± 链拼接（− 支存储反序）使跨支 Toeplitz 结构不可用统一 cell 级联表达；
-#     C = 拟合重构（Keldysh 关系审计通过的 (g,l) 拟合列 ⟹ 与现行 pole 因子
-#     同一算符）+ 原始接触；混合格 → 原始块 C（无重构）。
-#   - 混合交叉通道：Pairing × 2（τ→rt / rt→τ；块值直读；现行 rankone 发射
-#     的 GM 原生对应物，SVD 秩一压缩由 PolarExp 承接 = cross_rtol 口径）。
+# 因子构造按味对 (ba, ca, bb, cb) 分组遍历核键，**严格 TTI 门控**（2026-11-19
+# 审查裁决：检查失败响抛，不降级直读）：
+#   - `is_tti` 块级门（CorrelationMatrix 结构性成立，稠密块逐对角线 Toeplitz
+#     检验）——非 TTI 块 ArgumentError（ExactTTI = 严格 TTI 算法，非 TTI 核是
+#     调用方错误，PartialIF/PolarIF 承接任意块）；
+#   - 物理恒等式审计响抛：虚时热配对（环反周期闭合）/ 实时 Keldysh 关系
+#     （逐味对）；实时另要求四支块齐备；
+#   - 唯一非 fit 出口 = 虚时退化拟合节点（|q| ≈ 0，环绕族 1/q 失格）→
+#     Pairing 全矩阵兜底（拟合质量问题而非核形状问题，现行语义保留）。
 #
-# 审计保留：热配对（虚时）/ Keldysh 尾（实时）残差随 audit 返回，并入
+# 虚时环族（任意味对，2026-11-19 广义化；band-diagonal (T,F) 现行公式 = ba==bb
+# 特例，逐字退化；dense 算符对拍实证：单对 bitwise + 完整 BCS 四键 3.5e-18）：
+# 链站序与核胞序相反（cell_block(:τ, j) = k−j+1），核 s>t 距离 d 的条目在链上
+# 前向。拟合列 lower[m] = M[m+1, 1]（y[d] = Σ wₖ qₖ^{d−1}），三通道：
+#   ch1 = ExpDecaySum(α₁ = w/q, q;    ca, cb, asite=ba, bsite=bb)——链前向
+#         {jr > jc} ∪ {jr = jc ∧ ba < bb} 条目，系数 lower[d]；
+#   ch2 = ExpDecaySum(α₂ = w·q^{n−1}, 1/q; cb, ca, asite=bb, bsite=ba)——环绕族
+#         （味/带双翻转），系数反周期折叠 lower[n−m]；
+#   ch3 = 等时接触修正 λ=0：contact = M[1,1] − Σα₁ + Σα₂（两取向级联同胞折叠
+#         ±Σα 相消后余同胞条目值；同味对 asite ≠ bsite 无 local 对角，同一公式）。
+# 实时双通道（greater/lesser）：逐味对 (g,l) 列拟合 + Keldysh 关系四块重构，
+# Pairing × 4（味旗 = 对的 (ca, cb)）；audit 失败降级原始块直读。
+#
+# 审计保留：热配对（虚时）/ Keldysh（实时）残差与拟合展开随 audit 返回，并入
 # InfluenceFunctional.diagnostics（kernel diagnostics 字段已随 W2 删除）。
 
 """
@@ -40,10 +53,12 @@ function fit_exponentials(alg::ExpExp.ExponentialExpansionAlgorithm, y::Vector{<
     w = amps .* bases
     recon = [sum(w[i] * bases[i]^(d - 1) for i in eachindex(w)) for d in 1:L]
     err = norm(recon - y) / max(norm(y), eps())
-    if err > alg.tol && L <= alg.n
+    if !(err <= alg.tol) && L <= alg.n
         # Short finite windows can be underdetermined for a pencil / total LS.
         # An exact bounded exponential interpolation is a valid finite-window
         # expansion, not a fit fallback to another IF algorithm.
+        # !(err <= tol)（而非 err > tol）：铅笔在退化列上可返回 NaN 残差，
+        # NaN 比较恒 false 会跳过兜底（BCS 反常列 [a,0,−a] 实证）。
         bases = ComplexF64[0.8 * cis(2pi * j / L) for j in 0:L-1]
         B = [q^(d - 1) for d in 1:L, q in bases]
         w = B \ y                      # B 已按 GTEMPO 约定 q^(d−1) 构建 ⟹ 权重 = amps
@@ -57,6 +72,38 @@ function fit_exponentials(alg::ExpExp.ExponentialExpansionAlgorithm, y::Vector{<
 end
 
 # ---------------------------------------------------------------------------
+# is_tti：块的时间平移不变性（fit/direct 模式选择的块级门）
+# ---------------------------------------------------------------------------
+
+"""
+    is_tti(M; rtol=1e-12) -> Bool
+
+块的时间平移不变性（Toeplitz 性）。`CorrelationMatrix` 结构性成立恒 true；
+一般矩阵逐对角线检验常数性（相对块幅值的 `rtol` 容差，零块恒 true；矩形块
+按交叉块形状支持）。ExactTTI fit 模式的块级门——TTI 失败的味对降级 direct
+（原始块 Pairing 直读，精确对任意块）。
+"""
+is_tti(::CorrelationMatrix) = true
+function is_tti(M::AbstractMatrix; rtol::Real=1.0e-12)
+    n1, n2 = size(M)
+    amax = maximum(abs, M)
+    iszero(amax) && return true
+    for d in -(n2 - 1):(n1 - 1)
+        i0 = max(d + 1, 1)
+        j0 = i0 - d
+        v0 = M[i0, j0]
+        i = i0 + 1
+        j = j0 + 1
+        while i <= n1 && j <= n2
+            isapprox(M[i, j], v0; rtol=rtol, atol=rtol * amax) || return false
+            i += 1
+            j += 1
+        end
+    end
+    return true
+end
+
+# ---------------------------------------------------------------------------
 # 站表与列读取助手
 # ---------------------------------------------------------------------------
 
@@ -64,91 +111,150 @@ end
 _station(lattice::AbstractGrassmannLattice, cell::Tuple{Symbol,Int}, band::Int) =
     (cell_block(lattice, cell) - 1) * lattice.bands + band
 
-_kernel_block(k::HybridizationKernel, b1::Symbol, b2::Symbol, band::Int) =
-    k.blocks[(ContourBlockIndex(b1, band, true), ContourBlockIndex(b2, band, false))]
+_kernel_flavor_block(k::HybridizationKernel, b1::Symbol, ba::Int, ca::Bool,
+                     b2::Symbol, bb::Int, cb::Bool) =
+    k.blocks[(ContourBlockIndex(b1, ba, ca), ContourBlockIndex(b2, bb, cb))]
 
 "拟合列的 lag 重建（ExactTTI 因子锚 = :left，:right 由增长极点守卫拒绝）"
 _fitcolumn(f, m::Int) = sum(w * r^(m - 1) for (w, r) in zip(f.weights, f.nodes); init=0.0im)
 
+"核键的味对标签（去重排序的 (ba, ca, bb, cb) 遍历表）"
+_flavor_pairs(kernel::HybridizationKernel) =
+    sort!(unique!([(key[1].band, key[1].conj, key[2].band, key[2].conj)
+                   for key in keys(kernel.blocks)]))
+
 # ---------------------------------------------------------------------------
-# 虚时热通道：tti_imag_factors
+# 虚轴因子构造：tti_factors(::AbstractImagGrassmannLattice)
 # ---------------------------------------------------------------------------
 
 """
-    tti_imag_factors(kernel, lattice; alg) -> (; factors, audit)
+    tti_factors(kernel, lattice::AbstractImagGrassmannLattice; alg) -> (; factors, audit)
 
-热通道因子（τ/τ 核）：纯虚时格 = ExpDecaySumSum（上下三角级联 + 等时接触，
-锚点列拟合池）；混合格 τ 段 = Pairing（τ 站全矩阵）。热配对审计保留
-（thermal_residual ∈ audit）。band 范围由 kernel 决定：单带 normal 核（多带
-核请走 influence_functional/hybriddynamics，内部逐带切片装配）。
+热通道因子（τ/τ 核，虚轴 dispatch）：逐味对环族（ExpDecaySumSum 三通道——前向 +
+环绕 + 等时接触，2026-11-19 广义化：任意 (ba, ca, bb, cb) 味对，band-diagonal
+normal 公式 = ba==bb 特例逐字退化）。**严格 TTI 门**：块非 Toeplitz（`is_tti`
+失败）或热配对审计（环反周期闭合）失败 → ArgumentError（ExactTTI = 严格 TTI
+算法，非 TTI 核走 PartialIF/PolarIF）；虚时退化拟合节点（|q| ≈ 0）→ Pairing
+全矩阵兜底。audit 顶层 `thermal_residual` = 逐对最大值、`imag_expansions` = 逐对
+(; pair, mode, thermal_residual, expansion)。
 """
-function tti_imag_factors(kernel::HybridizationKernel, lattice::AbstractGrassmannLattice;
-                          alg=ExactTTI())
-    _tti_band_guard(kernel, lattice)
-    return _tti_imag_factors(kernel, lattice, only(kernel.bands), alg)
+function tti_factors(kernel::HybridizationKernel, lattice::AbstractImagGrassmannLattice;
+                     alg=ExactTTI())
+    factors = GM.GrassmannFactor[]
+    entries = []
+    thermal = 0.0
+    for (ba, ca, bb, cb) in _flavor_pairs(kernel)
+        fs, entry = _tti_imag_pair(kernel, lattice, ba, ca, bb, cb, alg)
+        append!(factors, fs)
+        push!(entries, entry)
+        thermal = max(thermal, entry.thermal_residual)
+    end
+    return (; factors, audit=(; thermal_residual=thermal, imag_expansions=entries))
 end
 
-function _tti_imag_factors(kernel::HybridizationKernel, lattice::AbstractGrassmannLattice,
-                           band::Int, alg)
-    lattice isa Union{AbstractImagGrassmannLattice,AbstractMixedGrassmannLattice} ||
-        return (; factors=GM.GrassmannFactor[], audit=NamedTuple())
+"单味对虚时环族（fit）；非 TTI / 热配对失败响抛，退化节点走 Pairing 兜底
+（第二输出 = audit 条目）"
+function _tti_imag_pair(kernel::HybridizationKernel, lattice::AbstractImagGrassmannLattice,
+                        ba::Int, ca::Bool, bb::Int, cb::Bool, alg)
     n = lattice.kτ
-    M = _kernel_block(kernel, :τ, :τ, band)
+    B = lattice.bands
+    blk = _kernel_flavor_block(kernel, :τ, ba, ca, :τ, bb, cb)
+    is_tti(blk) || throw(ArgumentError(
+        "ExactTTI requires time-translation-invariant (Toeplitz) kernel blocks: " *
+        "imag block for flavor pair (ba=$ba, ca=$ca) → (bb=$bb, cb=$cb) is not TTI; " *
+        "use PartialIF/PolarIF for non-TTI kernels"))
+    M = Matrix{ComplexF64}(blk)
     lower = ComplexF64[M[j+1, 1] for j in 1:n-1]
     upper = ComplexF64[M[1, j+1] for j in 1:n-1]
     thermal = norm(upper + reverse(lower)) / max(norm(lower), eps())
-    thermal <= 1e-12 || throw(ArgumentError("imaginary kernel violates thermal pairing"))
-    audit = (; thermal_residual=thermal)
-    if lattice isa AbstractImagGrassmannLattice
-        f = fit_exponentials(alg.alg_expan, lower)
-        audit = (; audit..., imag_expansion=(; f..., fit_interval=(1, n - 1),
-                                               convention=:integrated_lag_one))
-        # 环核的开放双线性分解（拟合约定 y[d] = Σₖ wₖ qₖ^{d−1}，环反周期
-        # upper[m] = −lower[n−m] 已由热配对审计锚定）：
-        #   上三角掩码 {ā_s, a_t}（链距 m = t−s）：系数 lower[m] = Σ (w/q)·q^m；
-        #   下三角掩码 {a_s, ā_t}（链距 m）：系数 −upper[m] = lower[n−m]
-        #     = Σ (w·q^{n−1})·(1/q)^m（环绕方向——反周期折叠）；
-        #   等时对角：两取向级联的对角（Σα₁ 与 −Σα₂）相消后余 M[1,1] →
-        #   λ=0 修正式携 M[1,1] − Σα₁ + Σα₂（每 τ 格同值——Toeplitz 环核等时元）。
-        # 拟合节点含 ≈0 极点时（环绕级联 1/q 退化）→ Pairing 全矩阵精确兜底。
-        B = lattice.bands
-        stationτ = (cell=B, asite=band, bsite=band)
-        if isempty(f.weights)
-            return (; factors=GM.GrassmannFactor[], audit)
-        elseif all(abs(q) > 1e-8 for q in f.nodes)
-            α1 = f.weights ./ f.nodes
-            α2 = f.weights .* f.nodes .^ (n - 1)
-            sums = [GM.ExpDecaySum(α1, f.nodes; conja=true, conjb=false, stationτ...),
-                    GM.ExpDecaySum(α2, 1 ./ f.nodes; conja=false, conjb=true, stationτ...)]
-            contact = M[1, 1] - sum(α1) + sum(α2)
-            iszero(contact) || push!(sums, GM.ExpDecaySum([contact], [0.0];
-                conja=true, conjb=false, stationτ...))
-            return (; factors=[GM.ExpDecaySumSum(sums)], audit)
+    thermal <= 1.0e-12 || throw(ArgumentError(
+        "imaginary kernel violates thermal pairing (anti-periodic ring closure): " *
+        "residual $thermal for flavor pair (ba=$ba, ca=$ca) → (bb=$bb, cb=$cb)"))
+    rowst = [_station(lattice, (:τ, j), ba) for j in 1:n]
+    colst = [_station(lattice, (:τ, j), bb) for j in 1:n]
+    f = fit_exponentials(alg.alg_expan, lower)
+    expansion = (; f..., fit_interval=(1, n - 1), convention=:integrated_lag_one)
+    # 环核的开放双线性分解（拟合约定 y[d] = Σₖ wₖ qₖ^{d−1}，环反周期
+    # upper[m] = −lower[n−m] 已由热配对审计锚定；链站序与核胞序相反 ⟹ 核
+    # s>t 距离 d 的条目在链上恰好前向，由 ch1 以 lower[d] 直读覆盖）：
+    #   ch1 前向族（味对原取向，asite=ba/bsite=bb）：{jr > jc} ∪ {jr = jc ∧
+    #     ba < bb} 条目，距离 d 系数 lower[d] = Σ (w/q)·q^d；
+    #   ch2 环绕族（味/带双翻转，asite=bb/bsite=ba）：{jr < jc} 条目，距离 m
+    #     系数 −lower[n−m]（反周期折叠）= Σ −(w·q^{n−1})·(1/q)^m 在对侧取向；
+    #   ch3 等时接触 λ=0：两取向级联的同胞折叠 ±Σα 相消后余同胞条目 M[1,1]
+    #     → contact = M[1,1] − Σα₁ + Σα₂（同味对 asite ≠ bsite 无 local 对角，
+    #     同一公式；拟合节点含 ≈0 极点时 1/q 退化——节点门下走 direct）。
+    if isempty(f.weights)
+        # 零核列：仅等时接触可能非零（λ=0 通道单发）
+        contact = M[1, 1]
+        iszero(contact) && return GM.GrassmannFactor[],
+            (; pair=(ba=ba, ca=ca, bb=bb, cb=cb), mode=:fit,
+              thermal_residual=thermal, expansion)
+        return [GM.ExpDecaySumSum([GM.ExpDecaySum([contact], [0.0]; conja=ca, conjb=cb,
+                                                   cell=B, asite=ba, bsite=bb)])],
+               (; pair=(ba=ba, ca=ca, bb=bb, cb=cb), mode=:fit,
+                 thermal_residual=thermal, expansion)
+    elseif all(abs(q) > 1.0e-8 for q in f.nodes)
+        α1 = f.weights ./ f.nodes
+        α2 = f.weights .* f.nodes .^ (n - 1)
+        S1 = sum(α1)
+        S2 = sum(α2)
+        sums = [GM.ExpDecaySum(α1, f.nodes; conja=ca, conjb=cb, cell=B, asite=ba, bsite=bb),
+                GM.ExpDecaySum(α2, 1 ./ f.nodes; conja=cb, conjb=ca, cell=B, asite=bb, bsite=ba)]
+        # ch3 等时接触（λ=0 通道）：两取向级联的同胞折叠相消后余同胞条目值。
+        # **同胞折叠取向随带序**——GM ExpDecayExp（WII 顶点序）只物化胞内前向对
+        # （开站 < 闭站；asite > bsite 的同胞内后向对结构性排除），故 λ=0 通道
+        # 恒取带序前向取向，把被排除通道的同胞账目一并收编：
+        #   ba < bb：ch1 同胞前向折 +S₁ 物化、ch2 同胞折 −S₂ 被排除 ⟹
+        #     canonical（row@ba 早, col@bb 晚）系数 = S₁ + Σα₃ = M[1,1]；
+        #   ba > bb：ch2 前向折 +S₂ 物化、ch1 折 −S₁ 与 (ca,cb) 定向接触折 −c
+        #     均被排除 ⟹ canonical（col@bb 早, row@ba 晚）系数 = S₂ + Σα₃
+        #     = −M[1,1]（row-first = −canonical）；
+        #   ba == bb：无胞内对，ch1/ch2 的 local 对角（ExpDecayExp diagon 块）
+        #     恒物化（(T,F)→−S₁、(F,T)→+S₂）⟹ Σα₃ = M[1,1] − S₁ + S₂（原式）。
+        if ba < bb
+            ch3 = GM.ExpDecaySum([M[1, 1] - S1], [0.0]; conja=ca, conjb=cb,
+                                 cell=B, asite=ba, bsite=bb)
+        elseif ba > bb
+            ch3 = GM.ExpDecaySum([-M[1, 1] - S2], [0.0]; conja=cb, conjb=ca,
+                                 cell=B, asite=bb, bsite=ba)
         else
-            stations = [_station(lattice, (:τ, j), band) for j in 1:n]
-            C = Matrix{ComplexF64}(M)
-            return (; factors=[GM.Pairing(C, stations, stations; conja=true, conjb=false)], audit)
+            ch3 = GM.ExpDecaySum([M[1, 1] - S1 + S2], [0.0]; conja=ca, conjb=cb,
+                                 cell=B, asite=ba, bsite=bb)
         end
+        iszero(ch3.αs[1]) || push!(sums, ch3)
+        return [GM.ExpDecaySumSum(sums)],
+               (; pair=(ba=ba, ca=ca, bb=bb, cb=cb), mode=:fit,
+                 thermal_residual=thermal, expansion)
+    else
+        # 退化节点（|q| ≈ 0）：环绕族 1/q 失格 → Pairing 全矩阵兜底（现行语义，
+        # 拟合质量问题而非核形状问题）
+        f2 = GM.Pairing(M, rowst, colst; conja=ca, conjb=cb)
+        return [f2], (; pair=(ba=ba, ca=ca, bb=bb, cb=cb), mode=:direct,
+                      thermal_residual=thermal, expansion)
     end
-    # 混合格：τ 段 Pairing（全矩阵，PolarExp SVD 承接压缩）
-    stations = [_station(lattice, (:τ, j), band) for j in 1:n]
-    C = Matrix{ComplexF64}(M)
-    return (; factors=[GM.Pairing(C, stations, stations; conja=true, conjb=false)], audit)
 end
 
 # ---------------------------------------------------------------------------
-# 实时双通道：tti_real_factors（greater/lesser 两侧列）
+# 实轴因子构造：tti_factors(::AbstractRealGrassmannLattice)
 # ---------------------------------------------------------------------------
 
-"Keldysh 尾审计（structured Lag 块近似：直读 kernel 的 Toeplitz 性；现行
-real_factors 同款）+ (g, l) 拟合列。返回 (fg, fl, keldysh_residual)"
-function _real_fits(kernel, lattice, band, alg)
-    n = lattice.k
-    g = ComplexF64[_kernel_block(kernel, :+, :+, band)[i+1, 1] for i in 1:n-1]
-    l = ComplexF64[_kernel_block(kernel, :+, :-, band)[i+1, 1] for i in 1:n-1]
+"逐味对 (g,l) 拟合列（:± 支对块首列 lag 1..n−1；n = 块行数）"
+function _real_columns(kernel, ba, ca, bb, cb)
+    n = size(_kernel_flavor_block(kernel, :+, ba, ca, :+, bb, cb), 1)
+    g = ComplexF64[_kernel_flavor_block(kernel, :+, ba, ca, :+, bb, cb)[i+1, 1] for i in 1:n-1]
+    l = ComplexF64[_kernel_flavor_block(kernel, :+, ba, ca, :-, bb, cb)[i+1, 1] for i in 1:n-1]
+    return g, l
+end
+
+"Keldysh 关系审计（structured Lag 块近似：直读 kernel 的 Toeplitz 性 + 四支
+块恒等式；逐味对）。返回残差（相对加权范数）。"
+function _keldysh_residual(kernel, ba, ca, bb, cb, n)
+    g, l = _real_columns(kernel, ba, ca, bb, cb)
     locations = [(max(d, 0) + 1, max(-d, 0) + 1) for d in -(n - 1):n-1]
-    error2 = 0.0; total2 = 0.0
-    blk(a, b) = _kernel_block(kernel, a, b, band)
+    error2 = 0.0
+    total2 = 0.0
+    blk(a, b) = _kernel_flavor_block(kernel, a, ba, ca, b, bb, cb)
     for (i, j) in locations
         i == j && continue
         v = i > j ? (g[i-j], l[i-j], -g[i-j], -l[i-j]) :
@@ -159,162 +265,146 @@ function _real_fits(kernel, lattice, band, alg)
             total2 += weight * abs2(blk(pair...)[i, j])
         end
     end
-    err = sqrt(error2) / max(sqrt(total2), eps())
-    err <= 1e-12 || throw(ArgumentError("ExactTTI real Keldysh relations fail: $err"))
-    if lattice isa AbstractRealGrassmannLattice
-        # alg_expan 分解（无锚点折叠语义；增长/边界极点由 Pairing 装配原生支撑）
-        fg = fit_exponentials(alg.alg_expan, g)
-        fl = fit_exponentials(alg.alg_expan, l)
-        return fg, fl, err
-    end
-    return nothing, nothing, err
+    return sqrt(error2) / max(sqrt(total2), eps())
 end
 
 """
-    tti_real_factors(kernel, lattice; alg) -> (; factors, audit)
+    tti_factors(kernel, lattice::AbstractRealGrassmannLattice; alg) -> (; factors, audit)
 
-实时双通道因子（greater/lesser 两侧列）：Pairing × 4（(+,+)、(−,−)、(+,−)、
-(−,+)），C = 拟合重构（Keldysh 关系审计通过的 (g,l) 列 ⟹ 与现行 pole 记忆
-元胞因子同一算符）+ 等时接触（blocks[·][1,1]，现行 contact D 同源）；混合格
-rt 块 = 原始块 C（无重构）。Keldysh 尾审计保留（keldysh_residual ∈ audit）。
+实时双通道因子（greater/lesser，实轴 dispatch）：逐味对 (g,l) 列拟合 + Keldysh
+关系四块重构，Pairing × 4（味旗 = 对的 (ca, cb)——normal (ā,a) 与 BCS 同味
+(ā,ā)/(a,a) 统一）。**严格门**：四支块齐备、`is_tti` 通过、Keldysh 审计（逐味
+对）通过，任一失败 → ArgumentError（ExactTTI = 严格 TTI 算法，非 TTI 核走
+PartialIF/PolarIF）。audit 顶层 `keldysh_residual` = 逐对最大值、`real_expansions`
+= 逐对 (; pair, mode, keldysh_residual, greater, lesser)。
 """
-function tti_real_factors(kernel::HybridizationKernel, lattice::AbstractGrassmannLattice;
-                          alg=ExactTTI())
-    _tti_band_guard(kernel, lattice)
-    return _tti_real_factors(kernel, lattice, only(kernel.bands), alg)
-end
-
-function _tti_real_factors(kernel::HybridizationKernel, lattice::AbstractGrassmannLattice,
-                           band::Int, alg)
-    lattice isa Union{AbstractRealGrassmannLattice,AbstractMixedGrassmannLattice} ||
-        return (; factors=GM.GrassmannFactor[], audit=NamedTuple())
-    n = _branch_len(lattice, :+)                    # 纯实时 = k；混合 = kt
-    st_p = [_station(lattice, (:+, j), band) for j in 1:n]
-    st_m = [_station(lattice, (:-, j), band) for j in 1:n]
-    audit = NamedTuple()
-    if lattice isa AbstractRealGrassmannLattice
-        fg, fl, kerr = _real_fits(kernel, lattice, band, alg)
-        audit = (keldysh_residual=kerr,
-                 real_expansions=(greater=(; fg..., fit_interval=(1, n - 1), convention=:integrated_lag_one),
-                                  lesser=(; fl..., fit_interval=(1, n - 1), convention=:integrated_lag_one)),
-                 real_fit_residuals=[fg.relative_error, fl.relative_error])
-        recg(m) = _fitcolumn(fg, m); recl(m) = _fitcolumn(fl, m)
-        cpp(i, j) = i == j ? _kernel_block(kernel, :+, :+, band)[1, 1] :
-                    i > j ? recg(i - j) : -conj(recl(j - i))
-        cmm(i, j) = i == j ? _kernel_block(kernel, :-, :-, band)[1, 1] :
-                    i > j ? -recl(i - j) : conj(recg(j - i))
-        cpm(i, j) = i == j ? _kernel_block(kernel, :+, :-, band)[1, 1] :
-                    i > j ? recl(i - j) : conj(recl(j - i))
-        cmp(i, j) = i == j ? _kernel_block(kernel, :-, :+, band)[1, 1] :
-                    i > j ? -recg(i - j) : -conj(recg(j - i))
-        Cpp = [cpp(i, j) for i in 1:n, j in 1:n]
-        Cmm = [cmm(i, j) for i in 1:n, j in 1:n]
-        Cpm = [cpm(i, j) for i in 1:n, j in 1:n]
-        Cmp = [cmp(i, j) for i in 1:n, j in 1:n]
-        factors = [GM.Pairing(Cpp, st_p, st_p; conja=true, conjb=false),
-                   GM.Pairing(Cmm, st_m, st_m; conja=true, conjb=false),
-                   GM.Pairing(Cpm, st_p, st_m; conja=true, conjb=false),
-                   GM.Pairing(Cmp, st_m, st_p; conja=true, conjb=false)]
-        return (; factors, audit)
-    end
-    # 混合格：原始块 C（rt 块直读，无重构）
-    factors = [GM.Pairing(Matrix{ComplexF64}(_kernel_block(kernel, a, b, band)),
-                          a === :+ ? st_p : st_m, b === :+ ? st_p : st_m;
-                          conja=true, conjb=false)
-               for a in (:+, :-), b in (:+, :-)]
-    return (; factors, audit)
-end
-
-# ---------------------------------------------------------------------------
-# 混合交叉通道：tti_cross_factors
-# ---------------------------------------------------------------------------
-
-"""
-    tti_cross_factors(kernel, lattice; alg) -> (; factors, audit)
-
-混合交叉通道因子（τ↔rt 六块）：Pairing × 2（τ→rt 行腿 = ā_τ、rt→τ 行腿 =
-ā_rt；列腿恒 a）——块值直读（现行 rankone 发射的 GM 原生对应物；旧实现
-rank-one 系数向量落在 a 型腿上 = 潜在味错位，新构造以 ā/a 腿直落核值、由
-ExactTTI ≡ PartialIF 互换对拍裁决）。秩审计保留（cross_ranks/cross_residuals
-∈ audit；SVD 秩一压缩由 PolarExp 按 cross_rtol 承接）。
-"""
-function tti_cross_factors(kernel::HybridizationKernel, lattice::AbstractGrassmannLattice;
-                           alg=ExactTTI())
-    _tti_band_guard(kernel, lattice)
-    return _tti_cross_factors(kernel, lattice, only(kernel.bands), alg)
-end
-
-function _tti_cross_factors(kernel::HybridizationKernel, lattice::AbstractGrassmannLattice,
-                            band::Int, alg)
-    lattice isa AbstractMixedGrassmannLattice && lattice.Nt > 0 ||
-        return (; factors=GM.GrassmannFactor[], audit=NamedTuple())
-    st_τ = [_station(lattice, (:τ, j), band) for j in 1:lattice.Nτ]
-    st_rt = vcat([_station(lattice, (:+, j), band) for j in 1:lattice.Nt],
-                 [_station(lattice, (:-, j), band) for j in 1:lattice.Nt])
+function tti_factors(kernel::HybridizationKernel, lattice::AbstractRealGrassmannLattice;
+                     alg=ExactTTI())
     factors = GM.GrassmannFactor[]
-    ranks = Int[]; residuals = Float64[]
-    for (rowbs, colbs, asites, bsites) in (((:τ,), (:+, :-), st_τ, st_rt),
-                                           ((:+, :-), (:τ,), st_rt, st_τ))
-        M = vcat([hcat([_kernel_block(kernel, a, b, band) for b in colbs]...) for a in rowbs]...)
-        U, S, V = MAK.svd_compact(M); sv = diag(S); tot = sum(abs2, sv); r = length(sv)
-        while r > 0 && sum(abs2, sv[r:end]) <= alg.cross_rtol^2 * tot; r -= 1; end
-        push!(ranks, r); push!(residuals, iszero(tot) ? 0.0 : sqrt(sum(abs2, sv[r+1:end]) / tot))
-        isempty(sv) || push!(factors, GM.Pairing(Matrix{ComplexF64}(M), asites, bsites;
-                                                 conja=true, conjb=false))
+    entries = []
+    kerr = 0.0
+    for (ba, ca, bb, cb) in _flavor_pairs(kernel)
+        fs, entry = _tti_real_pair(kernel, lattice, ba, ca, bb, cb, alg)
+        append!(factors, fs)
+        push!(entries, entry)
+        kerr = max(kerr, entry.keldysh_residual)
     end
-    audit = (cross_ranks=ranks, cross_residuals=residuals)
-    return (; factors, audit)
+    return (; factors, audit=(; keldysh_residual=kerr, real_expansions=entries))
+end
+
+"单味对实时双通道（fit 重构）；缺块 / 非 TTI / Keldysh 审计失败响抛
+（第二输出 = audit 条目）"
+function _tti_real_pair(kernel::HybridizationKernel, lattice::AbstractRealGrassmannLattice,
+                        ba::Int, ca::Bool, bb::Int, cb::Bool, alg)
+    n = lattice.k                       # 纯实时分支格点数
+    st = br -> [_station(lattice, (br, j), ba) for j in 1:n]
+    stcol = br -> [_station(lattice, (br, j), bb) for j in 1:n]
+    key(a, b) = (ContourBlockIndex(a, ba, ca), ContourBlockIndex(b, bb, cb))
+    missing_keys = [(a, b) for (a, b) in ((:+, :+), (:+, :-), (:-, :+), (:-, :-))
+                    if !haskey(kernel.blocks, key(a, b))]
+    isempty(missing_keys) || throw(ArgumentError(
+        "ExactTTI real kernel is missing branch blocks $missing_keys for flavor pair " *
+        "(ba=$ba, ca=$ca) → (bb=$bb, cb=$cb)"))
+    all(is_tti(kernel.blocks[key(a, b)]) for (a, b) in ((:+, :+), (:+, :-), (:-, :+), (:-, :-))) ||
+        throw(ArgumentError(
+            "ExactTTI requires time-translation-invariant (Toeplitz) kernel blocks: " *
+            "real blocks for flavor pair (ba=$ba, ca=$ca) → (bb=$bb, cb=$cb) are not TTI; " *
+            "use PartialIF/PolarIF for non-TTI kernels"))
+    kerr = _keldysh_residual(kernel, ba, ca, bb, cb, n)
+    kerr <= 1.0e-12 || throw(ArgumentError(
+        "ExactTTI real Keldysh relations fail: $kerr for flavor pair " *
+        "(ba=$ba, ca=$ca) → (bb=$bb, cb=$cb)"))
+    # fit 模式：(g,l) 列拟合 + Keldysh 关系四块重构（接触直读 blocks[·][1,1]）
+    fg = fit_exponentials(alg.alg_expan, first(_real_columns(kernel, ba, ca, bb, cb)))
+    fl = fit_exponentials(alg.alg_expan, last(_real_columns(kernel, ba, ca, bb, cb)))
+    expansion = e -> (; e..., fit_interval=(1, n - 1), convention=:integrated_lag_one)
+    recg(m) = _fitcolumn(fg, m)
+    recl(m) = _fitcolumn(fl, m)
+    cpp(i, j) = i == j ? _kernel_flavor_block(kernel, :+, ba, ca, :+, bb, cb)[1, 1] :
+                i > j ? recg(i - j) : -conj(recl(j - i))
+    cmm(i, j) = i == j ? _kernel_flavor_block(kernel, :-, ba, ca, :-, bb, cb)[1, 1] :
+                i > j ? -recl(i - j) : conj(recg(j - i))
+    cpm(i, j) = i == j ? _kernel_flavor_block(kernel, :+, ba, ca, :-, bb, cb)[1, 1] :
+                i > j ? recl(i - j) : conj(recl(j - i))
+    cmp(i, j) = i == j ? _kernel_flavor_block(kernel, :-, ba, ca, :+, bb, cb)[1, 1] :
+                i > j ? -recg(i - j) : -conj(recg(j - i))
+    factors = [GM.Pairing(Matrix{ComplexF64}([cpp(i, j) for i in 1:n, j in 1:n]),
+                          st(:+), stcol(:+); conja=ca, conjb=cb),
+               GM.Pairing(Matrix{ComplexF64}([cmm(i, j) for i in 1:n, j in 1:n]),
+                          st(:-), stcol(:-); conja=ca, conjb=cb),
+               GM.Pairing(Matrix{ComplexF64}([cpm(i, j) for i in 1:n, j in 1:n]),
+                          st(:+), stcol(:-); conja=ca, conjb=cb),
+               GM.Pairing(Matrix{ComplexF64}([cmp(i, j) for i in 1:n, j in 1:n]),
+                          st(:-), stcol(:+); conja=ca, conjb=cb)]
+    entry = (; pair=(ba=ba, ca=ca, bb=bb, cb=cb), mode=:fit, keldysh_residual=kerr,
+             greater=expansion(fg), lesser=expansion(fl))
+    return factors, entry
 end
 
 # ---------------------------------------------------------------------------
-# ExactTTI 装配：vacuumstate → 逐因子 expmult!×PolarExp
+# ExactTTI 装配
 # ---------------------------------------------------------------------------
 
-"ExactTTI 组装链：tti_real/imag/cross 因子逐个 expmult!×PolarExp（因子偶元
-互相超交换 ⟹ 应用序无关）。PolarExp 对 Pairing/AnomalousPairing = SVD 秩一
-精确指数（分量 Xₖ² = 0 ⟹ e^{Xₖ} = 1 + Xₖ）；对 ExpDecay 族（虚时 ESS）委托
-TTIExp = ExpDecayExp 逐通道物化——**要求 GM ≥ expdecayexp-same-orbital-fix
-（a7b39bb）**：同轨道（asite == bsite）触碰块已删，物化对朴素 exp 严格
-（触碰项与 local × 过线配对 pfaffian 逐项相消 ⟹ 净零；修正前同轨道偏差
-O(α²λ)，GTEMPO ESS 实测 3.2e-4）。截秩语义：real/imag 通道 rtol = 0（压缩
-由拟合重构自带，不叠加截断），cross 通道 rtol = cross_rtol（口径同旧 cross
-通道）。标量型：拟合层因子恒 ComplexF64（fit_exponentials 契约）——实链
-（虚时格 × 实谱核）在装配入口复化（GM mult! 不做就地跨型提升 ⟹ ExactTTI
-返回态恒 ComplexF64、≠ 输入别名）。"
+"ExactTTI 组装链：tti_factors 逐因子 expmult!×PolarExp（因子偶元互相超交换
+⟹ 应用序无关）。PolarExp 对 Pairing/AnomalousPairing = SVD 秩一精确指数（分
+量 Xₖ² = 0 ⟹ e^{Xₖ} = 1 + Xₖ）；对 ExpDecay 族（虚时 ESS）委托 TTIExp =
+ExpDecayExp 逐通道物化——**要求 GM ≥ expdecayexp-same-orbital-fix（a7b39bb）**：
+同轨道（asite == bsite）触碰块已删，物化对朴素 exp 严格（触碰项与 local ×
+过线配对 pfaffian 逐项相消 ⟹ 净零；修正前同轨道偏差 O(α²λ)，GTEMPO ESS 实测
+3.2e-4）。截秩语义：rtol = 0（压缩由拟合重构/direct 直读自带精确性，不叠加
+截断——混合 cross 通道的截秩口径随其退役删除）。标量型：拟合层因子恒
+ComplexF64（fit_exponentials 契约）——实链（虚时格 × 实谱核）在装配入口复化
+（GM mult! 不做就地跨型提升 ⟹ ExactTTI 返回态恒 ComplexF64、≠ 输入别名）。
+
+装配路由（plan bcs_exacttti §1.3）：**band 对角 normal 核 → 逐带独立装配，
+返回逐带元组**（带间不耦合 ⟹ 各带链键维独立；单带核恒就地单链——golden 锚）；
+**含跨带/反常键 → 恒单链**（PartialIF 第九批先例：味对因子单序列覆盖全部
+变量，`gmps` 就地改写）。"
 function _exacttti_state!(gmps, err::Float64, lattice::AbstractGrassmannLattice,
                           kernel::HybridizationKernel, alg::ExactTTI)
     diag = Dict{Symbol,Any}()
     mult = _mult(alg)
-    pol_exact = GM.PolarExp(rtol=0.0, alg_mult=mult)             # real/imag 通道：精确
-    pol_cross = GM.PolarExp(rtol=alg.cross_rtol, alg_mult=mult)  # cross 通道：截秩
-    single = length(kernel.bands) == 1
-    TK.scalartype(gmps) <: Real && (gmps = _complex_mps(gmps))   # 实链复化（见上注）
-    band_states = Any[single ? gmps : _copy_mps(gmps) for _ in kernel.bands]
-    for (bi, b) in enumerate(kernel.bands)                  # band 信息在 kernel，逐带切片
-        kb = _band_kernel(kernel, b)
-        state = band_states[bi]                             # 逐带独立装配（各带自己的 IF 链）
-        for (tti, pol) in ((tti_real_factors, pol_exact), (tti_imag_factors, pol_exact),
-                           (tti_cross_factors, pol_cross))
-            (; factors, audit) = tti(kb, lattice; alg)
-            isempty(audit) || merge!(diag, pairs(audit))
+    pol = GM.PolarExp(rtol=0.0, alg_mult=mult)     # 因子级精确（rtol=0）
+    TK.scalartype(gmps) <: Real && (gmps = complex(gmps))   # 实链复化（GM complex：
+    # 拟合层因子恒 ComplexF64，GM mult! 不做就地跨型提升 ⟹ ExactTTI 返回态恒
+    # ComplexF64、≠ 输入别名；已复链 complex 原样返回）
+    if !kernel.anomalous && !_has_cross_band_keys(kernel)
+        # band 对角 normal：逐带元组路由（golden 锚；单带核恒就地单链）
+        single = length(kernel.bands) == 1
+        band_states = Any[single ? gmps : copy(gmps) for _ in kernel.bands]
+        for (bi, b) in enumerate(kernel.bands)
+            (; factors, audit) = tti_factors(_band_kernel(kernel, b), lattice; alg)
+            _merge_audit!(diag, audit)
+            state = band_states[bi]
             for f in factors
                 state, e = GM.expmult!(state, f, pol)
                 err += e
             end
+            band_states[bi] = state
         end
-        band_states[bi] = state
+        return (single ? band_states[1] : tuple(band_states...)), err, diag
     end
-    return (single ? band_states[1] : tuple(band_states...)), err, diag
+    # 跨带/反常核：恒单链（味对因子单序列；就地装配）
+    (; factors, audit) = tti_factors(kernel, lattice; alg)
+    _merge_audit!(diag, audit)
+    for f in factors
+        gmps, e = GM.expmult!(gmps, f, pol)
+        err += e
+    end
+    return gmps, err, diag
 end
 
-"tti_* 的核范围守卫：仅单带 normal 取向核（键 = (ā, a)）；多带核逐带切片在
-_exacttti_state 内部，反常/跨带核（BCS）D7 不支持 ExactTTI，由
-influence_functional 拦截"
-function _tti_band_guard(kernel::HybridizationKernel, lattice::AbstractGrassmannLattice)
-    (!_is_normal_conj(kernel) || _has_cross_band_keys(kernel)) && throw(ArgumentError(
-        "ExactTTI does not support anomalous/cross-band kernels (D7: BCS is " *
-        "PartialIF-only), got bands $(kernel.bands)"))
-    length(kernel.bands) == 1 || throw(ArgumentError(
-        "tti_* factors require a single-band normal kernel, got bands $(kernel.bands); " *
-        "use hybriddynamics for multi-band assembly"))
+"audit 合并（跨带/逐因子多次 merge：残差标量取 max、逐对条目表 vcat）"
+function _merge_audit!(diag::Dict{Symbol,Any}, audit::NamedTuple)
+    for p in (:thermal_residual, :keldysh_residual)
+        haskey(audit, p) || continue
+        diag[p] = haskey(diag, p) ? max(diag[p], getproperty(audit, p)) :
+                  getproperty(audit, p)
+    end
+    for p in (:imag_expansions, :real_expansions)
+        haskey(audit, p) || continue
+        diag[p] = haskey(diag, p) ? vcat(diag[p], getproperty(audit, p)) :
+                  getproperty(audit, p)
+    end
+    return diag
 end

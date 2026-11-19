@@ -69,6 +69,11 @@ end
   通道）。**构造器从核键派生**（`any(key -> key[1].conj == key[2].conj)`）——
   单一事实来源，`changebands`/`Base.:+` 等重装路径自动一致（normal + 反常
   相加 = 反常）。
+
+**canonical 化（构造期）**：跨味键一律等效转换为 (ā, a) 取向——(a, ā) 键在
+构造期换腿 + 转置 + 换序号取负（`v·a_i·ā_j = (−vᵀ)·ā_j·a_i`）；同味键
+（(ā,ā)/(a,a)）无 normal-conj 等效形、原样保留。核存储恒 canonical，消费端
+（`fullfactor` 的 Pairing 路由、ExactTTI 味对分组）按键直读、无取向检查。
 - `coupling_norm::Float64` = 全带总耦合 Σ_b α_b（Weyl 标量补偿用；scheme
   语义扩展——如 Exact 的 normdelta 透传——待 exactif_port_plan 随 scheme 面
   恢复时引入）。
@@ -93,15 +98,37 @@ struct HybridizationKernel{T<:Number}
         allunique(bands) && issorted(bands) || throw(ArgumentError(
             "bands must be a sorted list of unique band indices, got $bands"))
         all(b -> b >= 1, bands) || throw(ArgumentError("band indices must be ≥ 1"))
+        # canonical 化（存储约定：核恒 canonical 取向）：跨味键 (a, ā) 等效转换
+        # 为 (ā, a)——项 v[i₁,i₂]·a_i₁·ā_i₂ = (−v)·ā_i₂·a_i₁（费米换序号 −1）
+        # ⟹ 换腿 + 转置 + 取负；同味键（(ā,ā)/(a,a)，BCS 反常通道）无 normal-conj
+        # 等效形，原样保留。碰撞（同一 canonical 键多来源）= 加法合并（双线性
+        # 项求和的代数事实；well-formed 核无碰撞）。消费端（fullfactor 的 Pairing
+        # 路由、ExactTTI 味对分组）按键直读、无取向检查。
+        canon = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},
+                     Union{Matrix{T},CorrelationMatrix{T}}}()
         for (key, value) in blocks
+            if !key[1].conj && key[2].conj
+                newkey = (ContourBlockIndex(key[2].branch, key[2].band, true),
+                          ContourBlockIndex(key[1].branch, key[1].band, false))
+                # CM = IFD transpose（两 Toeplitz 向量互换）+ 取负，容器原样；
+                # 稠密块物化（-transpose 为惰性 Transpose 包装器，须落 Matrix）
+                v = value isa CorrelationMatrix ? -transpose(value) :
+                    Matrix(-transpose(value))
+            else
+                newkey = key
+                v = value
+            end
+            canon[newkey] = haskey(canon, newkey) ? canon[newkey] + v : v
+        end
+        for (key, value) in canon
             key[1].band in bands && key[2].band in bands || throw(ArgumentError(
                 "block key $(key) references bands outside the kernel band list $bands"))
             all(isfinite, value) || throw(ArgumentError(
                 "nonfinite kernel block $(key[1].branch)/$(key[2].branch) band $(key[1].band)"))
         end
         isfinite(coupling_norm) || throw(ArgumentError("nonfinite coupling norm $coupling_norm"))
-        new{T}(blocks, Float64(coupling_norm), bands,
-               any(key -> key[1].conj == key[2].conj, keys(blocks)))
+        new{T}(canon, Float64(coupling_norm), bands,
+               any(key -> key[1].conj == key[2].conj, keys(canon)))
     end
 end
 

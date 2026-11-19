@@ -1,5 +1,63 @@
 # 接口更改说明
 
+## ExactTTI 审查修正批（2026-11-19，三裁决）
+
+- **严格 TTI 门（Breaking，替代 fit/direct 静默降级）**：`tti_imag_factors`/
+  `tti_real_factors` 的 `is_tti` 块级检查、虚时热配对审计、实时 Keldysh 审计、
+  实时四支块齐备检查——任一失败直接 ArgumentError（不再降级 Pairing 直读）。
+  ExactTTI = 严格 TTI 算法，非 TTI 核走 PartialIF/PolarIF。唯一非 fit 出口 =
+  虚时退化拟合节点（|q| ≈ 0，环绕族 1/q 失格）的 Pairing 全矩阵兜底（现行
+  语义，拟合质量问题而非核形状问题）。audit 条目的 `mode` 字段随降级面退役
+  （仅兜底路径仍 :direct）。
+- **`HybridizationKernel` 构造器 canonical 化 + `_is_normal_conj` 删除**：
+  跨味键 (a, ā) 构造期等效转换为 canonical (ā, a)——换腿 + 转置 + 费米换序号
+  取负（`v·a_i·ā_j = (−vᵀ)·ā_j·a_i`；CorrelationMatrix 用 IFD `transpose`/
+  `Base.:-` 向量互换逐向量取负，稠密块物化落 Matrix），同味键（(ā,ā)/(a,a)）
+  原样保留；canonical 键碰撞 = 加法合并（双线性项求和）。核存储恒 canonical，
+  `fullfactor` 的 Pairing 路由取向检查删除（`_is_normal_conj` 退役）。
+- **`_copy_mps`/`_complex_mps` 删除**：GM 的 `copy(::GMPS)`/`complex(::AbstractGMPS)`
+  已有同语义实现（`copy` 连键谱 `s` 一起拷贝、`complex` 已复链原样返回），
+  ExactTTI 装配入口直用泛型函数。
+- **`tti_factors` 按轴 dispatch（同批简化裁决）**：`tti_imag_factors`/
+  `tti_real_factors`（导出面）与通用 `AbstractGrassmannLattice` 总入口、
+  audit 合并层退役——`tti_factors` 只对 `AbstractImagGrassmannLattice`/
+  `AbstractRealGrassmannLattice` 各定义一个方法（逐味对环族 / (g,l) 拟合
+  重构）；混合格无方法 = `MethodError`（此前为 ArgumentError）。
+
+## ExactTTI 任意耦合模式 + 混合轴退役批次（2026-11-19，plan/bcs_exacttti_plan.md Phase A′/B′）
+
+- **`ExactTTI` 适用面换代（Breaking）**：任意 `HybridizationKernel` 耦合模式
+  （band 对角 normal / 跨带 normal / BCS 反常含多轨道 / 混合核）统一支持。
+  band/味守卫退役（单带 normal 限定与 D7「BCS = PartialIF-only」叙述删除）。
+  装配路由：band 对角 normal 核 → 逐带独立装配返回逐带元组（单带核恒就地
+  单链，golden 锚不变）；含跨带/反常键 → 恒单链（PartialIF 先例，`gmps`
+  就地改写）。
+- **混合时间轴支持退役（Breaking）**：ExactTTI 仅支持虚轴/实轴格；混合格
+  响抛（PartialIF/PolarIF 承接）。交叉通道 `tti_cross_factors` 删除（导出
+  面同步），`ExactTTI` 构造 kwarg **`cross_rtol` 删除**（cross 通道 SVD 截秩
+  口径随其退役；real/imag 通道恒 rtol=0 精确）。
+- **因子构造换代**：`tti_imag_factors`/`tti_real_factors` 广义化为味对分组
+  （键 = `(ba, ca, bb, cb)`，任意味对——normal (ā,a) 与 BCS 同味 (ā,ā)/(a,a)
+  统一），新增总入口 **`tti_factors(kernel, lattice; alg)`**（导出）。模式
+  选择逐味对：新增导出谓词 **`is_tti(M; rtol=1e-12)`**（`CorrelationMatrix`
+  结构性 true、稠密块逐对角线 Toeplitz 检验）+ 物理恒等式审计（虚时热配对 /
+  实时 Keldysh 逐味），通过 → fit（虚时环族 ESS 极点压缩 / 实时 (g,l) 列
+  拟合重构）；失败降级 direct（原始块 Pairing 直读，精确对任意块）+ 残差钉
+  audit。虚时环族广义化（band-diagonal (T,F) 现行公式 = ba==bb 特例逐字
+  退化）：ch1 前向族 (ca,cb; ba,bb) + ch2 环绕族（味/带双翻转）
+  (cb,ca; bb,ba) + ch3 等时接触 λ=0（**取向随带序**——GM ExpDecayExp WII
+  顶点序只物化胞内前向对，asite>bsite 通道的同胞折叠被结构性排除，λ=0
+  通道恒取带序前向取向收编全部同胞账目；ba==bb 退化为原式
+  `M[1,1] − Σα₁ + Σα₂`）。densen 算符对拍实证：单对 bitwise + 完整 BCS
+  四键 3.5e-18。
+- **`fit_exponentials` NaN 健壮性修复**：铅笔退化列（如 BCS 反常列
+  [a,0,−a]）返回 NaN 残差时 `err > tol` 恒 false 跳过有界插值兜底——改
+  `!(err <= tol)` 判据。
+- **diagnostics 审计键换代**：`:thermal_residual`/`:keldysh_residual` =
+  逐对最大值；新增 `:imag_expansions`/`:real_expansions` = 逐对
+  `(; pair, mode, 残差, 拟合展开)` 向量（旧 `:imag_expansion`/`:real_expansions`
+  标量/二元组结构退役，无消费方）。
+
 ## QuAPI scheme 限定批次（2026-11-19）
 
 - **`correlationfunction` 限定只接受 `IFD.QuAPI()` scheme**（两个构造方法

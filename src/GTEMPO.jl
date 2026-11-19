@@ -113,7 +113,7 @@ export sysdynamics, OperatorInsertion
 
 # IF 构造（W3/W4 装配面：fullfactor/tti_* = influencefunctional/ 后端统一入口）
 export InfluenceFunctionalAlgorithm, PartialIF, PolarIF, ExactTTI
-export fullfactor, tti_imag_factors, tti_real_factors, tti_cross_factors
+export fullfactor, tti_factors, is_tti
 export hybriddynamics!
 export var_charge, cell_charges, fock_charges
 export FockMPO, SparseFockMPO, fock_sysdynamics, fock_vacuumstate, fock_initstate!,
