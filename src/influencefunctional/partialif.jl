@@ -7,7 +7,9 @@
 # 压缩（SVDCompression）。
 #
 # fullfactor 的 C 矩阵约定（GM AnomalousPairing，变量 α ↔ 腿 α：奇 = η（a）、
-# 偶 = η̄（ā），站点 = (α+1)÷2）：**有向单一取向存储、不存镜像**——
+# 偶 = η̄（ā），站点 = (α+1)÷2）：**有向单一取向存储、不存镜像**——腿味 =
+# ContourBlockIndex.conj（构造期写定，键自完备——normal 同带键 = (ā, a)、
+# BCS 反常键 = (ā↑, ā↓) / (a↓, a↑)，装配端按键直读、无味旗标）：
 #   normal（band 键）：C[2·st(ā_row), 2·st(a_col) − 1] = blocks 值（ηη̄ 扇区；
 #   deta 折叠 C[2i−1,2j] − C[2j,2i−1] 把唯一取向展开为全单项式系数）；
 #   BCS（轨道带对键）：同带键 = 正常象限（同上式）；band1→band2 键 =
@@ -20,26 +22,29 @@
 _has_cross_band_keys(kernel::HybridizationKernel) =
     any(key[1].band != key[2].band for key in keys(kernel.blocks))
 
+"kernel 是否纯 normal 取向（所有键 = 行 ľ conj=true、列 conj=false——ExactTTI
+三通道因子构造的核形状契约；反常键 = BCS 专属，D7 PartialIF-only）"
+_is_normal_conj(kernel::HybridizationKernel) =
+    all(key -> key[1].conj && !key[2].conj, keys(kernel.blocks))
+
 """
-    fullfactor(kernel, lattice; bcs=false) -> GM.AnomalousPairing
+    fullfactor(kernel, lattice) -> GM.AnomalousPairing
 
 IF 指数的一般二次型系数（**紧凑站点表**）：C 覆盖 kernel 作用域的全部变量对
 （2M×2M，M = 作用域站数），`sites[k]` = 第 k 对变量的链站（严格递增，GM
 AnomalousPairing 契约）——lattice 可包含比 kernel 更多的 bands（核外带 =
 观测站，不进因子）。变量 α ↔ (sites[(α+1)÷2], conj = iseven(α))。
 
-`bcs` = 跨带键的腿味解释（同带键恒为 (ā, a) 法向取向）：`bcs = false`（缺省）
-= 全部键按法向有向耦合 C[2·st(ā), 2·st(a)−1] = Δ（一般多带杂化，含跨带
-Δ_b1b2）；`bcs = true` = BCS 反常味表（跨带键按 ā↑ā↓ / a↓a↑ 落 ud/du 象限，
-`bcs_hybriddynamics` 路径）。块值 = 构造期符号收编的指数系数
-（correlationfunction.jl 存储约定），直读不补号。
+腿味 = 核键的 `ContourBlockIndex.conj`（correlationfunction 构造期写定）：
+同带键 = (ā, a) 法向取向 `C[2·st(ā), 2·st(a)−1]`；跨带键按其键上味落象限
+（法向有向耦合 (ā, a) 或 BCS 反常 (ā, ā) / (a, a)）。块值 = 构造期符号收编
+的指数系数（correlationfunction.jl 存储约定），直读不补号。
 """
-function fullfactor(kernel::HybridizationKernel, lattice::AbstractGrassmannLattice;
-                    bcs::Bool=false)
-    return _fullfactor(kernel, lattice, bcs)
+function fullfactor(kernel::HybridizationKernel, lattice::AbstractGrassmannLattice)
+    return _fullfactor(kernel, lattice)
 end
 
-function _fullfactor(kernel::HybridizationKernel, lattice::AbstractGrassmannLattice, bcs::Bool)
+function _fullfactor(kernel::HybridizationKernel, lattice::AbstractGrassmannLattice)
     B = lattice.bands
     # kernel 作用域变量槽：(链站, band)，站升序（GM sites 严格递增契约）
     slots = sort!(collect(((cell_block(lattice, cell) - 1) * B + b, b)
@@ -48,11 +53,7 @@ function _fullfactor(kernel::HybridizationKernel, lattice::AbstractGrassmannLatt
     slotidx = Dict(slots[k] => k for k in 1:M)      # (站, band) → 紧凑变量对号
     C = zeros(ComplexF64, 2M, 2M)
     for (key, blk) in kernel.blocks
-        if bcs && key[1].band != key[2].band
-            ca, cb = _bcs_leg_conjs(key[1].band, key[2].band)   # BCS 反常味表
-        else
-            ca, cb = true, false                                # 法向有向取向（含同带）
-        end
+        ca, cb = key[1].conj, key[2].conj           # 腿味在键上（构造期写定）
         br1, br2 = key[1].branch, key[2].branch
         ba, bb = key[1].band, key[2].band
         for j1 in 1:_branch_len(lattice, br1), j2 in 1:_branch_len(lattice, br2)
@@ -72,25 +73,26 @@ end
 装配（单带/BCS = 就地装配 gmps；多带 normal = 逐带从 copy(gmps) 起步）；乘法
 压缩截断 = alg.trunc"
 function _partialif_state(gmps, lattice::AbstractGrassmannLattice, kernel::HybridizationKernel,
-                          alg::PartialIF, bcs::Bool)
+                          alg::PartialIF)
     exp = GM.PartialExp(alg_mult=SVDCompression(trunc=alg.trunc))
     if length(kernel.bands) == 1 || _has_cross_band_keys(kernel)
         # 单带 / BCS 轨道 / 一般跨带耦合核：二次型不可按带分解 ⟹ 单链整体装配
-        state, err = GM.expmult!(gmps, _fullfactor(kernel, lattice, bcs), exp)
+        state, err = GM.expmult!(gmps, _fullfactor(kernel, lattice), exp)
         return state, [err]
     end
     states = [GM.expmult!(_copy_mps(gmps),
-                          _fullfactor(_band_kernel(kernel, b), lattice, bcs), exp)
+                          _fullfactor(_band_kernel(kernel, b), lattice), exp)
               for b in kernel.bands]
     return tuple(first.(states)...), map(last, states)
 end
 
 """
-    bcs_hybriddynamics(lattice, bath::AbstractBCSBath, alg=PartialIF(); orbital=1, trunc) -> GMPS
+    bcs_hybriddynamics(lattice, bath::AbstractBCSBath, alg=PartialIF(); orbital=1) -> GMPS
 
 BCS bath 的 IF 链便捷入口：`orbital` 选 Nambu 对（band1 = 2·orbital−1、
 band2 = 2·orbital），对称性守卫 :z2（D7）。kernel 构造 =
-`correlationfunction(bath, lattice; orbital)`，装配走 fullfactor 轨道路径。
+`correlationfunction(bath, lattice; orbital)`，装配走 fullfactor 轨道路径
+（反常腿味在核键上，与 normal 同一装配函数）。
 """
 function bcs_hybriddynamics(lattice::AbstractGrassmannLattice, bath::AbstractBCSBath,
                             alg::InfluenceFunctionalAlgorithm=PartialIF();
@@ -98,5 +100,5 @@ function bcs_hybriddynamics(lattice::AbstractGrassmannLattice, bath::AbstractBCS
     alg isa PartialIF || throw(ArgumentError(
         "BCS IF supports only PartialIF on the GM stack (D7), got $(typeof(alg))"))
     kernel = correlationfunction(bath, lattice; orbital)
-    return first(hybriddynamics(lattice, kernel, alg; bcs=true))
+    return first(hybriddynamics(lattice, kernel, alg))
 end

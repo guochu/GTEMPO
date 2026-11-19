@@ -6,21 +6,21 @@
 	lat = GrassmannLattice(N=4, δτ=0.25, contour=:imag)
 	kernel = correlationfunction(bath, lat)
 	@test kernel isa HybridizationKernel
-	@test kernel.blocks[(ContourBlockIndex(:τ, 1), ContourBlockIndex(:τ, 1))] isa CorrelationMatrix
+	@test kernel.blocks[(ContourBlockIndex(:τ, 1, true), ContourBlockIndex(:τ, 1, false))] isa CorrelationMatrix
 	# 实时：四块（跨支 = CorrelationMatrix，Toeplitz 向量存储）
 	lat = GrassmannLattice(N=4, δt=0.1, contour=:real)
 	kernel = correlationfunction(bath, lat)
-	@test kernel.blocks[(ContourBlockIndex(:+, 1), ContourBlockIndex(:-, 1))] isa CorrelationMatrix
+	@test kernel.blocks[(ContourBlockIndex(:+, 1, true), ContourBlockIndex(:-, 1, false))] isa CorrelationMatrix
 	# 混合：τ↔rt = Matrix（构造期折叠物化），同支 = CorrelationMatrix
 	lat = GrassmannLattice(Nt=3, δt=0.1, Nτ=4, δτ=0.25, contour=:mixed)
 	kernel = correlationfunction(bath, lat)
-	@test kernel.blocks[(ContourBlockIndex(:τ, 1), ContourBlockIndex(:+, 1))] isa Matrix
-	@test kernel.blocks[(ContourBlockIndex(:+, 1), ContourBlockIndex(:+, 1))] isa CorrelationMatrix
+	@test kernel.blocks[(ContourBlockIndex(:τ, 1, true), ContourBlockIndex(:+, 1, false))] isa Matrix
+	@test kernel.blocks[(ContourBlockIndex(:+, 1, true), ContourBlockIndex(:+, 1, false))] isa CorrelationMatrix
 	# 单带构造：bands = [band]，块键仅该带
 	lat2 = GrassmannLattice(Nt=3, δt=0.1, Nτ=4, δτ=0.25, contour=:mixed, bands=2)
 	k1 = correlationfunction(bath, lat2; band=2)
 	@test k1.bands == [2]
-	@test keys(k1.blocks) == Set(((ContourBlockIndex(b1, 2), ContourBlockIndex(b2, 2))
+	@test keys(k1.blocks) == Set(((ContourBlockIndex(b1, 2, true), ContourBlockIndex(b2, 2, false))
 	                              for b1 in branches(lat2), b2 in branches(lat2)))
 	@test_throws BoundsError correlationfunction(bath, lat; band=2)   # band 越界
 end

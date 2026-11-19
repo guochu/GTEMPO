@@ -74,31 +74,30 @@ _copy_mps(x::GM.GMPS) = begin
 end
 
 """
-    hybriddynamics!(gmps, lattice, kernel, alg=PartialIF(); bcs=false)
-        -> (GMPS | Tuple{GMPS...}, diagnostics)
+    hybriddynamics!(gmps, lattice, kernel, alg=PartialIF()) -> (GMPS | Tuple{GMPS...}, diagnostics)
 
-原地 IF 装配（装配范围由 `kernel.bands` 决定，band 不重复输入）：含跨带键的
-kernel（跨带耦合 / BCS 轨道）= 二次型不可按带分解 ⟹ 就地装配 `gmps` 为单链
-（原样返回）；band 对角多带核 = 逐带从 `copy(gmps)` 起步装配（`gmps` 语义上
-应为真空起始态，本身不变），返回逐带元组。乘法压缩截断随算法对象携带
-（`alg.trunc`）。`bcs` = 跨带键的腿味解释（false = 一般法向有向耦合，true =
-BCS 反常味表，见 `fullfactor`）。第二输出 `diagnostics::Dict{Symbol,Any}` =
-装配诊断：`:truncerrs`（逐步乘法压缩的 GM truncerr）+ 通道审计键（Keldysh/
-热配对残差、拟合展开）+ `:algorithm`/`:truncation`。ExactTTI 仅支持单带
-normal 核（D7：BCS 仅 PartialIF）。
+原地 IF 装配（装配范围由 `kernel.bands` 决定，band 不重复输入；腿味在
+`ContourBlockIndex.conj` 上，无调用端味旗标）：含跨带键的 kernel（跨带耦合 /
+BCS 轨道）= 二次型不可按带分解 ⟹ 就地装配 `gmps` 为单链（原样返回）；band
+对角多带核 = 逐带从 `copy(gmps)` 起步装配（`gmps` 语义上应为真空起始态，
+本身不变），返回逐带元组。乘法压缩截断随算法对象携带（`alg.trunc`）。第二
+输出 `diagnostics::Dict{Symbol,Any}` = 装配诊断：`:truncerrs`（逐步乘法压缩
+的 GM truncerr）+ 通道审计键（Keldysh/热配对残差、拟合展开）+
+`:algorithm`/`:truncation`。ExactTTI 仅支持单带 normal 取向核（键 = (ā, a)；
+反常/跨带核 D7 走 PartialIF）。
 """
 function hybriddynamics!(gmps, lattice::AbstractGrassmannLattice, kernel::HybridizationKernel,
-                         alg::InfluenceFunctionalAlgorithm=PartialIF(); bcs::Bool=false)
+                         alg::InfluenceFunctionalAlgorithm=PartialIF())
     all(b -> 1 <= b <= lattice.bands, kernel.bands) ||
         throw(BoundsError(1:lattice.bands, kernel.bands))
     hascross = _has_cross_band_keys(kernel)
     diagnostics = Dict{Symbol,Any}(:algorithm => alg, :truncation => alg.trunc)
     if alg isa PartialIF
-        state, truncerrs = _partialif_state(gmps, lattice, kernel, alg, bcs)
+        state, truncerrs = _partialif_state(gmps, lattice, kernel, alg)
     elseif alg isa ExactTTI
-        (bcs || hascross) && throw(ArgumentError(
-            "ExactTTI does not support BCS/anomalous kernels (D7: BCS is PartialIF-only), " *
-            "got bands $(kernel.bands)"))
+        (!_is_normal_conj(kernel) || hascross) && throw(ArgumentError(
+            "ExactTTI does not support anomalous/cross-band kernels (D7: BCS is " *
+            "PartialIF-only), got bands $(kernel.bands)"))
         length(kernel.bands) == 1 || throw(ArgumentError(
             "ExactTTI requires a single-band normal kernel, got bands $(kernel.bands); " *
             "build per-band kernels for multi-band assembly"))
@@ -112,8 +111,7 @@ function hybriddynamics!(gmps, lattice::AbstractGrassmannLattice, kernel::Hybrid
 end
 
 """
-    hybriddynamics(lattice, kernel, alg=PartialIF(); bcs=false)
-        -> (GMPS | Tuple{GMPS...}, diagnostics)
+    hybriddynamics(lattice, kernel, alg=PartialIF()) -> (GMPS | Tuple{GMPS...}, diagnostics)
 
 IF 链装配（真空起始）：`hybriddynamics(lattice, ...) =
 hybriddynamics!(vacuumstate(promote_type(scalartype(lattice), scalartype(kernel)),
@@ -122,9 +120,9 @@ lattice), lattice, ...)`——提升的是两者的 scalartype。含跨带键的
 = 装配 diagnostics（见 `hybriddynamics!`）。
 """
 function hybriddynamics(lattice::AbstractGrassmannLattice, kernel::HybridizationKernel,
-                        alg::InfluenceFunctionalAlgorithm=PartialIF(); bcs::Bool=false)
+                        alg::InfluenceFunctionalAlgorithm=PartialIF())
     return hybriddynamics!(vacuumstate(promote_type(TK.scalartype(lattice), TK.scalartype(kernel)), lattice),
-                           lattice, kernel, alg; bcs)
+                           lattice, kernel, alg)
 end
 
 "integrate(lattice, x0, x1...) —— Berezin 迹（链 = (K, Is...)，GM 引擎）"

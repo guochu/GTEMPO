@@ -6,7 +6,7 @@
 @testset "QuAPI 交叉核对：kernel blocks = QuAPI 原块" begin
 	β = 1.0
 	bath = discretefermionicbath([1.0], [0.5]; β=β)
-	k(b) = ContourBlockIndex(b, 1)
+	k(b1, b2) = (ContourBlockIndex(b1, 1, true), ContourBlockIndex(b2, 1, false))
 
 	# 实时：四块直读（canonical = raw；跨支 Keldysh 号 = 指数系数，电流端公式层处理）
 	lat = GrassmannLattice(N=4, δt=0.1, contour=:real)
@@ -14,14 +14,14 @@
 	qt = Δt(bath; N=lat.Nt, t=lat.Nt * lat.δt)   # t 与 correlationfunction 同源（浮点位型一致）
 	for (b1, b2) in ((:+, :+), (:+, :-), (:-, :+), (:-, :-))
 		M = branch(qt; b1=b1, b2=b2)
-		@test kernel.blocks[(k(b1), k(b2))] == M[1:4, 1:4]
+		@test kernel.blocks[k(b1, b2)] == M[1:4, 1:4]
 	end
 
 	# 虚时：Δτ 块
 	latτ = GrassmannLattice(N=4, δτ=0.25, contour=:imag)
 	kernelτ = correlationfunction(bath, latτ)
 	qτ = Δτ(bath; N=4, δτ=0.25)
-	@test kernelτ.blocks[(k(:τ), k(:τ))] == qτ.data[1:4, 1:4]
+	@test kernelτ.blocks[k(:τ, :τ)] == qτ.data[1:4, 1:4]
 
 	# 混合：九块 + τ↔rt 交叉块内嵌负号构造期折叠（旧 _NegView 预翻的物化）
 	latm = GrassmannLattice(Nt=3, δt=0.1, Nτ=4, δτ=0.25, contour=:mixed)
@@ -33,6 +33,6 @@
 		r1 = b1 === :τ ? (1:4) : (1:3)
 		r2 = b2 === :τ ? (1:4) : (1:3)
 		expect = ((b1 === :τ) !== (b2 === :τ)) ? -M[r1, r2] : M[r1, r2]
-		@test kernelm.blocks[(k(b1), k(b2))] == expect
+		@test kernelm.blocks[k(b1, b2)] == expect
 	end
 end

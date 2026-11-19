@@ -65,7 +65,7 @@ _station(lattice::AbstractGrassmannLattice, cell::Tuple{Symbol,Int}, band::Int) 
     (cell_block(lattice, cell) - 1) * lattice.bands + band
 
 _kernel_block(k::HybridizationKernel, b1::Symbol, b2::Symbol, band::Int) =
-    k.blocks[(ContourBlockIndex(b1, band), ContourBlockIndex(b2, band))]
+    k.blocks[(ContourBlockIndex(b1, band, true), ContourBlockIndex(b2, band, false))]
 
 "拟合列的 lag 重建（ExactTTI 因子锚 = :left，:right 由增长极点守卫拒绝）"
 _fitcolumn(f, m::Int) = sum(w * r^(m - 1) for (w, r) in zip(f.weights, f.nodes); init=0.0im)
@@ -305,12 +305,13 @@ function _exacttti_state(gmps, lattice::AbstractGrassmannLattice, kernel::Hybrid
     return single ? band_states[1] : tuple(band_states...), truncerrs, diag
 end
 
-"tti_* 的核范围守卫：仅单带 normal 核（多带核逐带切片在 _exacttti_state 内部；
-BCS 核 D7 不支持 ExactTTI，由 influence_functional 拦截）"
+"tti_* 的核范围守卫：仅单带 normal 取向核（键 = (ā, a)）；多带核逐带切片在
+_exacttti_state 内部，反常/跨带核（BCS）D7 不支持 ExactTTI，由
+influence_functional 拦截"
 function _tti_band_guard(kernel::HybridizationKernel, lattice::AbstractGrassmannLattice)
-    _has_cross_band_keys(kernel) && throw(ArgumentError(
-        "ExactTTI does not support BCS/anomalous kernels (D7: BCS is PartialIF-only), " *
-        "got bands $(kernel.bands)"))
+    (!_is_normal_conj(kernel) || _has_cross_band_keys(kernel)) && throw(ArgumentError(
+        "ExactTTI does not support anomalous/cross-band kernels (D7: BCS is " *
+        "PartialIF-only), got bands $(kernel.bands)"))
     length(kernel.bands) == 1 || throw(ArgumentError(
         "tti_* factors require a single-band normal kernel, got bands $(kernel.bands); " *
         "use hybriddynamics for multi-band assembly"))

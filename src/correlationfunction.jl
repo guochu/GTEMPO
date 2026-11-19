@@ -7,9 +7,14 @@
 # coupling_norm::Float64、bands::Vector{Int}。normal 与 BCS bath 统一同一类型
 # （双构造方法 + changebands + Base.:+ 多浴耦合）。
 #
+# 2026-11-19：ContourBlockIndex 增 conj::Bool 腿味（true = ā、false = a）——
+# 核键 = (branch, band, conj) 完备腿信息构造期写定，装配端（fullfactor/
+# hybriddynamics）按键直读、bcs 味旗标退役。Kernel 从此对任意 bath 自完备。
+#
 # 存储约定（构造期符号收编——读点直读）：
-#   blocks[(CBI(b1,band), CBI(b2,band))][i, j] = IF 指数系数 ā_i^{b1,band}
-#   Δ a_j^{b2,band}（i, j = 分支局部格点下标）。
+#   blocks[(CBI(b1,band,ca), CBI(b2,band,cb))][i, j] = IF 指数系数（i, j =
+#   分支局部格点下标；行腿味 ca、列腿味 cb——normal 键 = (ā, a) 即
+#   (true, false)，BCS 反常键 = (ā, ā) / (a, a)）。
 #   - 纯虚时/纯实时：QuAPI branch 块原值（实时跨支块的 Keldysh 相对号内嵌于
 #     块值 = 指数系数的一部分；U1GTEMPO2 mode_block 口径逐位一致）；
 #   - 混合轮廓：τ↔rt 交叉块构造期整体取负（QuAPI Δm 的 τ↔rt 块相对物理核
@@ -27,14 +32,19 @@
 # ---------------------------------------------------------------------------
 
 """
-    ContourBlockIndex(branch::Symbol, band::Int)
+    ContourBlockIndex(branch::Symbol, band::Int, conj::Bool)
 
-核块的轮廓索引：(branch ∈ (:τ, :+, :-), band = 带号)。核块键 =
-`(ContourBlockIndex, ContourBlockIndex)`（行腿 × 列腿）。
+核块的轮廓索引：(branch ∈ (:τ, :+, :-), band = 带号, conj = 腿味)。核块键 =
+`(ContourBlockIndex, ContourBlockIndex)`（行腿 × 列腿）。`conj = true` ⟺ 腿为
+ā（GM 变量基的 η̄，变量号偶）、`false` ⟺ a（η，变量号奇）。normal 块键 =
+`(ā, a)` 即 `(true, false)`；BCS 反常块（ā↑ā↓ / a↓a↑）两腿同味。腿味由
+correlationfunction 构造期写定，装配端按键直读（kernel 自完备，无调用端
+味旗标）。
 """
 struct ContourBlockIndex
     branch::Symbol     # :τ / :+ / :-
     band::Int
+    conj::Bool         # true = ā（η̄）/ false = a（η）
 end
 
 """
@@ -80,9 +90,6 @@ struct HybridizationKernel{T<:Number}
 end
 
 TK.scalartype(::Type{HybridizationKernel{T}}) where {T} = T
-
-"块键便捷构造"
-_cbi(b::Symbol, band::Int) = ContourBlockIndex(b, band)
 
 "分支格点数（窗口化基准）"
 _branch_len(lattice::AbstractGrassmannLattice, b::Symbol) =
@@ -162,10 +169,12 @@ function correlationfunction(bath::AbstractNormalBath, lattice::AbstractGrassman
         fold = mixed && ((b1 === :τ) !== (b2 === :τ))
         W = _window_block(branch(corr; b1=b1, b2=b2), _branch_len(lattice, b1),
                           _branch_len(lattice, b2), T)
-        blocks[(_cbi(b1, first(bands)), _cbi(b2, first(bands)))] =
-            fold ? _neg_block(W) : W
+        blocks[(ContourBlockIndex(b1, first(bands), true),
+                ContourBlockIndex(b2, first(bands), false))] = fold ? _neg_block(W) : W
         for bd in bands[2:end]                     # 多带键共享同一块对象（零拷贝）
-            blocks[(_cbi(b1, bd), _cbi(b2, bd))] = blocks[(_cbi(b1, first(bands)), _cbi(b2, first(bands)))]
+            blocks[(ContourBlockIndex(b1, bd, true), ContourBlockIndex(b2, bd, false))] =
+                blocks[(ContourBlockIndex(b1, first(bands), true),
+                        ContourBlockIndex(b2, first(bands), false))]
         end
     end
     norm = length(bands) * coupling_norm(bath)
@@ -179,10 +188,11 @@ end
 # BCS 味键表：同带键 = 正常通道（行 ā、列 a，uu 味块）；band1→band2 = 反常
 # ā↑ā↓（ud 味块，双腿 ā）；band2→band1 = 反常 a↓a↑（du 味块，双腿 a）。
 # band1 = 2·orbital−1、band2 = 2·orbital（QuAPI GrassmannContourIndex 的
-# 奇偶带味约定）。fullfactor 装配按同表回推腿 conj 旗标。
+# 奇偶带味约定）。味表构造期写进 ContourBlockIndex.conj（键自完备）。
 
-"BCS 块键的腿 conj 旗标 (行, 列)：同带 = (ā, a)；band1→band2 = (ā, ā)；
-band2→band1 = (a, a)"
+"BCS 块键的腿 conj 旗标 (行, 列)（构造期写进 ContourBlockIndex.conj）：
+同带 = (ā, a) = (true, false)；band1→band2 = (ā, ā) = (true, true)；
+band2→band1 = (a, a) = (false, false)"
 function _bcs_leg_conjs(ba::Int, bb::Int)
     ba == bb && return (true, false)
     return isodd(ba) ? (true, true) : (false, false)
@@ -195,9 +205,9 @@ end
 
 "BCS 实时块物化：QuAPI GrassmannContourIndex 访问器逐元素读取（顶点移位内嵌）
 + 跨支 Keldysh 号构造期折叠（bcsweyl 锚定口径 = 旧 bcs_partial_if 装配读数）"
-function _bcs_dense_block(corr, lattice, b1::Symbol, b2::Symbol, ba::Int, bb::Int)
+function _bcs_dense_block(corr, lattice, b1::Symbol, b2::Symbol, ba::Int, bb::Int,
+                          ca::Bool, cb::Bool)
     n1, n2 = _branch_len(lattice, b1), _branch_len(lattice, b2)
-    ca, cb = _bcs_leg_conjs(ba, bb)
     keldysh = branches(lattice) == (:+, :-)
     M = zeros(ComplexF64, n1, n2)
     for i in 1:n1, j in 1:n2
@@ -242,13 +252,14 @@ function correlationfunction(bath::AbstractBCSBath, lattice::AbstractGrassmannLa
     blocks = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{T},CorrelationMatrix{T}}}()
     for b1 in branches(lattice), b2 in branches(lattice)
         for (ba, bb) in ((band1, band1), (band1, band2), (band2, band2), (band2, band1))
+            ca, cb = _bcs_leg_conjs(ba, bb)
+            key = (ContourBlockIndex(b1, ba, ca), ContourBlockIndex(b2, bb, cb))
             if lattice isa AbstractRealGrassmannLattice
-                blocks[(_cbi(b1, ba), _cbi(b2, bb))] =
-                    _bcs_dense_block(corr, lattice, b1, b2, ba, bb)
+                blocks[key] = _bcs_dense_block(corr, lattice, b1, b2, ba, bb, ca, cb)
             else
-                W = _window_block(branch(_bcs_flavor(corr, ba, bb); b1=b1, b2=b2),
-                                  _branch_len(lattice, b1), _branch_len(lattice, b2), T)
-                blocks[(_cbi(b1, ba), _cbi(b2, bb))] = W
+                blocks[key] = _window_block(branch(_bcs_flavor(corr, ba, bb); b1=b1, b2=b2),
+                                            _branch_len(lattice, b1),
+                                            _branch_len(lattice, b2), T)
             end
         end
     end
@@ -279,7 +290,8 @@ function changebands(H::HybridizationKernel, x::Vector{Pair{Int,Int}})
         for (key, value) in H.blocks             # （单带核扩多带：块对象别名共享）
             ba = key[1].band == old ? new : key[1].band
             bb = key[2].band == old ? new : key[2].band
-            blocks[(_cbi(key[1].branch, ba), _cbi(key[2].branch, bb))] = value
+            blocks[(ContourBlockIndex(key[1].branch, ba, key[1].conj),
+                    ContourBlockIndex(key[2].branch, bb, key[2].conj))] = value
         end
     end
     bands = sort(union!(collect(Set(last.(x))), collect(Set(

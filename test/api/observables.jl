@@ -223,7 +223,7 @@ end
 	zs = integrate_scaled(K, Is...)
 	Z = exp(zs.logabs) * zs.phase
 	cache = environments_cache(K, Is...)
-	kbi(b) = (ContourBlockIndex(:+, 1), ContourBlockIndex(b, 1))   # band-1 η 块（两带逐位同值）
+	kbi(b) = (ContourBlockIndex(:+, 1, true), ContourBlockIndex(b, 1, false))   # band-1 η 块（两带逐位同值）
 	ηpp = Matrix(kernel.blocks[kbi(:+)])
 	ηpm = -Matrix(kernel.blocks[kbi(:-)])
 	# ① 机器精度：两轨快速版（快照扫掠 / J∧K 单发积分）== 逐项 cached_gf

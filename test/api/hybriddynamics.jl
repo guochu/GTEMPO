@@ -12,7 +12,7 @@ bath0 = discretefermionicbath([1.0], [0.5]; β=β0)
 	@test kernel.bands == [1]
 	@test kernel.coupling_norm == coupling_norm(bath0)  # 单带 = bath α
 	for b1 in (:+, :-), b2 in (:+, :-)
-		blk = kernel.blocks[(ContourBlockIndex(b1, 1), ContourBlockIndex(b2, 1))]
+		blk = kernel.blocks[(ContourBlockIndex(b1, 1, true), ContourBlockIndex(b2, 1, false))]
 		@test size(blk) == (4, 4)
 		@test all(isfinite, blk)
 	end
@@ -22,19 +22,19 @@ bath0 = discretefermionicbath([1.0], [0.5]; β=β0)
 	kbcs = correlationfunction(bath_bcs, lat_b)
 	@test kbcs isa HybridizationKernel && kbcs.bands == [1, 2]
 	@test kbcs.coupling_norm == 2 * coupling_norm(bath_bcs)   # 带对各 α → 2×
-	@test haskey(kbcs.blocks, (ContourBlockIndex(:+, 1), ContourBlockIndex(:-, 2)))  # ud 反常键
-	@test haskey(kbcs.blocks, (ContourBlockIndex(:-, 2), ContourBlockIndex(:+, 1)))  # du 反常键
+	@test haskey(kbcs.blocks, (ContourBlockIndex(:+, 1, true), ContourBlockIndex(:-, 2, true)))  # ud 反常键（双腿 ā）
+	@test haskey(kbcs.blocks, (ContourBlockIndex(:-, 2, false), ContourBlockIndex(:+, 1, false)))  # du 反常键（双腿 a）
 
 	# 虚时只有 τ 块
 	latτ = GrassmannLattice(N=4, δτ=0.25, contour=:imag)
 	kernelτ = correlationfunction(bath0, latτ)
-	@test size(kernelτ.blocks[(ContourBlockIndex(:τ, 1), ContourBlockIndex(:τ, 1))]) == (4, 4)
+	@test size(kernelτ.blocks[(ContourBlockIndex(:τ, 1, true), ContourBlockIndex(:τ, 1, false))]) == (4, 4)
 
 	# 混合九块 + τ↔rt 构造期折叠（存储 = 指数系数终值）
 	latm = GrassmannLattice(Nt=3, δt=0.1, Nτ=4, δτ=0.25, contour=:mixed)
 	kernelm = correlationfunction(bath0, latm)
 	for b1 in (:+, :-, :τ), b2 in (:+, :-, :τ)
-		@test haskey(kernelm.blocks, (ContourBlockIndex(b1, 1), ContourBlockIndex(b2, 1)))
+		@test haskey(kernelm.blocks, (ContourBlockIndex(b1, 1, true), ContourBlockIndex(b2, 1, false)))
 	end
 end
 
@@ -43,14 +43,14 @@ end
 	k1 = correlationfunction(bath0, lat; band=1)
 	k12 = changebands(k1, [1 => 2])
 	@test k12.bands == [2]
-	@test k12.blocks[(ContourBlockIndex(:+, 2), ContourBlockIndex(:+, 2))] ===
-	      k1.blocks[(ContourBlockIndex(:+, 1), ContourBlockIndex(:+, 1))]   # 零改动（对象别名）
+	@test k12.blocks[(ContourBlockIndex(:+, 2, true), ContourBlockIndex(:+, 2, false))] ===
+	      k1.blocks[(ContourBlockIndex(:+, 1, true), ContourBlockIndex(:+, 1, false))]   # 零改动（对象别名）
 	@test k12.coupling_norm == k1.coupling_norm
 	# 单带核扩多带（免重建 corr 的多带装配路线）
 	k1v2 = changebands(k1, [1 => 1, 1 => 2])
 	@test k1v2.bands == [1, 2]
-	@test k1v2.blocks[(ContourBlockIndex(:-, 2), ContourBlockIndex(:-, 2))] ===
-	      k1v2.blocks[(ContourBlockIndex(:-, 1), ContourBlockIndex(:-, 1))]
+	@test k1v2.blocks[(ContourBlockIndex(:-, 2, true), ContourBlockIndex(:-, 2, false))] ===
+	      k1v2.blocks[(ContourBlockIndex(:-, 1, true), ContourBlockIndex(:-, 1, false))]
 	@test_throws ArgumentError changebands(k1, [3 => 2])          # 源带不在核
 	@test_throws ArgumentError changebands(k1, [1 => 1, 1 => 1])  # 目标带冲突
 end
@@ -65,15 +65,15 @@ end
 	@test kab.coupling_norm ≈ coupling_norm(b1) + coupling_norm(b2)
 	@test kab.bands == [1]
 	# CorrelationMatrix 值的 Toeplitz 向量相加（逐位 = 稠密和）
-	Ma = Matrix(ka.blocks[(ContourBlockIndex(:+, 1), ContourBlockIndex(:-, 1))])
-	Mb = Matrix(kb.blocks[(ContourBlockIndex(:+, 1), ContourBlockIndex(:-, 1))])
-	@test Matrix(kab.blocks[(ContourBlockIndex(:+, 1), ContourBlockIndex(:-, 1))]) ≈ Ma + Mb atol = 0.0
+	Ma = Matrix(ka.blocks[(ContourBlockIndex(:+, 1, true), ContourBlockIndex(:-, 1, false))])
+	Mb = Matrix(kb.blocks[(ContourBlockIndex(:+, 1, true), ContourBlockIndex(:-, 1, false))])
+	@test Matrix(kab.blocks[(ContourBlockIndex(:+, 1, true), ContourBlockIndex(:-, 1, false))]) ≈ Ma + Mb atol = 0.0
 	# 缺键透传（单带 vs 双带核相加）
 	kb_multi = changebands(correlationfunction(b2, lat), [1 => 2])
 	ksum = ka + kb_multi
 	@test ksum.bands == [1, 2]
-	@test ksum.blocks[(ContourBlockIndex(:+, 2), ContourBlockIndex(:-, 2))] ===
-	      kb_multi.blocks[(ContourBlockIndex(:+, 2), ContourBlockIndex(:-, 2))]
+	@test ksum.blocks[(ContourBlockIndex(:+, 2, true), ContourBlockIndex(:-, 2, false))] ===
+	      kb_multi.blocks[(ContourBlockIndex(:+, 2, true), ContourBlockIndex(:-, 2, false))]
 end
 
 @testset "API: hybriddynamics（IF 链）" begin

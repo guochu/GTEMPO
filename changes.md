@@ -1,5 +1,23 @@
 # 接口更改说明
 
+## ContourBlockIndex 腿味键批次（2026-11-19，Breaking）
+
+- **`ContourBlockIndex(branch, band)` → `ContourBlockIndex(branch, band, conj)`**：
+  核键自携腿味（`conj = true` ⟺ ā/η̄、`false` ⟺ a/η，GM 变量号奇偶约定）——
+  HybridizationKernel 从此对任意 bath 自完备（branch + band + 腿味）。
+- **`bcs` 味旗标退役**：`fullfactor(kernel, lattice; bcs)` → `fullfactor(kernel, lattice)`、
+  `hybriddynamics!/hybriddynamics(lattice, kernel, alg; bcs)` → 去 kwarg——腿味
+  从核键直读（`key.conj`），BCS 反常块（ā↑ā↓ / a↓a↑）与一般跨带法向耦合
+  （Δ_b1b2）在键结构上可分辨，不再依赖调用端旗标；`bcs_hybriddynamics` 同步。
+- **构造端写定**：`correlationfunction`（normal/BCS 双方法）构造期把腿味写进键
+  （同带 = (ā, a)、BCS band1→band2 = (ā, ā)、band2→band1 = (a, a)，`_bcs_leg_conjs`
+  味表 = 键的写入口）；`changebands` 键重建保留 conj；ExactTTI 守卫升级为结构
+  判定（`_is_normal_conj`：所有键 = (ā, a)——手工构造的反常同带核不再漏进
+  ExactTTI 路径，响抛 ArgumentError 而非 KeyError）。
+- **消费端**：`_kernel_block`（exacttti）、`_kernel_eta`/`current_operator`
+  （measurements）显式三参键；外部消费者（自建 blocks Dict 的测试/oracle）须
+  改三参 `ContourBlockIndex`。
+
 ## IF 装配后端统一批次（2026-11-18，plan/if_expmult_backend_plan.md W1–W4）
 
 - **`HybridizationKernel` 重定义（W2）**：`HybridizationKernel{L,C}`（lattice +

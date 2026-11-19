@@ -144,8 +144,8 @@ slow/gf 路线同为单项式故 fast == slow，新栈 slow 是边界插入锚�
 """
 function current_operator(lattice::AbstractGrassmannLattice, kernel::HybridizationKernel, k::Integer;
                           band::Int=1)
-    ηpp = Matrix(kernel.blocks[(ContourBlockIndex(:+, band), ContourBlockIndex(:+, band))])       # raw（顶点移位 accessor 禁令，见 electriccurrent）
-    ηpm = -Matrix(kernel.blocks[(ContourBlockIndex(:+, band), ContourBlockIndex(:-, band))])
+    ηpp = Matrix(kernel.blocks[(ContourBlockIndex(:+, band, true), ContourBlockIndex(:+, band, false))])       # raw（顶点移位 accessor 禁令，见 electriccurrent）
+    ηpm = -Matrix(kernel.blocks[(ContourBlockIndex(:+, band, true), ContourBlockIndex(:-, band, false))])
     op = nothing
     row = GrassmannContourIndex(Int(k), :+, band, true)
     for j in 1:Int(k)-1, (b2, η) in ((:+, ηpp), (:-, ηpm))

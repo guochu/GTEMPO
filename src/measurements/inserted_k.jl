@@ -211,7 +211,7 @@ kernel_coupling_norm(::Nothing) = 0.0
 与指数系数差 Keldysh 基一个相对号，公式层常数，见 correlationfunction.jl 注）"
 function _kernel_eta(kernel::HybridizationKernel, b::Symbol, band::Int)
     band in kernel.bands || throw(BoundsError(kernel.bands, band))
-    return kernel.blocks[(ContourBlockIndex(:+, band), ContourBlockIndex(b, band))]
+    return kernel.blocks[(ContourBlockIndex(:+, band, true), ContourBlockIndex(b, band, false))]
 end
 
 # ---------------------------------------------------------------------------

@@ -86,7 +86,7 @@ end
 		for b1 in bands_list, b2 in bands_list, br1 in brs, br2 in brs
 			n1 = br1 === :τ ? lat.kτ : lat.kt
 			n2 = br2 === :τ ? lat.kτ : lat.kt
-			blocks[(ContourBlockIndex(br1, b1), ContourBlockIndex(br2, b2))] =
+			blocks[(ContourBlockIndex(br1, b1, true), ContourBlockIndex(br2, b2, false))] =
 				randn(rng, T, n1, n2)          # 一般稠密核（非 Toeplitz，Matrix 值）
 		end
 		HybridizationKernel(blocks, 0.0, sort(unique(bands_list)))
