@@ -106,10 +106,21 @@ function _partialif_state(gmps, lattice::AbstractGrassmannLattice, kernel::Hybri
     return state, [err]
 end
 
+"PolarIF 组装（原地）：expmult!(gmps, fullfactor, PolarExp)——对角剥离/味扇区
+折叠后逐秩一分量 mult!（精确因子化），乘法压缩截断 = alg.trunc；返回
+(state, [truncerr])（与 _partialif_state 同形）"
+function _polarif_state(gmps, lattice::AbstractGrassmannLattice, kernel::HybridizationKernel,
+                        alg::PolarIF)
+    exp = GM.PolarExp(rtol=alg.rtol, alg_mult=SVDCompression(trunc=alg.trunc))
+    state, err = GM.expmult!(gmps, _fullfactor(kernel, lattice), exp)
+    return state, [err]
+end
+
 """
     bcs_hybriddynamics(lattice, bath::AbstractBCSBath, alg=PartialIF(); orbital=nothing) -> GMPS
 
-BCS bath 的 IF 链便捷入口：`orbital` 选 Nambu 对（band1 = 2·orbital−1、
+BCS bath 的 IF 链便捷入口：`alg` ∈ {PartialIF, PolarIF}（D7：GM 栈仅此二），
+`orbital` 选 Nambu 对（band1 = 2·orbital−1、
 band2 = 2·orbital），缺省 nothing = 全部 Nambu 对共享同一套杂化函数
 （correlationfunction 的轨道模式），对称性守卫 :z2（D7）。kernel 构造 =
 `correlationfunction(bath, lattice; orbital)`，装配走 fullfactor 轨道路径
@@ -118,8 +129,8 @@ band2 = 2·orbital），缺省 nothing = 全部 Nambu 对共享同一套杂化�
 function bcs_hybriddynamics(lattice::AbstractGrassmannLattice, bath::AbstractBCSBath,
                             alg::InfluenceFunctionalAlgorithm=PartialIF();
                             orbital::Union{Nothing,Int}=nothing)
-    alg isa PartialIF || throw(ArgumentError(
-        "BCS IF supports only PartialIF on the GM stack (D7), got $(typeof(alg))"))
+    alg isa Union{PartialIF,PolarIF} || throw(ArgumentError(
+        "BCS IF supports only PartialIF/PolarIF on the GM stack (D7), got $(typeof(alg))"))
     kernel = correlationfunction(bath, lattice; orbital)
     return first(hybriddynamics(lattice, kernel, alg))
 end

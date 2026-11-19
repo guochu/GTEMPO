@@ -73,6 +73,116 @@
 	end
 end
 
+@testset "IF 装配闸门：PolarIF（fullfactor × PolarExp 互换）" begin
+	# plan/polarif_plan.md T1/T2：PolarIF ≡ PartialIF（同一 fullfactor 的两种精确
+	# 因子化——乘法序不同 ⟹ 差 = 压缩噪声档，逐例实测锚；rtol=0 全数值秩）。
+	gd(x, y) = maximum(abs.(GM.Dense.todense(x).data - GM.Dense.todense(y).data))
+
+	# ---- ① 虚时（μ=0 / μ≠0 单模）——机器精度（实测 2.7e-15）----
+	for (bath, label) in ((discretefermionicbath([1.0], [0.5]; β=1.0), "μ=0"),
+	                      (fermionicbath(DiracDelta(ω=1.0, α=0.5), β=1.0, μ=0.7), "μ=0.7"))
+		lat = GrassmannLattice(N=4, δτ=0.25, contour=:imag)
+		kernel = correlationfunction(bath, lat)
+		full, _ = hybriddynamics(lat, kernel, PartialIF())
+		polar, _ = hybriddynamics(lat, kernel, PolarIF())
+		@test gd(polar, full) < 1e-13
+	end
+
+	# ---- ① 混合连续谱（半圆谱核秩结构大 ⟹ 压缩路径差实测 3.1e-6；
+	#       PolarIF 对精确 exp 的 oracle 锚 ≤ 3.2e-12，见下 ⑥）----
+	let latm = GrassmannLattice(Nt=3, δt=0.15, Nτ=4, δτ=0.25, contour=:mixed)
+		spec_c = spectrum(ϵ -> sqrt(1 - (ϵ / 10)^2) / π, lb=-10, ub=10)
+		bath = fermionicbath(spec_c, β=latm.β)
+		kernel = correlationfunction(bath, latm)
+		full, _ = hybriddynamics(latm, kernel, PartialIF())
+		polar, _ = hybriddynamics(latm, kernel, PolarIF())
+		@test gd(polar, full) < 1e-5
+	end
+
+	# ---- ③ U1 normal（F4 纯 ηη̄ Pairing 路线）——机器精度 ----
+	let lat = GrassmannLattice(N=4, δτ=0.25, contour=:imag, symmetry=U1Symmetry())
+		bath = discretefermionicbath([1.0], [0.5]; β=1.0)
+		kernel = correlationfunction(bath, lat)
+		full, _ = hybriddynamics(lat, kernel, PartialIF())
+		polar, _ = hybriddynamics(lat, kernel, PolarIF())
+		@test gd(polar, full) < 1e-13
+	end
+
+	# ---- ③ BCS 虚时反常（AnomalousPairing 味扇区折叠路径；实测 1.7e-8）----
+	let latb = GrassmannLattice(N=4, δτ=0.25, bands=2, contour=:imag, symmetry=Z2Symmetry())
+		bathb = bcsbath(fermionicbath(DiracDelta(ω=1.0, α=0.5), β=1.0), Δ=0.4)
+		kernelb = correlationfunction(bathb, latb)
+		full, _ = hybriddynamics(latb, kernelb, PartialIF())
+		polar, _ = hybriddynamics(latb, kernelb, PolarIF())
+		@test gd(polar, full) < 1e-7
+	end
+
+	# ---- ③ 实时 DiracDelta 单模（raw 直读无拟合档）——机器精度（实测 1.7e-15）----
+	let lat = GrassmannLattice(N=3, δt=0.15, contour=:real)
+		bath = fermionicbath(DiracDelta(ω=1.0, α=0.5), β=1.0)
+		kernel = correlationfunction(bath, lat)
+		full, _ = hybriddynamics(lat, kernel, PartialIF())
+		polar, _ = hybriddynamics(lat, kernel, PolarIF())
+		@test gd(polar, full) < 1e-13
+	end
+
+	# ---- ⑥ 跨带随机核 dense oracle（alg 换 PolarIF；实测 ≤ 3.2e-12）+ 恒单链契约 ----
+	DT = GM.Dense
+	import Random
+	function rand_kernel(rng, lat, bands_list)
+		T = ComplexF64
+		blocks = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{T},CorrelationMatrix{T}}}()
+		brs = branches(lat)
+		for b1 in bands_list, b2 in bands_list, br1 in brs, br2 in brs
+			n1 = br1 === :τ ? lat.kτ : lat.kt
+			n2 = br2 === :τ ? lat.kτ : lat.kt
+			blocks[(ContourBlockIndex(br1, b1, true), ContourBlockIndex(br2, b2, false))] =
+				randn(rng, T, n1, n2)
+		end
+		HybridizationKernel(blocks, 0.0, sort(unique(bands_list)))
+	end
+	gd2(x, y) = maximum(abs.(x .- y))
+	alg = PolarIF(trunc=GTEMPO.Defaults.alg_trunc_if(D=512))
+	for (B, kbands, N) in ((2, [1, 2], 3), (3, [1, 2, 3], 2), (4, [2, 3], 2), (4, [1, 3], 2))
+		rng = Random.MersenneTwister(hash((B, tuple(kbands...), N)))
+		lat = GrassmannLattice(N=N, δτ=0.25, bands=B, contour=:imag)
+		kernel = rand_kernel(rng, lat, kbands)
+		state, diag = hybriddynamics!(vacuumstate(lat), lat, kernel, alg)
+		oracle = DT.tositewise(DT.exp(DT.todense(fullfactor(kernel, lat), length(lat) ÷ 2)))
+		@test gd2(DT.tositewise(GM.Dense.todense(state)), oracle) < 1e-10
+	end
+	let rng = Random.MersenneTwister(777)
+		lat = GrassmannLattice(N=2, δt=0.15, bands=2, contour=:real)
+		kernel = rand_kernel(rng, lat, [1, 2])
+		state, _ = hybriddynamics!(vacuumstate(lat), lat, kernel, alg)
+		oracle = DT.tositewise(DT.exp(DT.todense(fullfactor(kernel, lat), length(lat) ÷ 2)))
+		@test gd2(DT.tositewise(GM.Dense.todense(state)), oracle) < 1e-10
+	end
+	# 恒单链契约（继承 PartialIF）：多带核 PolarIF 原地恒等返回单 GMPS
+	let rng = Random.MersenneTwister(555)
+		lat = GrassmannLattice(N=3, δτ=0.25, bands=2, contour=:imag)
+		kernel = rand_kernel(rng, lat, [1, 2])
+		g = vacuumstate(lat)
+		state, _ = hybriddynamics!(g, lat, kernel, PolarIF())
+		@test state === g && state isa GM.GMPS && length(state) == length(lat) ÷ 2
+	end
+
+	# ---- T2 rtol 截秩 smoke（数值锚实测回填：rtol=0.1 不掉秩=逐位同 rtol=0；
+	#       rtol=0.5 掉半秩质量 ⟹ 可观测差 4.0e-3）----
+	let lat = GrassmannLattice(N=4, δτ=0.25, contour=:imag)
+		bath = discretefermionicbath([1.0], [0.5]; β=1.0)
+		kernel = correlationfunction(bath, lat)
+		exact, _ = hybriddynamics(lat, kernel, PolarIF())
+		quiet, _ = hybriddynamics(lat, kernel, PolarIF(rtol=0.1))
+		@test gd(quiet, exact) == 0.0                     # 秩谱尾 < 0.1 → 无截 → 精确同
+		truncd, diag = hybriddynamics(lat, kernel, PolarIF(rtol=0.5))
+		d = gd(truncd, exact)
+		@test 0 < d < 1e-1                                # 实测 4.0e-3
+		@test all(isfinite, diag[:truncerrs])
+		@test isfinite(integrate(truncd))
+	end
+end
+
 @testset "泛化 kernel：随机跨带耦合 PartialIF（dense oracle）" begin
 	# 一般 HybridizationKernel 可含跨带耦合（Δ_b1b2 ≠ 0）——二次型不可按带分解，
 	# hybriddynamics 走单链整体装配（fullfactor 紧凑站点表）；正确性 = 装配态

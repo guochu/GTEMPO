@@ -1,9 +1,9 @@
 # influencefunctional/：IF 装配（plan/if_expmult_backend_plan.md W1 文件夹拆分
 # + W3/W4 后端统一，2026-11-18；influence.jl 旧装配档案随入口切换退役删除）
 #
-#   partialif.jl   W3：fullfactor（AnomalousPairing 整形式，紧凑站点表）+
-#                  PartialIF（expmult!×PartialExp 幂零指数——语义换代，同一
-#                  算符的第二种精确表示）
+#   partialif.jl   W3：fullfactor（Pairing/AnomalousPairing 整形式，紧凑站点表）+
+#                  PartialIF（expmult!×PartialExp 幂零指数）+ PolarIF
+#                  （expmult!×PolarExp SVD 秩一——同一算符第二种精确因子化）
 #   exacttti.jl    W4：tti_imag/real/cross_factors 三构造器（ExpDecaySumSum /
 #                  Pairing 容器）+ ExactTTI（expmult!×PolarExp SVD 秩一）
 #
@@ -26,6 +26,23 @@ IF = exp(Σ ā Δ a) 的精确幂零级数表示（F6 语义换代：旧逐行�
 `trunc` = 乘法压缩截断策略（Defaults.alg_trunc_if() = truncdimcutoff 缺省）。
 """
 @kwdef struct PartialIF{Tr<:TruncationStrategy} <: InfluenceFunctionalAlgorithm
+    trunc::Tr = Defaults.alg_trunc_if()
+end
+
+"""
+    PolarIF(; rtol=0.0, trunc=Defaults.alg_trunc_if())
+
+PolarIF：fullfactor 的 SVD 秩一精确指数装配（expmult!×PolarExp）——同一
+IF 算符 e^{Σ ā Δ a} 的第二种精确因子化（Pairing = 对角剥离 + 余阵 SVD；
+AnomalousPairing = 味扇区折叠逐扇区 SVD）。适用范围与 PartialIF 一致
+（任意轮廓 / kernel / 对称性；BCS 反常腿味在核键上，同一装配函数）。
+`rtol` = PolarExp SVD 秩截断（相对 Frobenius 尾部² 口径；0 = 全数值秩，
+机器精度精确——AnomalousPairing 跨扇区全局归一，BCS 配 rtol>0 时弱扇区
+可能整扇区截掉）；`trunc` = 乘法压缩截断策略（Defaults.alg_trunc_if() =
+truncdimcutoff 缺省）。
+"""
+@kwdef struct PolarIF{Tr<:TruncationStrategy} <: InfluenceFunctionalAlgorithm
+    rtol::Float64 = 0.0
     trunc::Tr = Defaults.alg_trunc_if()
 end
 
@@ -83,7 +100,8 @@ end
 原地 IF 装配（装配范围由 `kernel.bands` 决定，band 不重复输入；腿味在
 `ContourBlockIndex.conj` 上，无调用端味旗标）。**PartialIF = 恒就地装配
 `gmps` 为单链**（`fullfactor` 单因子覆盖全部变量——多带带对角核不再逐带
-拆分，逐带元组契约退役；原样返回，`gmps` 就地改写）。ExactTTI = 逐带独立
+拆分，逐带元组契约退役；原样返回，`gmps` 就地改写）。PolarIF = 恒就地
+单链（同 PartialIF 契约，SVD 秩一因子化乘入）。ExactTTI = 逐带独立
 装配：单带核就地单链；多带核逐带从 `copy(gmps)` 起步返回逐带元组。乘法
 压缩截断随算法对象携带（`alg.trunc`）。第二输出
 `diagnostics::Dict{Symbol,Any}` = 装配诊断：`:truncerrs`（逐步乘法压缩
@@ -100,6 +118,8 @@ function hybriddynamics!(gmps, lattice::AbstractGrassmannLattice, kernel::Hybrid
     diagnostics = Dict{Symbol,Any}(:algorithm => alg, :truncation => alg.trunc)
     if alg isa PartialIF
         state, truncerrs = _partialif_state(gmps, lattice, kernel, alg)
+    elseif alg isa PolarIF
+        state, truncerrs = _polarif_state(gmps, lattice, kernel, alg)
     elseif alg isa ExactTTI
         (!_is_normal_conj(kernel) || hascross) && throw(ArgumentError(
             "ExactTTI does not support anomalous/cross-band kernels (D7: BCS is " *

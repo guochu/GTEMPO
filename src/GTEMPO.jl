@@ -112,7 +112,7 @@ export correlationfunction, coupling_norm, ContourBlockIndex, changebands
 export sysdynamics, OperatorInsertion
 
 # IF 构造（W3/W4 装配面：fullfactor/tti_* = influencefunctional/ 后端统一入口）
-export InfluenceFunctionalAlgorithm, PartialIF, ExactTTI
+export InfluenceFunctionalAlgorithm, PartialIF, PolarIF, ExactTTI
 export fullfactor, tti_imag_factors, tti_real_factors, tti_cross_factors
 export bcs_hybriddynamics, hybriddynamics!
 export var_charge, cell_charges, fock_charges
