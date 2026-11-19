@@ -1,5 +1,31 @@
 # 接口更改说明
 
+## BCS-RT raw 口径 + Weyl2×BCS 批次（2026-11-19，plan/bcs_exacttti_plan.md Phase R/W）
+
+- **BCS-RT 去顶点移位（Phase R，Breaking）**：`_bcs_dense_block` 访问器物化
+  退役（顶点移位内嵌口径），BCS 三轮廓统一 raw branch 视图直存——与 normal
+  存储约定同构，GTEMPO 不再消费任何移位读取（QuAPI 包内 `_vs_rt_acc` 不动）。
+  **T6 探针否决计划预留的「跨支构造期取负」**：bcs_Δt 味块支视图自带与
+  normal Δt 相同的指数系数 Keldysh 号（Δ=0 四支对逐位 0.0），取反即错。
+  结构锚：Δ=0 BCS 核逐位等于 normal 核；T3 BCS 实时 ED 锚翻绿（max abs
+  gt 1.4e-4 / lt 6.5e-5 = 一阶标定档，δt 减半减半 ✓）——去移位前的 1.2e-2
+  δt 无关偏差（polarif 批 @test_broken 记录的缺陷）即移位口径错位，就此闭环。
+- **Weyl 二阶 × BCS（Phase W）**：`sysdynamics(...; order=2)` × BCS IF 端到端
+  实证——K 链 bath 无关、`coupling_norm` = normal 通道 α 和（kernel 携带）。
+  套件级闸门（test/bcs）：order=2 对 bcs_ed 偏差较 order=1 收缩 ≥10×
+  （实测 ~40×，Nt=8：1.2e-4 → 1.2e-5）。
+- **`validation/bcs_realtime_scaling.jl` 斜率标定**（N ∈ {4,8,16,32}）：
+  order=1 斜率 1.07–1.09 ✓；order=2 改善 ~40× 但 Nt≥8 撞 ~1e-5 δt 无关地板
+  （紧截断不变、随 Nt 线性缓增 = 每格常数残差特征）——渐近斜率 ≈ 2.00 被
+  地板掩盖，疑二阶接触门 × BCS 交互（plan R7 排查面；正常 bath 九组基准
+  1.996–2.005 无此地板）。**陷阱记录：ED 参照须按时刻对齐切片**
+  （`gt_ed[(1:Nt).*stride]`）——首版 `gt_ed[1:Nt]` 半时刻错位伪造了
+  order 无关大误差；relerr 分母随窗口变化也伪造斜率，斜率口径 = 绝对偏差。
+- **BCS goldens 新档**：`test/fixtures/bcs_realtime_golden.json` +
+  `check_golden_bcs.jl`（raw 口径四组合 PartialIF/PolarIF × order1/2 的
+  Z/gt/lt 全时序，1e-6 档；12/12 绿）。
+- **`fermionic_setup` 加 `alg` kwarg**（测试辅助面，缺省 PartialIF 不变）。
+
 ## PolarIF 装配算法批次（2026-11-19，plan/polarif_plan.md 落地）
 
 - **`PolarIF(; rtol=0.0, trunc=Defaults.alg_trunc_if())`** 新算法：

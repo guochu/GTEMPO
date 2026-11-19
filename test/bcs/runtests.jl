@@ -116,3 +116,46 @@ end
 	@test maximum(abs.(res[1][1] - res[2][1])) < 1e-6
 	@test maximum(abs.(res[1][2] - res[2][2])) < 1e-6
 end
+
+@testset "BCS: Weyl 二阶实时演化（order2 ED 锚 + 阶改善）" begin
+	# plan/bcs_exacttti_plan.md Phase W 套件级闸门：Weyl-2 K 机器 × BCS IF 端到端
+	# ——order=2 对 bcs_ed 偏差较 order=1 收缩 ≥10×（实测 ~40×：K 链 bath 无关、
+	# Weyl 标量 BCS 无修正——bcsweyl F5 裁决的端到端确证）。全 N 斜率标定 =
+	# validation/bcs_realtime_scaling.jl（N ∈ {4,8,16,32}）。
+	U = 1.0; ϵ_ed = 0.8; ω = 1.0; α = 0.5
+	β = 1.0; T = 0.25; Nt = 8; δt = T / Nt
+	ts = (1:Nt) .* δt
+	H, Ab, Bb, _ = bcs_ed(U, ϵ_ed; ω₀=ω, α=α, Δ=0.6)
+	p1 = spin_half_matrices()
+	n̂, σ₊, σ₋, JW = p1["n"], p1["+"], p1["-"], -p1["z"]
+	I2 = one(n̂)
+	n_imp = kron(n̂, I2) + kron(I2, n̂)
+	Himpbare = -ϵ_ed * n_imp + U * kron(n̂, n̂)
+	I4 = Matrix{ComplexF64}(I, 4, 4)
+	n_bath = kron(I2, n̂) + kron(n̂, I2)
+	H0dec = kron(Himpbare, I4) + ω * kron(I4, n_bath)
+	gt_ed, lt_ed = greater_lesser_ed(H, Ab, Bb, H0dec, ts, β)
+
+	lat = GrassmannLattice(N=Nt, δt=δt, bands=2, contour=:real, symmetry=Z2Symmetry())
+	model = AndersonIM(U=U, ϵ_d=-ϵ_ed)
+	bath = bcsbath(fermionicbath(DiracDelta(ω=ω, α=α), β=β), Δ=0.6)
+	kernel = correlationfunction(bath, lat)
+	cn = kernel.coupling_norm                     # 带对各 α（Weyl 标量 = normal 通道 α 和，Δ 不进）
+	ρ0 = thermal_impurity_state(model, β)
+	Is = bcs_hybriddynamics(lat, bath, PartialIF())
+	errs = Float64[]
+	for order in (1, 2)
+		K = order == 2 ?
+			sysdynamics(lat, model; order=2, coupling_norm=cn, initial_state=ρ0) :
+			sysdynamics(lat, model; initial_state=ρ0)
+		Z = integrate(K, Is)
+		gt = [greater(lat, model, kernel, Is; i=i, j=0, Z=Z, order=order,
+		              coupling_norm=cn, initial_state=ρ0) for i in 1:Nt]
+		lt = [lesser(lat, model, kernel, Is; i=i, j=0, Z=Z, order=order,
+		             coupling_norm=cn, initial_state=ρ0) for i in 1:Nt]
+		push!(errs, maximum(abs.(gt .- gt_ed)) + maximum(abs.(lt .- lt_ed)))
+	end
+	# 实测 Nt=8：order1 1.2e-4、order2 1.2e-5（40× 档）
+	@test errs[2] < 0.15 * errs[1]
+	@test errs[2] < 2e-5
+end
