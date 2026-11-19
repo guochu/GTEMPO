@@ -19,8 +19,8 @@ module GTEMPO
 
 using Base: @boundscheck, @propagate_inbounds
 using Reexport
-@reexport using ImpurityModelBase, QuAPI
-import QuAPI: branch
+@reexport using ImpurityModelBase, IFDiscretization
+import IFDiscretization as IFD
 using LinearAlgebra: LinearAlgebra, eigen, Diagonal, I, tr, norm, diag
 import TensorKit as TK
 import MatrixAlgebraKit as MAK
@@ -55,7 +55,7 @@ include("defaults.jl")
 include("bridge.jl")
 include("lattices.jl")
 
-# correlation functions（QuAPI 薄壳，零逻辑改动）
+# correlation functions（IFD scheme 薄壳，零逻辑改动）
 include("correlationfunction.jl")
 
 # 杂质模型（fock_propagator/fock_thermalstate 纯数值接口）

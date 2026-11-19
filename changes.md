@@ -1,5 +1,34 @@
 # 接口更改说明
 
+## IF 离散化后端切换 QuAPI → IFDiscretization 批次（2026-11-19，plan/ifd_backend_switch_plan.md）
+
+- **后端切换 + scheme 入口（Part 1，Breaking）**：
+  `correlationfunction(bath, lattice, scheme=IFD.QuAPI(); band/orbital)` 第三位
+  scheme 参数（缺省 = IFD `QuAPI()`，两参调用透明）——六个离散化调用点
+  （normal/BCS × imag/real/mixed）全部改走 `IFD.Δτ/Δt/Δm(bath; …, scheme)`
+  bath 对象直读分派（QuAPI `bath.f/β/μ/Δ` 手工拆包退役）。命名空间：
+  `@reexport using QuAPI` → `IFDiscretization`（容器/branch/Δ* 面同名透明，
+  实施时 names 冲突清单核对通过）；`import QuAPI: branch` 删。
+  **位级中性实证**：IFD↔QuAPI 全轮廓逐位 0.0（含 BCS-RT 三味——顶点移位只
+  存在于 QuAPI GrassmannContourIndex 访问器层，branch 支视图本就 raw，两
+  后端逐位一致）。
+- **依赖降级**：QuAPI 从 `[deps]` 移至 `[extras]`+`[targets].test`
+  （crosscheck 对拍锚保留）；⚠️ 直跑 `julia --project=. test/runtests.jl` 的
+  QuAPI 加载依赖共享环境栈（本机 `@v1.10` 已 dev QuAPI）——干净机器上须
+  Pkg.test 或 dev QuAPI 后直跑。
+- **严格 IF 入口（Part 2）**：`HybridizationKernel` 增 `normdelta::
+  Union{Nothing,Float64}` 字段（A1 按推荐落地；frozen scheme = nothing，
+  changebands/Base.:+ 透传）——imag + `ExactEqualDistantKernel` → IFD 元组
+  `(ImagCorrelationFunction, det(BB))` 解包，normdelta 忠实透传（IFD 容器
+  标量型带 ~1e-15 虚部尾，构造器守卫后取实）；**real/mixed + Exact →
+  ArgumentError**（strict 容器 = 装配级骨架+踢契约，非朴素指数系数——消费
+  路线归 exactif_port_plan）；BCS + Exact = IFD 三轮廓 dispatch 已接线，
+  correlationfunction 透传（δ 谱自然报错自 IFD 内部）。normdelta 的
+  `Z = normdelta·Pf(B)` 消费契约不在本计划（exactif_port_plan 领域）。
+- **测试**：crosscheck 升级常驻位级闸门（QuAPI 侧显式限定——F6 自比对陷阱
+  规避）；scheme 面 testset（缺省≡显式 QuAPI 逐位、imag+Exact 元组解包、
+  real/mixed 拒绝、MethodError 冒泡、exact IF 装配 smoke）。
+
 ## BCS-RT raw 口径 + Weyl2×BCS 批次（2026-11-19，plan/bcs_exacttti_plan.md Phase R/W）
 
 - **BCS-RT 去顶点移位（Phase R，Breaking）**：`_bcs_dense_block` 访问器物化

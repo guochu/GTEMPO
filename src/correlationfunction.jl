@@ -69,6 +69,10 @@ end
   通道）。**构造器从核键派生**（`any(key -> key[1].conj == key[2].conj)`）——
   单一事实来源，`changebands`/`Base.:+` 等重装路径自动一致（normal + 反常
   相加 = 反常）。
+- `normdelta::Union{Nothing,Float64}` = 严格核的 Z 归一常数透传（IFD exact
+  scheme 元组第二元 det(BB)，`Z = normdelta · Pf(B)`——exactif_port_plan 的
+  消费契约）；QuAPI/frozen scheme = `nothing`。`changebands`/`Base.:+` 重装
+  路径透传该字段。
 
 `scalartype` 仅 Type 上定义（TensorKit 泛型回退 scalartype(x) =
 scalartype(typeof(x)) 自动覆盖实例）；T 由构造端 = `scalartype(corr)` 动态定
@@ -80,10 +84,12 @@ struct HybridizationKernel{T<:Number}
     coupling_norm::Float64
     bands::Vector{Int}
     anomalous::Bool     # 异味键存在（构造器从键派生）
+    normdelta::Union{Nothing,Float64}   # 严格核 Z 归一常数透传（frozen scheme = nothing）
 
     function HybridizationKernel(blocks::Dict{Tuple{ContourBlockIndex,ContourBlockIndex},
                                               Union{Matrix{T},CorrelationMatrix{T}}},
-                                 coupling_norm::Real, bands::Vector{Int}) where {T<:Number}
+                                 coupling_norm::Real, bands::Vector{Int},
+                                 normdelta::Union{Nothing,Number}=nothing) where {T<:Number}
         isfinite(coupling_norm) && coupling_norm >= 0 ||
             throw(ArgumentError("invalid coupling norm $coupling_norm"))
         isempty(bands) && throw(ArgumentError("empty band list"))
@@ -96,8 +102,17 @@ struct HybridizationKernel{T<:Number}
             all(isfinite, value) || throw(ArgumentError(
                 "nonfinite kernel block $(key[1].branch)/$(key[2].branch) band $(key[1].band)"))
         end
+        nd = normdelta
+        if nd !== nothing && !isa(nd, Real)     # IFD 元组第二元随核标量型（det(BB) 实值）
+            abs(imag(nd)) <= 1e-12 * max(1.0, abs(real(nd))) ||
+                throw(ArgumentError("non-real normdelta $nd"))
+            nd = real(nd)
+        end
+        nd === nothing || (isfinite(nd) && nd != 0 ||
+            throw(ArgumentError("invalid normdelta $nd")))
         new{T}(blocks, Float64(coupling_norm), bands,
-               any(key -> key[1].conj == key[2].conj, keys(blocks)))
+               any(key -> key[1].conj == key[2].conj, keys(blocks)),
+               nd === nothing ? nothing : Float64(nd))
     end
 end
 
@@ -166,8 +181,19 @@ secondorderif kernels.jl 同款三路径（ED 验证过）：
 值共享同一底层块对象，零拷贝）。`coupling_norm` 自动 = 带数 ×
 `coupling_norm(bath)`（全带总量 Σ_b α_b）。β 不一致告警保留。
 """
-function correlationfunction(bath::AbstractNormalBath, lattice::AbstractGrassmannLattice;
+function correlationfunction(bath::AbstractNormalBath, lattice::AbstractGrassmannLattice,
+                             scheme::IFD.DiscretizationScheme=IFD.QuAPI();
                              band::Union{Nothing,Int}=nothing)
+    # 严格 scheme 路由（plan ifd_backend_switch §3.1）：imag + Exact = 元组
+    # (ImagCorrelationFunction, det(BB)) 解包；real/mixed + Exact = strict 容器
+    # （装配级骨架+踢契约，非朴素指数系数）→ ArgumentError 指向 exactif_port_plan
+    normdelta = nothing
+    if scheme isa IFD.ExactKernel && !(lattice isa AbstractImagGrassmannLattice)
+        throw(ArgumentError(
+            "real/mixed lattices do not support the Exact scheme in correlationfunction: " *
+            "the strict containers carry assembly-level contracts (skeleton + kicks, " *
+            "Z = normdelta · Pf(B)) — see plan/exactif_port_plan.md for the block-level route"))
+    end
     bands = band === nothing ? collect(1:lattice.bands) :
             (1 <= band <= lattice.bands || throw(BoundsError(1:lattice.bands, band));
              [band])
@@ -176,11 +202,12 @@ function correlationfunction(bath::AbstractNormalBath, lattice::AbstractGrassman
             @warn "lattice.β=$(lattice.β), but bath.β=$(bath.β)"
     end
     corr = if lattice isa AbstractImagGrassmannLattice
-        QuAPI.Δτ(bath; N=lattice.Nτ, δτ=lattice.δτ)
+        res = IFD.Δτ(bath; N=lattice.Nτ, δτ=lattice.δτ, scheme)
+        res isa Tuple ? (normdelta = res[2]; res[1]) : res     # exact scheme 元组解包（F2）
     elseif lattice isa AbstractRealGrassmannLattice
-        QuAPI.Δt(bath; N=lattice.Nt, t=lattice.Nt * lattice.δt)
+        IFD.Δt(bath; N=lattice.Nt, t=lattice.Nt * lattice.δt, scheme)
     else
-        QuAPI.Δm(bath; Nτ=lattice.Nτ, t=lattice.Nt * lattice.δt, Nt=lattice.Nt, δτ=lattice.δτ)
+        IFD.Δm(bath; Nτ=lattice.Nτ, t=lattice.Nt * lattice.δt, Nt=lattice.Nt, δτ=lattice.δτ, scheme)
     end
     T = TK.scalartype(corr)
     blocks = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{T},CorrelationMatrix{T}}}()
@@ -198,7 +225,7 @@ function correlationfunction(bath::AbstractNormalBath, lattice::AbstractGrassman
         end
     end
     norm = length(bands) * coupling_norm(bath)
-    return HybridizationKernel(blocks, norm, bands)
+    return HybridizationKernel(blocks, norm, bands, normdelta)
 end
 
 # ---------------------------------------------------------------------------
@@ -237,7 +264,8 @@ orbital 共享同一套杂化函数（四味块每支对只装配一次，多对
 normal 同构——Δ=0 时逐位等于 normal 核）；旧顶点移位口径与跨支取负均已
 移除（v3-① + T6 探针否决）。
 """
-function correlationfunction(bath::AbstractBCSBath, lattice::AbstractGrassmannLattice;
+function correlationfunction(bath::AbstractBCSBath, lattice::AbstractGrassmannLattice,
+                             scheme::IFD.DiscretizationScheme=IFD.QuAPI();
                              orbital::Union{Nothing,Int}=nothing)
     bcs_symmetry_guard(symmetry(lattice))
     orbitals = orbital === nothing ? collect(1:lattice.bands ÷ 2) :
@@ -251,12 +279,12 @@ function correlationfunction(bath::AbstractBCSBath, lattice::AbstractGrassmannLa
             @warn "lattice.β=$(lattice.β), but bath.β=$(bath.β)"
     end
     corr = if lattice isa AbstractImagGrassmannLattice
-        QuAPI.bcs_Δτ(bath.f; β=bath.β, μ=bath.μ, Δ=bath.Δ, N=lattice.Nτ, δτ=lattice.δτ)
+        res = IFD.Δτ(bath; N=lattice.Nτ, δτ=lattice.δτ, scheme)
+        res isa Tuple ? (normdelta = res[2]; res[1]) : res     # exact scheme 元组解包（F2）
     elseif lattice isa AbstractRealGrassmannLattice
-        QuAPI.bcs_Δt(bath.f; β=bath.β, μ=bath.μ, Δ=bath.Δ, N=lattice.Nt, t=lattice.Nt * lattice.δt)
+        IFD.Δt(bath; N=lattice.Nt, t=lattice.Nt * lattice.δt, scheme)
     else
-        QuAPI.bcs_Δm(bath.f; β=bath.β, μ=bath.μ, Δ=bath.Δ, Nτ=lattice.Nτ,
-                     t=lattice.Nt * lattice.δt, Nt=lattice.Nt, δτ=lattice.δτ)
+        IFD.Δm(bath; Nτ=lattice.Nτ, t=lattice.Nt * lattice.δt, Nt=lattice.Nt, δτ=lattice.δτ, scheme)
     end
     T = TK.scalartype(corr)
     blocks = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{T},CorrelationMatrix{T}}}()

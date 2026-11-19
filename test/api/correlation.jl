@@ -80,3 +80,49 @@ end
 	@test kab.blocks[key] isa CorrelationMatrix
 	@test Matrix(kab.blocks[key]) ≈ Matrix(kimg.blocks[key]) + Matrix(ka.blocks[key]) atol = 0.0
 end
+
+@testset "API: scheme 面（IFD 后端切换 + 严格 IF 入口）" begin
+	import IFDiscretization as IFD
+	# plan/ifd_backend_switch：后端切换 = correlationfunction 第三位 scheme 参数
+	# （缺省 IFD.QuAPI()）；严格面 = imag + Exact 元组解包 + normdelta 透传。
+	β = 1.0
+	bath = discretefermionicbath([1.0], [0.5]; β=β)
+	latτ = GrassmannLattice(N=4, δτ=0.25, contour=:imag)
+	latr = GrassmannLattice(N=4, δt=0.1, contour=:real)
+	latm = GrassmannLattice(Nt=2, δt=0.1, Nτ=3, δτ=0.25, contour=:mixed)
+
+	# T3a：缺省 ≡ 显式 QuAPI scheme（逐位中性证明）
+	k1 = correlationfunction(bath, latτ)
+	k2 = correlationfunction(bath, latτ, IFD.QuAPI())
+	@test collect(pairs(k1.blocks)) == collect(pairs(k2.blocks))
+	@test k1.normdelta === nothing && k2.normdelta === nothing
+
+	# T3b：imag + Exact（求解器要求可调用谱 → 连续谱 bath）——blocks ≡ 元组
+	# 第一位逐位、normdelta ≡ 第二位（det(BB)）
+	spec = spectrum_func()
+	bathc = fermionicbath(spec, β=β, μ=0.0)
+	scheme = IFD.ExactEqualDistantKernel(IFD.EDToulouseSolver(8))
+	kx = correlationfunction(bathc, latτ, scheme)
+	res = IFD.Δτ(bathc; N=4, δτ=0.25, scheme)
+	@test kx.normdelta == real(res[2])   # 构造器剥离 IFD 容器标量型的 ~1e-15 虚部尾
+	@test Matrix(kx.blocks[(ContourBlockIndex(:τ, 1, true), ContourBlockIndex(:τ, 1, false))]) ==
+	      Matrix(res[1].data[1:4, 1:4])
+
+	# T4：real/mixed + Exact 拒绝（strict 容器 = 装配级骨架+踢契约，非朴素指数
+	# 系数——消费路线归 exactif_port_plan）；非法 scheme → MethodError 自然冒泡
+	@test_throws ArgumentError correlationfunction(bathc, latr, scheme)
+	@test_throws ArgumentError correlationfunction(bathc, latm, scheme)
+	@test_throws ArgumentError correlationfunction(bath, latr, scheme)
+	@test_throws MethodError correlationfunction(bath, latτ, "bogus")
+
+	# T5：exact IF 装配 smoke（normdelta·Pf(B) 的 Z 消费契约归 exactif_port_plan
+	# ——本计划只保证字段忠实透传 + 可装配：exact IF 的 bath 归一 Z 与 QuAPI
+	# scheme 同量级）
+	Isq, _ = hybriddynamics(latτ, k1, PartialIF())
+	Ise, _ = hybriddynamics(latτ, kx, PartialIF())
+	model = ToulouseIM(ϵ_d=1.25 * pi)
+	K = sysdynamics(latτ, model)
+	Zq = integrate(K, Isq)
+	Zx = integrate(K, Ise)
+	@test isfinite(Zx) && 0.5 < abs(Zx) / abs(Zq) < 2.0
+end
