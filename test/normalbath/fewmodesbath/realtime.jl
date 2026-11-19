@@ -11,8 +11,11 @@
 	bath = discretefermionicbath([ω], [α]; β=β)
 	kernel = correlationfunction(bath, lat)
 	model = ToulouseIM(ϵ_d=μ)
-	for order in (1, 2)
-		K, Is = fermionic_setup(lat, bath, model; β=β, order=order, coupling_norm=coupling_norm(bath))
+	# order 循环：PartialIF 一/二阶全锚；PolarIF（乘法序不同）复验二阶语义
+	#（一阶 PolarIF ED 锚由 BCS 实时演化测试承接——免重复锚点）
+	for order in (1, 2), alg in (order == 2 ? (PartialIF(), PolarIF()) : (PartialIF(),))
+		K, Is = fermionic_setup(lat, bath, model; β=β, order=order,
+		                        coupling_norm=coupling_norm(bath), alg=alg)
 		Z = integrate(K, Is...)
 		for i in 1:Nt
 			g = greater(lat, model, kernel, Is...; i=i, j=0, Z=Z, order=order,

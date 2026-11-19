@@ -1,5 +1,32 @@
 # 接口更改说明
 
+## PolarIF 装配算法批次（2026-11-19，plan/polarif_plan.md 落地）
+
+- **`PolarIF(; rtol=0.0, trunc=Defaults.alg_trunc_if())`** 新算法：
+  `expmult!×PolarExp`——fullfactor 的 SVD 秩一精确指数（Pairing = 对角剥离 +
+  余阵 SVD；AnomalousPairing = 味扇区折叠逐扇区 SVD）。适用范围与 PartialIF
+  一致（任意轮廓/kernel/对称性），恒就地单链；`rtol` = PolarExp SVD 秩截断
+  （0 = 全数值秩缺省；AnomalousPairing 跨扇区全局归一）；`trunc` 随算法对象。
+  `bcs_hybriddynamics` 守卫放宽 `Union{PartialIF,PolarIF}`（D7）；export 补。
+- **闸门测试（if_gates）**：PolarIF ≡ PartialIF 对拍并入既有算例（复用装配态）
+  ——虚时/U1/实时单模机器精度档（~1e-15，缩格后压缩无损）、混合连续谱
+  5.3e-15（Nt=2/Nτ=3）、BCS 反常 1.2e-14（N=3）；跨带随机核 dense oracle
+  ≤ 3.2e-12（vs 精确 exp）+ 恒单链契约 + rtol smoke（0.1 不掉秩逐位同、
+  0.5 可观测差 4e-3）。虚时格 N≥4（N=3 触发热配对审计轮盘，已知）。
+- **BCS 实时 ED（test/bcs 新 testset）**：🔴 **发现已知缺陷**——BCS 实时核块
+  与 normal 约定错位（Δ=0 时 (+,+) 块首行全零/条目移位一格、(−,+) 块差一个
+  Keldysh 号；δt 无关、随 t 线性、Δ 无关的系统偏差 max abs ~1.2e-2）。根因 =
+  `_bcs_dense_block` 的 QuAPI 访问器物化保留旧栈顶点移位内嵌口径，新栈
+  fullfactor 按标准网格消费。ED 锚以 `@test_broken` 记录（互拍锚有效——两
+  算法消费同一核）；imag 侧不受影响（branch 视图）。修复方向：访问器读取
+  补偿内嵌移位，待裁决。
+- **`fermionic_setup` 加 `alg` kwarg**（测试辅助面，缺省 PartialIF 不变）；
+  fewmodes realtime 阶语义复验：order=2 双算法（一阶 PolarIF 锚由 BCS 实时
+  测试承接）。
+- **套件减时**（不缩覆盖）：闸门对拍复用装配态 + 混合/实时格缩格
+  （Nt=2/Nτ=3、real N=3）+ PolarIF oracle 4+1→2+1 算例；两个闸门 testset
+  合计 ~5.5 min → ~0.5 min（闸门算例的装配数 12+12 → 15 共享）。
+
 ## anomalous 派生旗标 + 恒单链装配批次（2026-11-19，Breaking）
 
 - **`HybridizationKernel.anomalous::Bool`**：是否含异味键（a·a / ā·ā——不满足

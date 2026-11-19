@@ -74,3 +74,66 @@ end
 	bath = bcsbath(fermionicbath(DiracDelta(ω=1.0, α=0.5), β=1.0), Δ=0.6)
 	@test_throws ArgumentError bcs_hybriddynamics(lat, bath)
 end
+
+@testset "BCS: 实时演化 vs bcs_ed（PartialIF / PolarIF 互换 + ED 锚）" begin
+	# plan/polarif_plan.md T3（docs/tutorials bcs_realtime.jl 模型缩测）：反常通道
+	# 实时 Keldysh 演化——两 IF 算法各跑 gt/lt vs 全模型 ED（一阶离散化档），
+	# 并互拍（同一 fullfactor 的两种因子化，互拍应远紧于 ED 容差）。
+	U = 1.0; ϵ_ed = 0.8; ω = 1.0; α = 0.5
+	β = 1.0; T = 0.25; Nt = 5; δt = T / Nt
+	ts = (1:Nt) .* δt
+	H, Ab, Bb, _ = bcs_ed(U, ϵ_ed; ω₀=ω, α=α, Δ=0.6)
+	# ED 初态口径 = 杂质热态 ⊗ 浴真空（现行栈 initial_state 只进杂质、浴恒真空；
+	# bcs_ed 的 H0 含配对浴——其热态 ≈ 配对基态，与真空口径差 O(Δ)，旧教程栈
+	# 折叠浴热态故口径一致、现行栈必须投影）：H0 = 杂质块 + 50×浴占据投影
+	# （占据浴基底权重 e^{-50β} ≈ 0；浴真空基位由数算符对角零位判定，免约定歧义）
+	p1 = spin_half_matrices()
+	n̂, σ₊, σ₋, JW = p1["n"], p1["+"], p1["-"], -p1["z"]
+	I2 = one(n̂)
+	n_imp = kron(n̂, I2) + kron(I2, n̂)          # 杂质两轨道数（4×4）
+	Himpbare = -ϵ_ed * n_imp + U * kron(n̂, n̂)
+	I4 = Matrix{ComplexF64}(I, 4, 4)
+	n_bath = kron(I2, n̂) + kron(n̂, I2)         # 浴两模数（4×4）
+	E_occ = zeros(ComplexF64, 4, 4)                             # 浴块占据投影（4×4）
+	for i in 1:4
+		real(n_bath[i, i]) > 0.5 && (E_occ[i, i] = 1)
+	end
+	H0proj = kron(Himpbare, I4) + 50 * kron(I4, E_occ)
+	gt_ed, lt_ed = greater_lesser_ed(H, Ab, Bb, H0proj, ts, β)
+
+	lat = GrassmannLattice(N=Nt, δt=δt, bands=2, contour=:real, symmetry=Z2Symmetry())
+	model = AndersonIM(U=U, ϵ_d=-ϵ_ed)
+	bath = bcsbath(fermionicbath(DiracDelta(ω=ω, α=α), β=β), Δ=0.6)
+	kernel = correlationfunction(bath, lat)
+	ρ0 = thermal_impurity_state(model, β)
+	K = sysdynamics(lat, model; initial_state=ρ0)
+	res = []
+	for alg in (PartialIF(), PolarIF())
+		Is = bcs_hybriddynamics(lat, bath, alg)
+		Z = integrate(K, Is)
+		gt = [greater(lat, model, kernel, Is; i=i, j=0, Z=Z, initial_state=ρ0) for i in 1:Nt]
+		lt = [lesser(lat, model, kernel, Is; i=i, j=0, Z=Z, initial_state=ρ0) for i in 1:Nt]
+		push!(res, (gt, lt))
+	end
+	# PolarIF ≡ PartialIF 互拍（实测 ~1.5e-8——两算法消费同一核，互换语义有效）
+	@test maximum(abs.(res[1][1] - res[2][1])) < 1e-7
+	@test maximum(abs.(res[1][2] - res[2][2])) < 1e-7
+
+	# 🔴 已知缺陷（2026-11-19 T3 新增锚发现，待裁决修复）：BCS 实时核块与 normal
+	# 约定错位——Δ=0 时 BCS 核应逐位等于 normal 核（bcs_Δt Δ=0 = 纯 uu 正常块），
+	# 实测（N=5, δt=0.05）：
+	#   (+,+) 块首行 = 全零（normal 的 [1,1] 等时接触 −2.9e-4 缺失）、其余条目
+	#   相对 normal 移位一格；(−,+) 块整体差一个 Keldysh 号（= −normal）。
+	#   后果 = 装配态的实时观测量带 δt 无关、随 t 线性增长的系统偏差
+	#   （max abs gt 1.2e-2 / lt 1.8e-2；Δ=0 与 Δ=0.6 同偏差 ⟹ 与反常通道无关）；
+	#   δt 减半不收缩 ⟹ 非离散化阶。根因 = `_bcs_dense_block` 的 QuAPI 访问器
+	#   物化保留旧栈「顶点移位内嵌」口径（bcsweyl 锚定的是 Weyl 标量补偿，非
+	#   网格约定），而新栈 fullfactor 按标准网格消费（normal 同款）。imag 侧走
+	#   branch 视图窗口无此问题（虚时 BCS ED 锚全绿）。修复方向 = 访问器读取
+	#   补偿内嵌移位（QuAPI BCS getindex 语义考古），修复后本组 @test_broken
+	#   翻绿（ED 参照口径已验证：数守恒退耦 H0 = 杂质热态 ⊗ 浴热态，Δ 无关）。
+	@test_broken maximum(abs.(res[1][1] .- gt_ed)) < 2.5e-4
+	@test_broken maximum(abs.(res[1][2] .- lt_ed)) < 2.5e-4
+	@test_broken maximum(abs.(res[2][1] .- gt_ed)) < 2.5e-4
+	@test_broken maximum(abs.(res[2][2] .- lt_ed)) < 2.5e-4
+end

@@ -36,18 +36,21 @@ thermal_impurity_state(model, β) =
 	Matrix{ComplexF64}(fock_thermalstate(model, β).data)
 
 """
-    fermionic_setup(lattice, bath, model; β=nothing, order=1, coupling_norm=nothing)
+    fermionic_setup(lattice, bath, model; β=nothing, order=1, coupling_norm=nothing,
+                    alg=PartialIF())
 
 新 API 装配：全带 kernel（coupling_norm 自动 = 带数 × coupling_norm(bath)，
-显式 coupling_norm 仅作 K 侧 Weyl 标量输入）+ 逐带 PartialIF + K（可带热初态、
-二阶 Weyl 标量）。返回 (K, Is)。
+显式 coupling_norm 仅作 K 侧 Weyl 标量输入）+ IF 装配（`alg` 透传
+hybriddynamics——恒单链，包装成 `(Is,)` 元组）+ K（可带热初态、二阶 Weyl
+标量）。返回 (K, Is)。
 """
-function fermionic_setup(lattice, bath, model; β=nothing, order::Int=1, coupling_norm=nothing)
+function fermionic_setup(lattice, bath, model; β=nothing, order::Int=1, coupling_norm=nothing,
+                         alg::InfluenceFunctionalAlgorithm=PartialIF())
 	order == 2 && coupling_norm === nothing &&
 		throw(ArgumentError("order=2 requires coupling_norm"))
 	kernel = correlationfunction(bath, lattice)
-	Is, _ = hybriddynamics(lattice, kernel, PartialIF())
-	Is isa GMPS && (Is = (Is,))                     # 单带 → 单 IF 元组（Is... 契约）
+	Is, _ = hybriddynamics(lattice, kernel, alg)
+	Is isa GMPS && (Is = (Is,))                     # 单 GMPS → 单 IF 元组（Is... 契约）
 	initial = β === nothing ? nothing : thermal_impurity_state(model, β)
 	K = order == 2 ?
 		sysdynamics(lattice, model; order=2, coupling_norm=coupling_norm, initial_state=initial) :
