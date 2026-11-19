@@ -81,11 +81,12 @@ end
     hybriddynamics!(gmps, lattice, kernel, alg=PartialIF()) -> (GMPS | Tuple{GMPS...}, diagnostics)
 
 原地 IF 装配（装配范围由 `kernel.bands` 决定，band 不重复输入；腿味在
-`ContourBlockIndex.conj` 上，无调用端味旗标）：含跨带键的 kernel（跨带耦合 /
-BCS 轨道）= 二次型不可按带分解 ⟹ 就地装配 `gmps` 为单链（原样返回）；band
-对角多带核 = 逐带从 `copy(gmps)` 起步装配（`gmps` 语义上应为真空起始态，
-本身不变），返回逐带元组。乘法压缩截断随算法对象携带（`alg.trunc`）。第二
-输出 `diagnostics::Dict{Symbol,Any}` = 装配诊断：`:truncerrs`（逐步乘法压缩
+`ContourBlockIndex.conj` 上，无调用端味旗标）。**PartialIF = 恒就地装配
+`gmps` 为单链**（`fullfactor` 单因子覆盖全部变量——多带带对角核不再逐带
+拆分，逐带元组契约退役；原样返回，`gmps` 就地改写）。ExactTTI = 逐带独立
+装配：单带核就地单链；多带核逐带从 `copy(gmps)` 起步返回逐带元组。乘法
+压缩截断随算法对象携带（`alg.trunc`）。第二输出
+`diagnostics::Dict{Symbol,Any}` = 装配诊断：`:truncerrs`（逐步乘法压缩
 的 GM truncerr）+ 通道审计键（Keldysh/热配对残差、拟合展开）+
 `:algorithm`/`:truncation`。ExactTTI 仅支持单带 normal 取向核（键 = (ā, a)；
 反常/跨带核 D7 走 PartialIF），且拟合层因子恒复 ⟹ 实链在装配入口复化
@@ -120,9 +121,10 @@ end
 
 IF 链装配（真空起始）：`hybriddynamics(lattice, ...) =
 hybriddynamics!(vacuumstate(promote_type(scalartype(lattice), scalartype(kernel)),
-lattice), lattice, ...)`——提升的是两者的 scalartype。含跨带键的 kernel 返回
-单 GMPS；band 对角多带 kernel 返回逐带 `Tuple`（`Is...` 变参兼容）；第二输出
-= 装配 diagnostics（见 `hybriddynamics!`）。
+lattice), lattice, ...)`——提升的是两者的 scalartype。PartialIF 返回单 GMPS
+（多带核 = 单个多带因子）；ExactTTI 多带核返回逐带 `Tuple`（`Is...` 变参
+兼容——消费方对单 GMPS 须自包装 `(Is,)`）；第二输出 = 装配 diagnostics
+（见 `hybriddynamics!`）。
 """
 function hybriddynamics(lattice::AbstractGrassmannLattice, kernel::HybridizationKernel,
                         alg::InfluenceFunctionalAlgorithm=PartialIF())

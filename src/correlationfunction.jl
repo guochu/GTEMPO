@@ -61,6 +61,10 @@ end
   必需，单带 = coupling_norm(bath)，全带 = bands·倍，BCS 轨道 = 2×）。
 - `bands::Vector{Int}` = 本核覆盖的带号有序表（单带 → [b]；全带 → [1..B]；
   BCS 轨道 → [band1, band2]）。
+- `anomalous::Bool` = 是否含异味键（a·a / ā·ā——不满足荷守恒的块，BCS 反常
+  通道）。**构造器从核键派生**（`any(key -> key[1].conj == key[2].conj)`）——
+  单一事实来源，`changebands`/`Base.:+` 等重装路径自动一致（normal + 反常
+  相加 = 反常）。
 
 `scalartype` 仅 Type 上定义（TensorKit 泛型回退 scalartype(x) =
 scalartype(typeof(x)) 自动覆盖实例）；T 由构造端 = `scalartype(corr)` 动态定
@@ -71,6 +75,7 @@ struct HybridizationKernel{T<:Number}
     blocks::Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{T},CorrelationMatrix{T}}}
     coupling_norm::Float64
     bands::Vector{Int}
+    anomalous::Bool     # 异味键存在（构造器从键派生）
 
     function HybridizationKernel(blocks::Dict{Tuple{ContourBlockIndex,ContourBlockIndex},
                                               Union{Matrix{T},CorrelationMatrix{T}}},
@@ -87,7 +92,8 @@ struct HybridizationKernel{T<:Number}
             all(isfinite, value) || throw(ArgumentError(
                 "nonfinite kernel block $(key[1].branch)/$(key[2].branch) band $(key[1].band)"))
         end
-        new{T}(blocks, Float64(coupling_norm), bands)
+        new{T}(blocks, Float64(coupling_norm), bands,
+               any(key -> key[1].conj == key[2].conj, keys(blocks)))
     end
 end
 

@@ -117,6 +117,7 @@ end
         cn = α * 2
         kernel = correlationfunction(bath, lat)
         Is, _ = hybriddynamics(lat, kernel, PartialIF())
+        Is = (Is,)	# 单 GMPS → 变参包装（恒单链契约）
         ρ0 = Diagonal(ComplexF64[1.0, exp(-β * μ), exp(-β * μ), exp(-β * 2μ)]); ρ0 /= tr(ρ0)
         K = sysdynamics(lat, AndersonIM(U=0.0, ϵ_d=μ); order=2, coupling_norm=cn, initial_state=ρ0)
         zs = integrate_scaled(K, Is...)

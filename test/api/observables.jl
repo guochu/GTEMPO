@@ -11,6 +11,7 @@ using LinearAlgebra: Diagonal, eigen
 	model = AndersonIM(U=0.0, ϵ_d=μ)
 	kernel = correlationfunction(bath, lat)
 	Is, _ = hybriddynamics(lat, kernel, PartialIF())
+	Is = (Is,)	# 单 GMPS → 变参包装（恒单链契约）
 	K = sysdynamics(lat, model; order=2, coupling_norm=1.0, initial_state=ρ0)
 	zs = integrate_scaled(K, Is...)
 	Z = exp(zs.logabs) * zs.phase
@@ -43,6 +44,7 @@ end
 	model = AndersonIM(U=0.0, ϵ_d=μ)
 	kernel = correlationfunction(bath, lat)
 	Is, _ = hybriddynamics(lat, kernel, PartialIF())
+	Is = (Is,)	# 单 GMPS → 变参包装（恒单链契约）
 	K = sysdynamics(lat, model)
 	Z = integrate(K, Is...)
 	@test Z ≈ 2.543041612650098 atol = 1e-10
@@ -115,6 +117,7 @@ end
 	bath2 = discretefermionicbath([ω, ω], [α, α]; β=β)
 	kernel2 = correlationfunction(bath2, lat2)
 	Is2, _ = hybriddynamics(lat2, kernel2, PartialIF())
+	Is2 = (Is2,)	# 单 GMPS → 变参包装（恒单链契约）
 	K2 = sysdynamics(lat2, AndersonIM(U=1.0, ϵ_d=μ))
 	Z2 = integrate(K2, Is2...)
 	bathZ2 = (1 + exp(-β * ω))^2
@@ -189,6 +192,7 @@ end
 	model = AndersonIM(U=0.0, ϵ_d=μ)
 	kernel = correlationfunction(bath, lat)
 	Is, _ = hybriddynamics(lat, kernel, PartialIF())
+	Is = (Is,)	# 单 GMPS → 变参包装（恒单链契约）
 	K = sysdynamics(lat, model; order=2, coupling_norm=1.0, initial_state=ρ0)
 	Z = integrate(K, Is...)
 	# raw_lead_correlator = lesser 图案（⟨d†(+,k) d(b2,j)⟩；同切位 a†a）
@@ -219,6 +223,7 @@ end
 	model = AndersonIM(U=0.0, ϵ_d=μ)
 	kernel = correlationfunction(bath, lat)
 	Is, _ = hybriddynamics(lat, kernel, PartialIF())
+	Is = (Is,)	# 单 GMPS → 变参包装（恒单链契约）
 	K = sysdynamics(lat, model; order=2, coupling_norm=1.0, initial_state=ρ0)
 	zs = integrate_scaled(K, Is...)
 	Z = exp(zs.logabs) * zs.phase

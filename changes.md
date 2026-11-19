@@ -1,5 +1,25 @@
 # 接口更改说明
 
+## anomalous 派生旗标 + 恒单链装配批次（2026-11-19，Breaking）
+
+- **`HybridizationKernel.anomalous::Bool`**：是否含异味键（a·a / ā·ā——不满足
+  荷守恒的块，BCS 反常通道）。**构造器从核键派生**
+  （`any(key -> key[1].conj == key[2].conj)`）——单一事实来源，
+  `changebands`/`Base.:+` 重装路径自动一致（normal + 反常相加 = 反常）。
+- **`fullfactor` 双路由**：`anomalous = true` → `GM.AnomalousPairing`（紧凑
+  变量表 2M×2M，BCS 反常键落同味象限，行为同前）；`anomalous = false` →
+  `GM.Pairing`（矩形站点表，C = M×M 全矩阵、行 ā 列 a；带解析站号天然互异
+  满足站点唯一性契约，接触项折 hloc 角）。non-anomalous 核若带非 canonical
+  键响抛。dense oracle 对拍裁决两路由 ≡ 同一算符。
+- **PartialIF 恒单链装配（多带逐带拆分退役）**：`_fullfactor` 单因子覆盖
+  `kernel.bands` 全部变量（多带带对角核不再 `_band_kernel` 逐带构建），
+  `_partialif_state` 恒 `expmult!(gmps, fullfactor, PartialExp)` 就地单链。
+  **`hybriddynamics!/hybriddynamics` 的 PartialIF 返回恒为单 GMPS**（多带
+  元组契约退役；ExactTTI 多带仍逐带元组）——消费方对单 GMPS 须自包装
+  `(Is,)` 再走 `Is...` 变参（`fermionic_setup` 的 `Is isa GMPS && (Is = (Is,))`
+  守卫语义从此恒真、对直传点不再需要）。装配值与旧逐带路径截断档一致
+  （实测 5e-15）。
+
 ## 动态标量型批次（2026-11-19，Breaking）
 
 - **包标量链全程动态（不再硬编码 ComplexF64）**：`correlationfunction.jl` 定义

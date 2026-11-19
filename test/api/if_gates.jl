@@ -63,13 +63,13 @@
 	let latb = GrassmannLattice(N=4, δτ=0.25, bands=2, contour=:imag, symmetry=Z2Symmetry())
 		bathb = bcsbath(fermionicbath(DiracDelta(ω=1.0, α=0.5), β=1.0), Δ=0.4)
 		kernelb = correlationfunction(bathb, latb)
-		@test_throws ArgumentError hybriddynamics(latb, kernelb, ExactTTI())
-		@test fullfactor(kernelb, latb) isa GM.AnomalousPairing      # BCS 轨道核 OK
-		bathn = discretefermionicbath([1.0], [0.5]; β=1.0)
-		kfull = correlationfunction(bathn, latb)                     # 多带 normal 核
-		ff = fullfactor(kfull, latb)                                 # 泛化：多带核 = 紧凑站点表因子
-		@test ff isa GM.AnomalousPairing && length(ff.sites) == length(latb) ÷ 2
-		@test_throws ArgumentError tti_imag_factors(kfull, latb)     # tti_* 仍限单带核
+	@test_throws ArgumentError hybriddynamics(latb, kernelb, ExactTTI())
+	@test fullfactor(kernelb, latb) isa GM.AnomalousPairing      # BCS 轨道核（anomalous）OK
+	bathn = discretefermionicbath([1.0], [0.5]; β=1.0)
+	kfull = correlationfunction(bathn, latb)                     # 多带 normal 核
+	ff = fullfactor(kfull, latb)                                 # 泛化：normal = Pairing 单因子全带
+	@test ff isa GM.Pairing && ff.asites == ff.bsites && length(ff.asites) == length(latb) ÷ 2
+	@test_throws ArgumentError tti_imag_factors(kfull, latb)     # tti_* 仍限单带核
 	end
 end
 
@@ -116,13 +116,14 @@ end
 		@test gd(DT.tositewise(GM.Dense.todense(state)), oracle) < 1e-10
 	end
 
-	# 多带带对角核（无跨带键）仍逐带元组；跨带核单链
+	# 恒单链契约：带对角多带核与跨带核同为单个多带因子装配（逐带元组退役）
 	let rng = Random.MersenneTwister(99)
 		lat = GrassmannLattice(N=3, δτ=0.25, bands=3, contour=:imag)
 		diag_kernel = rand_kernel(rng, lat, [1, 2, 3])
 		filter!(p -> p[1][1].band == p[1][2].band, diag_kernel.blocks)   # 只留带对角键
+		@test diag_kernel.anomalous == false && fullfactor(diag_kernel, lat) isa GM.Pairing
 		Is, _ = hybriddynamics(lat, diag_kernel, PartialIF())
-		@test Is isa Tuple && length(Is) == 3
+		@test Is isa GM.GMPS
 		kernel = rand_kernel(rng, lat, [1, 2, 3])
 		state, _ = hybriddynamics(lat, kernel, PartialIF())
 		@test state isa GM.GMPS

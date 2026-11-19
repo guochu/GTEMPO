@@ -11,6 +11,7 @@ bath0 = discretefermionicbath([1.0], [0.5]; β=β0)
 	@test TK.scalartype(kernel) == ComplexF64          # 泛型回退覆盖实例（仅 Type 定义）
 	@test kernel.bands == [1]
 	@test kernel.coupling_norm == coupling_norm(bath0)  # 单带 = bath α
+	@test kernel.anomalous == false                     # normal 键全 (ā, a)（构造器派生）
 	for b1 in (:+, :-), b2 in (:+, :-)
 		blk = kernel.blocks[(ContourBlockIndex(b1, 1, true), ContourBlockIndex(b2, 1, false))]
 		@test size(blk) == (4, 4)
@@ -24,6 +25,7 @@ bath0 = discretefermionicbath([1.0], [0.5]; β=β0)
 	@test kbcs.coupling_norm == 2 * coupling_norm(bath_bcs)   # 带对各 α → 2×
 	@test haskey(kbcs.blocks, (ContourBlockIndex(:+, 1, true), ContourBlockIndex(:-, 2, true)))  # ud 反常键（双腿 ā）
 	@test haskey(kbcs.blocks, (ContourBlockIndex(:-, 2, false), ContourBlockIndex(:+, 1, false)))  # du 反常键（双腿 a）
+	@test kbcs.anomalous == true                        # 异味键存在（派生旗标）
 	# orbital=nothing：全部 Nambu 对共享同一套块对象（零拷贝别名，normal 多带同款）
 	bath_bcs4 = bcsbath(fermionicbath(DiracDelta(ω=1.0, α=0.5), β=β0), Δ=0.3)
 	lat_b4 = GrassmannLattice(N=4, δt=0.1, bands=4, contour=:real, symmetry=Z2Symmetry())
@@ -97,15 +99,13 @@ end
 	lat = GrassmannLattice(N=4, δt=0.1, bands=2, contour=:real)
 	kernel = correlationfunction(bath0, lat)
 	Is, _ = hybriddynamics(lat, kernel, PartialIF())
-	@test Is isa Tuple && length(Is) == 2                 # 多带 kernel → 逐带 IF 序
-	for I in Is
-		@test I isa GM.GMPS && length(I) == length(lat) ÷ 2
-		@test check_charge(I)
-	end
-	# 原地版：多带核逐带从 copy(gmps) 起步（多带返回元组，gmps 本身不变）
-	Ik, diagk = hybriddynamics!(vacuumstate(lat), lat, kernel, PartialIF())
-	@test Ik isa Tuple && length(Ik) == length(Is)
-	@test all(i -> isapprox(integrate(Ik[i]), integrate(Is[i]); rtol=1e-12), eachindex(Is))
+	@test Is isa GM.GMPS && length(Is) == length(lat) ÷ 2   # 多带核 = 单个多带因子（恒单链契约）
+	@test check_charge(Is)
+	# 原地版：恒就地装配（多带也恒等返回，gmps 就地改写）
+	g = vacuumstate(lat)
+	Ik, diagk = hybriddynamics!(g, lat, kernel, PartialIF())
+	@test Ik === g
+	@test integrate(Ik) ≈ integrate(Is) rtol = 1e-12
 	@test diagk[:truncerrs] isa Vector{Float64}
 	@test haskey(diagk, :algorithm) && haskey(diagk, :truncation)
 	# 单带 kernel → 单 IF + 原地恒等 + diagnostics 第二输出

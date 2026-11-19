@@ -12,8 +12,8 @@ println("========== Part 3: BCS (Z2 only) ==========")
 	In, _ = hybriddynamics(lat, kernel, PartialIF())
 	K = sysdynamics(lat, model)
 	Zb = integrate(K, Ibcs)
-	Zn = integrate(K, In...)
-	@test value(integrate_scaled(K, Ibcs) / integrate_scaled(K, In...)) ≈ 1.0 atol = 1e-8
+	Zn = integrate(K, In)
+	@test value(integrate_scaled(K, Ibcs) / integrate_scaled(K, In)) ≈ 1.0 atol = 1e-8
 end
 
 @testset "BCS: 反常 IF vs bcs_ed（虚时 Z/occupation/GF）" begin
