@@ -19,9 +19,13 @@
 #     块值 = 指数系数的一部分；U1GTEMPO2 mode_block 口径逐位一致）；
 #   - 混合轮廓：τ↔rt 交叉块构造期整体取负（QuAPI Δm 的 τ↔rt 块相对物理核
 #     差一个负号——旧 _NegView 惰性预翻的物化版本）；
-#   - BCS 实时：有向系数经 QuAPI GrassmannContourIndex 访问器物化为稠密
-#     （顶点移位内嵌，bcsweyl 锚定口径）+ 跨支 Keldysh 号构造期折叠
-#     （旧 bcs_partial_if 装配处补号的收编）；虚时/混合 = 味块 branch 视图原值。
+#   - BCS 三轮廓统一 = 味块 branch 视图原值（raw）。2026-11-19 v3-① 裁决：
+#     旧「实时访问器物化（顶点移位内嵌，bcsweyl 锚定口径）」整体移除——移位
+#     与标准网格装配错位（Δ=0 对照 normal 实证：首行接触缺失/条目移位一格），
+#     Weyl2×BCS/ExactTTI fit 全消费端统一吃 raw；QuAPI 包内 _vs_rt_acc 语义
+#     不动（GTEMPO 不再消费任何移位读取）。T6 探针进一步否决了计划预留的
+#     「跨支构造期取负」：bcs_Δt 支视图自带与 normal 相同的指数系数 Keldysh
+#     号（Δ=0 四支对逐位 0.0），取反即错。
 #
 # 电流公式注记：η⁺⁺ = blocks 直读；η⁺⁻ = −blocks[(:+,:-)]——电流算符的
 # η 系数 = 无号物理块（backup/GTEMPO currents.jl 同款），与指数系数差
@@ -219,21 +223,6 @@ function _bcs_flavor(corr, ba::Int, bb::Int)
     return isodd(ba) ? corr.ud : corr.du
 end
 
-"BCS 实时块物化：QuAPI GrassmannContourIndex 访问器逐元素读取（顶点移位内嵌）
-+ 跨支 Keldysh 号构造期折叠（bcsweyl 锚定口径 = 旧 bcs_partial_if 装配读数）"
-function _bcs_dense_block(corr, lattice, b1::Symbol, b2::Symbol, ba::Int, bb::Int,
-                          ca::Bool, cb::Bool)
-    n1, n2 = _branch_len(lattice, b1), _branch_len(lattice, b2)
-    keldysh = branches(lattice) == (:+, :-)
-    M = zeros(ComplexF64, n1, n2)
-    for i in 1:n1, j in 1:n2
-        v = corr[GrassmannContourIndex(Int(i), b1, ba, ca),
-                 GrassmannContourIndex(Int(j), b2, bb, cb)]
-        M[i, j] = (keldysh && b1 !== b2) ? -v : v
-    end
-    return M
-end
-
 """
     correlationfunction(bath::AbstractBCSBath, lattice; orbital=nothing)
         -> HybridizationKernel
@@ -244,8 +233,9 @@ band2 = 2·orbital；lattice 需 bands ≥ band2）；`orbital = nothing`（缺�
 orbital 共享同一套杂化函数（四味块每支对只装配一次，多对键零拷贝别名）。
 对称性守卫 `bcs_symmetry_guard`（仅 :z2，D7）。`coupling_norm` = bands 数 ×
 `coupling_norm(bath)`（带对各 α：单对 = 2×，全轨道 = 2·轨道数×）。轮廓约定：
-虚时/混合 = 味块 branch 视图原值；实时 = 访问器物化（顶点移位内嵌 + 跨支号
-折叠）。
+三轮廓统一 = 味块 branch 视图原值（raw，CorrelationMatrix/Toeplitz，与
+normal 同构——Δ=0 时逐位等于 normal 核）；旧顶点移位口径与跨支取负均已
+移除（v3-① + T6 探针否决）。
 """
 function correlationfunction(bath::AbstractBCSBath, lattice::AbstractGrassmannLattice;
                              orbital::Union{Nothing,Int}=nothing)
@@ -272,16 +262,15 @@ function correlationfunction(bath::AbstractBCSBath, lattice::AbstractGrassmannLa
     blocks = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{T},CorrelationMatrix{T}}}()
     for b1 in branches(lattice), b2 in branches(lattice)
         # 四味块每支对只装配一次（多 Nambu 对共享同一套块对象——零拷贝别名）；
-        # 代表带 (1, 2) 供访问器/味选择读取（QuAPI 奇偶带味约定，带号超出奇偶
-        # 无关），orbital o 的实际带 = 2o−2+dba / 2o−2+dbb
+        # 味选择按 QuAPI 奇偶带约定（代表带 (1, 2)，带号超出奇偶无关），
+        # orbital o 的实际带 = 2o−2+dba / 2o−2+dbb
         for (dba, dbb) in ((1, 1), (1, 2), (2, 2), (2, 1))
             ca, cb = _bcs_leg_conjs(dba, dbb)
-            W = if lattice isa AbstractRealGrassmannLattice
-                _bcs_dense_block(corr, lattice, b1, b2, dba, dbb, ca, cb)
-            else
-                _window_block(branch(_bcs_flavor(corr, dba, dbb); b1=b1, b2=b2),
+            # raw 味块直存——bcs_Δt 味块 = 标准 fermionic_Δt 产物，支视图自带与
+            # normal Δt 相同的指数系数 Keldysh 号（Δ=0 对照 normal 逐位实证 0.0，
+            # 2026-11-19 T6 探针：计划预留的「跨支构造期取负」被否决——取反即错）
+            W = _window_block(branch(_bcs_flavor(corr, dba, dbb); b1=b1, b2=b2),
                               _branch_len(lattice, b1), _branch_len(lattice, b2), T)
-            end
             for o in orbitals
                 blocks[(ContourBlockIndex(b1, 2o - 2 + dba, ca),
                         ContourBlockIndex(b2, 2o - 2 + dbb, cb))] = W

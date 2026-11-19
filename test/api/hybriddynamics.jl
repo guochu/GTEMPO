@@ -44,6 +44,26 @@ bath0 = discretefermionicbath([1.0], [0.5]; β=β0)
 	@test Matrix(kb_o2.blocks[(ContourBlockIndex(:-, 3, true), ContourBlockIndex(:+, 4, true))]) ≈
 	      Matrix(kb_all.blocks[(ContourBlockIndex(:-, 1, true), ContourBlockIndex(:+, 2, true))]) atol = 0.0
 
+	# Phase R（bcs_exacttti_plan v3-①）：BCS-RT raw 口径——块全 CorrelationMatrix
+	#（is_tti 结构性成立）；Δ=0 时核逐位等于 normal 核（bcs_Δt 味块支视图自带
+	# 与 normal Δt 相同的指数系数 Keldysh 号，无移位、无构造期取负——T6 探针
+	# 否决计划预留的跨支取负）
+	bath_bcs0 = bcsbath(fermionicbath(DiracDelta(ω=1.0, α=0.5), β=β0), Δ=0.0)
+	kb0 = correlationfunction(bath_bcs0, lat_b)
+	kn2 = correlationfunction(bath0, lat_b)
+	maxd = 0.0
+	for (k1, k2) in ((:+, :+), (:+, :-), (:-, :+), (:-, :-))
+		for (dba, dbb) in ((1, 1), (1, 2), (2, 2), (2, 1))
+			ca, cb = GTEMPO._bcs_leg_conjs(dba, dbb)
+			Mb = kb0.blocks[(ContourBlockIndex(k1, dba, ca), ContourBlockIndex(k2, dbb, cb))]
+			@test Mb isa CorrelationMatrix
+			(ca == cb) && continue                     # 同味键无 normal 对应
+			Mn = kn2.blocks[(ContourBlockIndex(k1, dba, true), ContourBlockIndex(k2, dbb, false))]
+			maxd = max(maxd, maximum(abs.(Matrix(Mb) - Matrix(Mn))))
+		end
+	end
+	@test maxd == 0.0
+
 	# 虚时只有 τ 块
 	latτ = GrassmannLattice(N=4, δτ=0.25, contour=:imag)
 	kernelτ = correlationfunction(bath0, latτ)
