@@ -14,10 +14,9 @@ Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 TensorKit = "07d1fe3e-3e46-537d-9eac-e9e13d0d4cec"
 
 [extras]
-QuAPI = "49288508-9298-4753-b2e7-d320e8956d6c"
 Printf = "56ddb016-857b-54e1-b83d-a4a2d730ddaf"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Printf", "Random", "Test", "QuAPI"]
+test = ["Printf", "Random", "Test"]

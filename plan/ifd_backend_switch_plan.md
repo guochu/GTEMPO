@@ -256,6 +256,8 @@ cbac36e9，R8 无冲突——计划行号基于 0f64cf78 已过时，触点面�
   （normdelta ~1e11、语义 = det(BB) 全环闭式——`Z = normdelta·Pf(B)` 的
   Pf 非 port trace）——按计划边界该消费契约归 exactif_port_plan，本批降为
   透传 + 装配 smoke（exact IF bath 归一 Z 与 QuAPI scheme 同量级）。
-- **闸门**：T1 crosscheck 逐位 14/14 ✓（QuAPI 显式限定，F6 规避）；T2 全套
-  804/804（53 testsets）+ 三 golden 按值（weyl 8/8、exactttiif 6/6、BCS
-  12/12）；T3 scheme 透传逐位 ✓；T4 拒绝面 ✓；T6 直跑验证 ✓。
+- **闸门**：T2 全套 804/804（53 testsets）+ 三 golden 按值（weyl 8/8、
+  exactttiif 6/6、BCS 12/12）；T3 scheme 透传逐位 ✓；T4 拒绝面 ✓；T6 直跑
+  验证 ✓。**偏差（用户裁决）**：T1 crosscheck 撤除不落地——IFD↔QuAPI 位级
+  对拍是 IFD 包职责（其 `test/quapi/` 套件已承载），QuAPI 依赖从 extras/
+  targets 一并清零，GTEMPO 对 QuAPI 零引用。

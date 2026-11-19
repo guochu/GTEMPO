@@ -12,10 +12,11 @@
   **位级中性实证**：IFD↔QuAPI 全轮廓逐位 0.0（含 BCS-RT 三味——顶点移位只
   存在于 QuAPI GrassmannContourIndex 访问器层，branch 支视图本就 raw，两
   后端逐位一致）。
-- **依赖降级**：QuAPI 从 `[deps]` 移至 `[extras]`+`[targets].test`
-  （crosscheck 对拍锚保留）；⚠️ 直跑 `julia --project=. test/runtests.jl` 的
-  QuAPI 加载依赖共享环境栈（本机 `@v1.10` 已 dev QuAPI）——干净机器上须
-  Pkg.test 或 dev QuAPI 后直跑。
+- **QuAPI 依赖彻底移除**（`[deps]`/`[extras]`/`[targets]` 全清）：GTEMPO
+  对 QuAPI 零引用（src 零代码引用；test 剩余 "QuAPI" 字符串 = 注释术语与
+  `IFD.QuAPI()` scheme 类型名，均非包依赖）。**crosscheck 撤除**：
+  `test/api/quapi_crosscheck.jl` 的 IFD↔QuAPI 位级对拍是 IFD 包的职责
+  （其 `test/quapi/` 套件已承载同款对拍契约），不在 GTEMPO 落地。
 - **严格 IF 入口（Part 2）**：`HybridizationKernel` 增 `normdelta::
   Union{Nothing,Float64}` 字段（A1 按推荐落地；frozen scheme = nothing，
   changebands/Base.:+ 透传）——imag + `ExactEqualDistantKernel` → IFD 元组
@@ -25,9 +26,8 @@
   路线归 exactif_port_plan）；BCS + Exact = IFD 三轮廓 dispatch 已接线，
   correlationfunction 透传（δ 谱自然报错自 IFD 内部）。normdelta 的
   `Z = normdelta·Pf(B)` 消费契约不在本计划（exactif_port_plan 领域）。
-- **测试**：crosscheck 升级常驻位级闸门（QuAPI 侧显式限定——F6 自比对陷阱
-  规避）；scheme 面 testset（缺省≡显式 QuAPI 逐位、imag+Exact 元组解包、
-  real/mixed 拒绝、MethodError 冒泡、exact IF 装配 smoke）。
+- **测试**：scheme 面 testset（缺省≡显式 QuAPI scheme 逐位、imag+Exact 元组
+  解包、real/mixed 拒绝、MethodError 冒泡、exact IF 装配 smoke）。
 
 ## BCS-RT raw 口径 + Weyl2×BCS 批次（2026-11-19，plan/bcs_exacttti_plan.md Phase R/W）
 
