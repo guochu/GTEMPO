@@ -1,5 +1,33 @@
 # 接口更改说明
 
+## 动态标量型批次（2026-11-19，Breaking）
+
+- **包标量链全程动态（不再硬编码 ComplexF64）**：`correlationfunction.jl` 定义
+  QuAPI 三容器 `scalartype`（`ImagCorrelationFunction{T}` 取 T；Real/Mixed =
+  ComplexF64——QuAPI 结构约束；`BCSCorrelationFunction{C}` 委托 C）；
+  kernel 构造端 `T = scalartype(corr)`——实谱虚时核全程 Float64，复谱/实时/
+  混合核 ComplexF64。`fullfactor` 的 C = `zeros(scalartype(kernel), …)`；
+  **虚时 lattice `scalartype` = Float64**（实链 × 实因子全程 Float64，GM 原生
+  支持；复谱核 promote ComplexF64）。标量边界：`hybriddynamics` 真空起始 =
+  promote(lattice, kernel)（不变）；ExactTTI 拟合层因子恒复 ⟹ 实链在
+  `_exacttti_state` 装配入口复化（`_complex_mps`，标量乘提升 TensorMap——
+  TensorMap 无广播 length、`complex.` 不可用；返回态 ≠ 输入别名）。
+- **`_neg_block` 删除**：混合 τ↔rt 折叠直接 `-W`（CorrelationMatrix 走 QuAPI
+  `Base.:-` 向量取负；Matrix = view 取负物化）。
+- **核相加去稠密化**：`Base.:+(A::HybridizationKernel, B::HybridizationKernel)`
+  同键块 = `va + vb` 直加（CM+CM = QuAPI Toeplitz 向量相加、混合/稠密 =
+  LinearAlgebra 泛型——不再双物化 Matrix）；缺键透传经 `_convert_block`
+  标量对齐（跨标量相加 Float64+ComplexF64 可用，同型零拷贝）；`_is_cm` 删。
+- **BCS `orbital = nothing`（缺省）**：全部 Nambu 对（1:bands÷2）共享同一套
+  杂化函数——四味块每支对只装配一次（味代表带 (1, 2) 读取，QuAPI 奇偶带味
+  约定），多对键零拷贝别名（normal 多带同款）；`orbital::Int` 显式选对不变。
+  `coupling_norm` 统一 = bands 数 × `coupling_norm(bath)`（单对 2×、全轨道
+  2·轨道数×）；`bcs_hybriddynamics` 的 orbital 缺省同步 nothing。
+- **ExactTTI 现代化**：`@kwdef` + `alg_expan` 升类型参数 `AE <:
+  ExpExp.ExponentialExpansionAlgorithm`（`ExactTTI{Tr,AE}`）；`factor_rtol`
+  field 删除（`_mult` = `SVDCompression(trunc=alg.trunc)`）；`cross_rtol` 校验
+  保留在内构造器。
+
 ## ContourBlockIndex 腿味键批次（2026-11-19，Breaking）
 
 - **`ContourBlockIndex(branch, band)` → `ContourBlockIndex(branch, band, conj)`**：

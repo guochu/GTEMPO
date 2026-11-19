@@ -7,6 +7,7 @@
 	kernel = correlationfunction(bath, lat)
 	@test kernel isa HybridizationKernel
 	@test kernel.blocks[(ContourBlockIndex(:τ, 1, true), ContourBlockIndex(:τ, 1, false))] isa CorrelationMatrix
+	@test eltype(first(values(kernel.blocks))) == Float64   # 实谱虚时核 = Float64（T = scalartype(corr)）
 	# 实时：四块（跨支 = CorrelationMatrix，Toeplitz 向量存储）
 	lat = GrassmannLattice(N=4, δt=0.1, contour=:real)
 	kernel = correlationfunction(bath, lat)
@@ -54,4 +55,28 @@ end
 	@test coupling_norm(fermionicbath(spec, β=β, μ=0.0)) ≈ coupling_norm(fermionicbath(spec, β=2.0, μ=0.3))
 	@test coupling_norm(discretefermionicbath([1.0, 2.0], [0.5, 0.3]; β=β)) == 0.8
 	@test coupling_norm(fermionicbath(spec, β=β, μ=0.0)) ≈ 5.0 atol = 1e-6      # 半圆谱 [-10,10]：∫ sqrt(1-(ε/D)²)/π dε = 10·(π/2)/π = 5
+end
+
+@testset "API: kernel 动态标量型（实谱 Float64 / 跨标量相加）" begin
+	β = 1.0
+	# 实谱虚时核 = Float64（T = scalartype(corr)，lattice scalartype Float64 同型）
+	bath = discretefermionicbath([1.0], [0.5]; β=β)
+	latτ = GrassmannLattice(N=4, δτ=0.25, contour=:imag)
+	kimg = correlationfunction(bath, latτ)
+	@test eltype(first(values(kimg.blocks))) == Float64
+	# 跨标量相加：同键 = QuAPI CM 向量和（promote 复）；缺键 = 透传标量对齐 T
+	blocks = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{ComplexF64},CorrelationMatrix{ComplexF64}}}()
+	key = (ContourBlockIndex(:τ, 1, true), ContourBlockIndex(:τ, 1, false))
+	blocks[key] = CorrelationMatrix(ComplexF64[0.3, 0.2, 0.1, 0.05], ComplexF64[0.3, 0.2, 0.1, 0.05])
+	kcx = HybridizationKernel(blocks, 0.4, [1])
+	ksum = kimg + kcx
+	@test ksum.blocks[key] isa CorrelationMatrix
+	@test eltype(ksum.blocks[key]) == ComplexF64
+	@test Matrix(ksum.blocks[key]) ≈ Matrix(kimg.blocks[key]) + Matrix(kcx.blocks[key]) atol = 1e-14
+	@test ksum.coupling_norm ≈ kimg.coupling_norm + 0.4
+	# 核相加的 CM 保持（同标量 CM+CM 不物化稠密）
+	ka = correlationfunction(discretefermionicbath([2.0], [0.3]; β=β), latτ)
+	kab = kimg + ka
+	@test kab.blocks[key] isa CorrelationMatrix
+	@test Matrix(kab.blocks[key]) ≈ Matrix(kimg.blocks[key]) + Matrix(ka.blocks[key]) atol = 0.0
 end

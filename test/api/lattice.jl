@@ -10,7 +10,7 @@ using TensorKit: scalartype
 	@test length(lat) == 2 * lat.bands * lat.k
 	@test branches(lat) == (:τ,)
 	@test symmetry(lat) === Z2Symmetry()
-	@test scalartype(lat) == ComplexF64
+	@test scalartype(lat) == Float64     # 虚时链实标量（实谱核全程 Float64、复谱 promote）
 	lat2 = similar(lat, bands=2)
 	@test lat2.bands == 2 && lat2.δτ == lat.δτ && lat2.N == lat.N
 	lat3 = similar(lat, N=8, δτ=0.05)

@@ -51,7 +51,8 @@ function _fullfactor(kernel::HybridizationKernel, lattice::AbstractGrassmannLatt
                            for cell in _storage_cells(lattice) for b in kernel.bands))
     M = length(slots)
     slotidx = Dict(slots[k] => k for k in 1:M)      # (站, band) → 紧凑变量对号
-    C = zeros(ComplexF64, 2M, 2M)
+    T = TK.scalartype(kernel)                       # 核标量型动态（实谱核 = Float64）
+    C = zeros(T, 2M, 2M)
     for (key, blk) in kernel.blocks
         ca, cb = key[1].conj, key[2].conj           # 腿味在键上（构造期写定）
         br1, br2 = key[1].branch, key[2].branch
@@ -87,16 +88,17 @@ function _partialif_state(gmps, lattice::AbstractGrassmannLattice, kernel::Hybri
 end
 
 """
-    bcs_hybriddynamics(lattice, bath::AbstractBCSBath, alg=PartialIF(); orbital=1) -> GMPS
+    bcs_hybriddynamics(lattice, bath::AbstractBCSBath, alg=PartialIF(); orbital=nothing) -> GMPS
 
 BCS bath 的 IF 链便捷入口：`orbital` 选 Nambu 对（band1 = 2·orbital−1、
-band2 = 2·orbital），对称性守卫 :z2（D7）。kernel 构造 =
+band2 = 2·orbital），缺省 nothing = 全部 Nambu 对共享同一套杂化函数
+（correlationfunction 的轨道模式），对称性守卫 :z2（D7）。kernel 构造 =
 `correlationfunction(bath, lattice; orbital)`，装配走 fullfactor 轨道路径
 （反常腿味在核键上，与 normal 同一装配函数）。
 """
 function bcs_hybriddynamics(lattice::AbstractGrassmannLattice, bath::AbstractBCSBath,
                             alg::InfluenceFunctionalAlgorithm=PartialIF();
-                            orbital::Int=1)
+                            orbital::Union{Nothing,Int}=nothing)
     alg isa PartialIF || throw(ArgumentError(
         "BCS IF supports only PartialIF on the GM stack (D7), got $(typeof(alg))"))
     kernel = correlationfunction(bath, lattice; orbital)

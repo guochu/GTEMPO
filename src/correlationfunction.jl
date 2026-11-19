@@ -63,7 +63,9 @@ end
   BCS 轨道 → [band1, band2]）。
 
 `scalartype` 仅 Type 上定义（TensorKit 泛型回退 scalartype(x) =
-scalartype(typeof(x)) 自动覆盖实例）。
+scalartype(typeof(x)) 自动覆盖实例）；T 由构造端 = `scalartype(corr)` 动态定
+（实谱虚时核 Float64、复谱/实时/混合核 ComplexF64——见下方 QuAPI 容器
+scalartype 表）。
 """
 struct HybridizationKernel{T<:Number}
     blocks::Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{T},CorrelationMatrix{T}}}
@@ -91,6 +93,14 @@ end
 
 TK.scalartype(::Type{HybridizationKernel{T}}) where {T} = T
 
+# QuAPI 关联函数容器的标量型（kernel 构造端 T = scalartype(corr)——实谱虚时
+# 核全程 Float64、复谱/实时/混合核 ComplexF64；Real/Mixed 在 QuAPI 结构上
+# 即 ComplexF64 约束）。BCS 容器 = 味块类型的委托。
+TK.scalartype(::Type{ImagCorrelationFunction{T}}) where {T} = T
+TK.scalartype(::Type{<:RealCorrelationFunction}) = ComplexF64
+TK.scalartype(::Type{<:MixedCorrelationFunction}) = ComplexF64
+TK.scalartype(::Type{<:BCSCorrelationFunction{C}}) where {C} = TK.scalartype(C)
+
 "分支格点数（窗口化基准）"
 _branch_len(lattice::AbstractGrassmannLattice, b::Symbol) =
     b === :τ ? lattice.kτ :
@@ -100,8 +110,9 @@ _branch_len(lattice::AbstractGrassmannLattice, b::Symbol) =
     _window_block(B, k1, k2; T=ComplexF64) -> Union{CorrelationMatrix{T},Matrix{T}}
 
 branch 块的 lattice 网格窗口化 + 标量型归一：`CorrelationMatrix` = Toeplitz
-向量前缀切片（零拷贝语义、数据不物化；实谱虚时核 Float64 → ComplexF64 一次
-向量转换）；一般矩阵 = 视图（需要窗口化/换型时物化）。窗口不足即形状守卫响抛。
+向量前缀切片（零拷贝语义、数据不物化；换型仅当 T ≠ 块元素类型——动态
+scalartype 缺省恒等）；一般矩阵 = 视图（需要窗口化/换型时物化）。窗口不足
+即形状守卫响抛。
 """
 function _window_block(B::CorrelationMatrix, k1::Int, k2::Int, ::Type{T}) where {T<:Number}
     n = size(B, 1)
@@ -121,9 +132,8 @@ function _window_block(B::AbstractMatrix, k1::Int, k2::Int, ::Type{T}) where {T<
     return T.(view(B, 1:k1, 1:k2))
 end
 
-"构造期符号折叠（混合 τ↔rt 交叉块整体取负）；_NegView 惰性视图的物化替代"
-_neg_block(B::CorrelationMatrix{T}) where {T} = CorrelationMatrix(-B.ηⱼₖ, -B.ηₖⱼ)
-_neg_block(B::AbstractMatrix) = -B   # view 取负 = 物化稠密（预翻语义）
+# 构造期符号折叠（混合 τ↔rt 交叉块整体取负；_NegView 惰性视图的物化替代）：
+# -W——CorrelationMatrix 走 QuAPI Base.:- 向量取负、一般矩阵 = view 取负物化。
 
 # ---------------------------------------------------------------------------
 # 构造：normal bath（QuAPI Δτ/Δt/Δm 直提取）
@@ -162,7 +172,7 @@ function correlationfunction(bath::AbstractNormalBath, lattice::AbstractGrassman
     else
         QuAPI.Δm(bath; Nτ=lattice.Nτ, t=lattice.Nt * lattice.δt, Nt=lattice.Nt, δτ=lattice.δτ)
     end
-    T = ComplexF64
+    T = TK.scalartype(corr)
     blocks = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{T},CorrelationMatrix{T}}}()
     mixed = lattice isa AbstractMixedGrassmannLattice
     for b1 in branches(lattice), b2 in branches(lattice)
@@ -170,7 +180,7 @@ function correlationfunction(bath::AbstractNormalBath, lattice::AbstractGrassman
         W = _window_block(branch(corr; b1=b1, b2=b2), _branch_len(lattice, b1),
                           _branch_len(lattice, b2), T)
         blocks[(ContourBlockIndex(b1, first(bands), true),
-                ContourBlockIndex(b2, first(bands), false))] = fold ? _neg_block(W) : W
+                ContourBlockIndex(b2, first(bands), false))] = fold ? -W : W
         for bd in bands[2:end]                     # 多带键共享同一块对象（零拷贝）
             blocks[(ContourBlockIndex(b1, bd, true), ContourBlockIndex(b2, bd, false))] =
                 blocks[(ContourBlockIndex(b1, first(bands), true),
@@ -219,23 +229,27 @@ function _bcs_dense_block(corr, lattice, b1::Symbol, b2::Symbol, ba::Int, bb::In
 end
 
 """
-    correlationfunction(bath::AbstractBCSBath, lattice; orbital=1)
+    correlationfunction(bath::AbstractBCSBath, lattice; orbital=nothing)
         -> HybridizationKernel
 
-BCS bath 的核（normal 同一类型）：`orbital` = Nambu 对指标（band1 = 2·orbital−1、
-band2 = 2·orbital；lattice 需 bands ≥ band2）。四味块（uu 共享两正常带键 +
-ud/du 反常键）按 `(branch, band)` 键入同一 Dict——BCS 与 normal 从此同类型，
-fullfactor 装配同一函数（BCS = C 的反常象限非零特例）。对称性守卫
-`bcs_symmetry_guard`（仅 :z2，D7）。`coupling_norm` = 2·`coupling_norm(bath)`
-（带对各 α，K 侧全带总量按 2× 计入）。轮廓约定：虚时/混合 = 味块 branch
-视图原值；实时 = 访问器物化（顶点移位内嵌 + 跨支号折叠）。
+BCS bath 的核（normal 同一类型）：`orbital` 选 Nambu 对（band1 = 2·orbital−1、
+band2 = 2·orbital；lattice 需 bands ≥ band2）；`orbital = nothing`（缺省，行为
+同 AbstractNormalBath 的全带模式）= 全部 Nambu 对（1:lattice.bands÷2）——每个
+orbital 共享同一套杂化函数（四味块每支对只装配一次，多对键零拷贝别名）。
+对称性守卫 `bcs_symmetry_guard`（仅 :z2，D7）。`coupling_norm` = bands 数 ×
+`coupling_norm(bath)`（带对各 α：单对 = 2×，全轨道 = 2·轨道数×）。轮廓约定：
+虚时/混合 = 味块 branch 视图原值；实时 = 访问器物化（顶点移位内嵌 + 跨支号
+折叠）。
 """
 function correlationfunction(bath::AbstractBCSBath, lattice::AbstractGrassmannLattice;
-                             orbital::Int=1)
+                             orbital::Union{Nothing,Int}=nothing)
     bcs_symmetry_guard(symmetry(lattice))
-    band1, band2 = 2 * orbital - 1, 2 * orbital
-    band2 <= lattice.bands || throw(ArgumentError(
-        "BCS orbital $orbital requires bands ≥ $band2, got $(lattice.bands)"))
+    orbitals = orbital === nothing ? collect(1:lattice.bands ÷ 2) :
+               (2 * orbital <= lattice.bands || throw(ArgumentError(
+                    "BCS orbital $orbital requires bands ≥ $(2 * orbital), got $(lattice.bands)"));
+                [orbital])
+    isempty(orbitals) && throw(ArgumentError(
+        "BCS bath requires at least one Nambu pair, got bands = $(lattice.bands)"))
     if lattice isa Union{AbstractImagGrassmannLattice,AbstractMixedGrassmannLattice}
         isapprox(lattice.β, bath.β; rtol=1.0e-12, atol=1.0e-14) ||
             @warn "lattice.β=$(lattice.β), but bath.β=$(bath.β)"
@@ -248,22 +262,28 @@ function correlationfunction(bath::AbstractBCSBath, lattice::AbstractGrassmannLa
         QuAPI.bcs_Δm(bath.f; β=bath.β, μ=bath.μ, Δ=bath.Δ, Nτ=lattice.Nτ,
                      t=lattice.Nt * lattice.δt, Nt=lattice.Nt, δτ=lattice.δτ)
     end
-    T = ComplexF64
+    T = TK.scalartype(corr)
     blocks = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{T},CorrelationMatrix{T}}}()
     for b1 in branches(lattice), b2 in branches(lattice)
-        for (ba, bb) in ((band1, band1), (band1, band2), (band2, band2), (band2, band1))
-            ca, cb = _bcs_leg_conjs(ba, bb)
-            key = (ContourBlockIndex(b1, ba, ca), ContourBlockIndex(b2, bb, cb))
-            if lattice isa AbstractRealGrassmannLattice
-                blocks[key] = _bcs_dense_block(corr, lattice, b1, b2, ba, bb, ca, cb)
+        # 四味块每支对只装配一次（多 Nambu 对共享同一套块对象——零拷贝别名）；
+        # 代表带 (1, 2) 供访问器/味选择读取（QuAPI 奇偶带味约定，带号超出奇偶
+        # 无关），orbital o 的实际带 = 2o−2+dba / 2o−2+dbb
+        for (dba, dbb) in ((1, 1), (1, 2), (2, 2), (2, 1))
+            ca, cb = _bcs_leg_conjs(dba, dbb)
+            W = if lattice isa AbstractRealGrassmannLattice
+                _bcs_dense_block(corr, lattice, b1, b2, dba, dbb, ca, cb)
             else
-                blocks[key] = _window_block(branch(_bcs_flavor(corr, ba, bb); b1=b1, b2=b2),
-                                            _branch_len(lattice, b1),
-                                            _branch_len(lattice, b2), T)
+                _window_block(branch(_bcs_flavor(corr, dba, dbb); b1=b1, b2=b2),
+                              _branch_len(lattice, b1), _branch_len(lattice, b2), T)
+            end
+            for o in orbitals
+                blocks[(ContourBlockIndex(b1, 2o - 2 + dba, ca),
+                        ContourBlockIndex(b2, 2o - 2 + dbb, cb))] = W
             end
         end
     end
-    return HybridizationKernel(blocks, 2 * coupling_norm(bath), [band1, band2])
+    bands = reduce(vcat, ([2o - 1, 2o] for o in orbitals))   # orbitals 升序 ⟹ 有序
+    return HybridizationKernel(blocks, length(bands) * coupling_norm(bath), bands)
 end
 
 # ---------------------------------------------------------------------------
@@ -307,31 +327,27 @@ end
     Base.:+(A::HybridizationKernel, B::HybridizationKernel) -> HybridizationKernel
 
 多 bath 耦合的核相加：blocks 键 = 并集（同键块相加——`CorrelationMatrix` +
-`CorrelationMatrix` = Toeplitz 向量相加；混合表示 = 任一方 dense 即 dense
-结果相加；单侧缺键 = 零块透传）；`coupling_norm` 相加；`bands` = 有序并集。
-同键块形状不匹配响抛。用途：双 lead（异 μ/β 无法合成单 bath）逐 lead 建
-kernel 后相加——总耦合标量自动正确。
+`CorrelationMatrix` = QuAPI Toeplitz 向量相加，混合表示 = 泛型逐元素（任一方
+dense 即 dense 结果）；单侧缺键 = 透传并标量型对齐 T）；`coupling_norm` 相加；
+`bands` = 有序并集；标量型 = 两者 `scalartype` 的 promote。用途：双 lead（异
+μ/β 无法合成单 bath）逐 lead 建 kernel 后相加——总耦合标量自动正确。
 """
 function Base.:+(A::HybridizationKernel, B::HybridizationKernel)
     T = promote_type(TK.scalartype(A), TK.scalartype(B))
     blocks = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{T},CorrelationMatrix{T}}}()
     for key in union(keys(A.blocks), keys(B.blocks))
         inA = haskey(A.blocks, key); inB = haskey(B.blocks, key)
-        if inA && inB
-            va, vb = A.blocks[key], B.blocks[key]
-            (size(va) == size(vb)) || throw(DimensionMismatch(
-                "kernel block $(key) shape mismatch: $(size(va)) vs $(size(vb))"))
-            blocks[key] = _is_cm(va) && _is_cm(vb) ? va + vb : Matrix(va) + Matrix(vb)
-        else
-            blocks[key] = inA ? A.blocks[key] : B.blocks[key]
-        end
+        blocks[key] = inA && inB ? A.blocks[key] + B.blocks[key] :
+                      _convert_block(T, inA ? A.blocks[key] : B.blocks[key])
     end
     return HybridizationKernel(blocks, A.coupling_norm + B.coupling_norm,
                                sort(union(A.bands, B.bands)))
 end
 
-_is_cm(::CorrelationMatrix) = true
-_is_cm(::AbstractMatrix) = false
+"块对象标量型对齐（跨标量核相加的缺键透传；同型零拷贝）"
+_convert_block(::Type{T}, v::CorrelationMatrix) where {T} =
+    eltype(v) == T ? v : CorrelationMatrix(T.(v.ηⱼₖ), T.(v.ηₖⱼ))
+_convert_block(::Type{T}, v::AbstractMatrix) where {T} = eltype(v) == T ? v : T.(v)
 
 
 "逐带 kernel 视图：只保留 band 的键、bands = [band]（块对象别名共享，零拷贝）。

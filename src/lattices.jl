@@ -78,7 +78,7 @@ function Base.getproperty(x::ImagGrassmannLattice, s::Symbol)
         getfield(x, s)
     end
 end
-TK.scalartype(::Type{<:AbstractImagGrassmannLattice}) = ComplexF64
+TK.scalartype(::Type{<:AbstractImagGrassmannLattice}) = Float64   # 虚时链实标量（实谱核全程 Float64；复谱 promote）
 Base.length(x::AbstractImagGrassmannLattice) = 2 * x.bands * x.k   # 每格 (a,ā)×bands
 
 "虚时 Chrono _index：格 i（1..kτ）⟷ 链块 k−i+1（格 Nτ = 块 1）；

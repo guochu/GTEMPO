@@ -31,44 +31,48 @@ end
 
 """
     ExactTTI(; trunc=Defaults.alg_trunc_if(), alg_expan=Defaults.alg_expan(),
-             cross_rtol=1e-10, factor_rtol=nothing)
+             cross_rtol=1e-10)
 
-ExactTTI：tti_imag/real/cross 三通道因子统一经 expmult!×PolarExp 装配
-（Pairing/AnomalousPairing = SVD 秩一精确指数；ExpDecay 族委托 TTIExp 逐通道
-物化——要求 GM ≥ expdecayexp-same-orbital-fix a7b39bb 同轨道触碰块修正）。
+ExactTTI{Tr<:TruncationStrategy, AE<:ExpExp.ExponentialExpansionAlgorithm}：
+tti_imag/real/cross 三通道因子统一经 expmult!×PolarExp 装配（Pairing/
+AnomalousPairing = SVD 秩一精确指数；ExpDecay 族委托 TTIExp 逐通道物化——
+要求 GM ≥ expdecayexp-same-orbital-fix a7b39bb 同轨道触碰块修正）。
 
-- `alg_expan` = 函数指数分解算法（ExpExp.ExponentialExpansionAlgorithm 面，
-  Defaults.alg_expan() = AnchoredMatrixPencil 缺省，与铅笔路线同参）：tti_imag/
-  real 的核列拟合经 `fit_exponentials(alg_expan, y)` 分派；分解精度随 alg 配置
-  （精确单极点核机器精度；连续谱短核列受小样本极限）。
+- `alg_expan`（类型参数 AE）= 函数指数分解算法（ExpExp.ExponentialExpansionAlgorithm
+  面，Defaults.alg_expan() = AnchoredMatrixPencil 缺省，与铅笔路线同参）：
+  tti_imag/real 的核列拟合经 `fit_exponentials(alg_expan, y)` 分派；分解精度
+  随 alg 配置（精确单极点核机器精度；连续谱短核列受小样本极限）。
 - `trunc` = 乘法压缩截断策略（SVDCompression(trunc=trunc)）；
-- `cross_rtol` = cross 通道 Pairing SVD 截秩（real/imag 通道恒 rtol=0 精确）；
-- `factor_rtol` = 逐因子乘前压缩容差（nothing = 用 trunc）。
+- `cross_rtol` = cross 通道 Pairing SVD 截秩（real/imag 通道恒 rtol=0 精确）。
 """
-struct ExactTTI{Tr<:TruncationStrategy} <: InfluenceFunctionalAlgorithm
-    trunc::Tr
-    alg_expan::ExpExp.ExponentialExpansionAlgorithm
-    cross_rtol::Float64
-    factor_rtol::Union{Nothing,Float64}
-    function ExactTTI(; trunc=Defaults.alg_trunc_if(), alg_expan=Defaults.alg_expan(),
-                      cross_rtol::Real=1e-10, factor_rtol::Union{Nothing,Real}=nothing)
-        isfinite(cross_rtol) && 0 < cross_rtol < 1 ||
+@kwdef struct ExactTTI{Tr<:TruncationStrategy,AE<:ExpExp.ExponentialExpansionAlgorithm} <: InfluenceFunctionalAlgorithm
+    trunc::Tr = Defaults.alg_trunc_if()
+    alg_expan::AE = Defaults.alg_expan()
+    cross_rtol::Float64 = 1e-10
+
+    function ExactTTI(trunc::Tr, alg_expan::AE, cross_rtol::Real) where {Tr,AE}
+        rtol = Float64(cross_rtol)
+        isfinite(rtol) && 0 < rtol < 1 ||
             throw(ArgumentError("invalid cross_rtol $cross_rtol"))
-        factor_rtol === nothing || (isfinite(factor_rtol) && 0 <= factor_rtol < 1) ||
-            throw(ArgumentError("invalid factor cleanup tolerance"))
-        new{typeof(trunc)}(trunc, alg_expan, Float64(cross_rtol),
-            factor_rtol === nothing ? nothing : Float64(factor_rtol))
+        new{Tr,AE}(trunc, alg_expan, rtol)
     end
 end
 
-"ExactTTI 的乘法压缩策略（trunc 随算法对象；factor_rtol 覆盖为纯 rtol 截断）"
-_mult(alg::ExactTTI) =
-    alg.factor_rtol === nothing ? SVDCompression(trunc=alg.trunc) :
-    SVDCompression(trunc=Truncation(D=typemax(Int), rtol=alg.factor_rtol))
+"ExactTTI 的乘法压缩策略（trunc 随算法对象）"
+_mult(alg::ExactTTI) = SVDCompression(trunc=alg.trunc)
 
 "GMPS 起始态深拷贝（多带核逐带装配的起步态；TensorMap 逐张拷贝）"
 _copy_mps(x::GM.GMPS) = begin
     out = GM.GMPS(copy.(x.data))
+    GM.setlogscale!(out, GM.logscale(x))
+    out
+end
+
+"实链复化拷贝（exacttti 装配入口——拟合层因子恒 ComplexF64，GM mult! 不做
+就地跨型提升；复链不进此路径。标量乘提升 TensorMap——TensorMap 无广播
+length，complex. 广播不可用）"
+_complex_mps(x::GM.GMPS) = begin
+    out = GM.GMPS([one(ComplexF64) * t for t in x.data])
     GM.setlogscale!(out, GM.logscale(x))
     out
 end
@@ -84,7 +88,8 @@ BCS 轨道）= 二次型不可按带分解 ⟹ 就地装配 `gmps` 为单链（�
 输出 `diagnostics::Dict{Symbol,Any}` = 装配诊断：`:truncerrs`（逐步乘法压缩
 的 GM truncerr）+ 通道审计键（Keldysh/热配对残差、拟合展开）+
 `:algorithm`/`:truncation`。ExactTTI 仅支持单带 normal 取向核（键 = (ā, a)；
-反常/跨带核 D7 走 PartialIF）。
+反常/跨带核 D7 走 PartialIF），且拟合层因子恒复 ⟹ 实链在装配入口复化
+（ExactTTI 返回态恒 ComplexF64，不再与 `gmps` 别名）。
 """
 function hybriddynamics!(gmps, lattice::AbstractGrassmannLattice, kernel::HybridizationKernel,
                          alg::InfluenceFunctionalAlgorithm=PartialIF())

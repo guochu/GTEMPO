@@ -24,6 +24,23 @@ bath0 = discretefermionicbath([1.0], [0.5]; β=β0)
 	@test kbcs.coupling_norm == 2 * coupling_norm(bath_bcs)   # 带对各 α → 2×
 	@test haskey(kbcs.blocks, (ContourBlockIndex(:+, 1, true), ContourBlockIndex(:-, 2, true)))  # ud 反常键（双腿 ā）
 	@test haskey(kbcs.blocks, (ContourBlockIndex(:-, 2, false), ContourBlockIndex(:+, 1, false)))  # du 反常键（双腿 a）
+	# orbital=nothing：全部 Nambu 对共享同一套块对象（零拷贝别名，normal 多带同款）
+	bath_bcs4 = bcsbath(fermionicbath(DiracDelta(ω=1.0, α=0.5), β=β0), Δ=0.3)
+	lat_b4 = GrassmannLattice(N=4, δt=0.1, bands=4, contour=:real, symmetry=Z2Symmetry())
+	kb_all = correlationfunction(bath_bcs4, lat_b4)
+	@test kb_all.bands == [1, 2, 3, 4]
+	@test kb_all.coupling_norm == 4 * coupling_norm(bath_bcs4)
+	for (dba, dbb) in ((1, 1), (1, 2), (2, 2), (2, 1))
+		ca, cb = GTEMPO._bcs_leg_conjs(dba, dbb)
+		for b1 in (:+, :-), b2 in (:+, :-)
+			@test kb_all.blocks[(ContourBlockIndex(b1, 2 + dba, ca), ContourBlockIndex(b2, 2 + dbb, cb))] ===
+			      kb_all.blocks[(ContourBlockIndex(b1, dba, ca), ContourBlockIndex(b2, dbb, cb))]
+		end
+	end
+	kb_o2 = correlationfunction(bath_bcs4, lat_b4; orbital=2)
+	@test kb_o2.bands == [3, 4] && kb_o2.coupling_norm == 2 * coupling_norm(bath_bcs4)
+	@test Matrix(kb_o2.blocks[(ContourBlockIndex(:-, 3, true), ContourBlockIndex(:+, 4, true))]) ≈
+	      Matrix(kb_all.blocks[(ContourBlockIndex(:-, 1, true), ContourBlockIndex(:+, 2, true))]) atol = 0.0
 
 	# 虚时只有 τ 块
 	latτ = GrassmannLattice(N=4, δτ=0.25, contour=:imag)
@@ -105,8 +122,10 @@ end
 	kernelτ = correlationfunction(bath0, latτ)
 	Iτ, _ = hybriddynamics(latτ, kernelτ, PartialIF())
 	@test length(Iτ) == length(latτ) ÷ 2
+	@test TK.scalartype(Iτ) == Float64     # 虚时实谱链 = Float64（lattice Float64 × kernel Float64）
 	Ie, _ = hybriddynamics(latτ, kernelτ, ExactTTI())
 	@test length(Ie) == length(latτ) ÷ 2
+	@test TK.scalartype(Ie) == ComplexF64  # ExactTTI 拟合层恒复（实链装配入口复化）
 	@test integrate(Iτ) ≈ integrate(Ie) rtol = 1.0e-8
 end
 

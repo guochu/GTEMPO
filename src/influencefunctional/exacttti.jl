@@ -278,7 +278,9 @@ TTIExp = ExpDecayExp 逐通道物化——**要求 GM ≥ expdecayexp-same-orbit
 （触碰项与 local × 过线配对 pfaffian 逐项相消 ⟹ 净零；修正前同轨道偏差
 O(α²λ)，GTEMPO ESS 实测 3.2e-4）。截秩语义：real/imag 通道 rtol = 0（压缩
 由拟合重构自带，不叠加截断），cross 通道 rtol = cross_rtol（口径同旧 cross
-通道）。factor_rtol 映射到乘法压缩策略（旧逐因子 cleanup 语义）。"
+通道）。标量型：拟合层因子恒 ComplexF64（fit_exponentials 契约）——实链
+（虚时格 × 实谱核）在装配入口复化（GM mult! 不做就地跨型提升 ⟹ ExactTTI
+返回态恒 ComplexF64、≠ 输入别名）。"
 function _exacttti_state(gmps, lattice::AbstractGrassmannLattice, kernel::HybridizationKernel,
                          alg::ExactTTI)
     diag = Dict{Symbol,Any}()
@@ -286,6 +288,7 @@ function _exacttti_state(gmps, lattice::AbstractGrassmannLattice, kernel::Hybrid
     pol_exact = GM.PolarExp(rtol=0.0, alg_mult=mult)             # real/imag 通道：精确
     pol_cross = GM.PolarExp(rtol=alg.cross_rtol, alg_mult=mult)  # cross 通道：截秩
     single = length(kernel.bands) == 1
+    TK.scalartype(gmps) <: Real && (gmps = _complex_mps(gmps))   # 实链复化（见上注）
     band_states = Any[single ? gmps : _copy_mps(gmps) for _ in kernel.bands]
     truncerrs = Float64[]
     for (bi, b) in enumerate(kernel.bands)                  # band 信息在 kernel，逐带切片
