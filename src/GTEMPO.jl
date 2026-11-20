@@ -67,6 +67,7 @@ include("impuritymodels/impuritymodels.jl")
 include("sysdynamics/localops.jl")
 include("sysdynamics/sysdynamics.jl")
 include("sysdynamics/fockmpo.jl")
+include("sysdynamics/foldedmpo.jl")
 
 # IF 构造（W1–W4 后端统一完成；旧 influence.jl 装配档案随 2026-11-18
 # 入口切换退役删除——plan/if_expmult_backend_plan.md）
@@ -119,7 +120,7 @@ export fullfactor, tti_factors, is_tti
 export hybriddynamics!
 export var_charge, cell_charges, fock_charges
 export FockMPO, SparseFockMPO, fock_sysdynamics,
-       sparsefockmpo, fockmpo2gmps, gmps2fockmpo
+       sparsefockmpo, fockmpo2gmps, fockmpo2gmps_deprecated, gmps2fockmpo
 export HybridizationKernel, hybriddynamics, hybriddynamics!
 
 # 观测量（Phase 5b：inserted-K 边界观测 + 算符缓存原始关联两轨，D5 裁决见 measurements/）

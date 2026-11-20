@@ -82,7 +82,7 @@ import LinearAlgebra
                 blk[:, m+1, m+1, :] .*= (-1)^(oddlater * count_ones(m))
             end
         end
-        out = fockmpo2gmps(Kf, lattice)
+        out = fockmpo2gmps_deprecated(Kf, lattice)
         # Weyl 标量由调用方后置累加补上（⚠️ logscale += lscale——压缩归一化因子
         # 已在 logscale 内，覆盖会抹掉）
         lscale = order == 2 ? real(coupling_norm / 4 *
@@ -124,7 +124,7 @@ import LinearAlgebra
         z = one(G)
         fqs1 = GTEMPO.fock_charges(G, bands)
         qms = GTEMPO._slot_charges(G, bands)
-        Kf = fock_sysdynamics(lattice, model; order=order, insertions=insertions,
+        Kf = GTEMPO._fock_sysdynamics_chronological(lattice, model; order=order, insertions=insertions,
                               initial_state=initial_state)
         return [GTEMPO._site_charge_shift(Kf.data[k][(z, z, TK.dual(z), TK.dual(z))],
                                           fqs1, qms, bands) for k in 1:length(Kf.data)], z
@@ -173,14 +173,14 @@ import LinearAlgebra
         @test GTEMPO.qadd(δs[1], δs[2]) == z   # prefix(键2) = δ₁+δ₂ = −q+q = 0（≡ 旧 cut 累计）
         # 奇单插链 Σδ ≠ 0：fock_sysdynamics 可建（P5 逐站自检过），converter Σδ
         # 守卫拒绝
-        Kf = fock_sysdynamics(lat, model1; insertions=[OperatorInsertion(:τ, 1, GTEMPO._single_band_op(:a, 1, 1))])
-        @test_throws ArgumentError fockmpo2gmps(Kf, lat)
+        Kf = GTEMPO._fock_sysdynamics_chronological(lat, model1; insertions=[OperatorInsertion(:τ, 1, GTEMPO._single_band_op(:a, 1, 1))])
+        @test_throws ArgumentError GTEMPO.fockmpo2gmps_deprecated(Kf, lat)
     end
 
     @testset "荷账自读锚：电荷非对角初态拒绝（A1′）" begin
         lat = GrassmannLattice(N=2, δt=0.1, bands=2, contour=:real, symmetry=U1Symmetry())
         rho_bad = Matrix{ComplexF64}(LinearAlgebra.I, 4, 4); rho_bad[1, 2] = 0.3
-        @test_throws ArgumentError fock_sysdynamics(lat, model2; initial_state=rho_bad)
+        @test_throws ArgumentError GTEMPO._fock_sysdynamics_chronological(lat, model2; initial_state=rho_bad)
         @test_throws ArgumentError sysdynamics(lat, model2; initial_state=rho_bad)
         # 对角初态（含真空投影缺省）不受影响
         δs, z = _deltas(lat, model2, 1)

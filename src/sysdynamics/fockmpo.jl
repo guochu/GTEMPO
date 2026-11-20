@@ -96,11 +96,12 @@ function _fock_propagator_at(lattice::AbstractGrassmannLattice, model, b::Symbol
 end
 
 """
-    fock_sysdynamics(lattice, model; order=1, insertions=OperatorInsertion[],
+    _fock_sysdynamics_chronological(lattice, model; order=1, insertions=OperatorInsertion[],
                      initial_state=nothing) -> FockMPO
 
-杂质系统因子 K 的 Fock 直积 MPO，**一次装配产出穿戴完毕的链**（P1——无独立
-dressing 层）：①开链装配（逐物理格一 site，site 内块对角，单元算符与
+（deprecated 时序装配体——供 fockmpo2gmps_deprecated 与闸门对照使用；
+现行装配见 foldedmpo.jl 的折叠 fock_sysdynamics。）时序 Fock 直积 MPO，
+**一次装配产出穿戴完毕的链**（P1——无独立 dressing 层）：①开链装配（逐物理格一 site，site 内块对角，单元算符与
 sysdynamics 同口径：一阶 τ/+ 支 S·M、− 支 M·S，二阶 S·M·S）；②切位 ≥ 1 插入
 稀疏乘法（`sparsefockmpo *`，过滤按 `insertion_cut_index` 切位）；③ρ₀/切位 0
 三明治折首站（**在稀疏乘法之后**——切位 1 插入作用在站 1 时语义 =
@@ -113,7 +114,7 @@ sysdynamics 同口径：一阶 τ/+ 支 S·M、− 支 M·S，二阶 S·M·S）�
 **不含** 迹闭合/Weyl 标量——前者归 `fockmpo2gmps`，后者由调用方
 （_system_factor_fock/sysdynamics 层）setlogscale! 补上。
 """
-function fock_sysdynamics(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian;
+function _fock_sysdynamics_chronological(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian;
                           order::Integer=1, insertions=OperatorInsertion[], initial_state=nothing)
     order in (1, 2) || throw(ArgumentError("order must be 1 or 2"))
     bands = lattice.bands
@@ -356,9 +357,11 @@ end
 # ---------------------------------------------------------------------------
 
 """
-    fockmpo2gmps(f::FockMPO, lattice; trunc=nothing, truncerrs=nothing) -> GMPS
+    fockmpo2gmps_deprecated(f::FockMPO, lattice; trunc=nothing, truncerrs=nothing) -> GMPS
 
-FockMPO → GMPS（迹闭合 + 分站；**P2 纯翻译 + 荷账自读**）：`f` 必须是
+（deprecated——时序装配 + 末端 reorder! 重排；现行装配见 foldedmpo.jl 的折叠
+fockmpo2gmps。语义等价性由 todense 闸门锚定。）FockMPO → GMPS（迹闭合 + 分站；
+**P2 纯翻译 + 荷账自读**）：`f` 必须是
 `fock_sysdynamics` 产出的**穿戴链**（ρ₀/切位 0 三明治、切位 ≥ 1 插入、oddlater
 号已折进链）——本函数不消费任何插入/初态元数据（`rho0`/`insertions` kwargs
 已随 2026-11-20 换代删除）。逐格自读站荷移位 δ_k（槽名义荷表 + 站读数：
@@ -377,7 +380,7 @@ kwargs：`trunc`/`truncerrs` = reorder 后的 GM.truncate! 透传（缺省不截
 coupling_norm，对产出的 GMPS 做 `logscale += lscale`（⚠️ 累加非覆盖：
 truncate!/swap! 的压缩归一化因子已吸收进 logscale，E2 语义）。
 """
-function fockmpo2gmps(f::FockMPO, lattice::AbstractGrassmannLattice;
+function fockmpo2gmps_deprecated(f::FockMPO, lattice::AbstractGrassmannLattice;
                       trunc=nothing, truncerrs=nothing)
     G = TK.sectortype(lattice)
     bands = lattice.bands
@@ -507,9 +510,9 @@ function _system_factor_fock(lattice::AbstractGrassmannLattice, model::AbstractI
         throw(ArgumentError("order=2 requires coupling_norm ≥ 0 (total Σ_b α_b)"))
     spec === nothing || spec === TK.sectortype(lattice) ||
         throw(ArgumentError("spec $spec ≠ sectortype(lattice) $(TK.sectortype(lattice))"))
-    Kf = fock_sysdynamics(lattice, model; order=order, insertions=insertions,
-                          initial_state=initial_state)
-    out = fockmpo2gmps(Kf, lattice; trunc=trunc, truncerrs=truncerrs)
+    Kf = _fock_sysdynamics_chronological(lattice, model; order=order, insertions=insertions,
+                                         initial_state=initial_state)
+    out = fockmpo2gmps_deprecated(Kf, lattice; trunc=trunc, truncerrs=truncerrs)
     GM.setlogscale!(out, GM.logscale(out) + _fock_weyl_lscale(lattice, order, coupling_norm))
     return out
 end
