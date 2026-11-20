@@ -1,5 +1,25 @@
 # 接口更改说明
 
+## BCS 连续 bath 测试 + secondorderif BCS 基准批（2026-11-20）
+
+- **`test/bcs/continuousbath/`（新增，入套件）**：BCS 连续 bath 测试三组——
+  ① 核结构（Δ=0 连续核 ≡ normal 连续核 ≤1e-10、反常味键结构性存在但值恒零、
+  tti 因子全 fit 且 Keldysh/热配对审计零残差）；② 实时演化 vs **IMB
+  BCS-Toulouse 严格解**（`Toulouse(discretebath(δw))` 的
+  `toulouse_neq_greater_lesser`，Bogoliubov 机器；TN 与锚同一离散浴 ⟹
+  δw 误差抵消，容差只含 δt 项：order=2 ≤1e-3 / order=1 ≤5e-3，
+  实测 3.3e-4/2.2e-3 @ δt=0.05）；③ Z 恒等式（U=0，|Z−1| ≤ 2e-2/5e-3，
+  连续谱 δt² 档）。
+- **`extensions/secondorderif/bcs/`（本地档案区，同构 normal 基准）**：
+  `singlemode_anderson.jl`（BCS 单模 + Anderson U=1：虚时 order=2 斜率
+  1.990、实时 2.001）与 `continuous_toulouse.jl`（BCS 连续 + Toulouse U=0：
+  实时 order=2 斜率 1.997）——order=2 渐近斜率全 ≈ 2.00；CSV + 斜率 +
+  `plot_scaling.py` 扩展 bcs case（scaling_*.png）。bcs/README.md 记录
+  设置与结论（含 ED 初态配对口径）。
+- 测试侧教训：`Toulouse` 非平衡锚的 `nsys` = **每带占据**
+  （1/(e^{βϵ_d}+1)），不是 Fock 占据概率（ρ0 对角元）——错传会引入
+  ~0.1 量级的假失配。
+
 ## R7 定谳批：BCS 实时 ED 参照初态修正（2026-11-19）
 
 - **BCS ED 参照初态修正（测试/验证面，无 src 改动）**：`test/bcs/runtests.jl`

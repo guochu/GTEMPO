@@ -144,3 +144,4 @@ end
 	@test errs[2] < 0.15 * errs[1]
 	@test errs[2] < 2e-5
 end
+include("continuousbath/runtests.jl")
