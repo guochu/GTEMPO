@@ -1,12 +1,14 @@
-# fockmpo.jl：Fock 表象直积 MPO + fockmpo2gmps 转换
-# （plan/sysdynamics_fock_mpo_plan.md；2026-11-18 起为 sysdynamics 唯一路径——
-#  旧径 _system_factor_reference/SystemFactorPreparation 随 V2 删除）
+# fockmpo.jl：Fock 表象直积 MPO + fockmpo2gmps 转换（荷账自读）
+# （plan/sysdynamics_fock_mpo_plan.md；2026-11-20 起穿戴内联 fock_sysdynamics、
+#  converter 纯翻译——plan/fockmpo_dress_selfread_plan.md：无独立 dressing 层）
 #
-# 架构（三段闭环）：
-#   fock_sysdynamics → FockMPO（Fock 键直积 MPO，开链：无 ρ₀/迹闭合/插入）
-#   sparsefockmpo `*` → 插入算符乘进链（左/右作用；纯张量收缩，无 graded 符号）
-#   fockmpo2gmps → 迹闭合 + ρ₀/切位 0 三明治 + 键重封块 + oddlater → split_cell
-#   + pairize（基线分站装置，符号规范逐位继承）→ reorder! → GMPS
+# 架构（两段闭环）：
+#   fock_sysdynamics → FockMPO（**穿戴完毕**：开链装配 → 切位 ≥ 1 稀疏乘法 →
+#     ρ₀/切位 0 三明治折首站（在稀疏乘法之后！）→ oddlater 逐站 slot 号 →
+#     符号荷 vs 链 δ 读数交叉自检（P5））；仍开链——迹闭合归 converter
+#   fockmpo2gmps → 荷账自读（槽名义荷表 + 站读数 δ，不消费任何插入/初态元
+#     数据）+ 迹闭合 + 键重封块 → split_cell + pairize（基线分站装置，符号
+#     规范逐位继承）→ reorder! → GMPS
 #
 # V1 定谳（原型实证，见 debug/fockmpo_proto/）：
 #   1. **分站符号规范不可局部化**：[band1-first] GMPS 的系数带 GM 楔积规范相位
@@ -21,15 +23,16 @@
 #      （q(a_out) = q(a_in) + q_m）矛盾——带荷对角 MPO 腿不可分格表达。
 #      扇区结构由 fockmpo2gmps 重建（split_cell 的荷差键 + pairize 的分格站）。
 #
-# 语义（迁移期经 203 项对拍闸门对齐旧径逐位；旧径删除后由闸门接线对拍
-# + observables golden U1GTEMPO2 机器精度锚承接）：
+# 语义（闸门 = 手工闭环对拍 + observables golden U1GTEMPO2 机器精度锚）：
 #   一阶（q=1）：τ/+ 支 mats = S·M、− 支 M·S；二阶（Weyl）：S·M·S + Weyl 标量
 #   lscale = coupling_norm/4·Σ step²（_system_factor_fock/sysdynamics 层
-#   setlogscale!——2026-11-18 起 coupling_norm 不进 fock_sysdynamics/fockmpo2gmps）。
-#   ρ₀/切位 0 插入三明治（Ol₀·ρ·Or₀）由 fockmpo2gmps 的 rho0/insertions kwargs
-#   折进首格核；切位 ≥ 1 插入走 sparsefockmpo `*`；oddlater Koszul 号
-#   (−1)^{oddlater·popcount(m)} 由 fockmpo2gmps 按插入元数据统一施加（两次乘法
-#   可组合：指数相加）。插入总荷必须为零（奇插入链的 Grassmann 荷流闭合）。
+#   setlogscale!——coupling_norm 不进 fock_sysdynamics/fockmpo2gmps）。
+#   ρ₀/切位 0 插入三明治（Ol₀·ρ·Or₀）由 fock_sysdynamics 折进首站（在切位 ≥ 1
+#   稀疏乘法之后）；切位 ≥ 1 插入走 sparsefockmpo `*`；oddlater Koszul 号
+#   (−1)^{oddlater·popcount(m)}（oddlater = 切位 ≥ k 的奇插入数，谓词 cut ≥ k）
+#   由 fock_sysdynamics 逐站折进链。插入荷账由 converter 从穿戴链自读：
+#   δ_k = f_q(out) − f_q(in) − q_m（未 dressing 链 δ ≡ 0）、prefix(键 k) =
+#   Σ_{j≤k} δ_j（与旧 cut 累计逐位恒等——plan §2.2 验证例）。
 #   单项式腿 4^bands 态的槽编码与 local_weights 一致（band b = 2bit 低位组，
 #   0=无 1=ā(−d†) 2=a(d) 3=aā(W₄)）。
 
@@ -46,10 +49,10 @@ _fock_bondspace(G::Type{<:Sector}, dim::Int) = Vect[G](one(G) => dim)   # one(G)
 Fock 表象直积 MPO（纯容器，与 GMPS 同构的类型参数化）：每物理格一 site，
 bands 合并进 site 内部（Fock 维 2^bands、单项式腿 4^bands，site 内块对角——
 slot 指标过站不变，每单项式一个 (dim,dim) 算符块）。站位解释由 lattice 携带：
-site k ↔ chronological_cells(lattice)[k]。logscale 不挂 FockMPO——Weyl 标量在
+site k ↔ chronological_cells(lattice)[k]。**链 = 穿戴态**（`fock_sysdynamics`
+产出：ρ₀/切位 0 三明治已折、插入已乘、oddlater 号已折）、仍开链（迹闭合归
+`fockmpo2gmps`，可复用于其它收缩口径）。logscale 不挂 FockMPO——Weyl 标量在
 fockmpo2gmps 产出 GMPS 后由 _system_factor_fock/sysdynamics 层 setlogscale!。
-ρ₀/插入在链上以
-块乘法/转换 kwargs 表达，链本体保持开链（无 ρ₀/迹闭合，可复用于其它收缩口径）。
 """
 struct FockMPO{T<:GM.MPOTensor}
     data::Vector{T}
@@ -61,7 +64,7 @@ end
 
 Base.length(f::FockMPO) = length(f.data)
 Base.getindex(f::FockMPO, i::Int) = f.data[i]
-Base.copy(f::FockMPO) = FockMPO([copy(t) for t in f.data])   # 深拷贝：fock_initstate! 原地折块，浅拷贝会穿透
+Base.copy(f::FockMPO) = FockMPO([copy(t) for t in f.data])   # 深拷贝：张量为引用语义，就地穿戴/乘法路线的调用方需要独立链
 
 """
     SparseFockMPO{T<:MPOTensor}
@@ -93,18 +96,25 @@ function _fock_propagator_at(lattice::AbstractGrassmannLattice, model, b::Symbol
 end
 
 """
-    fock_sysdynamics(lattice, model; order=1) -> FockMPO
+    fock_sysdynamics(lattice, model; order=1, insertions=OperatorInsertion[],
+                     initial_state=nothing) -> FockMPO
 
-杂质系统因子 K 的 Fock 直积 MPO（开链，纯 Fock 无 Grassmann 内容）：逐物理格
-一 site，site 内块对角（每单项式 m 一个 (dim,dim) 算符块）。单元算符与
-sysdynamics 同口径：一阶 τ/+ 支 S·M、− 支 M·S；二阶 S·M·S。**不含** ρ₀/
-迹闭合/插入/oddlater/Weyl 标量——ρ₀ 与切位 0 插入走 fockmpo2gmps 的
-rho0/insertions kwargs，切位 ≥ 1 插入走 sparsefockmpo `*`，oddlater 由
-fockmpo2gmps 施加，Weyl 标量由调用方（_system_factor_fock/sysdynamics 层）
-setlogscale! 补上。
+杂质系统因子 K 的 Fock 直积 MPO，**一次装配产出穿戴完毕的链**（P1——无独立
+dressing 层）：①开链装配（逐物理格一 site，site 内块对角，单元算符与
+sysdynamics 同口径：一阶 τ/+ 支 S·M、− 支 M·S，二阶 S·M·S）；②切位 ≥ 1 插入
+稀疏乘法（`sparsefockmpo *`，过滤按 `insertion_cut_index` 切位）；③ρ₀/切位 0
+三明治折首站（**在稀疏乘法之后**——切位 1 插入作用在站 1 时语义 =
+(Ol₁·M₁·Or₁)·(Ol₀·ρ·Or₀)；边界态内联：imag/mixed = 热迹 I、real = 真空投影 P，
+`initial_state`（FockMatrix/矩阵）仅实时轮廓覆盖）；④oddlater 逐站 slot 对角号
+（谓词 cut ≥ k，奇偶源 = 符号荷）；⑤P5 交叉自检：符号荷累计 vs 链 δ 读数逐站
+核对（不一致 = 物化 bug——站内一致性检查抓不住的"一致但错"缺口，如 JW 符号
+错折 → ArgumentError）。
+
+**不含** 迹闭合/Weyl 标量——前者归 `fockmpo2gmps`，后者由调用方
+（_system_factor_fock/sysdynamics 层）setlogscale! 补上。
 """
 function fock_sysdynamics(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian;
-                          order::Integer=1)
+                          order::Integer=1, insertions=OperatorInsertion[], initial_state=nothing)
     order in (1, 2) || throw(ArgumentError("order must be 1 or 2"))
     bands = lattice.bands
     G = TK.sectortype(lattice)
@@ -129,66 +139,153 @@ function fock_sysdynamics(lattice::AbstractGrassmannLattice, model::AbstractImpu
         end
         t
     end for (b, j) in cells]
-    return FockMPO(data)
-end
+    f = FockMPO(data)
 
-# ---------------------------------------------------------------------------
-# ρ₀ / 插入
-# ---------------------------------------------------------------------------
+    # ② 切位 ≥ 1 稀疏乘法（左右各一 SparseFockMPO；切位 0 归三明治——过滤按
+    # 切位映射而非 j 字段：:- 支 j = 0 = 链末切位）
+    ge1 = filter(i -> insertion_cut_index(lattice, i) >= 1, insertions)
+    Wl = sparsefockmpo(lattice, filter(i -> i.side === :left, ge1))
+    Wr = sparsefockmpo(lattice, filter(i -> i.side === :right, ge1))
+    f = Wr * (Wl * f)
 
-"""
-    fock_vacuumstate(lattice; initial_state=nothing) -> Matrix{ComplexF64}
-
-Fock 侧初态/ρ₀（sysdynamics 的 ρ₀ 逻辑镜像）：imag/mixed = 热迹 I；real =
-真空投影 δ₀₀，`initial_state`（FockMatrix/矩阵）给定时为该态。
-"""
-function fock_vacuumstate(lattice::AbstractGrassmannLattice; initial_state=nothing)
-    dim = 2^lattice.bands
-    if lattice isa AbstractRealGrassmannLattice
-        rho = Matrix{ComplexF64}(Diagonal(vcat([1.0], zeros(dim - 1))))
-        initial_state === nothing || (rho = initial_state isa FockMatrix ?
-            Matrix{ComplexF64}(initial_state.data) : Matrix{ComplexF64}(initial_state))
-        return rho
+    # ③ ρ₀/切位 0 三明治折首站（在稀疏乘法之后——红线 1；push 序 = 0⁺ 序）。
+    # 边界态内联（P3 恒折）：imag/mixed = 热迹 I、real = 真空投影 P；
+    # `initial_state`（FockMatrix/矩阵）仅实时轮廓覆盖
+    rho = if lattice isa AbstractRealGrassmannLattice
+        initial_state === nothing ? Matrix{ComplexF64}(Diagonal(vcat([1.0], zeros(dim - 1)))) :
+        (initial_state isa FockMatrix ? Matrix{ComplexF64}(initial_state.data) :
+         Matrix{ComplexF64}(initial_state))
+    else
+        Matrix{ComplexF64}(I, dim, dim)
     end
-    return Matrix{ComplexF64}(I, dim, dim)
-end
-
-"""
-    fock_initstate!(lattice, f::FockMPO, rho0=nothing) -> FockMPO
-
-    ρ₀ 折叠（原地）：ρ₀ 右乘进首 site 全部单项式块（=(M·ρ₀) 同语义）。
-`rho0` 缺省 = fock_vacuumstate(lattice)。**切位 0 插入不经本函数**——
-Ol₀·ρ·Or₀ 三明治序由 fockmpo2gmps 的 rho0/insertions kwargs 保证
-（先 fold 后乘会得到 Ol₀·O₁·ρ 的错误序）；走 kwargs 路线时不要再调本函数。
-"""
-function fock_initstate!(lattice::AbstractGrassmannLattice, f::FockMPO, rho0=nothing)
-    dim = 2^lattice.bands
-    rho = rho0 === nothing ? fock_vacuumstate(lattice) :
-          (rho0 isa FockMatrix ? Matrix{ComplexF64}(rho0.data) : Matrix{ComplexF64}(rho0))
-    size(rho) == (dim, dim) || throw(DimensionMismatch("rho0 must be $dim×$dim"))
-    z = one(TK.sectortype(lattice))
-    blk = f.data[1][(z, z, TK.dual(z), TK.dual(z))]
+    size(rho) == (dim, dim) || throw(DimensionMismatch("initial state must be $dim×$dim"))
+    rho = foldr((i, A) -> _fockop_matrix(i.op, bands) * A,
+                filter(i -> insertion_cut_index(lattice, i) == 0 && i.side === :left, insertions);
+                init=rho)
+    rho = foldl((A, i) -> A * _fockop_matrix(i.op, bands),
+                filter(i -> insertion_cut_index(lattice, i) == 0 && i.side === :right, insertions);
+                init=rho)
+    blk1 = f.data[1][(z, z, TK.dual(z), TK.dual(z))]
     for m in 0:dim^2-1
-        blk[:, m+1, m+1, :] .= blk[:, m+1, m+1, :] * rho
+        blk1[:, m+1, m+1, :] .= blk1[:, m+1, m+1, :] * rho   # 右乘进全部 slot 块
+    end
+
+    # ④ oddlater 逐站 slot 对角号（谓词 cut ≥ k 逐字继承；标量因子对线性核
+    # 构造可提出，折进链与折进核逐位恒等）
+    bycut = Dict{Int,Vector{OperatorInsertion}}()
+    for ins in insertions
+        push!(get!(bycut, insertion_cut_index(lattice, ins), OperatorInsertion[]), ins)
+    end
+    for (k, t) in enumerate(f.data)
+        oddlater = 0
+        for (cut, items) in bycut, ins in items
+            cut >= k || continue
+            oddlater += GM.fermionparity(_fockop_charge(ins.op, G, bands)) ? 1 : 0
+        end
+        oddlater == 0 && continue
+        blk = t[(z, z, TK.dual(z), TK.dual(z))]
+        for m in 0:dim^2-1
+            blk[:, m+1, m+1, :] .*= (-1)^(oddlater * count_ones(m))
+        end
+    end
+
+    # ⑤ P5 交叉自检：符号荷累计 vs 链 δ 读数逐站核对（converter 侧独立再读，
+    # 双路径互证）。切位 0 插入随三明治折进站 1（prefix 恒等式：δ₁ 含切位 0/1）。
+    fqs1 = fock_charges(G, bands)
+    qms = _slot_charges(G, bands)
+    for (k, t) in enumerate(f.data)
+        expected = z
+        for (cut, items) in bycut, ins in items
+            (cut == k || (cut == 0 && k == 1)) || continue
+            expected = qadd(expected, _fockop_charge(ins.op, G, bands))
+        end
+        actual = _site_charge_shift(t[(z, z, TK.dual(z), TK.dual(z))], fqs1, qms, bands)
+        actual == expected || throw(ArgumentError(
+            "fock_sysdynamics: dressing charge mismatch at site $k — symbol charge " *
+            "$expected vs chain δ reading $actual (materialization bug?)"))
     end
     return f
 end
 
+# ---------------------------------------------------------------------------
+# 荷账自读装置（P2/P5 共用：槽名义荷表 + 站读数 δ）
+# ---------------------------------------------------------------------------
+
+"""
+槽名义荷表（先验，纯函数）：槽编码 m 每带 2bit 组 `slots[b] = (m >> 2(b−1)) & 3`
+（band 1 = 低位组，与 local_weights 逐位同源）：0 = q·I−n（0）、1 = −d†（+q_b）、
+2 = d（−q_b）、3 = W₄（0）——`q_m = Σ_b ([1]−[2])·var_charge(G, b, bands)`。
+带间 graded⊗ 符号与 JW ±1 均纯标量，不影响稀疏性（荷读数）。
+"""
+function _slot_charges(::Type{G}, bands::Int) where {G<:Sector}
+    out = Vector{typeof(one(G))}(undef, 4^bands)
+    for m in 0:4^bands-1
+        q = one(G)
+        for b in 1:bands
+            slot = (m >> (2 * (b - 1))) & 3
+            slot == 1 && (q = qadd(q, var_charge(G, b, bands)))
+            slot == 2 && (q = qadd(q, qneg(var_charge(G, b, bands))))
+        end
+        out[m+1] = q
+    end
+    return out
+end
+
+"""
+站荷移位读数（站内自验证三件套之 1/3 在此）：站张量腿序 =
+(键L ⊗ 单项式出) ← (单项式入 ⊗ 键R)，槽对角；条目 `blk[s, m+1, m+1, u] ≠ 0`
+（容差 = 1e-12 × 站内 max|blk|）⟹ `f_q(s) − f_q(u) = q_m + δ_k`，即
+**δ_k = f_q(out) − f_q(in) − q_m**（任一非零条目；未 dressing 链 δ ≡ 0——
+机器可检不变量，test/api/fockmpo.jl 锚）。全条目低于容差 → δ = 0（零链，
+split_cell 语义）。
+
+三件套：①站内一致性——同站不同条目/槽的 δ 读数全等，不一致 = 装配电荷不相干
+（电荷非对角初态，A1′）→ ArgumentError；③slot 对角断言——离对角 slot 条目
+≈ 0（读数前置检查）。②（Σδ = 0 环闭合）在 fockmpo2gmps。
+"""
+function _site_charge_shift(blk, fqs1, qms::Vector{G}, bands::Int) where {G<:Sector}
+    dim = size(blk, 1)
+    tol = 1e-12 * maximum(abs, blk)
+    # ③ slot 对角断言（读数前置）：离对角 slot 条目 ≈ 0
+    for m1 in 1:dim^2, m2 in 1:dim^2, u in 1:dim, s in 1:dim
+        m1 == m2 && continue
+        abs(blk[s, m1, m2, u]) > tol && throw(ArgumentError(
+            "monomial leg not slot-diagonal (off-diagonal |entry| > $tol)"))
+    end
+    # ① 站内一致性读数：非零条目的 δ 全等
+    δ = nothing
+    for m in 1:dim^2, u in 1:dim, s in 1:dim
+        abs(blk[s, m, m, u]) > tol || continue
+        d = qsub(qsub(fqs1[s], fqs1[u]), qms[m])
+        δ === nothing ? (δ = d) :
+        δ == d || throw(ArgumentError(
+            "site charge bookkeeping inconsistent (charge-non-diagonal dressing?): " *
+            "read δ = $δ and $d"))
+    end
+    return δ === nothing ? one(G) : δ
+end
+
+# ---------------------------------------------------------------------------
+# 插入稀疏算符链（切位 ≥ 1；切位 0 随边界态三明治内联在 fock_sysdynamics）
+# ---------------------------------------------------------------------------
+
 """
     sparsefockmpo(lattice, insertions) -> SparseFockMPO
 
-    插入算符 → 稀疏算符链：切位 ≥ 1 的插入按 `insertion_cut_index` 映射到链位，
-同位算符按 push 序折成列积（foldr/foldl，先 push 最左，0⁺ 序）。**切位 0 插入
-在此过滤掉**（归 fockmpo2gmps 的 rho0/insertions 三明治）；全部插入须同 side
-（左右各建一个 SparseFockMPO）。⚠️ 过滤按 cut index 而非 `boundary` 字段——
-`:-` 支 boundary 0 = 链末切位（cut = 2Nt），不是 ρ₀ 切位（lesser(j=0) 路径）。"""
+    插入算符 → 稀疏算符链（V7 装配点物化：FockOp 在此物化为 Fock 矩阵）：
+切位 ≥ 1 的插入按 `insertion_cut_index` 映射到链位，同位算符按 push 序折成
+列积（foldr/foldl，先 push 最左，0⁺ 序）。**切位 0 插入在此过滤掉**（归
+`fock_sysdynamics` 的 ρ₀/切位 0 三明治）；全部插入须同 side（左右各建一个
+SparseFockMPO）。⚠️ 过滤按 cut index 而非 `j` 字段——`:-` 支 j = 0 = 链末
+切位（cut = 2Nt），不是 ρ₀ 切位（lesser(j=0) 路径）。"""
 function sparsefockmpo(lattice::AbstractGrassmannLattice, insertions::Vector{OperatorInsertion})
     ins1 = filter(i -> insertion_cut_index(lattice, i) >= 1, insertions)
     side = isempty(ins1) ? :left : first(ins1).side
     all(i -> i.side === side, ins1) ||
         throw(ArgumentError("mixed sides: build one SparseFockMPO per side (:left / :right)"))
     G = TK.sectortype(lattice)
-    dim = 2^lattice.bands
+    bands = lattice.bands
+    dim = 2^bands
     focksp = _fock_bondspace(G, dim)
     onesp = _fock_bondspace(G, 1)
     z = one(G)
@@ -200,10 +297,10 @@ function sparsefockmpo(lattice::AbstractGrassmannLattice, insertions::Vector{Ope
     positions = sort!(collect(keys(bycut)))
     data = [begin
         # 左：foldr（先 push 最左）；右：foldl（先 push 最左）——基线 cutleft/cutright 同款
-        OL = foldr((i, A) -> i.matrix * A, filter(i -> i.side === :left, bycut[p]);
-                   init=I0)
-        OR = foldl((A, i) -> A * i.matrix, filter(i -> i.side === :right, bycut[p]);
-                   init=I0)
+        OL = foldr((i, A) -> _fockop_matrix(i.op, bands) * A,
+                   filter(i -> i.side === :left, bycut[p]); init=I0)
+        OR = foldl((A, i) -> A * _fockop_matrix(i.op, bands),
+                   filter(i -> i.side === :right, bycut[p]); init=I0)
         t = TK.zeros(ComplexF64, focksp ⊗ onesp ← onesp ⊗ focksp)
         t[(z, z, TK.dual(z), TK.dual(z))][:, 1, 1, :] .= OL * OR
         t
@@ -259,30 +356,28 @@ end
 # ---------------------------------------------------------------------------
 
 """
-    fockmpo2gmps(f::FockMPO, lattice; rho0=nothing, insertions=OperatorInsertion[],
-                 trunc=nothing, truncerrs=nothing) -> GMPS
+    fockmpo2gmps(f::FockMPO, lattice; trunc=nothing, truncerrs=nothing) -> GMPS
 
-FockMPO → GMPS（迹闭合 + 分站）：逐格把 FockMPO site 的 (dim,dim) 单项式块重排
-进 (s,t) 对差键核（线程注入：cell1 = (M₁ρ₀)[s,t]、中间 = M[v,s]δ_{t,w}、末格 =
-M[t,s] 右边界真空）→ split_cell（基线分站装置：荷差键 + 逐格 SVD 切分，符号规范
-逐位继承）→ pairize → reorder!（Chrono→存储序）→ GMPS。
+FockMPO → GMPS（迹闭合 + 分站；**P2 纯翻译 + 荷账自读**）：`f` 必须是
+`fock_sysdynamics` 产出的**穿戴链**（ρ₀/切位 0 三明治、切位 ≥ 1 插入、oddlater
+号已折进链）——本函数不消费任何插入/初态元数据（`rho0`/`insertions` kwargs
+已随 2026-11-20 换代删除）。逐格自读站荷移位 δ_k（槽名义荷表 + 站读数：
+δ_k = f_q(out) − f_q(in) − q_m；未 dressing 链 δ ≡ 0）→ 键标签
+prefix(键 k) = Σ_{j≤k} δ_j（与旧 cut 累计逐位恒等——plan §2.2 验证例）→
+(s,t) 对差键核（线程注入：首格直读、中间 = M[v,s]δ_{t,w}、末格 =
+M[t,s] 右边界真空、L==1 = 迹闭合）→ split_cell（基线分站装置：荷差键 + 逐格
+SVD 切分，符号规范逐位继承）→ pairize → reorder!（Chrono→存储序）→ GMPS。
 
-kwargs：
-- `rho0`：ρ₀（缺省 = fock_vacuumstate(lattice)；imag/mixed = I、real = 真空投影）。
-  切位 0 插入在此与 ρ₀ 三明治（Ol₀·ρ·Or₀，push 序 = 0⁺ 序）后折进首格核——
-  与基线 (M₁·Ol₀·ρ·Or₀) 逐位同序。
-- `insertions`：**全部**插入（含切位 0）——仅作标签元数据：prefix 荷累计（左键
-  标签移位）+ oddlater Koszul 号 (−1)^{oddlater·popcount(m)}（oddlater = 切位 ≥ k
-  的奇插入数）+ 总荷守卫（Σ charge = 0）。插入的矩阵本体应已乘进链（sparsefockmpo
-  `*`），本函数不重复乘。
-- `trunc`/`truncerrs`：reorder 后的 GM.truncate! 透传（缺省不截断）。
+站内自验证三件套：①站内一致性（δ 读数全等——不一致 = 电荷不相干 dressing，
+如电荷非对角初态 → ArgumentError）；②Σ_k δ_k = 0 环闭合守卫（≡ 旧总插入荷
+守卫，源 = 链矩阵）；③slot 对角断言——①③在 `_site_charge_shift`。
 
+kwargs：`trunc`/`truncerrs` = reorder 后的 GM.truncate! 透传（缺省不截断）。
 **Weyl 标量不在本函数**——调用方（_system_factor_fock/sysdynamics 层）持
 coupling_norm，对产出的 GMPS 做 `logscale += lscale`（⚠️ 累加非覆盖：
 truncate!/swap! 的压缩归一化因子已吸收进 logscale，E2 语义）。
 """
 function fockmpo2gmps(f::FockMPO, lattice::AbstractGrassmannLattice;
-                      rho0=nothing, insertions=OperatorInsertion[],
                       trunc=nothing, truncerrs=nothing)
     G = TK.sectortype(lattice)
     bands = lattice.bands
@@ -293,81 +388,51 @@ function fockmpo2gmps(f::FockMPO, lattice::AbstractGrassmannLattice;
     length(f.data) == L ||
         throw(DimensionMismatch("FockMPO has $(length(f.data)) sites, lattice has $L cells"))
 
-    # 插入元数据：切位映射、总荷守卫
-    cuts = Dict{Int,Vector{OperatorInsertion}}()
-    total_q = z
-    for ins in insertions
-        push!(get!(cuts, insertion_cut_index(lattice, ins), OperatorInsertion[]), ins)
-        total_q = qadd(total_q, ins.charge === nothing ? z : ins.charge)
-    end
-    total_q == z || throw(ArgumentError("total insertion charge must be zero"))
-
-    # ρ₀ + 切位 0 三明治（Ol₀·ρ·Or₀；push 序 = 0⁺ 序）——过滤按 cut index：
-    # `:-` 支 boundary 0 映射链末切位（cut = 2Nt），不是 ρ₀ 切位（与旧径 cuts
-    # 键同口径）
-    rho = rho0 === nothing ? fock_vacuumstate(lattice) :
-          (rho0 isa FockMatrix ? Matrix{ComplexF64}(rho0.data) : Matrix{ComplexF64}(rho0))
-    size(rho) == (dim, dim) || throw(DimensionMismatch("rho0 must be $dim×$dim"))
-    rho = foldr((i, A) -> i.matrix * A,
-                filter(i -> insertion_cut_index(lattice, i) == 0 && i.side === :left, insertions);
-                init=rho)
-    rho = foldl((A, i) -> A * i.matrix,
-                filter(i -> insertion_cut_index(lattice, i) == 0 && i.side === :right, insertions);
-                init=rho)
-
-    # prefix 荷（标签口径 = leftlabels；rightlabels 由 (prefix, 切位荷) 唯一决定）
-    prefix = foldl((p, ins) -> ins.charge === nothing ? p : qadd(p, ins.charge),
-                   get(cuts, 0, OperatorInsertion[]); init=z)
-    pairs_st = [(s, t) for t in 1:dim for s in 1:dim]   # 1-based，基线同款枚举序
+    # 荷账自读（P2）：站读数 δ（站内一致性 + slot 对角校验在 _site_charge_shift）
     fqs1 = fock_charges(G, bands)
+    qms = _slot_charges(G, bands)
+    deltas = [_site_charge_shift(f.data[k][(z, z, TK.dual(z), TK.dual(z))], fqs1, qms, bands)
+              for k in 1:L]
+    total_q = foldl(qadd, deltas; init=z)
+    total_q == z ||
+        throw(ArgumentError("total chain charge must be zero (Σδ = $total_q ≠ 0)"))
+
+    # prefix 恒等式：prefix(键 k) = Σ_{j≤k} δ_j（≡ 旧切位 0..k 插入荷累计）
+    prefixes = Vector{typeof(z)}(undef, L)
+    p = z
+    for k in 1:L
+        p = qadd(p, deltas[k])
+        prefixes[k] = p
+    end
+
+    pairs_st = [(s, t) for t in 1:dim for s in 1:dim]   # 1-based，基线同款枚举序
     chpc = convert(Vector{eltype(fqs1)}, cell_charges(G, bands))
 
     data = nothing
     for (k, (b, j)) in enumerate(cells)
         first_cell = k == 1
         last_cell = k == L
-        leftlabels = first_cell ? [z] : [qsub(qsub(fqs1[s], fqs1[t]), prefix) for (s, t) in pairs_st]
-        prefix_left = prefix
-        for (cut, items) in cuts, ins in items
-            cut == k || continue
-            ins.charge === nothing || (prefix = qadd(prefix, ins.charge))
-        end
-        rightlabels = last_cell ? [z] : [qsub(qsub(fqs1[s], fqs1[t]), prefix) for (s, t) in pairs_st]
-        # oddlater：切位 ≥ k 的奇插入数（切位 0 计入——基线同款）
-        oddlater = 0
-        for (cut, items) in cuts, ins in items
-            cut >= k || continue
-            q = ins.charge === nothing ? z : ins.charge
-            oddlater += GM.fermionparity(q) ? 1 : 0
-        end
+        leftlabels = first_cell ? [z] :
+                     [qsub(qsub(fqs1[s], fqs1[t]), prefixes[k-1]) for (s, t) in pairs_st]
+        rightlabels = last_cell ? [z] :
+                      [qsub(qsub(fqs1[s], fqs1[t]), prefixes[k]) for (s, t) in pairs_st]
         core = zeros(ComplexF64, length(leftlabels), dim^2, length(rightlabels))
         blk = f.data[k][(z, z, TK.dual(z), TK.dual(z))]   # (dim, 4^B, 4^B, dim)
         if L == 1
             for m in 0:dim^2-1
-                core[1, m+1, 1] = tr(blk[:, m+1, m+1, :] * rho) *
-                                  (-1)^(oddlater * count_ones(m))
+                core[1, m+1, 1] = tr(blk[:, m+1, m+1, :])   # 迹闭合（ρ₀ 已折进链）
             end
         elseif first_cell
-            for m in 0:dim^2-1
-                sgn = (-1)^(oddlater * count_ones(m))
-                for (r, (s, t)) in enumerate(pairs_st)
-                    # (M₁·ρ)[s, t]：ρ 已含切位 0 三明治
-                    core[1, m+1, r] = sum(blk[s, m+1, m+1, u] * rho[u, t] for u in 1:dim) * sgn
-                end
+            for m in 0:dim^2-1, (r, (s, t)) in enumerate(pairs_st)
+                core[1, m+1, r] = blk[s, m+1, m+1, t]   # 首格直读（无 ρ 收缩、无 sgn）
             end
         elseif last_cell
-            for m in 0:dim^2-1
-                sgn = (-1)^(oddlater * count_ones(m))
-                for (l, (s, t)) in enumerate(pairs_st)
-                    core[l, m+1, 1] = blk[t, m+1, m+1, s] * sgn
-                end
+            for m in 0:dim^2-1, (l, (s, t)) in enumerate(pairs_st)
+                core[l, m+1, 1] = blk[t, m+1, m+1, s]
             end
         else
-            for m in 0:dim^2-1
-                sgn = (-1)^(oddlater * count_ones(m))
-                for (l, (s, t)) in enumerate(pairs_st), (r, (v, w)) in enumerate(pairs_st)
-                    t == w && (core[l, m+1, r] = blk[v, m+1, m+1, s] * sgn)
-                end
+            for m in 0:dim^2-1, (l, (s, t)) in enumerate(pairs_st), (r, (v, w)) in enumerate(pairs_st)
+                t == w && (core[l, m+1, r] = blk[v, m+1, m+1, s])
             end
         end
         column = _cell_tensors(G, core, leftlabels, rightlabels, chpc)
@@ -409,20 +474,10 @@ function gmps2fockmpo(g::GMPS, lattice::AbstractGrassmannLattice)
 end
 
 # ---------------------------------------------------------------------------
-# 闭环装配：sysdynamics 公开入口的实现体（2026-11-18 起唯一路径——旧径随 V2
-# 删除；plan/sysdynamics_fock_mpo_plan.md）
+# 闭环装配：sysdynamics 公开入口的实现体（穿戴内联 fock_sysdynamics——2026-11-20
+# 起切位 ≥ 1 乘法/ρ₀ 三明治/oddlater 全在 fock_sysdynamics 内完成，无独立
+# dressing 层；plan/fockmpo_dress_selfread_plan.md P1）
 # ---------------------------------------------------------------------------
-
-"切位 ≥ 1 插入乘进 Fock 链（左右各一 SparseFockMPO，切位 0 归 fockmpo2gmps
-的 rho0/insertions 三明治）——test/api/fockmpo.jl 闸门 _wf_build 同配方。
-乘法非原地：产物在支撑位新建张量、其余透传别名，输入链（含缓存链）不被污染。"
-function _fockmpo_with_insertions(lattice::AbstractGrassmannLattice, Kf::FockMPO,
-                                  insertions)
-    ge1 = filter(i -> insertion_cut_index(lattice, i) >= 1, insertions)
-    Wl = sparsefockmpo(lattice, filter(i -> i.side === :left, ge1))
-    Wr = sparsefockmpo(lattice, filter(i -> i.side === :right, ge1))
-    return Wr * (Wl * Kf)
-end
 
 "Weyl 标量 lscale（order=2 = coupling_norm/4·Σ step²，一阶 0）——旧径同式同序"
 _fock_weyl_lscale(lattice::AbstractGrassmannLattice, order::Int, coupling_norm::Real) =
@@ -435,15 +490,13 @@ _fock_weyl_lscale(lattice::AbstractGrassmannLattice, order::Int, coupling_norm::
                         insertions=OperatorInsertion[], trunc=nothing, truncerrs=nothing,
                         spec=nothing) -> GMPS
 
-sysdynamics 的实现体（`fock_sysdynamics` → 切位 ≥ 1 插入稀疏乘法 →
-`fockmpo2gmps`：ρ₀/切位 0 三明治 + 迹闭合 + oddlater + prefix + reorder）。
-**coupling_norm（Weyl 标量）只在此层输入**：order=2 要求 ≥ 0，经
-`_fock_weyl_lscale` 算 lscale 后**累加**到产出 GMPS 的 logscale
-（`logscale += lscale`——logscale 是链幅的 log 场，E2 语义下 truncate!/swap!
-会把压缩归一化因子吸收进去，覆盖会抹掉这些因子；乘 exp(lscale) 语义 =
-累加）。语义经 test/api/fockmpo.jl 对拍闸门锚定：
-`initial_state` 仅实时轮廓生效（虚时/混合 = 热迹 I——此处按轮廓门控，
-`fockmpo2gmps` 的 rho0 直通）；`spec` 兼容旧径 kwarg（须 = sectortype(lattice)）。
+sysdynamics 的实现体（三行闭环）：`fock_sysdynamics`（穿戴内联：切位 ≥ 1 稀疏
+乘法 + ρ₀/切位 0 三明治 + oddlater + P5 自检，`initial_state` 仅实时轮廓生效）
+→ `fockmpo2gmps`（荷账自读 + 迹闭合 + 分站）→ Weyl 标量 `logscale +=`。
+**coupling_norm（Weyl 标量）只在此层输入**：order=2 要求 ≥ 0（⚠️ 累加非覆盖：
+logscale 是链幅的 log 场，E2 语义下 truncate!/swap! 会把压缩归一化因子吸收
+进去，覆盖会抹掉这些因子；乘 exp(lscale) 语义 = 累加）。`spec` 兼容旧径
+kwarg（须 = sectortype(lattice)）。
 """
 function _system_factor_fock(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian;
                              order::Int=1, coupling_norm::Real=0.0, initial_state=nothing,
@@ -454,12 +507,9 @@ function _system_factor_fock(lattice::AbstractGrassmannLattice, model::AbstractI
         throw(ArgumentError("order=2 requires coupling_norm ≥ 0 (total Σ_b α_b)"))
     spec === nothing || spec === TK.sectortype(lattice) ||
         throw(ArgumentError("spec $spec ≠ sectortype(lattice) $(TK.sectortype(lattice))"))
-    Kf = _fockmpo_with_insertions(lattice,
-                                  fock_sysdynamics(lattice, model; order=order),
-                                  insertions)
-    rho0 = lattice isa AbstractRealGrassmannLattice ? initial_state : nothing
-    out = fockmpo2gmps(Kf, lattice; rho0=rho0, insertions=insertions,
-                       trunc=trunc, truncerrs=truncerrs)
+    Kf = fock_sysdynamics(lattice, model; order=order, insertions=insertions,
+                          initial_state=initial_state)
+    out = fockmpo2gmps(Kf, lattice; trunc=trunc, truncerrs=truncerrs)
     GM.setlogscale!(out, GM.logscale(out) + _fock_weyl_lscale(lattice, order, coupling_norm))
     return out
 end

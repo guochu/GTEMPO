@@ -331,4 +331,30 @@ Phase 3 锚先行（δ ≡ 0 未 dressing 链）再重写 converter。
 
 ## 8. 实施状态
 
-（未实施——2026-11-20 合并计划成文，待 A1′ 裁决确认。）
+**✅ 已实施（2026-11-20，本会话；A1′ 按推荐 = 抛错落地）。** 四阶段全部完成，
+Part 1 API 闸门全绿（含 fockmpo 对拍矩阵 300 项 + localops 单测 313 项 +
+golden U1GTEMPO2 机器精度锚 + ED 电池）；Part 2–4 全套件见套件运行记录。
+
+实施偏差（相对计划文本，均有据）：
+
+- **乘法表 4 项修正**：§2.1 表中 (adag,n)/(adag,aadg)/(aadg,n)/(aadg,aadg)
+  四项与 2×2 矩阵代数矛盾（两行的 n↔aadg 列互换——代数：d†·n = 0、
+  d†·(I−n) = d†、(I−n)·n = 0、(I−n)² = I−n）。实现按矩阵代数落地，
+  Phase 1 的 36 项对拍闸门（计划自定验收判据）全绿。
+- **闸门配方修正**：Phase 3 的"裸调用（真空穿戴）→ 手工稀疏乘法 → 手工
+  三明治"与 P3 冲突——裸调用已恒折边界态（真空投影子），其上再折 ρ₀ =
+  双重折叠且乘法序不可复原。闸门改为复刻步骤 ①原始装配（未折 ρ）再走
+  手工稀疏乘法/三明治/oddlater，独立簿记路径语义不变。
+- **P5 补充钉定**：切位 0 插入（三明治）计入站 1 的 expected 荷
+  （`cut == k || (cut == 0 && k == 1)`）——prefix 恒等式 δ₁ 含切位 0/1。
+- **A1′**：电荷非对角初态 → `_site_charge_shift` 站内一致性抛 ArgumentError
+  （fock_sysdynamics 内先于 converter 触发）；对角态行为不变（含
+  sysdynamics 旧热化对角初态测试）。
+
+**实施后追加裁决（2026-11-20 用户）**：`fock_vacuumstate` 删除（计划原定保留，
+用户推翻）——边界态构造内联进 `fock_sysdynamics` 步骤 ③（imag/mixed = 热迹 I、
+real = 真空投影 P、`initial_state` 仅实时覆盖）；export 随删，闸门手工路径同式
+内联复刻。附带发现：旧闸门 `_wf_build` 里 `initial_state isa FockMatrix` 分支
+是从未执行的死代码（旧闸门从不传非 nothing 初态，三元惰性求值绕过名字解析）
+——新热化初态用例首次踩到，测试侧改用 `GTEMPO.FockMatrix` 限定名。全套件复跑
+绿。

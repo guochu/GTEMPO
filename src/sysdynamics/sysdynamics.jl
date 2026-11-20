@@ -1,17 +1,21 @@
 # sysdynamics.jl：杂质系统因子 K 构造（槽算符/插入/切位/存储序 + 公开入口）
 #
 # 公开 sysdynamics 全权委托 fock_sysdynamics +
-# fockmpo2gmps（本目录 fockmpo.jl；plan/sysdynamics_fock_mpo_plan.md）：
-#   Fock 直积 MPO 开链装配 → 切位 ≥ 1 插入稀疏乘法 → 转换（ρ₀/切位 0
-#   三明治 + prefix + oddlater + 迹闭合 + split_cell/pairize 分站 + reorder）。
+# fockmpo2gmps（本目录 fockmpo.jl；plan/sysdynamics_fock_mpo_plan.md +
+# plan/fockmpo_dress_selfread_plan.md）：
+#   fock_sysdynamics 一次装配产出**穿戴完毕**的 Fock 链（开链装配 → 切位 ≥ 1
+#   插入稀疏乘法 → ρ₀/切位 0 三明治折首站 → oddlater 逐站号 → 符号荷 vs 链 δ
+#   交叉自检）；fockmpo2gmps 纯翻译 + 荷账自读（槽名义荷表 + 站读数 δ——
+#   不消费任何插入/初态元数据）+ 迹闭合 + split_cell/pairize 分站 + reorder。
 # 旧径（U1GTEMPO2 移植的 dense-core ring automaton + SystemFactorPreparation
 # 两层缓存 + backend 开关）已于 2026-11-18 随 V2 删除（对拍闸门 203 项绿后）。
 #
 # 本文件保留的机器（新径与测量层共用）：
 #   - local_weights：槽算符积展开（q=1 anti-Wick / q=1/2 Weyl；W₄ gaussian）；
-#   - OperatorInsertion：插入算符（结构化 ==/hash）；
+#   - OperatorInsertion：插入算符（符号 FockOp；荷按位派生；结构化 ==/hash）；
 #   - fock_charges / _cell_step2 / _model_propagator / insertion_cut_index /
 #     _storage_cells / _cell_tensors（split_cell 分站装置）。
+# 符号算符层（LocalOp/FockOp）在 localops.jl。
 #
 # 语义（INTEGRATION.md §4 对齐，R2：以 U1GTEMPO2 为准）：
 #   一阶（q=1）：mats = S·M（+支）/ M·S（−支）——Lie 顺序；
@@ -109,49 +113,41 @@ end
 # ---------------------------------------------------------------------------
 
 """
-    OperatorInsertion(branch, boundary, matrix; charge=nothing, side=:left)
+    OperatorInsertion(branch, j, op::FockOp; side=:left)
 
-物理算符插入：在 `branch` 分支的边界 `boundary`（(+,0)/τ 0 = ρ₀ 切位）乘进链。
-`matrix` 为 2^bands×2^bands Fock 矩阵；`charge` = 算符的荷标签（缺省 = 零荷）。
-`side`（secondorderif WeylInsertion 同语义）：`:left` 乘在单元左（O·M，
-轮廓更晚读法）、`:right` 乘在单元右（M·O）。同切位多插入的 0⁺ 语义由 push
-序承载（先 push = 轮廓更早）。
+物理算符插入（全程符号态——V2/V7）：在 `branch` 分支的第 `j` 时间步乘进链。
+**j = 物理时间步数**（(+,j) 与 (−,j) 同一物理时间点；虚时 j 同口径）；j = 0 =
+ρ₀ 切位（三明治），⚠️ `:-` 支 j = 0 = 链末切位（合法物理插入）——过滤按
+`insertion_cut_index` 的切位映射而非 j 字段。`op` = 符号 FockOp，荷从符号按位
+派生（V3——无手工荷标签）；`side`（secondorderif WeylInsertion 同语义）：
+`:left` 乘在单元左（O·M，轮廓更晚读法）、`:right` 乘在单元右（M·O）。同切位
+多插入的 0⁺ 语义由 push 序承载（先 push = 轮廓更早）。构造守卫：j ≥ 0；
+分支格数上限（越界）在 `insertion_cut_index` 提前抛。
 """
 struct OperatorInsertion
     branch::Symbol
-    boundary::Int
-    matrix::Matrix{ComplexF64}
-    charge::Any
+    j::Int                       # 原 boundary：时间步数（V1）
+    op::FockOp                   # 原 matrix + charge：符号态，荷按位派生（V2/V3）
     side::Symbol
-    function OperatorInsertion(branch::Symbol, boundary::Int, matrix::AbstractMatrix;
-                               charge=nothing, side::Symbol=:left)
-        dim = size(matrix, 1)
-        (dim == size(matrix, 2) && dim <= 16 && ispow2(dim)) ||
-            throw(ArgumentError("operator must be a square 2^bands×2^bands matrix"))
-        all(isfinite, matrix) || throw(ArgumentError("finite insertion matrix required"))
+    function OperatorInsertion(branch::Symbol, j::Int, op::FockOp; side::Symbol=:left)
+        j >= 0 || throw(ArgumentError("insertion time step must be ≥ 0, got j = $j"))
         side in (:left, :right) || throw(ArgumentError("side must be :left or :right"))
-        new(branch, boundary, Matrix{ComplexF64}(matrix), charge, side)
+        new(branch, j, op, side)
     end
 end
 
 # 结构化相等/hash（制备对象格张量缓存键的先决；用户每次测量调用新构造插入
-# 对象，=== 不成立）。字段逐项 + 矩阵元素相等（dim ≤ 16，成本可忽略）；
-# 矩阵 hash 按列主序线性迭代，与 == 的元素序一致。charge 用 isequal 保持
-# hash/== 一致（nothing / Sector 值类型）。
+# 对象，=== 不成立）。字段逐项 + FockOp 符号逐位（Vector == 逐元素）；物化同
+# 矩阵不同符号形视为不同对象——缓存多算一份、数值不受影响。
 function Base.:(==)(a::OperatorInsertion, b::OperatorInsertion)
-    a.branch === b.branch && a.boundary == b.boundary && a.side === b.side &&
-        isequal(a.charge, b.charge) && a.matrix == b.matrix
+    a.branch === b.branch && a.j == b.j && a.side === b.side && a.op == b.op
 end
 
 function Base.hash(x::OperatorInsertion, h::UInt)
     h = hash(x.branch, h)
-    h = hash(x.boundary, h)
+    h = hash(x.j, h)
     h = hash(x.side, h)
-    h = hash(x.charge, h)
-    for v in x.matrix
-        h = hash(v, h)
-    end
-    return h
+    return hash(x.op, h)
 end
 
 # ---------------------------------------------------------------------------
@@ -182,16 +178,26 @@ end
 
 插入切位 → 时序格序索引（U1GTEMPO2 insertion_cut 同式；cut k 的插入左乘进
 时序格 k 的 mats，cut 0 = ρ₀ 边界）：τ j → j；+ j → nimag + j；
-− j → nimag + 2nreal − j。boundary ∈ 0..格数（该分支）。
+− j → nimag + 2nreal − j（反向）。j ∈ 0..该分支格数（越界/轮廓缺支提前抛）。
 """
 function insertion_cut_index(lattice::AbstractGrassmannLattice, ins::OperatorInsertion)
     ni = lattice isa AbstractRealGrassmannLattice ? 0 :
          lattice isa AbstractImagGrassmannLattice ? lattice.Nτ : lattice.Nτ
-    nt = lattice isa AbstractRealGrassmannLattice ? lattice.Nt : 
+    nt = lattice isa AbstractRealGrassmannLattice ? lattice.Nt :
          lattice isa AbstractMixedGrassmannLattice ? lattice.Nt : 0
-    ins.branch === :τ && return ins.boundary
-    ins.branch === :+ && return ni + ins.boundary
-    ins.branch === :- && return ni + 2nt - ins.boundary
+    if ins.branch === :τ
+        ni > 0 || throw(ArgumentError("branch :τ requires an imag or mixed contour lattice"))
+        0 <= ins.j <= ni || throw(ArgumentError("τ insertion j = $(ins.j) out of range 0..$ni"))
+        return ins.j
+    elseif ins.branch === :+
+        nt > 0 || throw(ArgumentError("branch :+ requires a real or mixed contour lattice"))
+        0 <= ins.j <= nt || throw(ArgumentError(":+ insertion j = $(ins.j) out of range 0..$nt"))
+        return ni + ins.j
+    elseif ins.branch === :-
+        nt > 0 || throw(ArgumentError("branch :- requires a real or mixed contour lattice"))
+        0 <= ins.j <= nt || throw(ArgumentError(":- insertion j = $(ins.j) out of range 0..$nt"))
+        return ni + 2nt - ins.j
+    end
     throw(ArgumentError("branch must be :τ, :+ or :-"))
 end
 
@@ -223,9 +229,9 @@ end
                 coupling_norm=0.0, insertions=OperatorInsertion[], trunc) -> GMPS
 
 杂质系统因子 K（order=1 相干 anti-Wick 语义，q=1 局部权重）。实现 =
-`fock_sysdynamics`（Fock 直积 MPO 开链装配）→ 切位 ≥ 1 插入稀疏乘法 →
-`fockmpo2gmps`（ρ₀/切位 0 三明治 + prefix + oddlater + 迹闭合 +
-split_cell/pairize 分站 + reorder）。ρ₀/迹闭合已折进单元
+`fock_sysdynamics`（穿戴内联：Fock 直积 MPO 装配 + 切位 ≥ 1 插入稀疏乘法 +
+ρ₀/切位 0 三明治折首站 + oddlater + 符号荷交叉自检）→ `fockmpo2gmps`（荷账
+自读 + 迹闭合 + split_cell/pairize 分站 + reorder）。ρ₀/迹闭合已折进单元
 （boundarycondition! 不再需要）；`initial_state`（FockMatrix/矩阵）仅实时
 轮廓生效（缺省 = 真空投影）。
 """

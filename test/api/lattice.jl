@@ -60,6 +60,6 @@ using TensorKit: scalartype
 	l = GrassmannLattice(N=4, δt=0.1, contour=:real)
 	cells = GTEMPO.chronological_cells(l)
 	@test length(cells) == 2 * l.Nt
-	@test GTEMPO.insertion_cut_index(l, OperatorInsertion(:+, 2, Matrix{ComplexF64}(I, 2, 2))) == 2
-	@test GTEMPO.insertion_cut_index(l, OperatorInsertion(:-, 3, Matrix{ComplexF64}(I, 2, 2))) == 2 * l.Nt - 3
+	@test GTEMPO.insertion_cut_index(l, OperatorInsertion(:+, 2, GTEMPO.FockOp([GTEMPO.LocalOp(:I)]))) == 2
+	@test GTEMPO.insertion_cut_index(l, OperatorInsertion(:-, 3, GTEMPO.FockOp([GTEMPO.LocalOp(:I)]))) == 2 * l.Nt - 3
 end

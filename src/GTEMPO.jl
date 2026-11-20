@@ -62,7 +62,9 @@ include("correlationfunction.jl")
 include("impuritymodels/impuritymodels.jl")
 
 # K 构造（sysdynamics 全权委托 fock_sysdynamics +
-# fockmpo2gmps；旧径随 V2 删除——plan/sysdynamics_fock_mpo_plan.md）
+# fockmpo2gmps；旧径随 V2 删除——plan/sysdynamics_fock_mpo_plan.md；
+# localops = 符号算符层，include 于 OperatorInsertion 定义之前）
+include("sysdynamics/localops.jl")
 include("sysdynamics/sysdynamics.jl")
 include("sysdynamics/fockmpo.jl")
 
@@ -109,14 +111,14 @@ export ScaledScalar, value
 export correlationfunction, coupling_norm, ContourBlockIndex, changebands
 
 # K 构造（SystemFactorPreparation/prepare_system/clear_cache! 随旧径 V2 删除）
-export sysdynamics, OperatorInsertion
+export sysdynamics, OperatorInsertion, LocalOp, FockOp
 
 # IF 构造（W3/W4 装配面：fullfactor/tti_* = influencefunctional/ 后端统一入口）
 export InfluenceFunctionalAlgorithm, PartialIF, PolarIF, ExactTTI
 export fullfactor, tti_factors, is_tti
 export hybriddynamics!
 export var_charge, cell_charges, fock_charges
-export FockMPO, SparseFockMPO, fock_sysdynamics, fock_vacuumstate, fock_initstate!,
+export FockMPO, SparseFockMPO, fock_sysdynamics,
        sparsefockmpo, fockmpo2gmps, gmps2fockmpo
 export HybridizationKernel, hybriddynamics, hybriddynamics!
 

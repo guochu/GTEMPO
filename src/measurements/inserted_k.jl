@@ -4,52 +4,32 @@
 # 全部经「带插入重建 K → GM 引擎 integrate → /Z」：
 #   occupation(branch j; band)      n̂（逐带或总）在 (branch, j) 边界 :left
 #   nn(i, j; b1, b2, band)          n̂ 双插入密度-密度（ED 验证 ✓）
-#   greater/lesser/matsubara        ✓ 已修复并对拍 U1GTEMPO2 机器精度（2026-11-15）。
-#                                   五处口径差全部定案：①builder prefix 必须以
-#                                   cut-0 插入荷为初值并逐胞累计（sysdynamics.jl；奇
-#                                   插入链迹归零的真凶——偶算符 charge=nothing
-#                                   不受影响）；②荷方向 = 算符自荷（d=−q、
-#                                   ddag=+q，correlation_insertions 同款，此前全
-#                                   反向）；③push 序 = cutleft foldr 首 push 最左
-#                                   （同切位 0⁺：greater = d·ddag、lesser/电流 =
-#                                   ddag·d）；④matsubara 时序因子 (i≥j ? −1 : +1)
-#                                   且混合轮廓 τ 支放行；⑤order/coupling_norm 显
-#                                   式 kwargs 必须转发（_normalized_two_point 曾
-#                                   忽略 → 以 order=1 链对 order=2 的 Z 归一）。
-#                                   双栈对拍：实时 greater/lesser 3 点、虚时
-#                                   matsubara 4 点、occupation 4 点、lead 关联
-#                                   6 点（含同切位）全部 Δ ≤ 5e-15。
-#   electriccurrent/heatcurrent     GF 求和精确版；raw_lead_correlator 同上锚定
+#   greater/lesser/matsubara        ✓ 对拍 U1GTEMPO2 机器精度（2026-11-15）。
+#                                   五处口径差全部定案（historical；插入构造已
+#                                   符号化——plan/fockmpo_dress_selfread_plan.md
+#                                   2026-11-20）：荷现在从符号 FockOp 按位派生
+#                                   （V3——d=−q、ddag=+q 内建，无手工标签）；
+#                                   ①builder prefix 不再消费插入元数据（converter
+#                                   从穿戴链 δ 读数自读）；②push 序 = cutleft
+#                                   foldr 首 push 最左（同切位 0⁺：greater =
+#                                   d·ddag、lesser/电流 = ddag·d）；③matsubara
+#                                   时序因子 (i≥j ? −1 : +1) 且混合轮廓 τ 支放行；
+#                                   ④order/coupling_norm 显式 kwargs 必须转发；
+#                                   ⑤total-n̂ = Σ_b n_b 不可表为单 FockOp（V6
+#                                   推论）——逐带求和（期望线性、数值恒等）。
+#   electriccurrent/heatcurrent     GF 求和精确版；raw_lead_correlator 同锚定
 #                                   （平衡态净电流离散伪影 O(δt)，旧栈同款量级）。
-# 边界 j ∈ 0..N（0 = ρ₀ 切位）；rt 顶点 branch=:+、τ 顶点 branch=:τ。
-# τ 链 G(β,0) = +⟨d†d⟩（热环等时同号；j==0 平移路由属 secondorderif M≥2 的
-# Z2 栈绕尾技巧，GM 栈 F≡0 前提下不需要——D5 验收时按 golden 裁决）。
+# 边界 j ∈ 0..N（0 = ρ₀ 切位，⚠️ :- 支 j = 0 = 链末切位）；rt 顶点 branch=:+、
+# τ 顶点 branch=:τ。τ 链 G(β,0) = +⟨d†d⟩（热环等时同号；j==0 平移路由属
+# secondorderif M≥2 的 Z2 栈绕尾技巧，GM 栈 F≡0 前提下不需要——D5 验收时按
+# golden 裁决）。
 #
-# 扫描型测量：K 重建走 fock_sysdynamics + fockmpo2gmps（2026-11-18 起唯一
-# 路径）；制备对象摊销（SystemFactorPreparation + preparation kwarg）已随
-# V2 删除——扫描成本回到逐点重建（FockMPO 级缓存/摊销归 V2 议题）。
-
-"""
-    _fock_ops(bands) -> Vector{Matrix{ComplexF64}}
-
-各带 JW 湮灭算符（band 1 = MSB；FockMatrix 约定）。
-"""
-_fock_ops(bands::Int) = _fock_annihilators(bands)
-
-"n̂ 算符（band=nothing → 全带总占据）"
-function _number_op(bands::Int, band::Union{Nothing,Int})
-    d = _fock_ops(bands)
-    if band === nothing
-        acc = d[1]' * d[1]
-        for b in 2:bands; acc += d[b]' * d[b]; end
-        return acc
-    end
-    (1 <= band <= bands) || throw(BoundsError(1:bands, band))
-    return d[band]' * d[band]
-end
+# 扫描型测量：K 重建走 fock_sysdynamics（穿戴内联）+ fockmpo2gmps（荷账自读，
+# 2026-11-20 起唯一路径）；制备对象摊销已随 V2 删除——扫描成本回到逐点重建
+# （FockMPO 级缓存/摊销归 V2 议题）。
 
 "插入 K 重建的公共尾程：K′ = sysdynamics(...; insertions) → integrate(K′, Is...) / Z
-（K 构造 = fock_sysdynamics + fockmpo2gmps 唯一路径）。"
+（K 构造 = fock_sysdynamics（穿戴）+ fockmpo2gmps（自读）唯一路径）。"
 function _inserted_expectation(lattice, model, Is, Z, insertions; order=1, coupling_norm=0.0,
                                initial_state=nothing, spec=nothing)
     K = sysdynamics(lattice, model; order, initial_state, coupling_norm, insertions,
@@ -62,14 +42,23 @@ end
     occupation(lattice, model, kernel, Is...; j, branch, band=nothing,
                order=1, coupling_norm=0.0, initial_state=nothing, Z) -> Complex
 
-⟨n̂(t_j)⟩（`band` 缺省 = 总占据；j ≥ 1 在 (branch, j) 边界，j = 0 折 ρ₀/
-热迹）。`Is` = 各带 IF 链；`Z` = 无插入分母。
+⟨n̂(t_j)⟩（`band` 缺省 = 总占据 Σ_b n̂_b——逐带求和，期望线性数值恒等；j ≥ 1
+在 (branch, j) 边界，j = 0 折 ρ₀/热迹）。`Is` = 各带 IF 链；`Z` = 无插入分母。
 """
 function occupation(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian,
                     kernel::Union{Nothing,HybridizationKernel}, Is...; j::Integer, branch::Symbol=default_branch(lattice),
                     band::Union{Nothing,Int}=nothing, order::Integer=1,
                     coupling_norm::Real=kernel_coupling_norm(kernel), initial_state=nothing, Z)
-    ins = [OperatorInsertion(branch, Int(j), _number_op(lattice.bands, band))]
+    if band === nothing
+        acc = 0.0im
+        for b in 1:lattice.bands
+            ins = [OperatorInsertion(branch, Int(j), _single_band_op(:n, b, lattice.bands))]
+            acc += _inserted_expectation(lattice, model, Is, Z, ins; order=Int(order),
+                                         coupling_norm=coupling_norm, initial_state=initial_state)
+        end
+        return acc
+    end
+    ins = [OperatorInsertion(branch, Int(j), _single_band_op(:n, Int(band), lattice.bands))]
     return _inserted_expectation(lattice, model, Is, Z, ins; order=Int(order),
                                  coupling_norm=coupling_norm, initial_state=initial_state)
 end
@@ -82,9 +71,8 @@ default_branch(lattice::AbstractGrassmannLattice) =
     raw_correlation(lattice, model, kernel, Is...; i, j=0, kind=:greater, ...) -> Complex
 
 两点函数 ⟨d(tᵢ) ddag(tⱼ)⟩（greater）/ ⟨ddag(tⱼ) d(tᵢ)⟩（lesser）；实时/混合
-专用（虚时用 matsubara）。0⁺ push 序约定见文件头。⚠️ 奇算符插入必须显式带荷
-（charge=var_charge/qneg）：charge=nothing 时 builder 的 prefix 不移位，奇单项
-式的电荷流不可表示 → K' 切分产出零站 → 链归零（偶算符 n̂ 不受影响）。
+专用（虚时用 matsubara）。0⁺ push 序约定见文件头。奇算符插入的荷从符号派生
+（V3）——奇插入链总荷非零时由 converter 的 Σδ 守卫拒绝（ArgumentError）。
 """
 function raw_correlation(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian,
                          kernel::Union{Nothing,HybridizationKernel}, Is...; i::Integer, j::Integer=0,
@@ -92,20 +80,20 @@ function raw_correlation(lattice::AbstractGrassmannLattice, model::AbstractImpur
                          coupling_norm::Real=kernel_coupling_norm(kernel), initial_state=nothing)
     (lattice isa AbstractRealGrassmannLattice || lattice isa AbstractMixedGrassmannLattice) ||
         throw(ArgumentError("实时/混合轮廓专用；纯虚时用 matsubara"))
-    spec = TK.sectortype(lattice)
-    qc = var_charge(spec, 1, lattice.bands)
-    d = _fock_ops(lattice.bands)[1]; ddag = d'
+    bands = lattice.bands
+    a = _single_band_op(:a, 1, bands)
+    adag = _single_band_op(:adag, 1, bands)
     ins = OperatorInsertion[]
     if kind === :greater
-        # ⟨d(tᵢ) ddag(tⱼ)⟩：荷 = 算符自荷（U1GTEMPO2 correlation_insertions 同款
-        # ——d 湮灭 = −q、ddag 产生 = +q）。push 序 = 算符左乘序（cutleft foldr
-        # 首 push 最左、最后作用）：同切位 0⁺ greater = d·ddag ⟹ d 先 push
-        push!(ins, OperatorInsertion(:+, Int(i), d; charge=qneg(qc)))
-        push!(ins, OperatorInsertion(:+, Int(j), ddag; charge=qc))
+        # ⟨d(tᵢ) ddag(tⱼ)⟩：荷 = 算符自荷（符号派生——:a = −q、:adag = +q）。
+        # push 序 = 算符左乘序（cutleft foldr 首 push 最左、最后作用）：同切位
+        # 0⁺ greater = d·ddag ⟹ d 先 push
+        push!(ins, OperatorInsertion(:+, Int(i), a))
+        push!(ins, OperatorInsertion(:+, Int(j), adag))
     elseif kind === :lesser
         # ⟨ddag(tⱼ) d(tᵢ)⟩：同切位 0⁺ = ddag·d（a†a）⟹ ddag 先 push
-        push!(ins, OperatorInsertion(:-, Int(j), ddag; charge=qc))
-        push!(ins, OperatorInsertion(:+, Int(i), d; charge=qneg(qc)))
+        push!(ins, OperatorInsertion(:-, Int(j), adag))
+        push!(ins, OperatorInsertion(:+, Int(i), a))
     else
         throw(ArgumentError("kind must be :greater or :lesser"))
     end
@@ -137,18 +125,18 @@ end
 function _normalized_two_point(lattice, model, kernel, Is, Z, i, j, kind;
                                order::Integer=1,
                                coupling_norm::Real=kernel_coupling_norm(kernel), kwargs...)
-    spec = TK.sectortype(lattice)
-    qc = var_charge(spec, 1, lattice.bands)
-    d = _fock_ops(lattice.bands)[1]; ddag = d'
+    bands = lattice.bands
+    a = _single_band_op(:a, 1, bands)
+    adag = _single_band_op(:adag, 1, bands)
     ins = OperatorInsertion[]
     if kind === :greater
         # push 序 = 左乘序（同切位 0⁺ greater = d·ddag）
-        push!(ins, OperatorInsertion(:+, Int(i), d; charge=qneg(qc)))
-        push!(ins, OperatorInsertion(:+, Int(j), ddag; charge=qc))
+        push!(ins, OperatorInsertion(:+, Int(i), a))
+        push!(ins, OperatorInsertion(:+, Int(j), adag))
     else
         # lesser = ddag·d（a†a）
-        push!(ins, OperatorInsertion(:-, Int(j), ddag; charge=qc))
-        push!(ins, OperatorInsertion(:+, Int(i), d; charge=qneg(qc)))
+        push!(ins, OperatorInsertion(:-, Int(j), adag))
+        push!(ins, OperatorInsertion(:+, Int(i), a))
     end
     return _inserted_expectation(lattice, model, Is, Z, ins;
                                  order=Int(order), coupling_norm=coupling_norm,
@@ -168,10 +156,9 @@ function matsubara(lattice::AbstractGrassmannLattice, model::AbstractImpurityHam
     # τ↔τ 插入在混合（Kadanoff）轮廓同样合法（虚时支 = 热态构建腿）
     lattice isa AbstractImagGrassmannLattice || lattice isa AbstractMixedGrassmannLattice ||
         throw(ArgumentError("matsubara 需虚时或混合轮廓"))
-    d = _fock_ops(lattice.bands)[1]; ddag = d'
-    qc = var_charge(TK.sectortype(lattice), 1, lattice.bands)
-    ins = [OperatorInsertion(:τ, Int(i), d; charge=qneg(qc)),
-           OperatorInsertion(:τ, Int(j), ddag; charge=qc)]
+    bands = lattice.bands
+    ins = [OperatorInsertion(:τ, Int(i), _single_band_op(:a, 1, bands)),
+           OperatorInsertion(:τ, Int(j), _single_band_op(:adag, 1, bands))]
     # Matsubara 时序约定（U1GTEMPO2 matsubara 同款）：G(τᵢ,τⱼ) =
     # (i ≥ j ? −1 : +1)·⟨d(τᵢ) ddag(τⱼ)⟩（τ 有序排列 ⟨T_τ dd†⟩ 的分支号）
     return (i >= j ? -1 : 1) * _inserted_expectation(lattice, model, Is, Z, ins; order=Int(order),
@@ -192,10 +179,10 @@ function nn(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonia
             coupling_norm::Real=kernel_coupling_norm(kernel), initial_state=nothing, Z)
     band1, band2 = band isa Int ? (band, band) : band
     if i == j && b1 === b2 && band1 == band2
-        ins = [OperatorInsertion(b1, Int(i), _number_op(lattice.bands, band1))]
+        ins = [OperatorInsertion(b1, Int(i), _single_band_op(:n, band1, lattice.bands))]
     else
-        ins = [OperatorInsertion(b1, Int(i), _number_op(lattice.bands, band1)),
-               OperatorInsertion(b2, Int(j), _number_op(lattice.bands, band2))]
+        ins = [OperatorInsertion(b1, Int(i), _single_band_op(:n, band1, lattice.bands)),
+               OperatorInsertion(b2, Int(j), _single_band_op(:n, band2, lattice.bands))]
     end
     return _inserted_expectation(lattice, model, Is, Z, ins; order=Int(order),
                                  coupling_norm=coupling_norm, initial_state=initial_state)
@@ -221,19 +208,17 @@ end
 """
     raw_lead_correlator(lattice, model, kernel, Is...; k, j, b2=:+, band=1, ...) -> Complex
 
-⟨ā(+,k; band) a(b2,j; band)⟩——current 公式的原始 GF（带荷双插入，约定与
-golden 验证过的 greater/lesser 同款：charge=nothing、:left 乘）。
+⟨ā(+,k; band) a(b2,j; band)⟩——current 公式的原始 GF（带荷双插入，荷从符号
+派生；约定与 golden 验证过的 greater/lesser 同款：:left 乘）。
 """
 function raw_lead_correlator(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian,
                              kernel::Union{Nothing,HybridizationKernel}, Is...; k::Integer, j::Integer,
                              b2::Symbol=:+, band::Int=1, order::Integer=1,
                              coupling_norm::Real=kernel_coupling_norm(kernel), initial_state=nothing, Z)
-    qc = var_charge(TK.sectortype(lattice), band, lattice.bands)
-    d = _fock_ops(lattice.bands)[band]
-    ddag = d'
+    bands = lattice.bands
     # push 序 = 左乘序：同切位 (k == j) 电流取 a†a 0⁺ 极限 ⟹ ddag 先 push
-    ins = [OperatorInsertion(:+, Int(k), ddag; charge=qc),
-           OperatorInsertion(b2, Int(j), d; charge=qneg(qc))]
+    ins = [OperatorInsertion(:+, Int(k), _single_band_op(:adag, band, bands)),
+           OperatorInsertion(b2, Int(j), _single_band_op(:a, band, bands))]
     return _inserted_expectation(lattice, model, Is, Z, ins; order=Int(order),
                                  coupling_norm=coupling_norm, initial_state=initial_state)
 end

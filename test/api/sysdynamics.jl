@@ -16,23 +16,27 @@ using LinearAlgebra: Diagonal, norm
 	Kr = sysdynamics(latr, model; initial_state=ρ0)
 	@test length(Kr) == length(latr) ÷ 2 && norm(Kr) > 0
 
-	# 偶算符插入（charge=nothing）合法
-	spec = GTEMPO.sectortype(Z2Symmetry())
-	d = GTEMPO._fock_ops(2)[1]
+	# n̂ 符号插入（荷派生 = 0）合法
+	d = GTEMPO._single_band_op(:n, 1, 2)
 	ins_even = [OperatorInsertion(:+, 1, d)]
 	K2 = sysdynamics(latr, model; insertions=ins_even, initial_state=ρ0)
 	@test length(K2) == length(latr) ÷ 2
-	# 单奇插入净荷非零 → 显式拒绝；奇配对（ddag@0 + d@1）合法
+	# 单奇插入净荷非零 → Σδ 守卫拒绝；奇配对（ddag@0 + d@1）合法
 	latu1 = GrassmannLattice(N=4, δt=0.05, bands=2, contour=:real, symmetry=U1Symmetry())
-	qc = GTEMPO.var_charge(GTEMPO.sectortype(U1Symmetry()), 1, 2)
-	ins_odd = [OperatorInsertion(:+, 1, d; charge=GTEMPO.qneg(qc))]
+	a = GTEMPO._single_band_op(:a, 1, 2)
+	ins_odd = [OperatorInsertion(:+, 1, a)]
 	@test_throws ArgumentError sysdynamics(latu1, model; insertions=ins_odd, initial_state=ρ0)
-	ddag = d'
-	ins_pair = [OperatorInsertion(:+, 0, ddag; charge=qc),
-	            OperatorInsertion(:+, 1, d; charge=GTEMPO.qneg(qc))]
+	adag = GTEMPO._single_band_op(:adag, 1, 2)
+	ins_pair = [OperatorInsertion(:+, 0, adag),
+	            OperatorInsertion(:+, 1, a)]
 	Ku1 = sysdynamics(latu1, model; insertions=ins_pair, initial_state=ρ0)
 	@test length(Ku1) == length(latu1) ÷ 2
 	@test Ku1 isa GM.GMPS
+
+	# 荷非对角初态 → 站内一致性校验拒绝（A1′：荷流必须闭合；对角态行为不变）
+	rho_bad = Matrix{ComplexF64}(I, 4, 4); rho_bad[1, 2] = 0.3
+	@test_throws ArgumentError sysdynamics(latu1, model; initial_state=rho_bad)
+	@test sysdynamics(latr, model; initial_state=ρ0) isa GM.GMPS   # 对角态（热化）合法
 
 	# 零时轮廓 / 单格链
 	lat1 = GrassmannLattice(N=1, δτ=0.1, contour=:imag)
@@ -52,23 +56,33 @@ end
 end
 
 @testset "API: OperatorInsertion 结构化 ==/hash" begin
-	# 结构化相等是插入按内容分组的先决（sparsefockmpo 同切位列积 /
-	# fockmpo2gmps 切位元数据）；用户每次测量调用新构造插入对象，=== 不成立
-	spec = GTEMPO.sectortype(U1Symmetry())
-	qc = var_charge(spec, 1, 1)
-	d = GTEMPO._fock_ops(1)[1]
-	a = OperatorInsertion(:+, 3, d; charge=qc)
-	@test a == OperatorInsertion(:+, 3, d; charge=qc)          # 新构造对象逐字段相等
-	@test hash(a) == hash(OperatorInsertion(:+, 3, d; charge=qc))
-	@test a != OperatorInsertion(:-, 3, d; charge=qc)          # branch
-	@test a != OperatorInsertion(:+, 4, d; charge=qc)          # boundary
-	@test a != OperatorInsertion(:+, 3, 2d; charge=qc)         # matrix
-	@test a != OperatorInsertion(:+, 3, d)                     # charge（nothing）
-	@test a != OperatorInsertion(:+, 3, d; charge=qc, side=:right)   # side
-	@test a != OperatorInsertion(:+, 3, d; charge=GTEMPO.qneg(qc))
+	# 结构化相等是插入按内容分组的先决（sparsefockmpo 同切位列积 / 穿戴装配）；
+	# 用户每次测量调用新构造插入对象，=== 不成立
+	adag1 = GTEMPO._single_band_op(:adag, 1, 1)
+	a = OperatorInsertion(:+, 3, adag1)
+	@test a == OperatorInsertion(:+, 3, GTEMPO._single_band_op(:adag, 1, 1))   # 新构造对象逐字段相等
+	@test hash(a) == hash(OperatorInsertion(:+, 3, GTEMPO._single_band_op(:adag, 1, 1)))
+	@test a != OperatorInsertion(:-, 3, adag1)                        # branch
+	@test a != OperatorInsertion(:+, 4, adag1)                        # j
+	@test a != OperatorInsertion(:+, 3, GTEMPO._single_band_op(:a, 1, 1))          # op（符号）
+	@test a != OperatorInsertion(:+, 3, GTEMPO._single_band_op(:adag, 1, 2))       # op（带数失配）
+	@test a != OperatorInsertion(:+, 3, adag1; side=:right)           # side
+	# 荷由符号派生（V3）：同符号不同 spec 构造的同形 FockOp 仍相等（荷不进 ==/hash）
+	@test OperatorInsertion(:+, 3, GTEMPO._single_band_op(:adag, 1, 1)) ==
+	      OperatorInsertion(:+, 3, GTEMPO._single_band_op(:adag, 1, 1))
 	# 同切位双插入键：元组 hash/== 走结构化定义
-	k1 = (:+, 3, (a, OperatorInsertion(:+, 0, d'; charge=GTEMPO.qneg(qc))))
-	k2 = (:+, 3, (OperatorInsertion(:+, 3, d; charge=qc), OperatorInsertion(:+, 0, d'; charge=GTEMPO.qneg(qc))))
+	k1 = (:+, 3, (a, OperatorInsertion(:+, 0, GTEMPO._single_band_op(:adag, 1, 1))))
+	k2 = (:+, 3, (OperatorInsertion(:+, 3, GTEMPO._single_band_op(:adag, 1, 1)),
+	              OperatorInsertion(:+, 0, GTEMPO._single_band_op(:adag, 1, 1))))
 	@test k1 == k2 && hash(k1) == hash(k2)
 	@test Dict(k1 => 1)[k2] == 1
+	# 构造守卫：j ≥ 0；side ∈ (:left, :right)
+	@test_throws ArgumentError OperatorInsertion(:+, -1, adag1)
+	@test_throws ArgumentError OperatorInsertion(:+, 0, adag1; side=:out)
+	# 分支格数上限在 insertion_cut_index（越界提前抛）
+	latr = GrassmannLattice(N=2, δt=0.1, contour=:real)
+	@test_throws ArgumentError GTEMPO.insertion_cut_index(latr, OperatorInsertion(:+, 3, adag1))
+	@test_throws ArgumentError GTEMPO.insertion_cut_index(latr, OperatorInsertion(:τ, 1, adag1))
+	lati = GrassmannLattice(N=2, δτ=0.1, contour=:imag)
+	@test_throws ArgumentError GTEMPO.insertion_cut_index(lati, OperatorInsertion(:+, 1, adag1))
 end
