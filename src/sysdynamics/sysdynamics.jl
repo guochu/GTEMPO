@@ -201,18 +201,24 @@ function insertion_cut_index(lattice::AbstractGrassmannLattice, ins::OperatorIns
     throw(ArgumentError("branch must be :τ, :+ or :-"))
 end
 
-"存储序格表（lattice _index 的块序反查）：[τ Nτ…1][+ 1..Nt][− Nt…1] 等"
+"存储序格表（lattice _index 的块序反查，2026-11-20 统一链存储序）：
+imag [τ Nτ…1]；real [(+,1),(−,1),(+,2),(−,2),…（± 成对、时间升序）]；
+mixed [τ Nτ…1][(+,1),(−,1),…（± 成对）]"
 function _storage_cells(lattice::AbstractGrassmannLattice)
     cells = Tuple{Symbol,Int}[]
     lattice isa AbstractImagGrassmannLattice && append!(cells, [(:τ, j) for j in lattice.kτ:-1:1])
     if lattice isa AbstractRealGrassmannLattice
-        append!(cells, [(:+, j) for j in 1:lattice.k])
-        append!(cells, [(:-, j) for j in lattice.k:-1:1])
+        for j in 1:lattice.k
+            push!(cells, (:+, j))
+            push!(cells, (:-, j))
+        end
     end
     if lattice isa AbstractMixedGrassmannLattice
-        append!(cells, [(:τ, j) for j in 1:lattice.Nτ])
-        append!(cells, [(:+, j) for j in 1:lattice.Nt])
-        append!(cells, [(:-, j) for j in lattice.Nt:-1:1])
+        append!(cells, [(:τ, j) for j in lattice.Nτ:-1:1])
+        for j in 1:lattice.Nt
+            push!(cells, (:+, j))
+            push!(cells, (:-, j))
+        end
     end
     return cells
 end

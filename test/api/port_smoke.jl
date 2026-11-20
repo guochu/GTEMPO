@@ -35,7 +35,7 @@ Random.seed!(12354)
 end
 
 @testset "Phase 1 smoke: lattice _index 位置映射" begin
-    # imag Chrono：格 i ⟷ 块 k−i+1；块内 2M 位 (a,ā) 相邻
+    # imag Chrono：格 i ⟷ 块 k−i+1；块内 2M 位 (a,ā) 相邻（统一链存储序下未变）
     lat = GrassmannLattice(N=3, δτ=0.1, bands=2, contour=:imag)
     @test length(lat) == 2 * 2 * 3
     m = indexmappings(lat)
@@ -44,20 +44,22 @@ end
     # 格 1 = 末块（k−1+1 = k）
     @test m[(1, false, :τ, 1)] == 2 * 2 * 3 - 2 * 2 + 1
     @test m[(1, true, :τ, 2)] == 2 * 2 * 3 - 2 * 2 + 4
-    # 实时 Chrono：块 (+,i) → i；(−,i) → 2k−i+1
+    # 实时 Chrono（2026-11-20 统一链存储序）：同时刻 ± 成对——块 (+,i) → 2i−1；(−,i) → 2i
     latr = GrassmannLattice(N=2, δt=0.1, bands=1, contour=:real)
     mr = indexmappings(latr)
-    @test mr[(1, false, :+, 1)] == 1
+    @test mr[(1, false, :+, 1)] == 1      # 块 1
     @test mr[(1, true, :+, 1)] == 2
-    @test mr[(1, false, :-, 1)] == 3 * 2 + 1   # block 2k−i+1 = 4
+    @test mr[(2, false, :+, 1)] == 5      # 块 3（(+,2)）
+    @test mr[(1, false, :-, 1)] == 3      # 块 2（(−,1)）
+    @test mr[(2, false, :-, 1)] == 7      # 块 4（(−,2)）
     @test length(unique(values(mr))) == length(mr) == length(latr)
-    # 混合 Chrono：τ j → 块 j；+ j → Nτ+j；− j → Nτ+Nt+(Nt−j+1)
+    # 混合 Chrono（统一链存储序）：τ j → 块 Nτ−j+1（热段降序）；+ j → Nτ+2j−1；− j → Nτ+2j
     latm = GrassmannLattice(Nτ=2, δτ=0.1, Nt=1, δt=0.1, bands=1, contour=:mixed)
     mm = indexmappings(latm)
-    @test mm[(1, false, :τ, 1)] == 1
-    @test mm[(2, false, :τ, 1)] == 3   # 块 2 起点 = (2−1)*2M+1
-    @test mm[(1, false, :+, 1)] == 2 * 2 + 1
-    @test mm[(1, false, :-, 1)] == 2 * 3 + 1
+    @test mm[(1, false, :τ, 1)] == 3   # τ1 → 块 2
+    @test mm[(2, false, :τ, 1)] == 1   # τ2 → 块 1（链头 = β 端）
+    @test mm[(1, false, :+, 1)] == 5   # +1 → 块 3
+    @test mm[(1, false, :-, 1)] == 7   # −1 → 块 4
     @test length(unique(values(mm))) == length(mm) == length(latm)
 end
 

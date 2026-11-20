@@ -1,10 +1,15 @@
 # lattice 层：排布固定 Chrono（功能调整 #1；2026-11-16 起 ordering 类型层
 # AbstractChronoOrdering 及其三个单例亦删除——排布是格点几何本身，不再是
-# 可插拔策略，lattice 构造无 ordering 输入）。唯一排布的块序：
-#   实时：[(+,1)…(+,Nt)][(−,Nt)…(−,1)]，K 时序链本征序直铺零 permute!；
-#         每格 2M 位、(a,ā) 奇偶相邻 ⟹ AC 积分。
-#   混合：[闲置 2 块][τ 1..Nτ][+ 1..Nt][− Nt…1]（闲置头块由真空穿透吸收）。
-#   虚时：[格 Nτ][…][格 1]（格 i ⟷ 块 k−i+1）。
+# 可插拔策略，lattice 构造无 ordering 输入）。唯一排布的块序（2026-11-20
+# 统一链存储序：plan/unified_chain_ordering_plan.md——热段 τ 降序 + 实时段
+# ± 成对升序）：
+#   实时：[(+,1),(−,1),(+,2),(−,2),…,(+,Nt),(−,Nt)]——同时刻 ± 成对相邻、
+#         时间升序（右端追加 = 增长语义）；每格 2M 位、(a,ā) 奇偶相邻 ⟹ AC 积分。
+#   混合：[τ Nτ…τ 1][(+,1),(−,1),…,(+,Nt),(−,Nt)]——τ 段降序（链头 = β 端），
+#         τ 段/实段分界键 = ρ₀ 切位。
+#   虚时：[格 Nτ][…][格 1]（格 i ⟷ 块 k−i+1）——与热段模板一致，未变。
+# K 时序装配（chronological walk）与存储序解耦：converter 末尾 reorder!
+# 承担重排（swap! 费米号值保持——2026-11-20 探针实证三轮廓插穿值不变）。
 # 格点计数语义（与旧 lattice 的 k=步数+1 不同——Chrono 无额外端点格点）：
 #   N/Nt/Nτ kwarg = 物理步数（= 单元数）；k/kt/kτ = 对应分支的格点数。
 # lattice 按对称性单例类型参数化（2026-11-16：Symbol 字符串手选退役；单例
@@ -129,14 +134,15 @@ end
 TK.scalartype(::Type{<:AbstractRealGrassmannLattice}) = ComplexF64
 Base.length(x::AbstractRealGrassmannLattice) = 4 * x.bands * x.k   # 2k 块 × 2M 位
 
-"实时 Chrono _index：块 = (+,i) → i；(−,i) → 2k−i+1；块内 2M 位"
+"实时 Chrono _index（2026-11-20 统一链存储序）：同时刻 ± 成对——块 = (+,i) → 2i−1；
+(−,i) → 2i；块内 2M 位"
 function _index(x::AbstractRealGrassmannLattice, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
     @boundscheck begin
         (1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
         (1 <= i <= x.k) || throw(BoundsError(1:x.k, i))
         (branch in (:+, :-)) || throw(ArgumentError("branch must be :+ or :-"))
     end
-    block = branch === :+ ? i : 2x.k - i + 1
+    block = branch === :+ ? 2i - 1 : 2i
     return (block - 1) * 2x.bands + 2 * band - 1 + Int(conj)
 end
 
@@ -187,8 +193,9 @@ end
 TK.scalartype(::Type{<:AbstractMixedGrassmannLattice}) = ComplexF64
 Base.length(x::AbstractMixedGrassmannLattice) = 2 * x.bands * (x.Nτ + 2x.Nt)   # τ 格 + ± 格
 
-"混合 Chrono _index（闲置头块已由真空穿透吸收、块号重排）：τ 格 j → 块 j；
-+ 格 j → 块 Nτ+j；− 格 j → 块 Nτ+Nt+(Nt−j+1)"
+"混合 Chrono _index（2026-11-20 统一链存储序）：τ 格 j → 块 Nτ−j+1（热段降序，
+链头 = β 端）；+ 格 j → 块 Nτ+2j−1；− 格 j → 块 Nτ+2j（实段 ± 成对）；
+τ 段/实段分界键 = ρ₀ 切位"
 function _index(x::AbstractMixedGrassmannLattice, i::Int; conj::Bool, branch::Symbol=:+, band::Int=1)
     @boundscheck begin
         (1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
@@ -199,9 +206,9 @@ function _index(x::AbstractMixedGrassmannLattice, i::Int; conj::Bool, branch::Sy
             (1 <= i <= x.kt) || throw(BoundsError(1:x.kt, i))
         end
     end
-    block = branch === :τ ? i :
-            branch === :+ ? x.Nτ + i :
-            x.Nτ + x.Nt + (x.Nt - i + 1)
+    block = branch === :τ ? x.Nτ - i + 1 :
+            branch === :+ ? x.Nτ + 2i - 1 :
+            x.Nτ + 2i
     return (block - 1) * 2x.bands + 2 * band - 1 + Int(conj)
 end
 
@@ -256,11 +263,11 @@ end
 """
 function cell_block(lattice::AbstractGrassmannLattice, cell::Tuple{Symbol,Int})
     b, j = cell
-    lattice isa AbstractRealGrassmannLattice && return b === :+ ? j : 2lattice.k - j + 1
+    lattice isa AbstractRealGrassmannLattice && return b === :+ ? 2j - 1 : 2j
     lattice isa AbstractImagGrassmannLattice && return lattice.k - j + 1
-    return b === :τ ? j :
-           b === :+ ? lattice.Nτ + j :
-           lattice.Nτ + lattice.Nt + (lattice.Nt - j + 1)
+    return b === :τ ? lattice.Nτ - j + 1 :
+           b === :+ ? lattice.Nτ + 2j - 1 :
+           lattice.Nτ + 2j
 end
 
 "块 → 变量位起点（每块 2·bands 位）"
