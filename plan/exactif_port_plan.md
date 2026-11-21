@@ -237,3 +237,34 @@ Phase 0 已完成；Phase A ≈ 1 天（类型层级改名面 + 分派 + 测量�
    结构化 + 稠密参照两处；混合路径经 Zb=Π(1+e^{−βε}) 已是真空归一、未动）。
    新增「Z 证书扩展：非对称离散谱」回归（DiracDelta 单模/DiscreteSpectrum
    双线 × orders 1/2 × μ 平移，Z ≡ 1 机器；实时金标准 74/74 绿）。
+
+## 7.1 裸 K 链机器校准状态（2026-11-21 第二轮，sysdynamics_exact 落地）
+
+**已落地**（`sysdynamics_exact`，exactif.jl）：真空 + 逐门跨片传播子因子
+（`_fockop_factor`：Fock 矩阵精确相干态展开 Σ M[I,J]·c̄(bra 带升序)·c(ket
+带降序)，旧 `_fockpropagator_sites` 序约定逐字；`lattice_monomial` + `togmps`
+物化 + `mult!` 压缩上链，truncrelerr(1e-14)）+ Keldysh 折返（带子集展开
+(−1)^{|S|}）+ ρ₀（bra ā⁺@(+,1)、ket a⁻@(−,1)）。荷守恒门守卫、恒等门不
+短路（单位链项在门因子内）。lattice = Nt = npairs+1 片、Δ 点 p ↔ 片 p。
+
+**证书现状**：|Z−1| ~ 1e-2（εd=0 即全部恒等门也差）。∫/det(A_ifd) 指纹：
+- order 1（npairs = 2,3）：0.98935, 0.98121——按 gap 衰减 f ≈ 0.9919/gap
+  + 基底偏移 c ≈ 1.0077（fold/ρ₀ 通道）；
+- order 2（npairs = 5,7）：**0.958663 完全饱和**（npairs 无关！）——
+  额外 gap 零贡献，指向 order 2 调度的零门 gap 上有结构性抵消/缺失。
+
+**约定台账（下一步校准用）**：
+1. 旧栈 K 链实为**四件套**：vacuumstate + **bulkconnection!**（逐片逐支
+   exp(GTerm(ā@(j+1), a@(j); +1))——+1 系数的跨点分辨率，2026-11-21 深挖
+   发现；新栈未移植）+ 门因子 + 折返 + ρ₀。我的机器缺 bulkconnection 等价物。
+2. 契约装配目标分布：逐点同支测度 −ā_p a_p（×2 支）+ 单位链 +1 + 闭合 −1。
+   我尝试的显式测度块（同支配对 coeff −1）→ 爆炸（×4/点）；跨支配对 → 整体
+   偏移——**two-chain 收缩引擎的站点配对语义**（是否内建 Berezin pairing）
+   未定谳，是测度块该不该显式上链的先决问题。
+3. 恒等门因子符号：旧 `_fockpropagator_sites` 的反序奇偶（seq = [bra 位置,
+   ket 位置]）⟹ 恒等门 = 1 − ā@g+1 a@g（跨点 −1）；契约单位链 = +1——
+   两者差 bulkconnection(+1) 与测度(−1) 的分解归属，未定谳。
+4. 校准正路（下一会话）：旧栈不可运行 ⟹ 以**契约装配 det(A) 为 oracle**
+   做单点扫描——先扩 engine 语义探针（两链收缩 vs 显式测度块的四种组合），
+   再扫 (bulk ±1、门对角 ±1、折返 ±1) × 测度(无/−1/+1) 的离散空间，
+   order 1 npairs=2 单点机器精度命中后全配置扫掠。

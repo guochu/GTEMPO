@@ -345,6 +345,156 @@ function exactif_kernel(bath, N::Integer, δt::Real; order::Integer=2, bands::In
 end
 
 # ---------------------------------------------------------------------------
+# 裸 Berezin K 链机器（sysdynamics_exact——extension _scheduled_gates! +
+# boundarycondition! + systhermalstate! 的 GM 因子机器换代移植）
+#
+# 设计定谳（plan §7 取证）：严格契约的 K 侧 = 旧栈裸机器——逐门**跨片二站点
+# 传播子因子**（bra 变量在节点 idx+1、ket 在节点 idx；− 支 bra/ket 互换）+
+# Keldysh 折返 exp(−ā⁻(N)a⁺(N)) + ρ₀ 因子（bra ā⁺@(+,1)、ket a⁻@(−,1)），
+# 全部用 GM 因子原语（`lattice_monomial` 单项式 + `apply!` 楔积）表达。
+# **不复用** `fock_sysdynamics` 的 S·W 权重胞——那是冻结核路线的
+# anti-Wick/Weyl 测度象（O(δt)/O(δt²)，靠 Weyl 标量补偿、ED 锚 1e-4 容差
+# 不可见），严格契约要机器精确。
+#
+# 节点-片映射（Weyl 胞布局定谳，plan §7.3）：片 j 的 a 腿 = 节点 j、ā 腿 =
+# 节点 j+1 ⟹ 门 g（连接节点 g → g+1）的因子变量 = {ā@片 g+1, a@片 g}——
+# 跨片二站点；IF Δ 点 p ↔ 片 p 的 (ā_p, a_p) 双腿（`_strict_pos`）。
+# lattice 携带 Nt = npairs + 1 片（门表 + 末位恒等窗 = 末节点）。
+# ---------------------------------------------------------------------------
+
+"Fock 占据位 → 带（band 1 = MSB，FockMatrix 约定与 fock_charges 同源）"
+_occ_bands(occ::Int, B::Int) = [b for b in 1:B if (occ >> (B - b)) & 1 == 1]
+
+"""
+    _fockop_factor(lat, M, bras, kets) -> GMPS
+
+Fock 矩阵 M 的**精确**相干态单项式展开因子 Σ_{IJ} M[I,J]·m_I(bras)·m_J(kets)
+（extension `_tosparsegmps` 展开的 GM 因子机器换代表达：逐单项式
+`lattice_monomial`（GTerm 语义，给定序系数）→ `togmps` 物化 → GMPS 求和；
+恒等项（I = J = 0 无变元）= 标量 × 真空链）。荷守恒矩阵契约：|I| ≠ |J| 的
+矩阵元非零即抛（正常杂质传播子/密度矩阵全荷守恒——非中性单项式在 GM 因子
+层不可表达，也物理为零）。单项式变元序 = c̄(bra, 带升序)·c(ket, 带降序)、
+系数 = 矩阵元 × 序列反序奇偶（旧 `_fockpropagator_sites` 逐字；恒等门因子
+1 − ā@g+1 a@g 自带该 pair 的相干态分辨率重叠——恒等门不可短路）。
+
+用法 = `mult!(K, factor; trunc)` 一次压缩乘法上链（`truncrelerr(1e-14)` 与
+旧机器 `Defaults.alg_trunc_sys` 同款——严格性在机器精度层保留）。
+"""
+function _fockop_factor(lat, M::AbstractMatrix,
+                        bras::Vector{GrassmannContourIndex},
+                        kets::Vector{GrassmannContourIndex})
+    B = length(bras)
+    (length(kets) == B) || throw(DimensionMismatch("bra/ket positions must match bands"))
+    size(M) == (2^B, 2^B) || throw(DimensionMismatch(
+        "expansion matrix must be $(2^B)×$(2^B), got $(size(M))"))
+    dim = 2^B
+    spaces = site_spaces(lat)
+    fac = nothing
+    for I in 0:dim-1, J in 0:dim-1
+        v = ComplexF64(M[I+1, J+1])
+        abs(v) < 1.0e-14 && continue
+        occ_i = _occ_bands(I, B)
+        occ_j = _occ_bands(J, B)
+        length(occ_i) == length(occ_j) || throw(ArgumentError(
+            "non-number-conserving Fock matrix (|M[$(I+1),$(J+1)]| = $(abs(v)) ≠ 0) — " *
+            "the strict-route expansion only supports charge-conserving operators"))
+        # 单项式序 = c̄(bra, 带升序) · c(ket, 带降序)，系数 = 矩阵元 × 序列反序
+        # 奇偶（旧 _fockpropagator_sites 逐字；lattice_monomial 的给定序系数语义
+        # 恰好承载同一对象：coeff·∏ 给定序 ⟹ 归一化反序号由其内部吸收）
+        idx = vcat(bras[occ_i], reverse(kets[occ_j]))
+        comp = isempty(idx) ? vacuumstate(ComplexF64, lat) :
+               GM.togmps(ComplexF64, lattice_monomial(lat, Tuple(idx); coeff=v), spaces)
+        fac = fac === nothing ? v * comp : fac + v * comp
+    end
+    return fac
+end
+
+"0..B−1 带的全部子集（升序带表；折返带子集展开用）"
+_band_subsets(B::Int) = [[b for b in 1:B if (mask >> (b - 1)) & 1 == 1]
+                          for mask in 0:(2^B - 1)]
+
+"1..n 元素集的全部子集（升序元素表；逐点测度 2B-pair 子集展开用）"
+_pair_subsets(n::Int) = [[k for k in 1:n if (mask >> (k - 1)) & 1 == 1]
+                          for mask in 0:(2^n - 1)]
+
+"""
+    sysdynamics_exact(lattice, model, gates; initial_state=nothing) -> GMPS
+
+严格核管线的**裸 Berezin** 系统因子（旧栈 `sysdynamics_exact!` 三件套的
+GM 因子机器换代；`gates` = `trotter_factors` 的补零 pair 网格门时长表，
+两支同表，Td 模型时间参数 = 门左端点累计、− 支 = T − Σᵢ≤g）：
+
+1. 真空起始 + 逐门跨片传播子因子（+ 支 bra@节点 g+1/ket@节点 g、− 支
+   bra@节点 g/ket@节点 g+1——`_propagator_sparsegmps` 的 ib/ik 约定逐字）；
+2. Keldysh 折返 exp(Σ_b −ā⁻(N)a⁺(N))（`boundarycondition!` 逐字；多带 =
+   带子集展开，系数 (−1)^{|S|}）；
+3. ρ₀ 因子（`sysinitialstate!` 逐字：bra ā⁺@(+,1)、ket a⁻@(−,1)；缺省 =
+   真空投影）。**无反测度**（QuAPI-Δ 相对测度 + 单位链骨架定义）。
+
+乘法压缩 = `truncrelerr(1e-14)`（旧机器 `Defaults.alg_trunc_sys` 同款——
+SVD 相对截断在机器精度层严格性保留，zidentity 证书仲裁）。⚠️ 恒等门不可
+短路——其展开携带单位链 + 分辨率重叠（测度的一部分）。
+"""
+function sysdynamics_exact(lattice::AbstractRealGrassmannLattice, model::AbstractImpurityHamiltonian,
+                           gates::Vector{Float64}; initial_state=nothing)
+    npairs = length(gates)
+    lattice.Nt == npairs + 1 || throw(DimensionMismatch(
+        "strict-contour lattice carries Nt = npairs + 1 slices (gate table + " *
+        "trailing identity window = final node), got Nt = $(lattice.Nt) vs gates = $npairs"))
+    B = lattice.bands
+    trunc = truncrelerr(1.0e-14)                              # 旧机器 alg_trunc_sys 同款
+    spaces = site_spaces(lattice)
+    K = vacuumstate(ComplexF64, lattice)
+    T = sum(gates)
+    vac = vacuumstate(ComplexF64, lattice)
+    for g in 1:npairs
+        for branch in (:+, :-)
+            t = branch === :+ ? sum(gates[1:g-1]; init=0.0) :
+                T - sum(gates[1:g]; init=0.0)
+            M = Matrix(fock_propagator(model, branch, gates[g], t).data)
+            # ⚠️ 恒等门不可跳过——恒等传播子展开 = 1 + ā@节点g+1 a@节点g（单位链
+            # + 该 pair 的相干态分辨率重叠，extension「恒等门不能跳过」纪律）
+            bras = branch === :+ ?
+                [GrassmannContourIndex(g + 1, :+, b, true) for b in 1:B] :
+                [GrassmannContourIndex(g, :-, b, true) for b in 1:B]
+            kets = branch === :+ ?
+                [GrassmannContourIndex(g, :+, b, false) for b in 1:B] :
+                [GrassmannContourIndex(g + 1, :-, b, false) for b in 1:B]
+            fac = _fockop_factor(lattice, M, bras, kets)
+            K = mult!(K, fac; trunc=trunc)[1]
+        end
+    end
+    # 2. Keldysh 折返（带子集展开：exp(Σ_b −m_b) = ∏_b (1 − m_b)；因子形式
+    #    一次乘法上链）
+    np = lattice.Nt
+    fold = one(ComplexF64) * vac
+    for mask in _band_subsets(B)
+        isempty(mask) && continue
+        idx = GrassmannContourIndex[]
+        for b in mask
+            push!(idx, GrassmannContourIndex(np, :-, b, true))
+            push!(idx, GrassmannContourIndex(np, :+, b, false))
+        end
+        fold = fold + ComplexF64(-1)^length(mask) *
+               GM.togmps(ComplexF64, lattice_monomial(lattice, Tuple(idx); coeff=1.0), spaces)
+    end
+    K = mult!(K, fold; trunc=trunc)[1]
+    # 3. ρ₀（bra ā⁺@(+,1)、ket a⁻@(−,1)）
+    rho = initial_state === nothing ?
+          Matrix{ComplexF64}(Diagonal(vcat([1.0], zeros(ComplexF64, 2^B - 1)))) :
+          initial_state isa FockMatrix ? Matrix{ComplexF64}(initial_state.data) :
+          Matrix{ComplexF64}(initial_state)
+    size(rho) == (2^B, 2^B) || throw(DimensionMismatch(
+        "initial state must be $(2^B)×$(2^B)"))
+    rho ≈ Matrix{ComplexF64}(I, 2^B, 2^B) || begin
+        bras = [GrassmannContourIndex(1, :+, b, true) for b in 1:B]
+        kets = [GrassmannContourIndex(1, :-, b, false) for b in 1:B]
+        K = mult!(K, _fockop_factor(lattice, rho, bras, kets); trunc=trunc)[1]
+    end
+    return K
+end
+
+# ---------------------------------------------------------------------------
 # 严格核管线（Phase B 主验收形态；extension exactif_native_quapi 换代移植）
 # ---------------------------------------------------------------------------
 
@@ -358,27 +508,26 @@ QuAPI-Δ 相对测度 + 单位链骨架定义，GM 收缩隐式测度正是其�
 1. `trotter_factors(order, N, δt)` 补零 pair 网格 → lattice（Nt = npairs 片）；
 2. `exactif_kernel` → ExactHybridizationKernel → `hybriddynamics(PartialIF)`
    （IF 算法层零特例；多带 = 单链覆盖）；
-3. K 链 = 折叠 `fock_sysdynamics(gates=…)`（调度门自管：逐 gap
-   gate_durations、两支同表、q=1 反 Wick、ρ₀/`initial_state` 折格 1、迹闭合
-   格 Nt——旧 boundarycondition!/systhermalstate! 的折叠内联语义）；
+3. K 链 = `sysdynamics_exact`（裸 Berezin 机器：逐门跨片传播子因子 +
+   Keldysh 折返 + ρ₀/`initial_state`——见其 docstring；**不复用**
+   `fock_sysdynamics` 的 S·W 权重胞）；
 4. `Z = integrate(K, Is) · kernel.normdelta`（E4′：normdelta 与分子同携带；
    经 sysdynamics(kernel=…) 的链幅通道时自动携带，比值观测量相消）。
 
 插入观测量（greater/lesser/occupation 级）在管线层重建：K′ =
-`fockmpo2gmps(fock_sysdynamics(lat, model; order=1, gates=…, insertions=…),
-lat)`——调度表与 Z 的 K 链同源（公开测量入口的 sysdynamics 重建走均匀门，
-与 pair 网格调度不同源，Exact 路线不用）。
+`sysdynamics_exact(lat, model, pipe.gates; …)`——调度表与 Z 的 K 链同源
+（公开测量入口的 sysdynamics 重建走均匀门，与 pair 网格调度不同源，
+Exact 路线不用；插入算符重建面留 V2）。
 """
 function exactif_pipeline(bath, model::AbstractImpurityHamiltonian, N::Integer, δt::Real;
                           order::Integer=2, bands::Int=1, initial_state=nothing)
     factors = trotter_factors(order, N, δt)
-    gates = vcat(collect(Float64.(factors.gate_durations)), 0.0)   # 末位恒等窗（开放端）
+    gates = collect(Float64.(factors.gate_durations))              # 原始门表（npairs 条）
     lat = GrassmannLattice(N=factors.npairs + 1, δt=δt, contour=:real, bands=bands)
     delta = quapi_strictdelta(bath, collect(Float64.(factors.cell_durations)), lat)
     kernel = exactif_kernel(delta, lat)
     Is, _ = hybriddynamics(lat, kernel, PartialIF())
-    K = fockmpo2gmps(fock_sysdynamics(lat, model; order=1, gates=gates,
-                                      initial_state=initial_state), lat)
+    K = sysdynamics_exact(lat, model, gates; initial_state=initial_state)
     return (lat = lat, K = K, Is = Is, kernel = kernel, factors = factors,
             gates = gates)
 end
@@ -392,10 +541,7 @@ end
 `exactif_expectation(pipe, model, insertions; initial_state)` = (num, Z)"
 function exactif_expectation(pipe, model::AbstractImpurityHamiltonian,
                              insertions::Vector{OperatorInsertion}; initial_state=nothing)
-    K′ = fockmpo2gmps(fock_sysdynamics(pipe.lat, model; order=1,
-                                       gates=pipe.gates,
-                                       insertions=insertions, initial_state=initial_state),
-                      pipe.lat)
+    K′ = sysdynamics_exact(pipe.lat, model, pipe.gates; initial_state=initial_state)
     num = integrate(K′, pipe.Is)
     Z = integrate(pipe.K, pipe.Is) * pipe.kernel.normdelta
     return num / Z

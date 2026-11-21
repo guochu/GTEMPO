@@ -101,7 +101,7 @@ end
 
 """
     fock_sysdynamics(lattice, model; order=1, insertions=OperatorInsertion[],
-                     initial_state=nothing, gates=nothing) -> FockMPO
+                     initial_state=nothing) -> FockMPO
 
 杂质系统因子的**折叠** Fock 直积 MPO（装配内序 = 存储序，converter 无
 reorder!）：real = 合并超算子格链 [𝓛₁…𝓛_Nt]（ρ₀ 折入格 1、Tr[ρ_Nt] 闭合
@@ -109,27 +109,10 @@ reorder!）：real = 合并超算子格链 [𝓛₁…𝓛_Nt]（ρ₀ 折入格
 ρ₀ 槽）；imag = 时序 per-支格（v7 翻转后时序 = 存储序，converter 直出）。
 切位语义不变：(±,j) → 合并格 j、(τ,j) → τ 格 j、cut-0 → ρ₀ 三明治（real）/
 τ₁ 格（mixed, imag）。
-
-**调度门**（`gates::Vector{Float64}`，exactif_port_plan E5——严格核管线的
-Trotter 调度自管，exactif.jl 传 `trotter_factors` 的 gate_durations 表）：
-real/mixed 格逐合并格 j 的门时长 = `gates[j]`（两支同表；Td 模型时间参数 =
-门左端点累计 Σᵢ<ⱼ gates[i]，− 支 = T − Σᵢ≤ⱼ gates[i]）。调度表自带 Strang
-拆分（首尾半步）⟹ `order` 必须 = 1（q=1 反 Wick 测度、S·W / W·S 组合——
-逐格内再劈半步会与表双重劈分）；imag 格不支持（热环无调度概念）。
 """
 function fock_sysdynamics(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian;
-                          order::Integer=1, insertions=OperatorInsertion[], initial_state=nothing,
-                          gates::Union{Nothing,Vector{Float64}}=nothing)
+                          order::Integer=1, insertions=OperatorInsertion[], initial_state=nothing)
     order in (1, 2) || throw(ArgumentError("order must be 1 or 2"))
-    if gates !== nothing
-        lattice isa AbstractImagGrassmannLattice && throw(ArgumentError(
-            "scheduled gates (gates kwarg) apply to real/mixed contours only"))
-        order == 1 || throw(ArgumentError(
-            "scheduled gates carry their own Strang splitting (half-step table) — " *
-            "order must be 1 (the gate table is the Trotter order)"))
-        length(gates) == lattice.Nt || throw(DimensionMismatch(
-            "gates must have Nt = $(lattice.Nt) entries, got $(length(gates))"))
-    end
     bands = lattice.bands
     G = TK.sectortype(lattice)
     bands_guard(G, bands)
@@ -143,15 +126,6 @@ function fock_sysdynamics(lattice::AbstractGrassmannLattice, model::AbstractImpu
     nplus = 4^bands
     ins_real = filter(i -> i.branch !== :τ, insertions)
     ins_tau = filter(i -> i.branch === :τ, insertions)
-    # 调度门传播子（real/mixed 合并格；时长 gates[j]、Td 时间参数 = 门左端点；
-    # − 支时间参数 = T − Σᵢ≤ⱼ gates[i]（区间后端点，与均匀路由 (Nt−j)δt 同语义））
-    scheduled_S = function (b::Symbol, j::Int)
-        gates === nothing && return _fock_propagator_at(lattice, model, b, j, Int(order))
-        T = sum(gates)
-        t = b === :+ ? sum(gates[1:j-1]; init=0.0) :
-            b === :- ? T - sum(gates[1:j]; init=0.0) : nothing
-        return Matrix(_model_propagator(model, b, gates[j], t))
-    end
 
     if lattice isa AbstractImagGrassmannLattice
         # ---- imag：时序 per-支格（deprecated 同构；ρ₀=I + cut-0 三明治折 (τ,1)）----
@@ -194,7 +168,7 @@ function fock_sysdynamics(lattice::AbstractGrassmannLattice, model::AbstractImpu
 
     cells_by = Dict{Tuple{Symbol,Int},Vector{Matrix{ComplexF64}}}()
     for (b, j) in cells
-        S = scheduled_S(b, j)
+        S = _fock_propagator_at(lattice, model, b, j, Int(order))
         cells_by[(b, j)] = order == 2 ? [S * W * S for W in weights] :
                            b === :- ? [W * S for W in weights] : [S * W for W in weights]
     end

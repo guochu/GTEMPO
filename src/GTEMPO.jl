@@ -119,7 +119,8 @@ export sysdynamics, OperatorInsertion, LocalOp, FockOp
 export InfluenceFunctionalAlgorithm, PartialIF, PolarIF, ExactTTI
 export fullfactor, tti_factors, is_tti
 export exactif_kernel, exactif_pipeline, exactif_Z, exactif_expectation,
-       trotter_factors, native_schedule, NativeSchedule, pfaffian, bath_norm
+       sysdynamics_exact, trotter_factors, native_schedule, NativeSchedule,
+       pfaffian, bath_norm
 export hybriddynamics!
 export var_charge, cell_charges, fock_charges
 export FockMPO, SparseFockMPO, fock_sysdynamics,
