@@ -1,15 +1,17 @@
 # lattice 层：排布固定 Chrono（功能调整 #1；2026-11-16 起 ordering 类型层
 # AbstractChronoOrdering 及其三个单例亦删除——排布是格点几何本身，不再是
 # 可插拔策略，lattice 构造无 ordering 输入）。唯一排布的块序（2026-11-20
-# 统一链存储序：plan/unified_chain_ordering_plan.md——热段 τ 降序 + 实时段
-# ± 成对升序）：
+# 统一链存储序 + v7 虚轴翻转裁决：plan/unified_chain_ordering_plan.md §7——
+# 三轮廓存储 = 轮廓时序，converter 装配内序直出无 reorder!）：
 #   实时：[(+,1),(−,1),(+,2),(−,2),…,(+,Nt),(−,Nt)]——同时刻 ± 成对相邻、
 #         时间升序（右端追加 = 增长语义）；每格 2M 位、(a,ā) 奇偶相邻 ⟹ AC 积分。
 #   混合：[τ Nτ…τ 1][(+,1),(−,1),…,(+,Nt),(−,Nt)]——τ 段降序（链头 = β 端），
 #         τ 段/实段分界键 = ρ₀ 切位。
-#   虚时：[格 Nτ][…][格 1]（格 i ⟷ 块 k−i+1）——与热段模板一致，未变。
-# K 时序装配（chronological walk）与存储序解耦：converter 末尾 reorder!
-# 承担重排（swap! 费米号值保持——2026-11-20 探针实证三轮廓插穿值不变）。
+#   虚时：[格 1][格 2]…[格 Nτ]（格 i ⟷ 块 i；v7 用户裁决 2026-11-20：存储 =
+#         时序，纯虚时环的展开方向取 K 装配序——graded 反排号与末端 reorder!
+#         一并消除；ED 三方对拍定谳见 plan §7/§7.1/§7.2）。
+# K 时序装配与存储序解耦：real/mixed 折叠装配直出；imag v7 起时序 = 存储序
+# 直出（converter 无 reorder!）。
 # 格点计数语义（与旧 lattice 的 k=步数+1 不同——Chrono 无额外端点格点）：
 #   N/Nt/Nτ kwarg = 物理步数（= 单元数）；k/kt/kτ = 对应分支的格点数。
 # lattice 按对称性单例类型参数化（2026-11-16：Symbol 字符串手选退役；单例
@@ -86,7 +88,7 @@ end
 TK.scalartype(::Type{<:AbstractImagGrassmannLattice}) = Float64   # 虚时链实标量（实谱核全程 Float64；复谱 promote）
 Base.length(x::AbstractImagGrassmannLattice) = 2 * x.bands * x.k   # 每格 (a,ā)×bands
 
-"虚时 Chrono _index：格 i（1..kτ）⟷ 链块 k−i+1（格 Nτ = 块 1）；
+"虚时 Chrono _index（v7 虚轴翻转）：格 i（1..kτ）⟷ 链块 i（存储 = 时序升序）；
 块内 (band 1: a,ā), …, (band M: a,ā)"
 function _index(x::AbstractImagGrassmannLattice, i::Int; conj::Bool, band::Int=1, branch::Symbol=:τ)
     @boundscheck begin
@@ -94,7 +96,7 @@ function _index(x::AbstractImagGrassmannLattice, i::Int; conj::Bool, band::Int=1
         (1 <= band <= x.bands) || throw(BoundsError(1:x.bands, band))
         (1 <= i <= x.k) || throw(BoundsError(1:x.k, i))
     end
-    block = x.k - i + 1
+    block = i
     return (block - 1) * 2x.bands + 2 * band - 1 + Int(conj)
 end
 
@@ -264,7 +266,7 @@ end
 function cell_block(lattice::AbstractGrassmannLattice, cell::Tuple{Symbol,Int})
     b, j = cell
     lattice isa AbstractRealGrassmannLattice && return b === :+ ? 2j - 1 : 2j
-    lattice isa AbstractImagGrassmannLattice && return lattice.k - j + 1
+    lattice isa AbstractImagGrassmannLattice && return j
     return b === :τ ? lattice.Nτ - j + 1 :
            b === :+ ? lattice.Nτ + 2j - 1 :
            lattice.Nτ + 2j

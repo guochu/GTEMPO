@@ -15,15 +15,17 @@
 #     Pairing 全矩阵兜底（拟合质量问题而非核形状问题，现行语义保留）。
 #
 # 虚时环族（任意味对，2026-11-19 广义化；band-diagonal (T,F) 现行公式 = ba==bb
-# 特例，逐字退化；dense 算符对拍实证：单对 bitwise + 完整 BCS 四键 3.5e-18）：
-# 链站序与核胞序相反（cell_block(:τ, j) = k−j+1），核 s>t 距离 d 的条目在链上
-# 前向。拟合列 lower[m] = M[m+1, 1]（y[d] = Σ wₖ qₖ^{d−1}），三通道：
-#   ch1 = ExpDecaySum(α₁ = w/q, q;    ca, cb, asite=ba, bsite=bb)——链前向
-#         {jr > jc} ∪ {jr = jc ∧ ba < bb} 条目，系数 lower[d]；
-#   ch2 = ExpDecaySum(α₂ = w·q^{n−1}, 1/q; cb, ca, asite=bb, bsite=ba)——环绕族
-#         （味/带双翻转），系数反周期折叠 lower[n−m]；
-#   ch3 = 等时接触修正 λ=0：contact = M[1,1] − Σα₁ + Σα₂（两取向级联同胞折叠
-#         ±Σα 相消后余同胞条目值；同味对 asite ≠ bsite 无 local 对角，同一公式）。
+# 特例，逐字退化；dense 算符对拍实证：单对 bitwise + 完整 BCS 四键 3.5e-18；
+# 2026-11-20 v7 虚轴翻转——链站序与核胞序相同，通道按新方向重推，见
+# plan/unified_chain_ordering_plan.md §7）：
+# 链站序与核胞序相同（cell_block(:τ, j) = j）。拟合列 lower[m] = M[m+1, 1]
+# （y[d] = Σ wₖ qₖ^{d−1}），三通道（取向读号：原取向 +系数、翻转取向 −系数）：
+#   ch1 = ExpDecaySum(α₁ = −w·q^{n−1}, 1/q; ca, cb, asite=ba, bsite=bb)——链前向
+#         {jr < jc} 条目，系数 upper[d] = −lower[n−d]（反周期折叠）；
+#   ch2 = ExpDecaySum(α₂ = −w/q, q; cb, ca, asite=bb, bsite=ba)——后向族
+#         （味/带双翻转，翻转读 −系数），{jr > jc} 条目系数 lower[m]；
+#   ch3 = 等时接触修正 λ=0：Σα₃ 按 ba≷bb 镜像（同胞折叠取向随带序，带序在
+#         翻转下不变；同味对 asite ≠ bsite 无 local 对角，同一公式）。
 # 实时双通道（greater/lesser）：逐味对 (g,l) 列拟合 + Keldysh 关系四块重构，
 # Pairing × 4（味旗 = 对的 (ca, cb)）；audit 失败降级原始块直读。
 #
@@ -175,15 +177,23 @@ function _tti_imag_pair(kernel::HybridizationKernel, lattice::AbstractImagGrassm
     f = fit_exponentials(alg.alg_expan, lower)
     expansion = (; f..., fit_interval=(1, n - 1), convention=:integrated_lag_one)
     # 环核的开放双线性分解（拟合约定 y[d] = Σₖ wₖ qₖ^{d−1}，环反周期
-    # upper[m] = −lower[n−m] 已由热配对审计锚定；链站序与核胞序相反 ⟹ 核
-    # s>t 距离 d 的条目在链上恰好前向，由 ch1 以 lower[d] 直读覆盖）：
-    #   ch1 前向族（味对原取向，asite=ba/bsite=bb）：{jr > jc} ∪ {jr = jc ∧
-    #     ba < bb} 条目，距离 d 系数 lower[d] = Σ (w/q)·q^d；
-    #   ch2 环绕族（味/带双翻转，asite=bb/bsite=ba）：{jr < jc} 条目，距离 m
-    #     系数 −lower[n−m]（反周期折叠）= Σ −(w·q^{n−1})·(1/q)^m 在对侧取向；
-    #   ch3 等时接触 λ=0：两取向级联的同胞折叠 ±Σα 相消后余同胞条目 M[1,1]
-    #     → contact = M[1,1] − Σα₁ + Σα₂（同味对 asite ≠ bsite 无 local 对角，
-    #     同一公式；拟合节点含 ≈0 极点时 1/q 退化——节点门下走 direct）。
+    # upper[m] = −lower[n−m] 已由热配对审计锚定；v7 虚轴翻转：链站序与核胞序
+    # **相同** ⟹ 核 s>t（下三角）条目在链上后向、s<t（上三角）条目链前向。
+    # 取向读号（由旧降序家族的正确性钉死）：原取向（ca,cb / ba→bb）dense 读
+    # = +系数，翻转取向（cb,ca / bb→ba）读 = −系数）：
+    #   ch1 前向族（味对原取向，asite=ba/bsite=bb）：{jr < jc} 条目，距离 d
+    #     系数 upper[d] = −lower[n−d] = Σ (−w·q^{n−1})·(1/q)^d；
+    #   ch2 后向族（味/带双翻转，asite=bb/bsite=ba）：{jr > jc} 条目，距离 m
+    #     系数 lower[m]：翻转读 −系数 ⟹ α₂ = −w/q、节点 q；
+    #   ch3 等时接触 λ=0：同胞折叠取向随带序（WII 只物化胞内前向对；带序在
+    #     翻转下不变 ⟹ 物化条件同旧降序家族）：
+    #     ba < bb：ch1 同胞折 +T₁ 物化（T₁ = Σα₁）、ch2 同胞折被排除 ⟹
+    #       Σα₃ = M[1,1] − T₁；
+    #     ba > bb：ch2 同胞折 −T₂ 物化、ch1 被排除 ⟹ canonical（col@bb 早，
+    #       row@ba 晚）= −T₂·(−读) 账 ⟹ Σα₃ = −M[1,1] − T₂（row-first = −canonical）；
+    #     ba == bb：local 对角 (T,F)→−T₁、(F,T)→+T₂ ⟹ Σα₃ = M[1,1] − T₁ + T₂
+    #     （符号组合经符号暴力搜索 + ET≡PartialIF 表逐位一致定谳，
+    #     Δ = 1.6e-15；拟合节点含 ≈0 极点时 1/q 退化——节点门下走 direct）。
     if isempty(f.weights)
         # 零核列：仅等时接触可能非零（λ=0 通道单发）
         contact = M[1, 1]
@@ -195,31 +205,20 @@ function _tti_imag_pair(kernel::HybridizationKernel, lattice::AbstractImagGrassm
                (; pair=(ba=ba, ca=ca, bb=bb, cb=cb), mode=:fit,
                  thermal_residual=thermal, expansion)
     elseif all(abs(q) > 1.0e-8 for q in f.nodes)
-        α1 = f.weights ./ f.nodes
-        α2 = f.weights .* f.nodes .^ (n - 1)
-        S1 = sum(α1)
-        S2 = sum(α2)
-        sums = [GM.ExpDecaySum(α1, f.nodes; conja=ca, conjb=cb, cell=B, asite=ba, bsite=bb),
-                GM.ExpDecaySum(α2, 1 ./ f.nodes; conja=cb, conjb=ca, cell=B, asite=bb, bsite=ba)]
-        # ch3 等时接触（λ=0 通道）：两取向级联的同胞折叠相消后余同胞条目值。
-        # **同胞折叠取向随带序**——GM ExpDecayExp（WII 顶点序）只物化胞内前向对
-        # （开站 < 闭站；asite > bsite 的同胞内后向对结构性排除），故 λ=0 通道
-        # 恒取带序前向取向，把被排除通道的同胞账目一并收编：
-        #   ba < bb：ch1 同胞前向折 +S₁ 物化、ch2 同胞折 −S₂ 被排除 ⟹
-        #     canonical（row@ba 早, col@bb 晚）系数 = S₁ + Σα₃ = M[1,1]；
-        #   ba > bb：ch2 前向折 +S₂ 物化、ch1 折 −S₁ 与 (ca,cb) 定向接触折 −c
-        #     均被排除 ⟹ canonical（col@bb 早, row@ba 晚）系数 = S₂ + Σα₃
-        #     = −M[1,1]（row-first = −canonical）；
-        #   ba == bb：无胞内对，ch1/ch2 的 local 对角（ExpDecayExp diagon 块）
-        #     恒物化（(T,F)→−S₁、(F,T)→+S₂）⟹ Σα₃ = M[1,1] − S₁ + S₂（原式）。
+        α1 = -(f.weights .* f.nodes .^ (n - 1))
+        α2 = -(f.weights ./ f.nodes)
+        T1 = sum(α1)
+        T2 = sum(α2)
+        sums = [GM.ExpDecaySum(α1, 1 ./ f.nodes; conja=ca, conjb=cb, cell=B, asite=ba, bsite=bb),
+                GM.ExpDecaySum(α2, f.nodes; conja=cb, conjb=ca, cell=B, asite=bb, bsite=ba)]
         if ba < bb
-            ch3 = GM.ExpDecaySum([M[1, 1] - S1], [0.0]; conja=ca, conjb=cb,
+            ch3 = GM.ExpDecaySum([M[1, 1] - T1], [0.0]; conja=ca, conjb=cb,
                                  cell=B, asite=ba, bsite=bb)
         elseif ba > bb
-            ch3 = GM.ExpDecaySum([-M[1, 1] - S2], [0.0]; conja=cb, conjb=ca,
+            ch3 = GM.ExpDecaySum([-M[1, 1] - T2], [0.0]; conja=cb, conjb=ca,
                                  cell=B, asite=bb, bsite=ba)
         else
-            ch3 = GM.ExpDecaySum([M[1, 1] - S1 + S2], [0.0]; conja=ca, conjb=cb,
+            ch3 = GM.ExpDecaySum([M[1, 1] - T1 + T2], [0.0]; conja=ca, conjb=cb,
                                  cell=B, asite=ba, bsite=bb)
         end
         iszero(ch3.αs[1]) || push!(sums, ch3)

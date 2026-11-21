@@ -8,7 +8,7 @@
 #     符号荷 vs 链 δ 读数交叉自检（P5））；仍开链——迹闭合归 converter
 #   fockmpo2gmps → 荷账自读（槽名义荷表 + 站读数 δ，不消费任何插入/初态元
 #     数据）+ 迹闭合 + 键重封块 → split_cell + pairize（基线分站装置，符号
-#     规范逐位继承）→ reorder! → GMPS
+#     规范逐位继承）→ reorder!（v7 虚轴翻转后 imag perm 恒等 = 无操作）→ GMPS
 #
 # V1 定谳（原型实证，见 debug/fockmpo_proto/）：
 #   1. **分站符号规范不可局部化**：[band1-first] GMPS 的系数带 GM 楔积规范相位
@@ -360,7 +360,9 @@ end
     fockmpo2gmps_deprecated(f::FockMPO, lattice; trunc=nothing, truncerrs=nothing) -> GMPS
 
 （deprecated——时序装配 + 末端 reorder! 重排；现行装配见 foldedmpo.jl 的折叠
-fockmpo2gmps。语义等价性由 todense 闸门锚定。）FockMPO → GMPS（迹闭合 + 分站；
+fockmpo2gmps。语义等价性由 todense 闸门锚定。v7 虚轴翻转后 imag 的
+_storage_cells = 时序 ⟹ 本函数 perm 恒等、reorder! 退化为无操作，仅作
+跨布局兼容保留。）FockMPO → GMPS（迹闭合 + 分站；
 **P2 纯翻译 + 荷账自读**）：`f` 必须是
 `fock_sysdynamics` 产出的**穿戴链**（ρ₀/切位 0 三明治、切位 ≥ 1 插入、oddlater
 号已折进链）——本函数不消费任何插入/初态元数据（`rho0`/`insertions` kwargs
@@ -369,7 +371,8 @@ fockmpo2gmps。语义等价性由 todense 闸门锚定。）FockMPO → GMPS（�
 prefix(键 k) = Σ_{j≤k} δ_j（与旧 cut 累计逐位恒等——plan §2.2 验证例）→
 (s,t) 对差键核（线程注入：首格直读、中间 = M[v,s]δ_{t,w}、末格 =
 M[t,s] 右边界真空、L==1 = 迹闭合）→ split_cell（基线分站装置：荷差键 + 逐格
-SVD 切分，符号规范逐位继承）→ pairize → reorder!（Chrono→存储序）→ GMPS。
+SVD 切分，符号规范逐位继承）→ pairize → reorder!（Chrono→存储序；imag 下
+v7 翻转后 perm 恒等）→ GMPS。
 
 站内自验证三件套：①站内一致性（δ 读数全等——不一致 = 电荷不相干 dressing，
 如电荷非对角初态 → ArgumentError）；②Σ_k δ_k = 0 环闭合守卫（≡ 旧总插入荷
@@ -444,7 +447,9 @@ function fockmpo2gmps_deprecated(f::FockMPO, lattice::AbstractGrassmannLattice;
     end
     out = pairize(G, data)
     # 时序构造 → 存储序：每格 bands 站成块移动（GM.reorder! perm 语义 = 新链第 k 站
-    # = 原链第 perm[k] 站；swap! 费米换序号已修复）
+    # = 原链第 perm[k] 站；swap! 费米换序号已修复）。v7 虚轴翻转后 imag 的
+    # _storage_cells = 时序 ⟹ perm 恒等、reorder! 退化为无操作（保留以兼容
+    # real/mixed 布局与未来布局变更；graded 换序号语义见 plan §7）。
     chrono = Dict(cell => k for (k, cell) in enumerate(cells))
     perm = Int[]
     for cell in _storage_cells(lattice)

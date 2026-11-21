@@ -35,15 +35,16 @@ Random.seed!(12354)
 end
 
 @testset "Phase 1 smoke: lattice _index 位置映射" begin
-    # imag Chrono：格 i ⟷ 块 k−i+1；块内 2M 位 (a,ā) 相邻（统一链存储序下未变）
+    # imag Chrono（v7 虚轴翻转）：格 i ⟷ 块 i（存储 = 时序升序）；块内 2M 位 (a,ā) 相邻
     lat = GrassmannLattice(N=3, δτ=0.1, bands=2, contour=:imag)
     @test length(lat) == 2 * 2 * 3
     m = indexmappings(lat)
     @test length(m) == length(lat)
     @test length(unique(values(m))) == length(m)               # 双射
-    # 格 1 = 末块（k−1+1 = k）
-    @test m[(1, false, :τ, 1)] == 2 * 2 * 3 - 2 * 2 + 1
-    @test m[(1, true, :τ, 2)] == 2 * 2 * 3 - 2 * 2 + 4
+    # 格 1 = 块 1
+    @test m[(1, false, :τ, 1)] == 1
+    @test m[(1, true, :τ, 2)] == 4
+    @test m[(3, false, :τ, 1)] == 2 * 2 * 3 - 2 * 2 + 1
     # 实时 Chrono（2026-11-20 统一链存储序）：同时刻 ± 成对——块 (+,i) → 2i−1；(−,i) → 2i
     latr = GrassmannLattice(N=2, δt=0.1, bands=1, contour=:real)
     mr = indexmappings(latr)

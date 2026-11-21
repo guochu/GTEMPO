@@ -17,8 +17,8 @@
 #            三明治）、𝓛₁ … 𝓛_Nt]——恒等式 vec(τ₁⋯τ_N) = (I⊗τ_Nᵀ)⋯(I⊗τ₂ᵀ)
 #            (τ₁⊗I)|I⟩⟩：τ₁ ket-side（vec 头）、τ₂..τ_N bra-side（X·τ_j 追加），
 #            τ 段输出 bond = vec(τP) = ρ₀ 槽（seam）。
-#   imag  : 时序 per-支格（deprecated 同构）——converter 按 [τ Nτ..τ 1]
-#           反序转置核直出（反序保邻接，循环精确）。
+#   imag  : 时序 per-支格（deprecated 同构）——v7 虚轴翻转后存储 = 时序，
+#           converter 时序核直出（无 reorder!）。
 #
 # 键荷账：pair 差标签 q(s)−q(t)−prefix（prefix = 插入荷沿线程累计）；
 # 合并格荷移 δ = q(m⁻)+q(m⁺)+Σq_ins、τ 格 δ = q(m)+Σq_ins（q_ins 两支同号
@@ -106,9 +106,9 @@ end
 杂质系统因子的**折叠** Fock 直积 MPO（装配内序 = 存储序，converter 无
 reorder!）：real = 合并超算子格链 [𝓛₁…𝓛_Nt]（ρ₀ 折入格 1、Tr[ρ_Nt] 闭合
 格 Nt）；mixed = [τ_N…τ₂(bra-side) τ₁(vec 头) 𝓛₁…𝓛_Nt]（τ 段输出 bond =
-ρ₀ 槽）；imag = 时序 per-支格（converter 反序转置直出）。切位语义不变：
-(±,j) → 合并格 j、(τ,j) → τ 格 j、cut-0 → ρ₀ 三明治（real）/τ₁ 格
-（mixed, imag）。
+ρ₀ 槽）；imag = 时序 per-支格（v7 翻转后时序 = 存储序，converter 直出）。
+切位语义不变：(±,j) → 合并格 j、(τ,j) → τ 格 j、cut-0 → ρ₀ 三明治（real）/
+τ₁ 格（mixed, imag）。
 """
 function fock_sysdynamics(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian;
                           order::Integer=1, insertions=OperatorInsertion[], initial_state=nothing)
@@ -294,23 +294,25 @@ function fock_sysdynamics(lattice::AbstractGrassmannLattice, model::AbstractImpu
 end
 
 # ---------------------------------------------------------------------------
-# 折叠 fockmpo2gmps：装配内序直出（无 reorder!）
+# 折叠 fockmpo2gmps：装配内序直出（无 reorder!、无 trunc——纯翻译；v7 起
+# 三轮廓全直出，2026-11-21 用户裁决删 trunc 输入）
 # ---------------------------------------------------------------------------
 
 """
-    fockmpo2gmps(f::FockMPO, lattice; trunc=nothing, truncerrs=nothing) -> GMPS
+    fockmpo2gmps(f::FockMPO, lattice) -> GMPS
 
-折叠 FockMPO → GMPS（**装配内序直出，无 reorder!**）：`f` 必须是折叠
-`fock_sysdynamics` 的产物（real/mixed 为 pair 态键折叠链、imag 为时序
-per-支链）。逐格直出核（real/mixed 按 pair 态键线程；imag 按 [τ Nτ..τ 1]
-反序转置核——反序保邻接，循环精确）→ split_cell + pairize → GMPS。
+折叠 FockMPO → GMPS（**装配内序直出，无 reorder!、无截断后处理**）：`f` 必须是
+折叠 `fock_sysdynamics` 的产物（real/mixed 为 pair 态键折叠链、imag 为时序
+per-支链——v7 虚轴翻转后 imag 时序 = 存储序）。逐格直出核（real/mixed 按
+pair 态键线程；imag 时序核直出）→ split_cell + pairize → GMPS。converter 是
+纯翻译：无 trunc 输入（截断属 IF 算法层/SVDCompression 与调用方，2026-11-21
+用户裁决删除——套件从不经此管道传 trunc）。
 
 站内自验证三件套（pair 版）：①站内 δ 读数全等（电荷不相干 dressing →
 ArgumentError）；②Σδ = 0 环闭合；③slot 对角断言。
 **Weyl 标量不在本函数**——调用方 setlogscale!（累加，E2 语义）。
 """
-function fockmpo2gmps(f::FockMPO, lattice::AbstractGrassmannLattice;
-                      trunc=nothing, truncerrs=nothing)
+function fockmpo2gmps(f::FockMPO, lattice::AbstractGrassmannLattice)
     G = TK.sectortype(lattice)
     bands = lattice.bands
     dim = 2^bands
@@ -322,12 +324,8 @@ function fockmpo2gmps(f::FockMPO, lattice::AbstractGrassmannLattice;
     chpc = convert(Vector{eltype(fqs1)}, cell_charges(G, bands))
     chpc2 = vcat(chpc, chpc)                      # 合并格变量序：+ 支全带 → − 支全带
 
-    "存储序核列（每元素 = (core, leftlabels, rightlabels, charges)）"
-    cores = Any[]
     if lattice isa AbstractImagGrassmannLattice
-        # ---- imag：反序发射含 swap! 费米重排号（二次型相位不可局部化为逐格因子
-        #      ——V1 定谳①在反序情形的再现），reorder! 为 imag 不可约装置——
-        #      沿用 deprecated 时序核发射 + reorder!----
+        # ---- imag：时序 = 存储序（v7 虚轴翻转），时序核直出无 reorder! ----
         L = length(f.data)
         cells = chronological_cells(lattice)
         deltas = [_site_charge_shift(f.data[k][(z, z, TK.dual(z), TK.dual(z))],
@@ -373,17 +371,6 @@ function fockmpo2gmps(f::FockMPO, lattice::AbstractGrassmannLattice;
             data === nothing ? (data = copy(column)) : append!(data, column)
         end
         out = pairize(G, data)
-        chrono = Dict(cell => k for (k, cell) in enumerate(cells))
-        perm = Int[]
-        for cell in _storage_cells(lattice)
-            kc = chrono[cell]
-            append!(perm, [(kc - 1) * bands .+ (1:bands)...])
-        end
-        GM.reorder!(out, perm; trunc=GM.truncrelerr(1e-14))
-        if trunc !== nothing
-            _, err = GM.truncate!(out; trunc)
-            truncerrs === nothing || push!(truncerrs, err)
-        end
         return out
     end
     # ---- real/mixed：折叠 pair 线程直出 ----
@@ -451,10 +438,6 @@ function fockmpo2gmps(f::FockMPO, lattice::AbstractGrassmannLattice;
         data === nothing ? (data = copy(column)) : append!(data, column)
     end
     out = pairize(G, data)
-    if trunc !== nothing
-        _, err = GM.truncate!(out; trunc)
-        truncerrs === nothing || push!(truncerrs, err)
-    end
     return out
 end
 
