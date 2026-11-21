@@ -30,6 +30,8 @@
 # 观测量严格相消；管线直用乘法则走本文件的显式 normdelta。
 
 # ---------------------------------------------------------------------------
+using LinearAlgebra: det, Diagonal, I
+
 # Trotter 调度（IFGTEMPO trotter_schedule 的移植；order 4 裁剪——E5）
 # ---------------------------------------------------------------------------
 
@@ -282,6 +284,7 @@ blockification 读取规则折入，见 `exactif_kernel`）。
 """
 function quapi_strictdelta(bath, cells::Vector{Float64},
                            lattice::AbstractRealGrassmannLattice)
+    # 纯浴对象契约（无 kicks——IF 组装不依赖杂质哈密顿量；杂质全项走 K 链门）
     corr, prefactor = IFD.exact_fermionic_Δt_cells(bath.spectrum; β=bath.β, cells=cells, μ=bath.μ)
     basis, Δ = _strict_legmatrix(corr, length(cells))
     pos = _strict_pos(lattice)
@@ -436,7 +439,7 @@ SVD 相对截断在机器精度层严格性保留，zidentity 证书仲裁）。
 短路——其展开携带单位链 + 分辨率重叠（测度的一部分）。
 """
 function sysdynamics_exact(lattice::AbstractRealGrassmannLattice, model::AbstractImpurityHamiltonian,
-                           gates::Vector{Float64}; initial_state=nothing)
+                           gates::Vector{Float64}; initial_state=nothing, counter_c::Int=0)
     npairs = length(gates)
     lattice.Nt == npairs + 1 || throw(DimensionMismatch(
         "strict-contour lattice carries Nt = npairs + 1 slices (gate table + " *
@@ -464,8 +467,19 @@ function sysdynamics_exact(lattice::AbstractRealGrassmannLattice, model::Abstrac
             K = mult!(K, fac; trunc=trunc)[1]
         end
     end
-    # 2. Keldysh 折返（带子集展开：exp(Σ_b −m_b) = ∏_b (1 − m_b)；因子形式
-    #    一次乘法上链）
+    # 1b. 接口分辨率反测度（counter_c ≠ 0：compact 核已吸收接口 resolution，
+    #     逐接口片逐支逐带乘幂零 (1 + counter_c·x·x̄) 抵消隐式重复——extension
+    #     sysdynamics_exact! counter_c 步骤；compact 路线标定 counter_c = −1）
+    counter_c != 0 && for p in 2:(lattice.Nt - 1), br in (:+, :-), b in 1:B
+        fac = one(ComplexF64) * vac +
+              GM.togmps(ComplexF64, lattice_monomial(lattice,
+                    (GrassmannContourIndex(p, br, b, true), GrassmannContourIndex(p, br, b, false));
+                    coeff=ComplexF64(counter_c)), spaces)
+        K = mult!(K, fac; trunc=trunc)[1]
+    end
+    # 2. Keldysh 折返 exp(Σ_b +ā⁻(N)a⁺(N))（带子集展开系数 (+1)^{|S|}；系数
+    #    +1 由 zidentity 证书机器精度钉定——旧 boundarycondition! 的 GTerm −1
+    #    在 lattice_monomial 给定序语义下换号为 +1）
     np = lattice.Nt
     fold = one(ComplexF64) * vac
     for mask in _band_subsets(B)
@@ -475,8 +489,7 @@ function sysdynamics_exact(lattice::AbstractRealGrassmannLattice, model::Abstrac
             push!(idx, GrassmannContourIndex(np, :-, b, true))
             push!(idx, GrassmannContourIndex(np, :+, b, false))
         end
-        fold = fold + ComplexF64(-1)^length(mask) *
-               GM.togmps(ComplexF64, lattice_monomial(lattice, Tuple(idx); coeff=1.0), spaces)
+        fold = fold + GM.togmps(ComplexF64, lattice_monomial(lattice, Tuple(idx); coeff=1.0), spaces)
     end
     K = mult!(K, fold; trunc=trunc)[1]
     # 3. ρ₀（bra ā⁺@(+,1)、ket a⁻@(−,1)）
@@ -492,6 +505,93 @@ function sysdynamics_exact(lattice::AbstractRealGrassmannLattice, model::Abstrac
         K = mult!(K, _fockop_factor(lattice, rho, bras, kets); trunc=trunc)[1]
     end
     return K
+end
+
+# ---------------------------------------------------------------------------
+# compact 消元核（extension compact_delta 逐字移植 + blockification）
+# ---------------------------------------------------------------------------
+
+"""
+    compact_strictdelta(Hbath, V, β, sched, lattice; sgn=-1) -> StrictDelta
+
+紧凑消元核（extension `compact_delta` 的逐字移植）：bath pair = trace_final +
+forward(N) + backward(N) 共 2N+1 对；forward 末步 trace_bra 翻转（⟨−ψ̄| 约定）；
+热边 first_forward.bars × first_backward.etas；每 pair 测度 −γ̄γ；Schur 消 bath
+块取反对称；消元整体负号（FormB elim_sign = −1）。G 在接口 IF 槽位
+（4·nl 维）；D = 消元核 = G⁻¹ 反对称化的 (bar, eta) partner 读矩阵；
+normdelta = ν·Pf(G)。接口 c ∈ 1..nl ↔ lattice 片 c+1（whole-slice 节点映射）。
+"""
+function compact_strictdelta(Hbath::Matrix{ComplexF64}, V::Vector{ComplexF64}, β::Real,
+                             sched::NativeSchedule, lattice::AbstractRealGrassmannLattice;
+                             sgn::Int=-1)
+    cells = sched.cells
+    nl = length(cells)
+    m = length(V)
+    nif = 4 * nl
+    total = nif + 2m * (2nl + 1)
+    A = zeros(ComplexF64, total, total)
+    h = _coupled_h(V, Hbath)
+    Us = [exp(-1im * cell .* h) for cell in cells]
+    cursor = nif
+    pair_data = NamedTuple[]
+    for label in (:trace_final, :forward, :backward)
+        count = label === :trace_final ? 1 : nl
+        for step in 0:(count - 1)
+            bars = collect((cursor + 1):(cursor + m))
+            etas = collect((cursor + m + 1):(cursor + 2m))
+            push!(pair_data, (label = label, step = step, bars = bars, etas = etas))
+            cursor += 2m
+        end
+    end
+    trace_pair = pair_data[1]
+    forward_pairs = pair_data[2:(nl + 1)]
+    backward_pairs = pair_data[(nl + 2):end]
+    for step in 0:(nl - 1)
+        input_pair = forward_pairs[step + 1]
+        output_pair = step == nl - 1 ? trace_pair : forward_pairs[step + 2]
+        _q_add!(A, _ifslot(step + 1, :+, :bar), _ifslot(step + 1, :+, :eta),
+                output_pair.bars, input_pair.etas, Us[step + 1];
+                trace_bra = (step == nl - 1))
+    end
+    for step in 0:(nl - 1)
+        output_pair = backward_pairs[step + 1]
+        input_pair = step == nl - 1 ? trace_pair : backward_pairs[step + 2]
+        _q_add!(A, _ifslot(step + 1, :-, :bar), _ifslot(step + 1, :-, :eta),
+                output_pair.bars, input_pair.etas, adjoint(Us[step + 1]))
+    end
+    thermal = exp(-Float64(β) .* Hbath)
+    for i in 1:m, j in 1:m
+        _put_G!(A, forward_pairs[1].bars[i], backward_pairs[1].etas[j], thermal[i, j])
+    end
+    for pair in pair_data, mode in 1:m
+        _put_G!(A, pair.bars[mode], pair.etas[mode], -1.0)
+    end
+    E = A[1:nif, 1:nif]
+    C = A[1:nif, nif+1:end]
+    B = A[nif+1:end, nif+1:end]
+    effective = E + C * (B \ transpose(C))
+    G = 0.5 .* (effective .- transpose(effective))
+    ν = bath_norm(V, Hbath, β, cells)
+    Ginv = inv(G)
+    GA = (Ginv .- transpose(Ginv)) ./ 2
+    k = lattice.Nt
+    pos = Dict{GrassmannContourIndex,Int}()
+    for band in 1:lattice.bands, br in (:+, :-), p in 1:k
+        row = 4 * k * (band - 1) + 2 * k * (br === :+ ? 0 : 1) + 2 * (p - 1) + 1
+        pos[GrassmannContourIndex(p, br, band, true)] = row
+        pos[GrassmannContourIndex(p, br, band, false)] = row + 1
+    end
+    M = zeros(ComplexF64, 4 * lattice.bands * k, 4 * lattice.bands * k)
+    for band in 1:lattice.bands, c in 1:nl, br in (:+, :-),
+        c2 in 1:nl, br2 in (:+, :-)
+        # 消元恒等式 exp(−½jᵀG⁻¹j) 的整体负号（FormB elim_sign = −1）
+        v = sgn * GA[_partner_slot(c, br, :bar), _partner_slot(c2, br2, :eta)]
+        row = pos[GrassmannContourIndex(c + 1, br, band, true)]
+        col = pos[GrassmannContourIndex(c2 + 1, br2, band, false)]
+        iszero(v) && continue
+        M[row, col] = v
+    end
+    return StrictDelta(pos, M, _real_normdelta(ν * pfaffian(G)))
 end
 
 # ---------------------------------------------------------------------------
@@ -513,6 +613,8 @@ QuAPI-Δ 相对测度 + 单位链骨架定义，GM 收缩隐式测度正是其�
    `fock_sysdynamics` 的 S·W 权重胞）；
 4. `Z = integrate(K, Is) · kernel.normdelta`（E4′：normdelta 与分子同携带；
    经 sysdynamics(kernel=…) 的链幅通道时自动携带，比值观测量相消）。
+
+**纯浴对象契约**：核不携带任何杂质信息（IFD uniform API，无 kicks）——杂质全项（εd、U、时间依赖）走 K 链门（`sysdynamics_exact` 的全模型传播子），IF 组装对一般杂质模型无假设（extensions/exactif 目标定义）。
 
 插入观测量（greater/lesser/occupation 级）在管线层重建：K′ =
 `sysdynamics_exact(lat, model, pipe.gates; …)`——调度表与 Z 的 K 链同源
