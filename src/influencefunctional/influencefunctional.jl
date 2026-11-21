@@ -94,9 +94,22 @@ _mult(alg::ExactTTI) = SVDCompression(trunc=alg.trunc)
 `:algorithm`/`:truncation`。ExactTTI 仅支持虚轴/实轴格（混合格无 ExactTTI
 方法——MethodError，PartialIF/PolarIF 承接），且拟合层因子恒复 ⟹ 实链在装配入口复化（ExactTTI
 返回态恒 ComplexF64，不再与 `gmps` 别名）。
+
+**算法支持集**（exactif_port_plan v2.3）：Frozen 核 × {PartialIF, PolarIF,
+ExactTTI}；Exact 核 × {PartialIF, PolarIF}（Exact 核非平移不变，ExactTTI
+入口类型级 ArgumentError 拒绝）。
 """
-function hybriddynamics!(gmps, lattice::AbstractGrassmannLattice, kernel::HybridizationKernel,
+function hybriddynamics!(gmps, lattice::AbstractGrassmannLattice, kernel::AbstractHybridizationKernel,
                          alg::InfluenceFunctionalAlgorithm=PartialIF())
+    # 算法支持集（exactif_port_plan v2.3 用户裁决，类型级守卫）：Exact 核天然
+    # 破坏时间平移不变性（逐时刻独立的非平移不变块）——ExactTTI 的"核块平移
+    # 不变指数拟合"前提不成立，入口显式拒绝（不依赖运行时 is_tti 门顺带抛错）。
+    # Frozen 核支持集不变：PartialIF/PolarIF/ExactTTI 三算法照旧；
+    # Exact 核 × {PartialIF, PolarIF} 全支持（行扫/逐块 SVD 秩一分解无平移不变
+    # 前提，任意核适用）。
+    kernel isa ExactHybridizationKernel && alg isa ExactTTI && throw(ArgumentError(
+        "Exact kernels are not time-translation-invariant (per-node independent " *
+        "strict blocks), ExactTTI does not apply — use PartialIF or PolarIF"))
     all(b -> 1 <= b <= lattice.bands, kernel.bands) ||
         throw(BoundsError(1:lattice.bands, kernel.bands))
     diagnostics = Dict{Symbol,Any}(:algorithm => alg, :truncation => alg.trunc)
@@ -125,7 +138,7 @@ ExactTTI 跨带/反常核返回单 GMPS（恒单链）；ExactTTI band 对角 no
 返回逐带 `Tuple`（`Is...` 变参兼容——消费方对单 GMPS 须自包装 `(Is,)`）；
 第二输出 = 装配 diagnostics（见 `hybriddynamics!`）。
 """
-function hybriddynamics(lattice::AbstractGrassmannLattice, kernel::HybridizationKernel,
+function hybriddynamics(lattice::AbstractGrassmannLattice, kernel::AbstractHybridizationKernel,
                         alg::InfluenceFunctionalAlgorithm=PartialIF())
     return hybriddynamics!(vacuumstate(promote_type(TK.scalartype(lattice), TK.scalartype(kernel)), lattice),
                            lattice, kernel, alg)
@@ -134,3 +147,4 @@ end
 
 include("partialif.jl")
 include("exacttti.jl")
+include("exactif.jl")

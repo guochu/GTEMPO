@@ -493,32 +493,63 @@ _fock_weyl_lscale(lattice::AbstractGrassmannLattice, order::Int, coupling_norm::
                       sum(_cell_step2(lattice, b) for (b, _) in chronological_cells(lattice))) :
     0.0
 
+# Z 常数类型分派（exactif_port_plan E6）：
+# - Frozen = Weyl 公式随 order。`coupling_norm` kwarg = 显式值优先（0 = 未给
+#   哨兵 → kernel.coupling_norm）；**不做与 kernel 值的一致性抛错**——多带装配
+#   的既有惯例是 kernel 全带 cn ≠ K 侧显式标量（如 two-band ED 锚：单 bath 核
+#   全带 cn = 2α、K 侧传 α；比值观测量下常数分子分母同因子严格相消，两者各自
+#   一致即可，绝对 Z 调用方自管一致性）。
+# - Exact = log|normdelta| 与 order 无关——严格核无冻结顶点 O(δt²) 测度宽度
+#   可补偿；号不进 log，由 _system_factor_fock 的 lmul! 折进首站。Weyl 通道
+#   对 Exact 无意义：显式非零 coupling_norm 响抛（恒错禁止：normdelta 当
+#   耦合范数用）。
+_constant_lscale(k::FrozenHybridizationKernel, lattice::AbstractGrassmannLattice, order::Int;
+                 coupling_norm::Real=k.coupling_norm) =
+    _fock_weyl_lscale(lattice, order, coupling_norm == 0 ? k.coupling_norm : coupling_norm)
+_constant_lscale(k::ExactHybridizationKernel, ::AbstractGrassmannLattice, ::Int) =
+    log(abs(k.normdelta))
+
 """
-    _system_factor_fock(lattice, model; order=1, coupling_norm=0.0, initial_state=nothing,
-                        insertions=OperatorInsertion[], trunc=nothing, truncerrs=nothing,
-                        spec=nothing) -> GMPS
+    _system_factor_fock(lattice, model; order=1, coupling_norm=0.0, kernel=nothing,
+                        initial_state=nothing, insertions=OperatorInsertion[],
+                        trunc=nothing, truncerrs=nothing, spec=nothing) -> GMPS
 
 sysdynamics 的实现体（三行闭环）：`fock_sysdynamics`（穿戴内联：切位 ≥ 1 稀疏
 乘法 + ρ₀/切位 0 三明治 + oddlater + P5 自检，`initial_state` 仅实时轮廓生效）
-→ `fockmpo2gmps`（荷账自读 + 迹闭合 + 分站）→ Weyl 标量 `logscale +=`。
-**coupling_norm（Weyl 标量）只在此层输入**：order=2 要求 ≥ 0（⚠️ 累加非覆盖：
-logscale 是链幅的 log 场，E2 语义下 truncate!/swap! 会把压缩归一化因子吸收
-进去，覆盖会抹掉这些因子；乘 exp(lscale) 语义 = 累加）。`spec` 兼容旧径
-kwarg（须 = sectortype(lattice)）。
+→ `fockmpo2gmps`（荷账自读 + 迹闭合 + 分站）→ Z 常数 `logscale +=`。
+**常数按类型分派**（exactif_port_plan E6）：`kernel === nothing` → 现行 Weyl
+公式（`coupling_norm` 输入，order=2 要求 ≥ 0）；`kernel !== nothing` →
+`_constant_lscale(kernel, lattice, order)`（Frozen：显式 coupling_norm 优先、
+0 = 未给哨兵取 kernel.coupling_norm，无一致性抛错——多带惯例见
+`_constant_lscale` 注；Exact：log|normdelta| + 号折首站（`lmul!`），显式非零
+coupling_norm 响抛）。⚠️ 累加非覆盖：logscale 是链幅的 log 场，E2 语义下
+truncate!/swap! 会把压缩归一化因子吸收进去，覆盖会抹掉这些因子；乘
+exp(lscale) 语义 = 累加。`spec` 兼容旧径 kwarg（须 = sectortype(lattice)）。
 """
 function _system_factor_fock(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian;
-                             order::Int=1, coupling_norm::Real=0.0, initial_state=nothing,
+                             order::Int=1, coupling_norm::Real=0.0,
+                             kernel::Union{Nothing,AbstractHybridizationKernel}=nothing,
+                             initial_state=nothing,
                              insertions=OperatorInsertion[], trunc=nothing, truncerrs=nothing,
                              spec=nothing)
     order in (1, 2) || throw(ArgumentError("order must be 1 or 2"))
-    order == 2 && !(coupling_norm >= 0) &&
-        throw(ArgumentError("order=2 requires coupling_norm ≥ 0 (total Σ_b α_b)"))
+    kernel isa ExactHybridizationKernel && coupling_norm != 0 && throw(ArgumentError(
+        "Exact kernel chains carry their Z constant via normdelta (chain-amplitude " *
+        "dispatch); explicit coupling_norm (Weyl scalar) does not apply"))
     spec === nothing || spec === TK.sectortype(lattice) ||
         throw(ArgumentError("spec $spec ≠ sectortype(lattice) $(TK.sectortype(lattice))"))
     Kf = _fock_sysdynamics_chronological(lattice, model; order=order, insertions=insertions,
                                          initial_state=initial_state)
     out = fockmpo2gmps_deprecated(Kf, lattice; trunc=trunc, truncerrs=truncerrs)
-    GM.setlogscale!(out, GM.logscale(out) + _fock_weyl_lscale(lattice, order, coupling_norm))
+    if kernel === nothing
+        order == 2 && !(coupling_norm >= 0) &&
+            throw(ArgumentError("order=2 requires coupling_norm ≥ 0 (total Σ_b α_b)"))
+        GM.setlogscale!(out, GM.logscale(out) + _fock_weyl_lscale(lattice, order, coupling_norm))
+    else
+        GM.setlogscale!(out, GM.logscale(out) + _constant_lscale(kernel, lattice, order;
+                                                                 coupling_norm=coupling_norm))
+        kernel isa ExactHybridizationKernel && GM.lmul!(sign(kernel.normdelta), out)
+    end
     return out
 end
 

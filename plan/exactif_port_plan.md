@@ -8,10 +8,12 @@
 > 严格 IF）两具体类型；**合并接口与否 = Exact 行为完全摸清后再裁**（显式推迟点）。
 > **v2.3（2026-11-20 用户裁决：hybriddynamics 算法支持集）**：Exact 核天然破坏时间平移
 > 不变性 ⟹ `hybriddynamics` 对 Exact 核只支持 `alg ∈ (PartialIF, PolarIF)`（类型级守卫）。
-> 本修订与 `fockmpo_dress_selfread_plan.md`（合并计划：fock_sysdynamics 穿戴 /
-> logscale E2 语义 / fock_initstate! 删除）对齐。
+> **v2.4（2026-11-20 用户定标：对比金标准）**：主流路线物理锚两个——G1 AndersonIM × 单模
+> bath、G2 Toulouse × 连续 bath（直接 Trotter vs 严格核装配，order ∈ {1,2} 严格对齐）；
+> **范围 = normal bath，BCS 不做**。本修订与 `fockmpo_dress_selfread_plan.md`（合并计划：
+> fock_sysdynamics 穿戴 / logscale E2 语义 / fock_initstate! 删除）对齐。
 
-- 日期：2026-11-17（v1）；2026-11-20（v2 统一常数契约修订）
+- 日期：2026-11-17（v1）；2026-11-20（v2 统一常数契约 → v2.2 类型层级 → v2.3 hybriddynamics 算法支持集 → v2.4 对比金标准 G1/G2）
 - 基线：GTEMPO HEAD `a6672a84`；移植源 = `extensions/exactif/src/NativeExact.jl`（1698 行）+ `validation/`（18 个 CSV + imag_identify/matrixid/opfit 脚本 + theory notes）
 - 现状：extension 针对旧栈编写（`Z2Tensors` 截断、旧 `sysdynamics!`/`boundarycondition!`/`systhermalstate!`、`GTEMPO.Defaults.alg_trunc_sys`、旧 `cached_greater/lesser`）——框架大改后失效
 - 关联：`if_expmult_backend_plan.md` Phase 1（**前置已落地**——2026-11-19 十七批，`HybridizationKernel{T}` + `ContourBlockIndex` 在产）；`fockmpo_dress_selfread_plan.md`（合并计划：穿戴语义 P1/P3、logscale E2 语义、`fock_initstate!` 删除——F3 映射表与 §2.3 依赖之）；`ifd_backend_switch_plan.md` R5（imag + Exact 已接线，real/mixed 拒绝面 = 本计划关闭）
@@ -124,14 +126,23 @@ exactif_kernel(bath, model, N, δt; order, nl, kwargs...)
 
 按映射表机械移植（F4 清单全量）；`ImagProbes` 记忆化与族种子机制原样；CSV I/O 原样（`validation/` 档案路径不变，回归直接可比）。
 
+### 2.5 对比金标准（v2.4 用户定标；Phase B 主验收、Phase E 固化）
+
+主流路线的物理定义级锚，两个（**范围 = normal bath；BCS 金标准不做**——见不做清单）。与既有两轴互补：imag Z 证书轴（§2.2，`normdelta·Pf(B)`）+ 研究管线 CSV 回归轴（F5，18 档案）之外的第三条腿——**ExactHybridizationKernel → hybriddynamics(PartialIF/PolarIF) → integrate → 观测量**全链路的物理正确性锚。
+
+- **G1【AndersonIM × 单模 bath——定义级锚】**：AndersonIM 杂质（U ≠ 0 照常——U 走系统因子 K，bath 部分经严格核精确处理，εd 经 kicks 进核，这正是 IF 机器的分工；装配契约 = IFD 金标准已定谳的带踢 Schur，Z ≡ 1 机器精确）+ 离散单模 bath（DiscreteSpectrum 单模）。参照 = **联合 Fock ED 直接 Trotter 门序列演化**（杂质 + 1 bath 模的小维空间，order 1 = Lie / order 2 = Strang）；被检 = 严格核装配同一观测量（最低集：杂质占据 n̄；虚时轴补 Z、n̄(β)）。**判据 = 相同 (N, δt, order) 下机器精度对齐，order 1/2 两档逐对**。
+- **G2【Toulouse × 连续 bath】**：ConstImpurityHamiltonian（U = 0 单能级 εd）+ 连续谱 bath（半圆/wide-band 有界谱），GL-M 求积离散化（与 `EDToulouseSolver(nbath)` 的 M 节点**同源**）。参照 = 离散化后 M 模联合 ED 门序列直接 Trotter；被检 = 严格核装配同观测量。判据同 G1。
+
+**对齐前提（硬约束）**：参照门序列与严格核的 cells/kicks 调度**逐 gap 同源**（IFD 金标准 `pair_grid`/`trotter_factors` 同款拆分）——不同调度只保证阶数一致性（δt² 收敛斜率），无逐位对齐。**参照机纪律**：联合 ED 门序列演化 = **测试侧 helper**（`src` 零新增符号——IFD spectral 计划同款纪律；IFD `test/exact/_anchor_utils.jl` 的 ED 门序列机可对照移植；extensions 区不入库，R7 定谳的 ED 参照机按需重建）。
+
 ## 3. 阶段与验收
 
 - **Phase 0（前置）**：~~`if_expmult_backend_plan` Phase 1~~ **已落地（2026-11-19 十七批）**。
 - **Phase A（类型层级重构 + 常数消费落地面）**：§2.2 全部（改名面/分派/kernel kwarg/测量转发/imag+Exact 容器切换/hybriddynamics 算法守卫）。验收：**frozen 全套不回归**（203 闸门 + observables golden + 测量电池逐位）；imag + Exact 容器 = `ExactHybridizationKernel`（带号 normdelta 守卫单测）；`Base.:+` 分派与混合抛错单测；**hybriddynamics 算法守卫单测**（Exact × ExactTTI → ArgumentError；Frozen × 三算法不回归）。
-- **Phase B（exactif 核心 + real/mixed 路由 + 因子化裁决门）**：§2.1；`ifd_backend_switch` 拒绝面（real/mixed + Exact ArgumentError）关闭改路由 `exactif_kernel`。验收：ExactDelta/ExactIFKernel 读数与旧栈（backup 可跑）逐位或机器精度对拍；`H.normdelta` vs IFD 金标准逐位；**imag + Exact 端到端 Z**（`correlationfunction`/`exactif_kernel` → `sysdynamics(kernel=…)` → `integrate`）vs IFD 金标准 `normdelta · Pf(B)` 机器精度；比值观测量带/不带常数同值（相消实证）；**多浴因子化裁决**（双浴联合构造 vs blocks+ / normdelta× 对拍——成立则 `Base.:+` Exact 语义落地为乘法，不成立则拒绝面单测）。
+- **Phase B（exactif 核心 + real/mixed 路由 + 因子化裁决门 + 金标准）**：§2.1 + §2.5；`ifd_backend_switch` 拒绝面（real/mixed + Exact ArgumentError）关闭改路由 `exactif_kernel`。验收：ExactDelta/ExactIFKernel 读数与旧栈（backup 可跑）逐位或机器精度对拍；`H.normdelta` vs IFD 金标准逐位；**imag + Exact 端到端 Z**（`correlationfunction`/`exactif_kernel` → `sysdynamics(kernel=…)` → `integrate`）vs IFD 金标准 `normdelta · Pf(B)` 机器精度；比值观测量带/不带常数同值（相消实证）；**多浴因子化裁决**（双浴联合构造 vs blocks+ / normdelta× 对拍——成立则 `Base.:+` Exact 语义落地为乘法，不成立则拒绝面单测）；**金标准 G1/G2 主验收**（§2.5：直接 Trotter vs 严格核装配，order ∈ {1,2} 逐对机器精度——不过 = 停）。
 - **Phase C（管线）**：§2.3。验收：`exactif_pipeline`/`frozen_pipeline` 端到端 gt/lt 对 `validation/` CSV 机器精度回归（dsol 系列档案）；Z 常数取数 = kernel 字段按类型。
 - **Phase D（imag 工具族）**：§2.4。验收：三验证脚本对 `validation/imag_*.csv` 全量数值回归。
-- **Phase E（清理 + 测试 + 合并接口裁决）**：`test/exactif/` 套件（核心对拍 + CSV 回归精简版 + 类型分派/守卫/裁决门单测）；`changes.md`；**合并接口裁决点**（用户预设推迟：Exact 行为经 Phase B–D 完全摸清后，裁 Frozen/Exact 合一与否——若合一，统一类型回收 `HybridizationKernel` 名并内化分派；本计划不预设结论）。
+- **Phase E（清理 + 测试 + 合并接口裁决）**：`test/exactif/` 套件（核心对拍 + CSV 回归精简版 + 类型分派/守卫/裁决门单测 + **金标准 G1/G2 固化**）；`changes.md`；**合并接口裁决点**（用户预设推迟：Exact 行为经 Phase B–D 完全摸清后，裁 Frozen/Exact 合一与否——若合一，统一类型回收 `HybridizationKernel` 名并内化分派；本计划不预设结论）。
 
 ## 4. 不做清单
 
@@ -140,9 +151,89 @@ exactif_kernel(bath, model, N, δt; order, nl, kwargs...)
 - ExactIF 的 `fullfactor` 化（ExactIF = 核构造器定位，不进 W3 因子路线）；
 - 旧栈 API 兼容层（一次性切净）；
 - order 4 Trotter 分解（S4 序列含负时间演化，用户裁决不支持）与非等距离散化（E5）；
-- **BCS strict normdelta**（IFD 刻意留白——待 BCS 后端立项，届时 E4′/E6 契约直接套用）；
+- **BCS strict normdelta**（IFD 刻意留白——待 BCS 后端立项，届时 E4′/E6 契约直接套用）；**BCS bath 金标准**（本计划金标准范围 = normal bath，§2.5）；
 - **双 Exact 浴联合构造接口**（按 §2.2/Phase B 因子化裁决：成立 ⟹ 加法（normdelta 乘）覆盖、无需本接口；不成立 ⟹ `exactif_kernel` 接浴列表联合构造——同一机器喂两浴，裁决前不预建）。
 
 ## 5. 工作量与顺序
 
-Phase 0 已完成；Phase A ≈ 1 天（类型层级改名面 + 分派 + 测量转发）；Phase B ≈ 1.5 天（exactif 核心 + 路由 + 裁决门）；Phase C ≈ 2 天；Phase D ≈ 2 天；Phase E ≈ 0.5 天。总 ≈ 7 天。顺序：A → B → C → D → E；CSV 回归不过全停；合并接口裁决 = Phase E 显式用户裁决点，不预设。
+Phase 0 已完成；Phase A ≈ 1 天（类型层级改名面 + 分派 + 测量转发 + hybriddynamics 守卫）；Phase B ≈ 2 天（exactif 核心 + 路由 + 裁决门 + 金标准 G1/G2——ED 参照 helper ≈ +0.5）；Phase C ≈ 2 天；Phase D ≈ 2 天；Phase E ≈ 0.5 天。总 ≈ 7.5 天。顺序：A → B → C → D → E；CSV 回归与金标准不过全停；合并接口裁决 = Phase E 显式用户裁决点，不预设。
+
+## 6. 落地偏差记录（Phase A，2026-11-21）
+
+- **E6 "两者同给且耦合不一致 → 抛错"未按文实施（Frozen 分支）**：落地语义 =
+  显式 `coupling_norm` 优先（0 = 未给哨兵 → `kernel.coupling_norm`），Frozen
+  不做一致性抛错。原因：two-band ED 锚（fewmodesbath/realtime.jl 两带 U≠0）
+  的既有惯例是 kernel 全带 cn = 2α、K 侧显式传 α——比值观测量下常数分子分母
+  同因子严格相消、"不一致同给"是合法用法；强行抛错/强用 kernel 值都会破坏
+  frozen 基线（实测：强用 kernel 值 → 4e-3 系统偏差）。Exact 分支保留拒绝：
+  显式非零 coupling_norm 响抛（normdelta 当耦合范数用 = 恒错）。
+- **计划外前置修复（IFDiscretization）**：exact 路线 `_quad_nodes` 此前只有
+  GL-M 连续谱方法——DiracDelta 派发后 `f(ϵ)` 抛错、DiscreteSpectrum ±Inf 撑界
+  静默产 Inf/NaN。补离散两方法（物理模式直取、nbath 不消费——docstring
+  「离散谱 = 谱线数目」的实装），IFD test T5 回归（离散直取 == T2 尖峰路线 ==
+  DiracDelta≡单线 DiscreteSpectrum；六金标准全绿）。这是 Phase B 的硬前置：
+  exactif extension 验证锚（zidentity 等）全用 DiracDelta 单模 bath。
+- 测量层 kernel 转发的耦合面：8 入口 `coupling_norm` 缺省从
+  `kernel_coupling_norm(kernel)` 改 0.0（常数改经 kernel 转发按型分派；
+  Frozen 数值逐位不变——Weyl 公式输入同源）；`kernel_coupling_norm` 保留为
+  E4′ 单一取数点（Frozen → Σα / Exact → normdelta / nothing → 0），供管线
+  Z 常数取数。
+
+## 7. 实施进展（2026-11-21 会话）
+
+**已完成**：
+- **Phase A 全部落地并验收**：类型层级（`AbstractHybridizationKernel` +
+  `FrozenHybridizationKernel` + `ExactHybridizationKernel`，构造期 canonical
+  化抽共用 `_canon_kernel_blocks`；`HybridizationKernel` 名退役无 alias）+
+  常数消费分派（`_constant_lscale` 双方法 + sysdynamics/`_system_factor_fock`
+  `kernel` kwarg + Exact 号折首站 `lmul!`）+ 测量层 8 入口 kernel 转发 +
+  hybriddynamics 算法守卫（Exact × ExactTTI → ArgumentError）+ imag+Exact
+  构造路线归位（元组解包 → Exact 容器）+ exports。验收 = 58 testsets + 3
+  fixtures（weyl 4.5e-16 / BCS 12 / ExactTTI 6）全绿。
+- **Phase B 核心（部分）**：`src/influencefunctional/exactif.jl`——
+  `native_schedule`/`trotter_factors`（order ∈ {1,2}，E5 裁剪）+ bath Gaussian
+  机器（`pfaffian`/`bath_norm` 等 extension 逐字）+ `StrictDelta`（去 QuAPI
+  容器化中间载体）+ `quapi_strictdelta`（IFD `exact_fermionic_Δt_cells` 四分支
+  块 → legpos 无损重构）+ `exactif_kernel`（跨支负号折入 blockification →
+  `ExactHybridizationKernel`）+ `exactif_pipeline`/`exactif_Z`/
+  `exactif_expectation`（调度门管线骨架）+ 折叠 `fock_sysdynamics` `gates`
+  调度 kwarg（real/mixed、order=1 组合强制、Td 累计时间）。
+
+**Phase B 停点（金标准未过全停——§3 纪律）**：zidentity 证书
+（Z = ∫·normdelta ≡ 1，Toulouse εd=0）在 GTEMPO 新栈上 **order1/N=2 机器
+精度（4.4e-16）、其余配置 O(δt) 残差（~5e-3）**。取证定谳：
+
+1. **GTEMPO 收缩侧已严格**：∫ 逐位等于 IFD 契约装配 det(A)（紧凑 (ā,a) 子块
+   + 测度 −1 + 单位链 + 闭合边 + 真空 ρ₀ 的行列式）——含 N=2 逐位一致。
+2. **根因 = K 链机器**：新栈 `fock_sysdynamics` 胞 = S·W（W = anti-Wick/Weyl
+   局部权重）——这是冻结核路线的 O(δt)/O(δt²) 测度象（冻结路线由 Weyl 标量
+   补偿、ED 锚 1e-4 容差看不见）；严格契约要的是旧栈
+   `_propagator_sparsegmps` 的**裸 Berezin 机器**：逐门**跨片二站点传播子
+   因子**（bra 变量在节点 idx+1、ket 在节点 idx，Fock 矩阵元的精确相干态
+   单项式展开、无 W 权重）+ `boundarycondition!`（exp(GTerm(ā⁻(k),a⁺(k);−1))
+   Keldysh 折返）+ `systhermalstate!`（ρ₀）。新栈落点 = GM 因子机器
+   （`MonomialSum` 4^B 单项式 / Pairing 二站点）+ expmult!/mult! 链。
+3. **节点-片映射定谳**：新格 Weyl 胞布局（a = 片左端 t_{j−1}、ā = 片右端
+   t_j）⟹ 片 j 隐含节点 j（a）与 j+1（ā）；旧格 Nt 片 + k = Nt+1 节点一一
+   对应新格 Nt 片（**当前 exactif.jl 的 Nt = npairs+1 + 尾窗与 Δ 整片映射
+   需按此重做**：Δ 点 p ↔ {a@片p, ā@片p−1}、门 = 同片因子 exp(ā_j S a_j)）。
+4. **会话内临时状态**：exactif.jl 为未接线 WIP（不进 runtests），全量回归
+   不受影响；`gates` kwarg 缺省 nothing = 现行路径逐位不变。
+
+**下一步（Phase B 续）**：①裸 K 链机器移植（MonomialSum 门因子 + 折返因子
++ ρ₀ 因子，符号约定由 zidentity 证书机器精度钉定）；②按节点映射重做
+`_strict_pos`/管线 lattice；③G1/G2 金标准；④因子化裁决门。
+
+## 8. 关联修复（IFDiscretization，2026-11-21，两处实证 bug）
+
+1. **exact 路线谱支持**：`_quad_nodes` 原只有 GL 连续谱方法——DiracDelta
+   派发后 `f(ϵ)` 抛错、DiscreteSpectrum ±Inf 撑界静默产 Inf/NaN。补离散两
+   方法（物理模式直取、nbath 不消费）+ T5 回归（离散直取 == T2 尖峰路线 ==
+   DiracDelta ≡ 单线 DiscreteSpectrum；六金标准绿）。
+2. **realtime prefactor 真空权重归一**：IFD 移植把旧 QuAPI 的
+   `1/(1+exp(−βε))`（真空权重 1−n̄）改写成物理占据 `1/(exp(βε)+1)`——差每模
+   e^{βε}，**对称谱（Σε=0：金标准半圆/T2 双线）下两种公式简并、掩盖至今**；
+   非对称离散谱 Z 证书直接破（Z = e^{−βΣε}）。修复 = Π(1−n̄)·detBB（实时
+   结构化 + 稠密参照两处；混合路径经 Zb=Π(1+e^{−βε}) 已是真空归一、未动）。
+   新增「Z 证书扩展：非对称离散谱」回归（DiracDelta 单模/DiscreteSpectrum
+   双线 × orders 1/2 × μ 平移，Z ≡ 1 机器；实时金标准 74/74 绿）。

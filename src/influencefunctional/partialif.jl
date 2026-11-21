@@ -19,7 +19,7 @@
 # 仅 Z2/Z2Z2（D7 守卫在 kernel 构造端已断言）。
 
 "kernel 是否含跨带键（band_i ≠ band_j 的键——跨带耦合核或 BCS 轨道核）"
-_has_cross_band_keys(kernel::HybridizationKernel) =
+_has_cross_band_keys(kernel::AbstractHybridizationKernel) =
     any(key[1].band != key[2].band for key in keys(kernel.blocks))
 
 """
@@ -41,11 +41,11 @@ lattice 可包含比 kernel 更多的 bands（核外带 = 观测站，不进因�
 不补号。核的跨味键已由 `HybridizationKernel` 构造器 canonical 化为 (ā, a)
 取向（构造期换腿+转置+取负），Pairing 单取向路由按键直读、无取向检查。
 """
-function fullfactor(kernel::HybridizationKernel, lattice::AbstractGrassmannLattice)
+function fullfactor(kernel::AbstractHybridizationKernel, lattice::AbstractGrassmannLattice)
     return _fullfactor(kernel, lattice)
 end
 
-function _fullfactor(kernel::HybridizationKernel, lattice::AbstractGrassmannLattice)
+function _fullfactor(kernel::AbstractHybridizationKernel, lattice::AbstractGrassmannLattice)
     B = lattice.bands
     # kernel 作用域变量槽：(链站, band)，站升序（带解析站号 = (块号−1)·B + band
     # 天然互异——Pairing 站点表唯一性契约自动满足）
@@ -94,7 +94,7 @@ end
 kernel.bands 全部变量（恒就地单链装配）；第二输入 err = 累计总截断误差，
 返回 (state, err + 本步截断误差)；乘法压缩截断 = alg.trunc"
 function _partialif_state!(gmps, err::Float64, lattice::AbstractGrassmannLattice,
-                           kernel::HybridizationKernel, alg::PartialIF)
+                           kernel::AbstractHybridizationKernel, alg::PartialIF)
     exp = GM.PartialExp(alg_mult=SVDCompression(trunc=alg.trunc))
     state, e = GM.expmult!(gmps, _fullfactor(kernel, lattice), exp)
     return state, err + e
@@ -104,7 +104,7 @@ end
 折叠后逐秩一分量 mult!（精确因子化）；第二输入 err = 累计总截断误差，
 返回 (state, err + 本步截断误差)；乘法压缩截断 = alg.trunc"
 function _polarif_state!(gmps, err::Float64, lattice::AbstractGrassmannLattice,
-                         kernel::HybridizationKernel, alg::PolarIF)
+                         kernel::AbstractHybridizationKernel, alg::PolarIF)
     exp = GM.PolarExp(rtol=alg.rtol, alg_mult=SVDCompression(trunc=alg.trunc))
     state, e = GM.expmult!(gmps, _fullfactor(kernel, lattice), exp)
     return state, err + e

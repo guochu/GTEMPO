@@ -110,6 +110,7 @@ export ScaledScalar, value
 
 # correlation functions
 export correlationfunction, coupling_norm, ContourBlockIndex, changebands
+export AbstractHybridizationKernel, FrozenHybridizationKernel, ExactHybridizationKernel
 
 # K 构造（SystemFactorPreparation/prepare_system/clear_cache! 随旧径 V2 删除）
 export sysdynamics, OperatorInsertion, LocalOp, FockOp
@@ -117,11 +118,13 @@ export sysdynamics, OperatorInsertion, LocalOp, FockOp
 # IF 构造（W3/W4 装配面：fullfactor/tti_* = influencefunctional/ 后端统一入口）
 export InfluenceFunctionalAlgorithm, PartialIF, PolarIF, ExactTTI
 export fullfactor, tti_factors, is_tti
+export exactif_kernel, exactif_pipeline, exactif_Z, exactif_expectation,
+       trotter_factors, native_schedule, NativeSchedule, pfaffian, bath_norm
 export hybriddynamics!
 export var_charge, cell_charges, fock_charges
 export FockMPO, SparseFockMPO, fock_sysdynamics,
        sparsefockmpo, fockmpo2gmps, fockmpo2gmps_deprecated, gmps2fockmpo
-export HybridizationKernel, hybriddynamics, hybriddynamics!
+export hybriddynamics, hybriddynamics!
 
 # 观测量（Phase 5b：inserted-K 边界观测 + 算符缓存原始关联两轨，D5 裁决见 measurements/）
 export occupation, greater, lesser, matsubara, default_branch, nn

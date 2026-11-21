@@ -3,10 +3,10 @@ import TensorKit as TK
 β0 = 1.0
 bath0 = discretefermionicbath([1.0], [0.5]; β=β0)
 
-@testset "API: HybridizationKernel（W2 重定义）" begin
+@testset "API: FrozenHybridizationKernel（W2 重定义）" begin
 	lat = GrassmannLattice(N=4, δt=0.1, contour=:real)
 	kernel = correlationfunction(bath0, lat)
-	@test kernel isa HybridizationKernel
+	@test kernel isa FrozenHybridizationKernel
 	@test TK.scalartype(typeof(kernel)) == ComplexF64
 	@test TK.scalartype(kernel) == ComplexF64          # 泛型回退覆盖实例（仅 Type 定义）
 	@test kernel.bands == [1]
@@ -21,7 +21,7 @@ bath0 = discretefermionicbath([1.0], [0.5]; β=β0)
 	bath_bcs = bcsbath(fermionicbath(DiracDelta(ω=1.0, α=0.5), β=β0), Δ=0.3)
 	lat_b = GrassmannLattice(N=4, δt=0.1, bands=2, contour=:real, symmetry=Z2Symmetry())
 	kbcs = correlationfunction(bath_bcs, lat_b)
-	@test kbcs isa HybridizationKernel && kbcs.bands == [1, 2]
+	@test kbcs isa FrozenHybridizationKernel && kbcs.bands == [1, 2]
 	@test kbcs.coupling_norm == 2 * coupling_norm(bath_bcs)   # 带对各 α → 2×
 	@test haskey(kbcs.blocks, (ContourBlockIndex(:+, 1, true), ContourBlockIndex(:-, 2, true)))  # ud 反常键（双腿 ā）
 	@test haskey(kbcs.blocks, (ContourBlockIndex(:-, 2, false), ContourBlockIndex(:+, 1, false)))  # du 反常键（双腿 a）
@@ -122,7 +122,7 @@ end
 	M = randn(ComplexF64, 4, 4)
 	blocks = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{ComplexF64},CorrelationMatrix{ComplexF64}}}(
 		(ContourBlockIndex(:τ, 1, false), ContourBlockIndex(:τ, 2, true)) => M)   # (a, ā) 键
-	kernel = HybridizationKernel(blocks, 0.0, [1, 2])
+	kernel = FrozenHybridizationKernel(blocks, 0.0, [1, 2])
 	@test haskey(kernel.blocks, (ContourBlockIndex(:τ, 2, true), ContourBlockIndex(:τ, 1, false)))
 	@test length(kernel.blocks) == 1
 	@test Matrix(kernel.blocks[(ContourBlockIndex(:τ, 2, true), ContourBlockIndex(:τ, 1, false))]) ==
@@ -133,7 +133,7 @@ end
 	Mc = Matrix(-transpose(M))
 	blocks_c = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{ComplexF64},CorrelationMatrix{ComplexF64}}}(
 		(ContourBlockIndex(:τ, 2, true), ContourBlockIndex(:τ, 1, false)) => Mc)
-	kernel_c = HybridizationKernel(blocks_c, 0.0, [1, 2])
+	kernel_c = FrozenHybridizationKernel(blocks_c, 0.0, [1, 2])
 	fa = fullfactor(kernel, lat)
 	fc = fullfactor(kernel_c, lat)
 	@test fa isa GM.Pairing && fc isa GM.Pairing
@@ -147,7 +147,7 @@ end
 	cm = CorrelationMatrix(ComplexF64[1.0, 0.5, 0.25], ComplexF64[1.0, 0.5, 0.125])
 	blocks_cm = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{ComplexF64},CorrelationMatrix{ComplexF64}}}(
 		(ContourBlockIndex(:τ, 1, false), ContourBlockIndex(:τ, 1, true)) => cm)
-	kcm = HybridizationKernel(blocks_cm, 0.0, [1])
+	kcm = FrozenHybridizationKernel(blocks_cm, 0.0, [1])
 	Mcm = Matrix(kcm.blocks[(ContourBlockIndex(:τ, 1, true), ContourBlockIndex(:τ, 1, false))])
 	@test Mcm == Matrix(-transpose(Matrix(cm)))
 
@@ -157,7 +157,7 @@ end
 	blocks2 = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{ComplexF64},CorrelationMatrix{ComplexF64}}}(
 		(ContourBlockIndex(:τ, 1, false), ContourBlockIndex(:τ, 2, true)) => A,   # → (2T;1F): −Aᵀ
 		(ContourBlockIndex(:τ, 2, true), ContourBlockIndex(:τ, 1, false)) => B)   # canonical 原样
-	k2 = HybridizationKernel(blocks2, 0.0, [1, 2])
+	k2 = FrozenHybridizationKernel(blocks2, 0.0, [1, 2])
 	@test Matrix(k2.blocks[(ContourBlockIndex(:τ, 2, true), ContourBlockIndex(:τ, 1, false))]) ==
 	      B + (-transpose(A))
 
@@ -165,7 +165,7 @@ end
 	blocks3 = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{ComplexF64},CorrelationMatrix{ComplexF64}}}(
 		(ContourBlockIndex(:τ, 1, true), ContourBlockIndex(:τ, 2, true)) => M,    # (ā, ā)
 		(ContourBlockIndex(:τ, 2, false), ContourBlockIndex(:τ, 1, false)) => Mc) # (a, a)
-	k3 = HybridizationKernel(blocks3, 0.0, [1, 2])
+	k3 = FrozenHybridizationKernel(blocks3, 0.0, [1, 2])
 	@test haskey(k3.blocks, (ContourBlockIndex(:τ, 1, true), ContourBlockIndex(:τ, 2, true)))
 	@test haskey(k3.blocks, (ContourBlockIndex(:τ, 2, false), ContourBlockIndex(:τ, 1, false)))
 	@test k3.anomalous == true

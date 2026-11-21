@@ -141,7 +141,7 @@ end
 			blocks[(ContourBlockIndex(br1, b1, true), ContourBlockIndex(br2, b2, false))] =
 				randn(rng, T, n1, n2)
 		end
-		HybridizationKernel(blocks, 0.0, sort(unique(bands_list)))
+		FrozenHybridizationKernel(blocks, 0.0, sort(unique(bands_list)))
 	end
 	gd2(x, y) = maximum(abs.(x .- y))
 	# ⚠️ dense oracle 按 2^(2·站数) 分配——案例站数上限 8；D=512 覆盖 M ≤ 8 无截断。
@@ -202,7 +202,7 @@ end
 			blocks[(ContourBlockIndex(br1, b1, true), ContourBlockIndex(br2, b2, false))] =
 				randn(rng, T, n1, n2)          # 一般稠密核（非 Toeplitz，Matrix 值）
 		end
-		HybridizationKernel(blocks, 0.0, sort(unique(bands_list)))
+		FrozenHybridizationKernel(blocks, 0.0, sort(unique(bands_list)))
 	end
 	gd(x, y) = maximum(abs.(x .- y))
 
@@ -268,7 +268,7 @@ end
 		blocks = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{ComplexF64},CorrelationMatrix{ComplexF64}}}(
 			(ContourBlockIndex(:τ, 1, true), ContourBlockIndex(:τ, 2, false)) => M,
 			(ContourBlockIndex(:τ, 2, true), ContourBlockIndex(:τ, 1, false)) => ring_kernel(lower .* 0.5, 0.01im))
-		kernel = HybridizationKernel(blocks, 0.1, [1, 2])
+		kernel = FrozenHybridizationKernel(blocks, 0.1, [1, 2])
 		exact, diagx = hybriddynamics(lat, kernel, ExactTTI())
 		full, _ = hybriddynamics(lat, kernel, PartialIF())
 		@test exact isa GM.GMPS                       # 跨带核恒单链
@@ -284,7 +284,7 @@ end
 		blocks = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{ComplexF64},CorrelationMatrix{ComplexF64}}}(
 			(ContourBlockIndex(:τ, 1, true), ContourBlockIndex(:τ, 2, true)) => M,
 			(ContourBlockIndex(:τ, 2, false), ContourBlockIndex(:τ, 1, false)) => ring_kernel(lower .* 0.5, -0.02im))
-		kernel = HybridizationKernel(blocks, 0.1, [1, 2])
+		kernel = FrozenHybridizationKernel(blocks, 0.1, [1, 2])
 		@test kernel.anomalous == true
 		exact, diagx = hybriddynamics(lat, kernel, ExactTTI())
 		full, _ = hybriddynamics(lat, kernel, PartialIF())
@@ -302,7 +302,7 @@ end
 			blocks[(ContourBlockIndex(b1, 1, true), ContourBlockIndex(b2, 2, false))] =
 				blocks[(ContourBlockIndex(b1, 1, true), ContourBlockIndex(b2, 1, false))]
 		end
-		kernel = HybridizationKernel(blocks, 0.2, [1, 2])
+		kernel = FrozenHybridizationKernel(blocks, 0.2, [1, 2])
 		exact, diagx = hybriddynamics(lat, kernel, ExactTTI())
 		full, _ = hybriddynamics(lat, kernel, PartialIF())
 		@test exact isa GM.GMPS
@@ -317,7 +317,7 @@ end
 		lat = GrassmannLattice(N=3, δτ=0.25, bands=2, contour=:imag)
 		blocks = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{ComplexF64},CorrelationMatrix{ComplexF64}}}(
 			(ContourBlockIndex(:τ, 1, true), ContourBlockIndex(:τ, 2, false)) => randn(rng, ComplexF64, 3, 3))
-		kernel = HybridizationKernel(blocks, 0.0, [1, 2])
+		kernel = FrozenHybridizationKernel(blocks, 0.0, [1, 2])
 		@test is_tti(collect(values(kernel.blocks))[1]) == false
 		@test_throws ArgumentError tti_factors(kernel, lat)
 		@test_throws ArgumentError hybriddynamics(lat, kernel, ExactTTI())
@@ -330,7 +330,7 @@ end
 		for b1 in (:+, :-), b2 in (:+, :-)
 			blocks[(ContourBlockIndex(b1, 1, true), ContourBlockIndex(b2, 2, true))] = randn(rng, ComplexF64, 2, 2)
 		end
-		kernel = HybridizationKernel(blocks, 0.0, [1, 2])
+		kernel = FrozenHybridizationKernel(blocks, 0.0, [1, 2])
 		@test_throws ArgumentError tti_factors(kernel, lat)
 		@test_throws ArgumentError hybriddynamics(lat, kernel, ExactTTI())
 	end
@@ -344,7 +344,7 @@ end
 		end
 		blocks = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{ComplexF64},CorrelationMatrix{ComplexF64}}}(
 			(ContourBlockIndex(:τ, 1, true), ContourBlockIndex(:τ, 1, false)) => M)
-		kernel = HybridizationKernel(blocks, 0.0, [1])
+		kernel = FrozenHybridizationKernel(blocks, 0.0, [1])
 		@test is_tti(M)
 		@test_throws ArgumentError tti_factors(kernel, lat)
 		@test_throws ArgumentError hybriddynamics(lat, kernel, ExactTTI())

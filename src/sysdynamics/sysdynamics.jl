@@ -232,7 +232,8 @@ end
 
 """
     sysdynamics(lattice, model; order=1, initial_state=nothing,
-                coupling_norm=0.0, insertions=OperatorInsertion[], trunc) -> GMPS
+                coupling_norm=0.0, kernel=nothing, insertions=OperatorInsertion[],
+                trunc) -> GMPS
 
 杂质系统因子 K（order=1 相干 anti-Wick 语义，q=1 局部权重）。实现 =
 `fock_sysdynamics`（穿戴内联：Fock 直积 MPO 装配 + 切位 ≥ 1 插入稀疏乘法 +
@@ -240,6 +241,13 @@ end
 自读 + 迹闭合 + split_cell/pairize 分站 + reorder）。ρ₀/迹闭合已折进单元
 （boundarycondition! 不再需要）；`initial_state`（FockMatrix/矩阵）仅实时
 轮廓生效（缺省 = 真空投影）。
+
+**Z 常数消费**（exactif_port_plan E6）：`kernel::Union{Nothing,
+AbstractHybridizationKernel}` 按类型分派——`kernel === nothing` = 现行
+`coupling_norm` → Weyl 公式（Frozen 缺省语义）；`kernel !== nothing` =
+`_constant_lscale(kernel, lattice, order)`（Frozen = Weyl 公式，显式
+`coupling_norm` 优先、0 = 未给哨兵取 kernel.coupling_norm；Exact =
+log|normdelta| + 号折首站，Weyl 通道不适用）。`logscale` 累加语义（E2）不变。
 """
 function sysdynamics(lattice::AbstractGrassmannLattice, model::AbstractImpurityHamiltonian;
                      order::Integer=1, kwargs...)

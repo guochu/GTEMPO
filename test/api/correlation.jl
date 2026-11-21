@@ -5,7 +5,7 @@
 	# 虚时：τ/τ 块（CorrelationMatrix 存储）
 	lat = GrassmannLattice(N=4, δτ=0.25, contour=:imag)
 	kernel = correlationfunction(bath, lat)
-	@test kernel isa HybridizationKernel
+	@test kernel isa FrozenHybridizationKernel
 	@test kernel.blocks[(ContourBlockIndex(:τ, 1, true), ContourBlockIndex(:τ, 1, false))] isa CorrelationMatrix
 	@test eltype(first(values(kernel.blocks))) == Float64   # 实谱虚时核 = Float64（T = scalartype(corr)）
 	# 实时：四块（跨支 = CorrelationMatrix，Toeplitz 向量存储）
@@ -68,7 +68,7 @@ end
 	blocks = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{ComplexF64},CorrelationMatrix{ComplexF64}}}()
 	key = (ContourBlockIndex(:τ, 1, true), ContourBlockIndex(:τ, 1, false))
 	blocks[key] = CorrelationMatrix(ComplexF64[0.3, 0.2, 0.1, 0.05], ComplexF64[0.3, 0.2, 0.1, 0.05])
-	kcx = HybridizationKernel(blocks, 0.4, [1])
+	kcx = FrozenHybridizationKernel(blocks, 0.4, [1])
 	ksum = kimg + kcx
 	@test ksum.blocks[key] isa CorrelationMatrix
 	@test eltype(ksum.blocks[key]) == ComplexF64
@@ -97,16 +97,18 @@ end
 	@test collect(pairs(k1.blocks)) == collect(pairs(k2.blocks))
 
 
-	# 非 QuAPI scheme 拒绝（2026-11-19 限定：GTEMPO 暂只运行在 QuAPI 离散化
-	# 框架；Exact/严格核消费（骨架+踢契约、normdelta·Pf(B)）待 exactif_port_plan
-	# 随 scheme 面恢复）
+	# scheme 面（exactif_port_plan Phase A 路由归位）：imag + Exact = 严格 τ 环
+	# 点值核 + normdelta 元组解包 → ExactHybridizationKernel（带号 Z 常数）；
+	# real/mixed + Exact 拒绝（装配级骨架+踢契约走 exactif_kernel，Phase B 路由）
 	spec = spectrum_func()
 	bathc = fermionicbath(spec, β=β, μ=0.0)
 	scheme = IFD.ExactEqualDistantKernel(IFD.EDToulouseSolver(8))
-	@test_throws ArgumentError correlationfunction(bathc, latτ, scheme)
+	kex = correlationfunction(bathc, latτ, scheme)
+	@test kex isa ExactHybridizationKernel && isfinite(kex.normdelta) && kex.normdelta != 0
 	@test_throws ArgumentError correlationfunction(bathc, latr, scheme)
 	@test_throws ArgumentError correlationfunction(bath, latr, scheme)
+	@test_throws ArgumentError correlationfunction(bathc, latm, scheme)
 	# 非法 scheme → MethodError 自然冒泡
 	@test_throws MethodError correlationfunction(bath, latτ, "bogus")
-	# scheme 面收口（QuAPI 限定；Exact 随 exactif_port_plan 恢复时一并回归）
+	# scheme 面收口（Exact 真实/混合路由 = exactif_kernel，exactif_port_plan Phase B）
 end

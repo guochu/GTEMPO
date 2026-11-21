@@ -1,4 +1,5 @@
-# correlationfunction.jl：浴关联 → 单元级杂化核（HybridizationKernel{T}）
+# correlationfunction.jl：浴关联 → 单元级杂化核（Abstract/Frozen/Exact
+# HybridizationKernel 类型层级，exactif_port_plan E6）
 #
 # plan/if_expmult_backend_plan.md W2（2026-11-17 用户五裁决）：旧
 # HybridizationKernel{L,C}（lattice + QuAPI corr 本体 + (Symbol,Symbol) 视图 +
@@ -11,6 +12,12 @@
 # 核键 = (branch, band, conj) 完备腿信息构造期写定，装配端（fullfactor/
 # hybriddynamics）按键直读、bcs 味旗标退役。Kernel 从此对任意 bath 自完备。
 #
+# 2026-11-21（exactif_port_plan Phase A，E6 用户裁决）：HybridizationKernel
+# 类型层级化——AbstractHybridizationKernel + FrozenHybridizationKernel（现行
+# QuAPI 冻结核改名）/ ExactHybridizationKernel（IFD 严格核对接，带号
+# normdelta 单一存储）；
+# `HybridizationKernel` 名退役（统一类型回收与否 = Phase E 合并接口裁决）；
+# 常数消费 = 类型分派 `_constant_lscale`（sysdynamics/fockmpo.jl）。
 # 存储约定（构造期符号收编——读点直读）：
 #   blocks[(CBI(b1,band,ca), CBI(b2,band,cb))][i, j] = IF 指数系数（i, j =
 #   分支局部格点下标；行腿味 ca、列腿味 cb——normal 键 = (ā, a) 即
@@ -32,7 +39,7 @@
 # Keldysh 基的一个相对号，公式层常数（2026-11-18 裁决保留，见 inserted_k.jl）。
 
 # ---------------------------------------------------------------------------
-# ContourBlockIndex + HybridizationKernel{T}
+# ContourBlockIndex + 核类型层级（Abstract/Frozen/Exact——exactif_port_plan E6）
 # ---------------------------------------------------------------------------
 
 """
@@ -52,9 +59,24 @@ struct ContourBlockIndex
 end
 
 """
-    HybridizationKernel{T<:Number}
+    AbstractHybridizationKernel
 
-单元级杂化核（canonical 指数系数约定，见文件头存储约定）：
+单元级杂化核的抽象基类（exactif_port_plan E6，2026-11-20 用户裁决：类型层级
+取代 scheme 字段）。两具体型共享同一数据面：`blocks`（ContourBlockIndex 对
+键）、`bands::Vector{Int}`、`anomalous::Bool`（构造器从键派生）；常数面按型
+分派——`FrozenHybridizationKernel.coupling_norm`（Σα，Weyl 标量）/
+`ExactHybridizationKernel.normdelta`（带号 Z 常数）。下游
+（`correlationfunction`/`fullfactor`/`hybriddynamics`/PartialIF 系/
+measurements）一律消费抽象型。
+"""
+abstract type AbstractHybridizationKernel end
+
+"""
+    FrozenHybridizationKernel{T<:Number} <: AbstractHybridizationKernel
+
+单元级杂化核（canonical 指数系数约定，见文件头存储约定）——QuAPI 冻结核
+离散化（原 `HybridizationKernel` 改名；`HybridizationKernel` 名退役，统一
+类型回收与否 = exactif_port_plan Phase E 合并接口裁决点）：
 
 - `blocks::Dict{Tuple{ContourBlockIndex,ContourBlockIndex}, Union{Matrix{T},CorrelationMatrix{T}}}`
   ——块键 = (行腿, 列腿) 的 ContourBlockIndex 对；`CorrelationMatrix` = QuAPI
@@ -74,65 +96,111 @@ end
 构造期换腿 + 转置 + 换序号取负（`v·a_i·ā_j = (−vᵀ)·ā_j·a_i`）；同味键
 （(ā,ā)/(a,a)）无 normal-conj 等效形、原样保留。核存储恒 canonical，消费端
 （`fullfactor` 的 Pairing 路由、ExactTTI 味对分组）按键直读、无取向检查。
-- `coupling_norm::Float64` = 全带总耦合 Σ_b α_b（Weyl 标量补偿用；scheme
-  语义扩展——如 Exact 的 normdelta 透传——待 exactif_port_plan 随 scheme 面
-  恢复时引入）。
 
 `scalartype` 仅 Type 上定义（TensorKit 泛型回退 scalartype(x) =
 scalartype(typeof(x)) 自动覆盖实例）；T 由构造端 = `scalartype(corr)` 动态定
 （实谱虚时核 Float64、复谱/实时/混合核 ComplexF64——见下方 QuAPI 容器
 scalartype 表）。
 """
-struct HybridizationKernel{T<:Number}
+struct FrozenHybridizationKernel{T<:Number} <: AbstractHybridizationKernel
     blocks::Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{T},CorrelationMatrix{T}}}
     coupling_norm::Float64
     bands::Vector{Int}
     anomalous::Bool     # 异味键存在（构造器从键派生）
 
-    function HybridizationKernel(blocks::Dict{Tuple{ContourBlockIndex,ContourBlockIndex},
-                                              Union{Matrix{T},CorrelationMatrix{T}}},
-                                 coupling_norm::Real, bands::Vector{Int}) where {T<:Number}
+    function FrozenHybridizationKernel(blocks::Dict{Tuple{ContourBlockIndex,ContourBlockIndex},
+                                                   Union{Matrix{T},CorrelationMatrix{T}}},
+                                       coupling_norm::Real, bands::Vector{Int}) where {T<:Number}
         isfinite(coupling_norm) && coupling_norm >= 0 ||
             throw(ArgumentError("invalid coupling norm $coupling_norm"))
         isempty(bands) && throw(ArgumentError("empty band list"))
         allunique(bands) && issorted(bands) || throw(ArgumentError(
             "bands must be a sorted list of unique band indices, got $bands"))
         all(b -> b >= 1, bands) || throw(ArgumentError("band indices must be ≥ 1"))
-        # canonical 化（存储约定：核恒 canonical 取向）：跨味键 (a, ā) 等效转换
-        # 为 (ā, a)——项 v[i₁,i₂]·a_i₁·ā_i₂ = (−v)·ā_i₂·a_i₁（费米换序号 −1）
-        # ⟹ 换腿 + 转置 + 取负；同味键（(ā,ā)/(a,a)，BCS 反常通道）无 normal-conj
-        # 等效形，原样保留。碰撞（同一 canonical 键多来源）= 加法合并（双线性
-        # 项求和的代数事实；well-formed 核无碰撞）。消费端（fullfactor 的 Pairing
-        # 路由、ExactTTI 味对分组）按键直读、无取向检查。
-        canon = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},
-                     Union{Matrix{T},CorrelationMatrix{T}}}()
-        for (key, value) in blocks
-            if !key[1].conj && key[2].conj
-                newkey = (ContourBlockIndex(key[2].branch, key[2].band, true),
-                          ContourBlockIndex(key[1].branch, key[1].band, false))
-                # CM = IFD transpose（两 Toeplitz 向量互换）+ 取负，容器原样；
-                # 稠密块物化（-transpose 为惰性 Transpose 包装器，须落 Matrix）
-                v = value isa CorrelationMatrix ? -transpose(value) :
-                    Matrix(-transpose(value))
-            else
-                newkey = key
-                v = value
-            end
-            canon[newkey] = haskey(canon, newkey) ? canon[newkey] + v : v
-        end
-        for (key, value) in canon
-            key[1].band in bands && key[2].band in bands || throw(ArgumentError(
-                "block key $(key) references bands outside the kernel band list $bands"))
-            all(isfinite, value) || throw(ArgumentError(
-                "nonfinite kernel block $(key[1].branch)/$(key[2].branch) band $(key[1].band)"))
-        end
-        isfinite(coupling_norm) || throw(ArgumentError("nonfinite coupling norm $coupling_norm"))
-        new{T}(canon, Float64(coupling_norm), bands,
-               any(key -> key[1].conj == key[2].conj, keys(canon)))
+        canon, anomalous = _canon_kernel_blocks(blocks, bands, T)
+        new{T}(canon, Float64(coupling_norm), bands, anomalous)
     end
 end
 
-TK.scalartype(::Type{HybridizationKernel{T}}) where {T} = T
+"""
+    ExactHybridizationKernel{T<:Number} <: AbstractHybridizationKernel
+
+严格核（IFD ExactKernel 族）的核容器（exactif_port_plan E4′/E6）：blocks 面
+与 Frozen 完全同构（imag + Exact = τ 环 Toeplitz 点值块，CorrelationMatrix；
+real/mixed + Exact = 精确消元核，非平移不变，dense `Matrix`），整体 Z 常数 =
+`normdelta::Float64`（**带号**，单一存储，不折进 blocks）：
+
+- Δτ 无耦合极限 `(−1)^{NK}·Z_bath`、Δt = `Π n̄ₖ·det(BB)`、Δm =
+  `(−1)^{n(K+1)}·det(BB)/Z_bath`（号约定锚 = IFD 金标准
+  `test/exact/fermionic_{imagtime,realtime,mixedtime}.jl`）；
+- 构造守卫 = `isfinite` + 实值尾取实（IFD 元组第二元随容器标量型带 ~1e-15
+  虚部尾，det 实值）；
+- 下游常数消费 = 类型分派（`_constant_lscale`：log|normdelta| 折进链幅
+  logscale、号经 `lmul!` 折进首站）⟹ Z 与分子同携带，比值观测量严格相消、
+  绝对 Z 与真空形式 n̄_vac 需要（IFD normdelta 语义定谳一致）。
+"""
+struct ExactHybridizationKernel{T<:Number} <: AbstractHybridizationKernel
+    blocks::Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{T},CorrelationMatrix{T}}}
+    normdelta::Float64
+    bands::Vector{Int}
+    anomalous::Bool     # 异味键存在（构造器从键派生）
+
+    function ExactHybridizationKernel(blocks::Dict{Tuple{ContourBlockIndex,ContourBlockIndex},
+                                                  Union{Matrix{T},CorrelationMatrix{T}}},
+                                      normdelta::Number, bands::Vector{Int}) where {T<:Number}
+        isempty(bands) && throw(ArgumentError("empty band list"))
+        allunique(bands) && issorted(bands) || throw(ArgumentError(
+            "bands must be a sorted list of unique band indices, got $bands"))
+        all(b -> b >= 1, bands) || throw(ArgumentError("band indices must be ≥ 1"))
+        canon, anomalous = _canon_kernel_blocks(blocks, bands, T)
+        new{T}(canon, _real_normdelta(normdelta), bands, anomalous)
+    end
+end
+
+"normdelta 实值化守卫：isfinite + 虚部尾 ≤ 1e-12·max(1,|Re|) 取实（det 实值
+契约； genuinely 复值响抛）"
+function _real_normdelta(nd::Number)
+    abs(imag(nd)) <= 1.0e-12 * max(1.0, abs(real(nd))) || throw(ArgumentError(
+        "normdelta must be real (Z constant contract), got imag tail $(imag(nd))"))
+    v = Float64(real(nd))
+    isfinite(v) || throw(ArgumentError("invalid normdelta $nd"))
+    return v
+end
+
+"核 blocks 的 canonical 化 + 键/带一致性守卫（两具体型构造器共用）：
+跨味键 (a, ā) 等效转换为 (ā, a)——换腿 + 转置 + 换序号取负（费米换序号 −1）；
+同味键原样保留。碰撞（同一 canonical 键多来源）= 加法合并（双线性项求和的
+代数事实；well-formed 核无碰撞）。返回 (canon, anomalous)。"
+function _canon_kernel_blocks(blocks::Dict{Tuple{ContourBlockIndex,ContourBlockIndex},
+                                          Union{Matrix{T},CorrelationMatrix{T}}},
+                              bands::Vector{Int}, ::Type{T}) where {T<:Number}
+    canon = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},
+                 Union{Matrix{T},CorrelationMatrix{T}}}()
+    for (key, value) in blocks
+        if !key[1].conj && key[2].conj
+            newkey = (ContourBlockIndex(key[2].branch, key[2].band, true),
+                      ContourBlockIndex(key[1].branch, key[1].band, false))
+            # CM = IFD transpose（两 Toeplitz 向量互换）+ 取负，容器原样；
+            # 稠密块物化（-transpose 为惰性 Transpose 包装器，须落 Matrix）
+            v = value isa CorrelationMatrix ? -transpose(value) :
+                Matrix(-transpose(value))
+        else
+            newkey = key
+            v = value
+        end
+        canon[newkey] = haskey(canon, newkey) ? canon[newkey] + v : v
+    end
+    for (key, value) in canon
+        key[1].band in bands && key[2].band in bands || throw(ArgumentError(
+            "block key $(key) references bands outside the kernel band list $bands"))
+        all(isfinite, value) || throw(ArgumentError(
+            "nonfinite kernel block $(key[1].branch)/$(key[2].branch) band $(key[1].band)"))
+    end
+    return canon, any(key -> key[1].conj == key[2].conj, keys(canon))
+end
+
+TK.scalartype(::Type{FrozenHybridizationKernel{T}}) where {T} = T
+TK.scalartype(::Type{ExactHybridizationKernel{T}}) where {T} = T
 
 # QuAPI 关联函数容器的标量型（kernel 构造端 T = scalartype(corr)——实谱虚时
 # 核全程 Float64、复谱/实时/混合核 ComplexF64；Real/Mixed 在 QuAPI 结构上
@@ -182,9 +250,12 @@ end
 
 """
     correlationfunction(bath::AbstractNormalBath, lattice; band=nothing)
-        -> HybridizationKernel
+        -> FrozenHybridizationKernel
+    correlationfunction(bath::AbstractNormalBath, lattice::AbstractImagGrassmannLattice,
+                        scheme::IFD.ExactEqualDistantKernel; band=nothing)
+        -> ExactHybridizationKernel
 
-从 QuAPI 离散化函数直接提取 canonical 单元级核（IF = exp(Σ ā_i Δ_ij a_j)）——
+从 QuAPI 离散化函数直接提取 canonical 单元级核（IF = exp(Σ ā Δ_ij a_j)）——
 secondorderif kernels.jl 同款三路径（ED 验证过）：
 
 - 虚时：Δτ 的单元矩阵窗口 [1:Nτ, 1:Nτ]；
@@ -193,6 +264,13 @@ secondorderif kernels.jl 同款三路径（ED 验证过）：
 - 混合：Δm 九块，rt [1:Nt]/τ [1:Nτ]；τ↔rt 交叉块构造期整体取负（QuAPI
   Δm 相对物理核差一个负号）。
 
+`scheme`（缺省 `IFD.QuAPI()`）= 冻结核路线（Frozen 容器）。**虚时 + Exact**
+（`IFD.ExactEqualDistantKernel`）= 严格核路线：`exact_fermionic_Δτ` 返回
+`(ImagCorrelationFunction, normdelta)` 元组——blocks 照常窗口化（τ 环点值
+核，CorrelationMatrix 存储）、normdelta 透传 `ExactHybridizationKernel`
+（E4′：严格性全浓缩在带号标量 Z 常数；real/mixed + Exact 的装配级容器
+（骨架+踢契约）不走本路线，见 `exactif_kernel`）。
+
 `band` = 单带构造（blocks 仅该带的键、bands = [band]）；缺省全带（各带键
 值共享同一底层块对象，零拷贝）。`coupling_norm` 自动 = 带数 ×
 `coupling_norm(bath)`（全带总量 Σ_b α_b）。β 不一致告警保留。
@@ -200,12 +278,17 @@ secondorderif kernels.jl 同款三路径（ED 验证过）：
 function correlationfunction(bath::AbstractNormalBath, lattice::AbstractGrassmannLattice,
                              scheme::IFD.DiscretizationScheme=IFD.QuAPI();
                              band::Union{Nothing,Int}=nothing)
-    # scheme 限定（2026-11-19）：暂只接受 QuAPI 冻结核——GTEMPO 全包暂限定在
-    # QuAPI 离散化框架；Exact/严格核消费（骨架+踢契约、normdelta·Pf(B)）
-    # 待 exactif_port_plan 落地后随 scheme 面恢复
-    scheme isa IFD.QuAPI || throw(ArgumentError(
-        "correlationfunction is currently restricted to the QuAPI scheme (frozen kernel), " *
-        "got $(typeof(scheme)) — exact/strict routes are pending exactif_port_plan"))
+    # scheme 路由（exactif_port_plan Phase A 构造路线归位）：QuAPI = 冻结核
+    # （Frozen）；ExactKernel 仅虚时格放行（严格 τ 环点值核 + normdelta 元组，
+    # Exact 容器）；real/mixed + Exact 的装配级骨架+踢契约待 exactif_kernel
+    # 路由（Phase B）
+    scheme isa IFD.QuAPI || scheme isa IFD.ExactKernel || throw(ArgumentError(
+        "unsupported discretization scheme $(typeof(scheme))"))
+    exact = scheme isa IFD.ExactKernel
+    exact && !(lattice isa AbstractImagGrassmannLattice) && throw(ArgumentError(
+        "real/mixed lattices do not support the Exact scheme in correlationfunction: " *
+        "the strict containers carry assembly-level contracts (skeleton + kicks, " *
+        "Z = normdelta · Pf(B)) — use exactif_kernel (see plan/exactif_port_plan.md)"))
     bands = band === nothing ? collect(1:lattice.bands) :
             (1 <= band <= lattice.bands || throw(BoundsError(1:lattice.bands, band));
              [band])
@@ -214,7 +297,13 @@ function correlationfunction(bath::AbstractNormalBath, lattice::AbstractGrassman
             @warn "lattice.β=$(lattice.β), but bath.β=$(bath.β)"
     end
     corr = if lattice isa AbstractImagGrassmannLattice
-        IFD.Δτ(bath; N=lattice.Nτ, δτ=lattice.δτ, scheme)
+        res = IFD.Δτ(bath; N=lattice.Nτ, δτ=lattice.δτ, scheme)
+        if exact
+            normdelta = res[2]                     # exact 元组解包（E4′）
+            res[1]
+        else
+            res
+        end
     elseif lattice isa AbstractRealGrassmannLattice
         IFD.Δt(bath; N=lattice.Nt, t=lattice.Nt * lattice.δt, scheme)
     else
@@ -235,7 +324,10 @@ function correlationfunction(bath::AbstractNormalBath, lattice::AbstractGrassman
                         ContourBlockIndex(b2, first(bands), false))]
         end
     end
-    return HybridizationKernel(blocks, Float64(length(bands) * coupling_norm(bath)), bands)
+    if exact
+        return ExactHybridizationKernel(blocks, normdelta, bands)
+    end
+    return FrozenHybridizationKernel(blocks, Float64(length(bands) * coupling_norm(bath)), bands)
 end
 
 # ---------------------------------------------------------------------------
@@ -262,9 +354,10 @@ end
 
 """
     correlationfunction(bath::AbstractBCSBath, lattice; orbital=nothing)
-        -> HybridizationKernel
+        -> FrozenHybridizationKernel
 
-BCS bath 的核（normal 同一类型）：`orbital` 选 Nambu 对（band1 = 2·orbital−1、
+BCS bath 的核（Frozen 容器；BCS + Exact 无 normdelta 契约——IFD 刻意留白，
+待 BCS 后端立项）：`orbital` 选 Nambu 对（band1 = 2·orbital−1、
 band2 = 2·orbital；lattice 需 bands ≥ band2）；`orbital = nothing`（缺省，行为
 同 AbstractNormalBath 的全带模式）= 全部 Nambu 对（1:lattice.bands÷2）——每个
 orbital 共享同一套杂化函数（四味块每支对只装配一次，多对键零拷贝别名）。
@@ -278,8 +371,8 @@ function correlationfunction(bath::AbstractBCSBath, lattice::AbstractGrassmannLa
                              scheme::IFD.DiscretizationScheme=IFD.QuAPI();
                              orbital::Union{Nothing,Int}=nothing)
     scheme isa IFD.QuAPI || throw(ArgumentError(
-        "correlationfunction is currently restricted to the QuAPI scheme (frozen kernel), " *
-        "got $(typeof(scheme))"))
+        "BCS correlationfunction is restricted to the QuAPI scheme (frozen kernel), " *
+        "got $(typeof(scheme)) — strict BCS normdelta is an IFD leave-blank (BCS backend project)"))
     bcs_symmetry_guard(symmetry(lattice))
     orbitals = orbital === nothing ? collect(1:lattice.bands ÷ 2) :
                (2 * orbital <= lattice.bands || throw(ArgumentError(
@@ -318,7 +411,7 @@ function correlationfunction(bath::AbstractBCSBath, lattice::AbstractGrassmannLa
         end
     end
     bands = reduce(vcat, ([2o - 1, 2o] for o in orbitals))   # orbitals 升序 ⟹ 有序
-    return HybridizationKernel(blocks, length(bands) * coupling_norm(bath), bands)
+    return FrozenHybridizationKernel(blocks, length(bands) * coupling_norm(bath), bands)
 end
 
 # ---------------------------------------------------------------------------
@@ -326,13 +419,15 @@ end
 # ---------------------------------------------------------------------------
 
 """
-    changebands(H::HybridizationKernel, x::Vector{Pair{Int,Int}}) -> HybridizationKernel
+    changebands(H::AbstractHybridizationKernel, x::Vector{Pair{Int,Int}})
+        -> 同型 HybridizationKernel
 
 带重排：按 `x = [old => new, …]` 映射 blocks 键的 `ContourBlockIndex.band`
 （同一 old 可映射到多个 new——块对象别名共享，标量/矩阵数据零改动），
-`bands` = 重排后的有序并集。用途：单带核建一份、重排出多带装配所需带号。
+`bands` = 重排后的有序并集。常数面随型保留（Frozen `coupling_norm` /
+Exact `normdelta`）。用途：单带核建一份、重排出多带装配所需带号。
 """
-function changebands(H::HybridizationKernel, x::Vector{Pair{Int,Int}})
+function changebands(H::AbstractHybridizationKernel, x::Vector{Pair{Int,Int}})
     for old in first.(x)
         old in H.bands || throw(ArgumentError(
             "changebands: source band $old not in kernel bands $(H.bands)"))
@@ -351,7 +446,16 @@ function changebands(H::HybridizationKernel, x::Vector{Pair{Int,Int}})
     end
     bands = sort(union!(collect(Set(last.(x))), collect(Set(
         b for b in H.bands if b ∉ first.(x)))))
-    return HybridizationKernel(blocks, H.coupling_norm, bands)
+    return _retype_kernel(H, blocks, bands)
+end
+
+"同型核重建（changebands/_band_kernel 共用；常数面按型透传）"
+function _retype_kernel(H::AbstractHybridizationKernel, blocks, bands::Vector{Int})
+    H isa FrozenHybridizationKernel &&
+        return FrozenHybridizationKernel(blocks, H.coupling_norm, bands)
+    H isa ExactHybridizationKernel &&
+        return ExactHybridizationKernel(blocks, H.normdelta, bands)
+    throw(ArgumentError("unsupported kernel type $(typeof(H))"))
 end
 
 # ---------------------------------------------------------------------------
@@ -359,15 +463,21 @@ end
 # ---------------------------------------------------------------------------
 
 """
-    Base.:+(A::HybridizationKernel, B::HybridizationKernel) -> HybridizationKernel
+    Base.:+(A::FrozenHybridizationKernel, B::FrozenHybridizationKernel)
+        -> FrozenHybridizationKernel
 
 多 bath 耦合的核相加：blocks 键 = 并集（同键块相加——`CorrelationMatrix` +
 `CorrelationMatrix` = QuAPI Toeplitz 向量相加，混合表示 = 泛型逐元素（任一方
 dense 即 dense 结果）；单侧缺键 = 透传并标量型对齐 T）；`coupling_norm` 相加；
 `bands` = 有序并集；标量型 = 两者 `scalartype` 的 promote。用途：双 lead（异
 μ/β 无法合成单 bath）逐 lead 建 kernel 后相加——总耦合标量自动正确。
+
+Exact 核不定义加法（`+(::Exact, ::Exact)` 与混合 `+(::Frozen, ::Exact)` 均
+`MethodError`/ArgumentError）：normdelta 是行列式型常数，多浴联合装配是否
+恰好因子化（blocks 加 + normdelta 乘）= exactif_port_plan Phase B 数值裁决门，
+裁决落地前不提供（恒错禁止：normdelta 相加 / 绝对 Z 静默降级）。
 """
-function Base.:+(A::HybridizationKernel, B::HybridizationKernel)
+function Base.:+(A::FrozenHybridizationKernel, B::FrozenHybridizationKernel)
     T = promote_type(TK.scalartype(A), TK.scalartype(B))
     blocks = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},Union{Matrix{T},CorrelationMatrix{T}}}()
     for key in union(keys(A.blocks), keys(B.blocks))
@@ -375,9 +485,19 @@ function Base.:+(A::HybridizationKernel, B::HybridizationKernel)
         blocks[key] = inA && inB ? A.blocks[key] + B.blocks[key] :
                       _convert_block(T, inA ? A.blocks[key] : B.blocks[key])
     end
-    return HybridizationKernel(blocks, A.coupling_norm + B.coupling_norm,
-                               sort(union(A.bands, B.bands)))
+    return FrozenHybridizationKernel(blocks, A.coupling_norm + B.coupling_norm,
+                                     sort(union(A.bands, B.bands)))
 end
+
+Base.:+(A::ExactHybridizationKernel, B::ExactHybridizationKernel) =
+    throw(ArgumentError(
+        "Exact kernel addition is pending the factorization verdict " *
+        "(exactif_port_plan Phase B: joint two-bath normdelta · blocks+ must be " *
+        "verified against the IFD gold standard first)"))
+Base.:+(A::AbstractHybridizationKernel, B::AbstractHybridizationKernel) =
+    throw(ArgumentError(
+        "mixed kernel addition Frozen+Exact is not defined (different Z-constant " *
+        "contracts: coupling_norm Σα vs signed normdelta)"))
 
 "块对象标量型对齐（跨标量核相加的缺键透传；同型零拷贝）"
 _convert_block(::Type{T}, v::CorrelationMatrix) where {T} =
@@ -387,14 +507,14 @@ _convert_block(::Type{T}, v::AbstractMatrix) where {T} = eltype(v) == T ? v : T.
 
 "逐带 kernel 视图：只保留 band 的键、bands = [band]（块对象别名共享，零拷贝）。
 多带 normal 核的逐带装配内部切片用。"
-function _band_kernel(kernel::HybridizationKernel, band::Int)
+function _band_kernel(kernel::AbstractHybridizationKernel, band::Int)
     band in kernel.bands || throw(BoundsError(kernel.bands, band))
     blocks = Dict{Tuple{ContourBlockIndex,ContourBlockIndex},eltype(values(kernel.blocks))}()
     for (key, value) in kernel.blocks
         (key[1].band == band && key[2].band == band) || continue
         blocks[key] = value
     end
-    return HybridizationKernel(blocks, kernel.coupling_norm, [band])
+    return _retype_kernel(kernel, blocks, [band])
 end
 
 # ---------------------------------------------------------------------------

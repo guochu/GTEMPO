@@ -113,7 +113,7 @@ end
 _station(lattice::AbstractGrassmannLattice, cell::Tuple{Symbol,Int}, band::Int) =
     (cell_block(lattice, cell) - 1) * lattice.bands + band
 
-_kernel_flavor_block(k::HybridizationKernel, b1::Symbol, ba::Int, ca::Bool,
+_kernel_flavor_block(k::AbstractHybridizationKernel, b1::Symbol, ba::Int, ca::Bool,
                      b2::Symbol, bb::Int, cb::Bool) =
     k.blocks[(ContourBlockIndex(b1, ba, ca), ContourBlockIndex(b2, bb, cb))]
 
@@ -121,7 +121,7 @@ _kernel_flavor_block(k::HybridizationKernel, b1::Symbol, ba::Int, ca::Bool,
 _fitcolumn(f, m::Int) = sum(w * r^(m - 1) for (w, r) in zip(f.weights, f.nodes); init=0.0im)
 
 "核键的味对标签（去重排序的 (ba, ca, bb, cb) 遍历表）"
-_flavor_pairs(kernel::HybridizationKernel) =
+_flavor_pairs(kernel::AbstractHybridizationKernel) =
     sort!(unique!([(key[1].band, key[1].conj, key[2].band, key[2].conj)
                    for key in keys(kernel.blocks)]))
 
@@ -140,7 +140,7 @@ normal 公式 = ba==bb 特例逐字退化）。**严格 TTI 门**：块非 Toepl
 全矩阵兜底。audit 顶层 `thermal_residual` = 逐对最大值、`imag_expansions` = 逐对
 (; pair, mode, thermal_residual, expansion)。
 """
-function tti_factors(kernel::HybridizationKernel, lattice::AbstractImagGrassmannLattice;
+function tti_factors(kernel::AbstractHybridizationKernel, lattice::AbstractImagGrassmannLattice;
                      alg=ExactTTI())
     factors = GM.GrassmannFactor[]
     entries = []
@@ -156,7 +156,7 @@ end
 
 "单味对虚时环族（fit）；非 TTI / 热配对失败响抛，退化节点走 Pairing 兜底
 （第二输出 = audit 条目）"
-function _tti_imag_pair(kernel::HybridizationKernel, lattice::AbstractImagGrassmannLattice,
+function _tti_imag_pair(kernel::AbstractHybridizationKernel, lattice::AbstractImagGrassmannLattice,
                         ba::Int, ca::Bool, bb::Int, cb::Bool, alg)
     n = lattice.kτ
     B = lattice.bands
@@ -277,7 +277,7 @@ end
 PartialIF/PolarIF）。audit 顶层 `keldysh_residual` = 逐对最大值、`real_expansions`
 = 逐对 (; pair, mode, keldysh_residual, greater, lesser)。
 """
-function tti_factors(kernel::HybridizationKernel, lattice::AbstractRealGrassmannLattice;
+function tti_factors(kernel::AbstractHybridizationKernel, lattice::AbstractRealGrassmannLattice;
                      alg=ExactTTI())
     factors = GM.GrassmannFactor[]
     entries = []
@@ -293,7 +293,7 @@ end
 
 "单味对实时双通道（fit 重构）；缺块 / 非 TTI / Keldysh 审计失败响抛
 （第二输出 = audit 条目）"
-function _tti_real_pair(kernel::HybridizationKernel, lattice::AbstractRealGrassmannLattice,
+function _tti_real_pair(kernel::AbstractHybridizationKernel, lattice::AbstractRealGrassmannLattice,
                         ba::Int, ca::Bool, bb::Int, cb::Bool, alg)
     n = lattice.k                       # 纯实时分支格点数
     st = br -> [_station(lattice, (br, j), ba) for j in 1:n]
@@ -360,7 +360,7 @@ ComplexF64（fit_exponentials 契约）——实链（虚时格 × 实谱核）�
 **含跨带/反常键 → 恒单链**（PartialIF 第九批先例：味对因子单序列覆盖全部
 变量，`gmps` 就地改写）。"
 function _exacttti_state!(gmps, err::Float64, lattice::AbstractGrassmannLattice,
-                          kernel::HybridizationKernel, alg::ExactTTI)
+                          kernel::AbstractHybridizationKernel, alg::ExactTTI)
     diag = Dict{Symbol,Any}()
     mult = _mult(alg)
     pol = GM.PolarExp(rtol=0.0, alg_mult=mult)     # 因子级精确（rtol=0）

@@ -142,7 +142,7 @@ bond-2 压缩分支是 JW 物理基的产物，变量基中直和键的收缩仍
 slow/gf 路线同为单项式故 fast == slow，新栈 slow 是边界插入锚定路线）。
 每项的 ⟨ā a⟩ 值与 `cached_gf`（同元组）逐位一致。
 """
-function current_operator(lattice::AbstractGrassmannLattice, kernel::HybridizationKernel, k::Integer;
+function current_operator(lattice::AbstractGrassmannLattice, kernel::AbstractHybridizationKernel, k::Integer;
                           band::Int=1)
     ηpp = Matrix(kernel.blocks[(ContourBlockIndex(:+, band, true), ContourBlockIndex(:+, band, false))])       # raw（顶点移位 accessor 禁令，见 electriccurrent）
     ηpm = -Matrix(kernel.blocks[(ContourBlockIndex(:+, band, true), ContourBlockIndex(:-, band, false))])
@@ -167,7 +167,7 @@ end
 胞坐标 0⁺ 语义（cached_gf 的 D5 注同款）——与边界插入的 electriccurrent 差
 O(胞内接触项)，边界语义锚定路径仍是 electriccurrent。
 """
-function cached_electriccurrent_fast(lattice::AbstractGrassmannLattice, kernel::HybridizationKernel,
+function cached_electriccurrent_fast(lattice::AbstractGrassmannLattice, kernel::AbstractHybridizationKernel,
                                      K::GM.GMPS, Is::GM.GMPS...; k::Integer, band::Int=1,
                                      cache::Union{Nothing,GM.ExpectationCache}=nothing)
     Int(k) == 1 && return 0.0im

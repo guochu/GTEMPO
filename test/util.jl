@@ -16,7 +16,7 @@ function _error(a::Number, b::Number, tol::Real)
 end
 
 # ------------------------------------------------- single-particle matrices
-using LinearAlgebra: Diagonal, eigen, Hermitian, tr
+using LinearAlgebra: Diagonal, eigen, Hermitian, tr, norm
 
 function spin_half_matrices()
 	s_SP = Array{Float64, 2}([0 0; 1 0])
